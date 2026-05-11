@@ -160,21 +160,89 @@ of 10 hand-marks. Logged here once locked.
 
 **Date:** 2026-05-11.
 
-Drafts of the preliminary report and the dissertation are written in
-`docs/REPORT_PRELIM.md` and (later) `docs/REPORT_DISSERTATION.md`. Bibliography
-in `docs/references.bib`. Final PDFs are typeset from these sources. Notion is
-the place for narrative observations and supervision notes, not for the
-report itself.
+Drafts of the final dissertation are written in `docs/REPORT_PRELIM.md`
+(which evolves into `docs/REPORT_DISSERTATION.md`). Bibliography in
+`docs/references.bib`. Final PDFs are typeset from these sources. Notion
+is the place for narrative observations and supervision notes, not for
+the report itself.
 
 Rationale: keeping prose in the repo gives version control, citation
 management, and reproducibility. An examiner who clones the repo can rebuild
 the report from source.
 
+### D12: Token-efficiency and latency as first-class research dimensions
+
+**Date:** 2026-05-11.
+
+Beyond answer accuracy, the project measures and reports computational
+cost per question: input tokens, output tokens, and wall-clock latency.
+Cost-per-correct-answer becomes a headline metric alongside accuracy.
+
+Rationale: existing agentic-LLM benchmarks (GAIA, AgentBench, WebArena)
+report accuracy almost exclusively. For a system intended to replace a
+manual annual workflow at scale, the operational question is not only
+"is the answer correct" but "what does the answer cost." Stratifying
+both accuracy and cost by the rubric dimensions (D6) reveals which
+question types are cheap-and-correct, expensive-but-correct,
+cheap-but-wrong, and expensive-and-wrong. The cost surface is itself a
+finding.
+
+A new research question is added in METHODOLOGY.md:
+
+> **RQ5.** What is the trade-off between answer quality and computational
+> cost (tokens, latency) for ODMI questions of different rubric profiles?
+
+Implications:
+- Every LLM call records `input_tokens`, `output_tokens`,
+  `wall_clock_ms`, and an estimated cost figure (or a flat marker since
+  the project routes through CLIProxyAPI on a fixed subscription).
+- The `phase2_runs` and (if used) `phase1_classifications` schemas need
+  these columns added before the first real run. Logged as Q6 below.
+- Optimisation strategies tried (prompt compression, retrieval scope
+  tightening, caching, smaller model fallback) are themselves
+  experimental conditions to report on.
+
+### D13: 2025 ODMI cycle as primary ground truth, 2024 as held-out test set
+
+**Date:** 2026-05-11. Resolves Q5.
+
+The 2025 ODMI cycle is the primary evaluation ground truth. The repo
+already contains the parsed 2025 questionnaire and France's 2025 response
+sheet (which includes the 2024 answer as a baseline column). The 2024
+cycle data is held back as an independent external-validity test set,
+extracted from the original 2024 PDFs only after the pipeline is finalised
+on 2025.
+
+Rationale: 2025 data is parsed and ready; 2024 needs re-extraction. The
+held-back design also gives a cleaner external-validity check, because
+prompt and rubric tuning never touch the 2024 evidence.
+
+### D14: 22 May deliverable is a results-focused slide deck, not a written report
+
+**Date:** 2026-05-11.
+
+The 22 May submission is repositioned as a short slide deck reporting
+real progress (hand-mark pilot results plus tech-prototype outputs), not
+the 10-page written report originally scoped. Per Benjy's read of the KCL
+programme, the preliminary submission is non-examinable and acts as a
+gateway; with a tight time budget, real results demonstrate capability
+more efficiently than a planning document.
+
+Consequences:
+- `docs/REPORT_PRELIM.md` is no longer the 22 May deliverable. It is
+  retained as scaffolding that will evolve into the final dissertation
+  draft (which is examined).
+- A new `docs/PROGRESS_SLIDES.md` holds the slide outline and content for
+  the 22 May submission.
+- This week's effort focuses on hand-marks (Benjy), a minimal tech
+  prototype (Claude Code), and a small set of real results to put on
+  slides.
+
 ---
 
 ## Current status
 
-**Phase:** Phase A setup. Preliminary report writing week.
+**Phase:** Phase A foundation. Results-and-slides sprint week (per D14).
 
 ### Built (verified)
 
@@ -202,7 +270,12 @@ the report from source.
 - Hand-mark migration from the Word document to the CSV workspace.
 - Hand-mark schema in SQLite (table to be added).
 - Pilot batch of 10 hand-marks for France across the difficulty range.
-- Preliminary report (drafting in progress as of 2026-05-11).
+- Minimal answering-agent prototype: one question end-to-end on France
+  through CLIProxyAPI, written to SQLite with source URL and evidence
+  quote. Pre-cursor to the full Coordinator-Researcher-Verifier swarm.
+- 22 May slide deck (`docs/PROGRESS_SLIDES.md`).
+- Schema additions for D12: `input_tokens`, `output_tokens`,
+  `wall_clock_ms` on the run tables.
 - `evaluation/` analysis scripts.
 - Notion master page sync with the new state (still says Supabase + Opus).
 
@@ -216,10 +289,12 @@ the report from source.
 - **Q3:** Supervisor identity and meeting cadence. Log in Notion once set.
 - **Q4:** Language confidence table — how to populate it for Phase B without
   blowing time on a 24-language benchmark we may not need.
-- **Q5:** Do we evaluate against the 2024 cycle, the 2025 cycle, or both?
-  The repo has the 2025 questionnaire and France's 2025 response sheet. The
-  2024 reports exist in PDF and would need re-extracting. Decide before
-  finalising evaluation methodology in `docs/METHODOLOGY.md`.
+- **Q5:** Resolved by D13. 2025 cycle is primary; 2024 is held back as
+  external-validity test set.
+- **Q6:** Schema additions for the optimisation columns (per D12). Add
+  `input_tokens`, `output_tokens`, `wall_clock_ms`, `estimated_cost_usd`
+  (nullable) to `phase1_classifications` and `phase2_runs`. Migrate the
+  empty DB before the first real run lands.
 
 ---
 
@@ -227,7 +302,8 @@ the report from source.
 
 | Date | Change |
 |---|---|
-| 2026-05-11 | Project state reverse-engineered after five-week dormancy. Stale ODMI_Project_Knowledge.md / ODMI_Project_Setup.md deleted. CLAUDE.md, SPEC.md, METHODOLOGY.md, PROJECT_LOG.md rewritten. D8, D9, D10, D11 added. Option 3 (rubric as analytical lens) locked in. Hand-marks workspace created. First git commit on `main`. |
+| 2026-05-11 (pm) | D12 (optimisation as first-class dimension), D13 (2025 ground truth, 2024 held-out), D14 (22 May = slide deck not report). Q5 resolved. Q6 opened. RQ5 added to METHODOLOGY. |
+| 2026-05-11 (am) | Project state reverse-engineered after five-week dormancy. Stale ODMI_Project_Knowledge.md / ODMI_Project_Setup.md deleted. CLAUDE.md, SPEC.md, METHODOLOGY.md, PROJECT_LOG.md rewritten. D8, D9, D10, D11 added. Option 3 (rubric as analytical lens) locked in. Hand-marks workspace created. First git commit on `main`. |
 | 2026-04-01 | SPEC.md first created (now superseded). Confirmed CLIProxyAPI (D1) and SQLite (D2). Project moved from `~/Projects` to `~/Desktop/Msc Project`. |
 | 2026-03-27 | Session 1: repo scaffolding, classifier v1, Supabase schema (since dropped). |
 

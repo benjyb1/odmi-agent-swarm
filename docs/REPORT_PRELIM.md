@@ -1,4 +1,12 @@
-# Preliminary Project Report
+# Final Dissertation — Draft Scaffold (was: Preliminary Report)
+
+> **Status (2026-05-11):** This file is no longer the 22 May deliverable. Per
+> decision D14 in `docs/SPEC.md`, the 22 May submission is now a results
+> slide deck (`docs/PROGRESS_SLIDES.md`). This document remains as scaffolding
+> for the final dissertation (due 2026-08-02), which is the examined
+> submission. The section structure below already mirrors the dissertation
+> brief: Introduction, Background, Schedule. Methodology and Results sections
+> are added as the work progresses.
 
 **Title:** AI Frameworks for Assessment of Data and Digital Technologies: An
 Agent Swarm for the EU Open Data Maturity Index
@@ -9,9 +17,7 @@ Agent Swarm for the EU Open Data Maturity Index
 
 **Supervisor:** TBC
 
-**Submission date:** 2026-05-22
-
-**Self-imposed cut-off:** 2026-05-16
+**Final dissertation submission:** 2026-08-02
 
 ---
 

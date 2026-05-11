@@ -43,6 +43,12 @@ regimes when the same system is run on a stratified six-country sample?
 of agentic LLMs as currently constituted, and what reformulations would bring
 them in scope?
 
+**RQ5.** What is the trade-off between answer quality and computational cost
+(input tokens, output tokens, wall-clock latency) for ODMI questions of
+different rubric profiles? Are some classes of question cheap-and-correct,
+others expensive-and-still-wrong, and where in the rubric space does each
+regime sit?
+
 ---
 
 ## 3. The answerability rubric
@@ -200,29 +206,82 @@ unresolved is flagged for human review.
 
 ## 6. Evaluation methodology
 
-### Stage 1: retrospective benchmark
+### Ground-truth cycles (per D13)
 
-Run the finalised swarm on the (question, country) pairs from the most
-recent ODMI cycle with full ground-truth answers (2024 or 2025, to be
-finalised). Compute:
+The 2025 ODMI cycle is the primary evaluation set. The parsed 2025
+questionnaire and France's 2025 response sheet are already in the repo.
+The 2024 cycle is held back as an independent external-validity set; it
+is extracted from PDFs and run only after the pipeline is finalised on
+2025. Prompt and rubric tuning never touch 2024 evidence.
 
-- Accuracy stratified by rubric tier.
-- Accuracy stratified by ODMI dimension (Policy / Portal / Quality / Impact).
-- Accuracy stratified by country and by language.
-- Categorical failure mode analysis: wrong source, outdated evidence,
-  hallucinated source, irretrievable source, ambiguous question.
+### Stage 1: retrospective benchmark (2025)
 
-### Stage 2: live deployment (2026 cycle)
+Run the finalised swarm on the (question, country) pairs from the 2025
+ODMI cycle for the Phase B six-country set. Every pair has a known human
+answer. Compute, separately:
 
-Run the validated pipeline on the 2026 ODMI indicators. No ground truth
-exists. Answers go to human review. Acceptance rate is the headline metric.
-The qualitative discussion focuses on which question types resisted
-automation and how those questions might be reformulated.
+- **Accuracy** stratified by rubric tier, ODMI dimension, country, and
+  language.
+- **Cost** stratified by the same axes: input tokens, output tokens, total
+  tokens, wall-clock latency. Mean and 95th-percentile per stratum.
+- **Cost-per-correct-answer** as a joint metric.
+- **Failure mode taxonomy** with categorical labels: wrong source,
+  outdated evidence, hallucinated source, irretrievable source, ambiguous
+  question, language-comprehension failure.
+
+### Stage 2: external-validity test (2024)
+
+Run the unchanged pipeline against the 2024 ODMI ground truth. No further
+tuning. The expected accuracy delta between 2025 and 2024 is itself a
+result; a small delta suggests the pipeline generalises, a large delta
+suggests it overfits to the 2025 evidence patterns.
+
+### Stage 3: live deployment (2026 cycle)
+
+Run the pipeline on 2026 indicators. No ground truth exists. Answers go to
+human review and acceptance rate is the headline metric. Qualitative
+discussion focuses on which question types resisted automation and how
+those questions might be reformulated.
+
+### Efficiency measurement (per D12)
+
+Every LLM call (classifier post-hoc experiment, Researcher, Verifier,
+any optimisation variant) writes to the database with the columns added
+in Q6 / SPEC.md:
+
+- `input_tokens`, `output_tokens`: from the API usage block.
+- `wall_clock_ms`: time from prompt dispatch to parsed structured output.
+- `estimated_cost_usd`: nullable. Computed off the published Anthropic
+  pricing for the model variant in use, or marked as zero under the
+  CLIProxyAPI / Claude Max routing per D1 (with a footnote noting the
+  arithmetic equivalent if the calls had been billed direct).
+
+Reporting groups answers by (rubric_tier × ODMI_dimension × country) and
+reports both accuracy and cost. The cost surface across the rubric space
+is the primary RQ5 output.
+
+### Optimisation experiments
+
+Concrete variants run as named conditions, each writing into the same
+schema with a `condition_label` column:
+
+| Condition | Description |
+|---|---|
+| `baseline` | Full prompt, full retrieval, no truncation. The reference accuracy and cost. |
+| `prompt-compressed` | Same agent loop, prompts compressed (no examples, terser instructions). |
+| `retrieval-tight` | Tavily search limited to top-3 hits; Playwright fetch capped at first 4k chars. |
+| `cache-hot` | Identical query within an hour returns the cached evidence rather than re-fetching. |
+| `model-fallback` | Cheaper model (e.g. Haiku) tried first; escalates to Sonnet only on Verifier reject. |
+
+Each variant produces a point on the accuracy-vs-cost surface. The
+contribution is not "the optimised pipeline" but "the shape of the
+trade-off for this task class."
 
 ### Contribution
 
-The failure mode taxonomy is the principal research output. The pipeline is
-the vehicle for producing it.
+The failure mode taxonomy and the accuracy-vs-cost surface are the two
+principal research outputs. The pipeline is the vehicle for producing
+them.
 
 ---
 
@@ -235,7 +294,8 @@ the vehicle for producing it.
 | Prompt drift across iterations. | Prompt versioning (D5). Every score links to the exact prompt version that produced it. |
 | Selection bias in hand-mark sample. | Stratification design (D10). Sample composition locked before marking begins. |
 | Language quality variance. | Static language confidence table populated by an early pilot. Native / DeepL / human routing per language. |
-| Cycle ambiguity (2024 vs 2025 vs 2026). | Decide and document before Stage 1 begins (Q5 in SPEC.md). |
+| Cycle ambiguity (2024 vs 2025 vs 2026). | Resolved in D13. 2025 primary; 2024 held-out external-validity set; 2026 is the live deployment. |
+| Cost gaming via prompt or retrieval tuning. | Optimisation variants are reported separately with explicit condition labels. The accuracy-cost surface is the output, not "the optimised pipeline." Baseline is always reported alongside any optimised variant. |
 
 ---
 
