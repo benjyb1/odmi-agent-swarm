@@ -295,6 +295,24 @@ Consequences:
   `input_tokens`, `output_tokens`, `wall_clock_ms`, `estimated_cost_usd`
   (nullable) to `phase1_classifications` and `phase2_runs`. Migrate the
   empty DB before the first real run lands.
+- **Q7:** One `phase2_runs` table with a `final` boolean, or split into
+  `phase2_researcher_runs`, `phase2_verifier_runs`, and `phase2_final`?
+  Leaning split-table for query simplicity. Decide before the schema
+  migration. See AGENT_DESIGN.md section 5 for the writes that the
+  Coordinator must support.
+- **Q8:** Tavily `topic` parameter default for the Researcher's
+  `web_search` tool. `general` to start; revisit if ODMI policy
+  questions need a `news`-style retrieval.
+- **Q9:** How to compute `estimated_cost_usd` under the CLIProxyAPI
+  flat-rate subscription. Use published Anthropic rates as the
+  arithmetic equivalent. Footnote in the dissertation.
+- **Q10:** Trusted-domain list for the Researcher's source validator.
+  Per-country JSON files under `data/trusted_domains/<country>.json`.
+  Populate during Phase A.
+- **Q11:** Substring check tolerance in the Verifier. Strict literal
+  match is brittle; normalised match (collapse whitespace, lowercase,
+  strip punctuation) is probably right. Decide before building the
+  Verifier.
 
 ---
 
