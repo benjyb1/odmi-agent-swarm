@@ -1,0 +1,1003 @@
+[
+  {
+    "question_id": "P1",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Is there a national open data policy in your country and, if your country is an EU Member State, does this include a national legislation for the transposition of the Open Data Directive?\n\nFor Explanation:\n* If yes, please provide (1) the URL and (2) title of the policy document and (3) briefly describe.\n* If ‘other’, please provide (1) a brief explanation to support your answer choice and (2) provide the URL and indicate the policy section which explicitly references open data.",
+    "response_scoring": "{'yes': 40, 'no': 0, 'other': 40}"
+  },
+  {
+    "question_id": "P2",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Is there a national open data strategy in your country?\n\nFor Explanation:\n* If yes, please provide (1) the URL to the strategy and (2) describe the main highlights.  \n* If 'not applicable', please provide (1) a brief explanation to support your answer choice and provide (2) the URL and indicate the policy section which explicitly references objectives, actions/measures, delivery timelines etc.",
+    "response_scoring": "{'yes': 40, 'no': 0, 'not applicable': 40}"
+  },
+  {
+    "question_id": "P3",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Is there an open data policy/strategy at regional or local level?\n\nFor Explanation:\n* If yes, please (1) provide the URL and (2) title of the document(s) and (3) briefly describe.",
+    "response_scoring": "{'yes': 20, 'no': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "P4",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Does the national strategy/policy include an action plan with measures to be implemented in the open data field?\n\nFor Explanation:\nIf yes, please briefly describe the main measures described by the action plan.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P5",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Does the national strategy/policy outline measures to incentivise the publication of and access to real-time or dynamic data?\n\nFor Explanation:\n* If yes, please briefly describe the measures.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P6",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Does the national strategy/policy outline measures to incentivise the publication of and access to citizen-generated data?\n\nFor Explanation:\n* If yes, please briefly describe the measures.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P7",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Does the national strategy/policy foster the discoverability of the aforementioned types of data from your country on data.europa.eu?\n\nFor Explanation:\n* If yes, please briefly describe how.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P8",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Does the national strategy/policy outline measures to support the reuse of open data by the public sector?\n\nFor Explanation:\n* If yes, please briefly describe the measures.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P9",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Does the national strategy/policy outline measures to support the reuse of open data by the private sector?\n\nFor Explanation:\n* If yes, please briefly describe the measures.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P10-a",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Does the national strategy/policy mandate carrying out and maintaining a data inventory by public bodies, whether at national or local level?\n\nFor Explanation:\n* If yes, please briefly specify.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P10-b",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Do these data inventories include the data collected by public bodies that cannot be published as open data (e.g. in relation to the EU Data Governance Act (EU) 2022/868)? \n\nFor Explanation:\n* If yes, please briefly specify.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P11",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Is your country applying the implementing regulation (EU) 2023/138 on high-value datasets?\n\nFor Explanation:\n* If yes, how is it progressing? \n* If you are an EFTA or a candidate country to the EU, please select 'not applicable'.\n** In the table below, please indicate your progress with respect to a) organisation, b) legal aspects, c) technical aspects on a scale from 1 to 5. 1 = no progress; 2 = few progress; 3 = some progress; 4 = considerable progress; 5 = works are finalised.",
+    "response_scoring": "{'yes': 40, 'no': 0, 'not applicable': 40}"
+  },
+  {
+    "question_id": "P12",
+    "dimension": "Policy",
+    "indicator": "policy_framework",
+    "question_text": "Have the public bodies in your country denoted relevant datasets as high-value datasets in their metadata following the publication of the implementing regulation (EU) 2023/138 on high-value datasets?\n\nFor Explanation:\n*  If yes, please specify how and highlight challenges, if any. \n* If you are an EFTA or a candidate country to the EU, please select 'not applicable'.",
+    "response_scoring": "{'yes': 20, 'no': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "P13",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "Is there a governance structure in place that enables the participation and/or inclusion of various open data stakeholders? \n\nFor Explanation:\n*  If yes, please briefly describe the governance structure and its operating model",
+    "response_scoring": "{'yes': 40, 'no': 0}"
+  },
+  {
+    "question_id": "P14",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "How would you classify the model used for governing open data in your country? \n\nFor Explanation:\n*  Please briefly explain why this model was chosen/works best for your country",
+    "response_scoring": "{'top-down': 0, 'bottom-up': 0, 'hybrid': 0}"
+  },
+  {
+    "question_id": "P15",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "Does the governance structure ensure that the local and regional open data initiatives are facilitated and supported at national level?\n\nFor Explanation:\n* If yes, please give an example of what kind of support.\n* If not applicable, please explain why.",
+    "response_scoring": "{'yes': 20, 'no': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "P16",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "To what degree do local/regional public bodies conduct open data initiatives? \n\nFor Explanation:\n* If not applicable, please explain why.",
+    "response_scoring": "{'all public bodies': 20, 'the majority of public bodies': 15, 'approximately half of the public bodies': 10, 'few public bodies': 5, 'none of the public bodies': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "P17",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "Is a document describing the responsibilities and governance structure of the national (and/or regional/local) open data team publicly available?\n\nFor Explanation:\n* If yes, please provide the URL where this information is published.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P18",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "Is there a regular exchange of knowledge or experiences between the national open data team and the team maintaining the national portal? \n\nFor Explanation:\n* If yes, please briefly describe how this exchange takes place and provide evidence supporting your answer (e.g. meeting agendas, URLs to news items).",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P19",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "Does the governance model include the appointment of official roles in civil services that are dedicated to open data (e.g. open data officers)?\n\nFor Explanation:\n* If yes, please describe how this task is fulfilled at public body level.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P20",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "Is there a regular exchange of knowledge or experiences between the national open data team and the wider network of open data officers in your country? \n\nFor Explanation:\n* If yes, please briefly describe how this exchange takes place and provide evidence supporting your answer (e.g. meeting agendas, URLs to news items).",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P21",
+    "dimension": "Policy",
+    "indicator": "policy_governance",
+    "question_text": "Is there a regular exchange of knowledge or experiences between public sector bodies (i.e. the providers) and open data reusers (e.g. academia, citizens, businesses)?\n\nFor Explanation:\n* If yes, please briefly describe how this exchange takes place and provide evidence supporting your answer (e.g. meeting agendas, URLs to news items).",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P22",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "Do data publication plans exist at public body level?\n\nFor Explanation:\n* If yes, please provide the URL and briefly highlight the key aspects covered.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P23",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "Are there processes to ensure that the open data policies/strategy previously mentioned are implemented (e.g. monitoring)?\n\nFor Explanation:\n* If yes, please specify the process(es).",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "P24",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "Are there processes to ensure that the open data policies/strategy previously mentioned are updated and revised as needed?\n\nFor explanation:\n* If yes, please describe the process and any recent updates made to strategy/policy",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P25",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "Are there any processes in place to assess if public sector bodies are charging for data above marginal cost? (please see directive (EU) 2019/1024 on open data and the reuse of public sector information).\n\nFor Explanation:\n* If yes, please specify the process(es).",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "P26-a",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "What are the top 3 challenges that your country is facing in the implementation of the mentioned open data policies/strategy?\n\nFor Explanation:\n* Please briefly describe.",
+    "response_scoring": "{None: 0}"
+  },
+  {
+    "question_id": "P26-b",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "Are there activities in place to address these challenges in your country (e.g. with specific national/regional/local plans or initiatives)?\n\nFor Explanation:\n* If yes, please briefly describe the measures that you have adopted or plan to adopt to address these challenges. \n* If no, please specify what is hampering finding a strategic approach to solve these challenges.",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "P27",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "Are there any activities in place to assist data holders with publishing their data as open data (i.e. to help them with the data opening process)?\n\nFor Explanation:\n* If yes, please describe/provide examples of these activities.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P28",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "Is there a professional development or training plan for civil servants working with data in your country? \n\nFor Explanation:\n* If yes, please briefly describe these training activities.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "P29",
+    "dimension": "Policy",
+    "indicator": "policy_implementation",
+    "question_text": "Are there annually held national, regional or local events (e.g. hackathons, courses, conferences, users meet-ups, summer/winter schools) to promote open data and open data literacy in your country beyond the target group of public servants? \n \nFor Explanation:\n* If yes, please provide examples (e.g. title, date, location of the event and URL).",
+    "response_scoring": "{'yes, >9': 20, 'yes, 6-9': 15, 'yes, 3-5': 10, 'yes, 1-2': 5, 'no': 0}"
+  },
+  {
+    "question_id": "PT1",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Is there a national portal in your country for that enables users to search for open datasets and find where to download open data? \n\nFor Explanation:\n* If yes, please provide the URL of the national portal.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT2",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "For Explanation:\n* What is the technology stack of your portal (e.g. based on uData, CKAN, etc.)",
+    "response_scoring": "{None: 0}"
+  },
+  {
+    "question_id": "PT3",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer to its users a way to programmatically query the metadata via an API?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT4",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer to its users a way to programmatically query the metadata via a SPARQL access point?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT5",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer/link to documentation on the use of APIs?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT6",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer/link to documentation on the use of SPARQL? \n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT7",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal provide functionality for users to contribute datasets they have produced or enriched? \n\nFor explanation:\n* If yes, please (1) explain how  the portal facilitate the linking of documentation and supporting materials to these user-contributed datasets and (2) provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT8",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer a mechanism for users to provide general feedback, such  a 'Contact us' or 'Feedback' button that is placed in a visible spot and would allows users to send a general comment concerning the portal?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature or describe how this functionality is provided.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT9",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer a mechanism for users to provide feedback on specific datasets, such as a 'feedback button' or a comment/discussion section under the dataset?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature or describe how this functionality is provided.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT10",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal provide a mechanism for users to rate datasets?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature or describe how this functionality is provided.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT11",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal enable users to find information and news on relevant open data topics in the country?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT12",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer the possibility for users to receive notifications when new datasets are available on the national portal (RSS, ATOM feeds, email notifications etc.)?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT13",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal enable users to request datasets, such as through a \"request data\" button? \n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature or describe how this functionality is provided.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT14",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Are requests for datasets and their progress status presented in a transparent manner on the national portal? \n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT15",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the team monitor the extent to which requests (either via the portal or otherwise) result in the publication of the requested data?\n\nFor Explanation:\n* If yes, please describe how this monitoring is conducted.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT16",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer a mechanism for users to exchange with others, such as a discussion forum?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature or describe how this functionality is provided.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT17",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal showcase reuse cases, such as in a designated section of the portal?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT18",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal reference the datasets that the showcased reuse cases are based on (i.e. there is a link between the reuse case in the showcase and the underlying dataset on the portal)?\n\nFor Explanation:\n* If yes, please provide the URL to this feature/to an example documenting this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT19",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal provide the possibility for users to submit their own reuse cases?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT20",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer a preview function for tabular data?\n\nFor Explanation:\n* If yes, please provide the URL to an example documenting this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT21",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Does the national portal offer a preview function for geospatial data?\n\nFor Explanation:\n* If yes, please provide the URL to an example documenting this feature.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT22",
+    "dimension": "Portal",
+    "indicator": "portal_features",
+    "question_text": "Do you promote high-value datasets on your national portal (e.g. use filtering features for reusers to easily find such datasets, use editorial features to promote the datasets, etc.))?\n\nFor Explanation:\n* If yes, please specify how and highlight challenges if any. \n* If you are an EFTA or a candidate country to the EU, please select 'not applicable'.",
+    "response_scoring": "{'yes': 20, 'no': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "PT23",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Do you monitor the portal's traffic (e.g. in terms of number of unique visitors, visitor profiles, percentage of machine traffic, number of downloads according to the number of datasets etc.)? \n\nFor Explanation:\n* If yes, which tool(s) do you use?",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT24",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Do you run analytics on API usage?\n\nFor Explanation:\n* If yes, please briefly (1) describe your process and (2) how you use the insights to improve the portal",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT25",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Besides monitoring portal traffic, do you perform any further activities to better understand the behaviour and needs of users of your portal (e.g. web analytics, surveys, or analysis of social media feeds)?\n\nFor Explanation:\n* If yes, please (1) specify the activities and explain (2) how they help you understand user needs",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT26",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Do you use the insights about portal usage and about the behaviour and needs of portal users to improve the portal accordingly?\n\nFor Explanation:\n* If yes, please explain your process for improving the portal based on user insights and feedback\n* If relevant, kindly highlight some improvements made in the past year",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT27",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Do you undertake any activities to promote the portal and attract new users or new audiences?\n\nFor explanation:\n* If yes, please (1) explain what activities your perform, and (2) mention if these activities are directed at any specific target audience (e.g. business, public sector, academia, etc.)",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT28",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Do you monitor what keywords are used to search for data and content on the portal?\n\nFor Explanation:\n* If yes, please briefly (1) describe your process and (2) how you use the insights to improve the portal",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT29",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Do you monitor the most and least consulted pages?\n\nFor Explanation:\n* If yes, please briefly (1) describe your process and (2) how you use the insights to improve the portal\n* For informational purposes, kindly provide the URLs to the five most popular datasets on the portal",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT30",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Do you take measures to optimise the search and discoverability of content (data and editorial)? \n\nFor Explanation:\n*If yes, please briefly describe how your optimise the search",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT31",
+    "dimension": "Portal",
+    "indicator": "portal_usage",
+    "question_text": "Is the metadata on your portal available in clear plain language to enable both humans and machines to read and understand it? \n\nFor Explanation:\n*If yes, please provide the URL to an example documenting this feature.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT32",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "To what degree do public sector data providers contribute data to the portal? \n\nFor Explanation:\n*Please describe what is the agreed approach.\n* If less than the majority of data providers, please briefly explain why (e.g. technical incompatibilities, governance aspects, low awareness etc.).",
+    "response_scoring": "{'all public sector data providers': 20, 'the majority of public sector data providers': 15, 'approximately half of the public sector data providers': 10, 'few public sector data providers': 0}"
+  },
+  {
+    "question_id": "PT33",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "Do you identify the data providers that are not yet publishing data on the national portal?",
+    "response_scoring": "{'yes, or all public sector data providers already publish data': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT34",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "Were there concrete actions taken to assist these data providers with their publication process?\n\nFor Explanation:\n* If yes, could you provide some examples of the actions taken in this regard.",
+    "response_scoring": "{'yes, or all public sector data providers already publish data': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT35",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "Besides the national open data portal, are there other regional and local portals? \n\nFor Explanation:\n* If yes, please provide a complete list and the links to these portals.",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "PT36",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "Are regional and local portals listed above and their data sources discoverable via the national portal? \n\nFor Explanation:\n* If not applicable, please briefly explain why.",
+    "response_scoring": "{'yes': 20, 'no': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "PT37",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "To what degree are  regional and local sources harvested automatically? \n\nFor Explanation:\n* If less than the majority of existing sources is harvested by the national portal, please briefly explain why.                        \n* If not applicable, please briefly explain why.",
+    "response_scoring": "{'all datasets': 20, 'the majority of datasets': 15, 'approximately half of the datasets': 10, 'few datasets': 5, 'none of the datasets': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "PT38",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "Does the national portal include datasets that are real-time or dynamic?\n\nFor Explanation:\n* If yes, please provide URLs to real-time and/or dynamic data featured via the national portal.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT39",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "Does the national portal provide a way for non-official data (i.e. not stemming from official sources, such as community-sourced/citizen-generated data) to be published? \n\nFor Explanation:\n* If yes, please explain how non-official data is distinguished for official data (e.g. using a different section of the portal or tags) \n* And please provide a URL to an example of a non-official dataset on the portal",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT40",
+    "dimension": "Portal",
+    "indicator": "portal_data_provision",
+    "question_text": "Does the national portal allow users to see what data exists but cannot be made available as open data?\n\nFor Explanation:\n* If yes, please (1) provide the URL to an example and (2) briefly describe the approach used to ensure this transparency.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT41",
+    "dimension": "Portal",
+    "indicator": "portal_sustainability",
+    "question_text": "Does the national portal have a strategy to ensure its sustainability?\n\nFor Explanation:\n* If yes, please (1) provide the URL to this document and (2) describe the main measures to keep the portal running in the long-term and continue to serve its audience",
+    "response_scoring": "{'yes': 40, 'no': 0}"
+  },
+  {
+    "question_id": "PT42",
+    "dimension": "Portal",
+    "indicator": "portal_sustainability",
+    "question_text": "Is your national portal active on social media? \n\nFor Explanation:\n* If yes, please provide the URL(s) to your social media accounts.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT43",
+    "dimension": "Portal",
+    "indicator": "portal_sustainability",
+    "question_text": "Are the portal’s source code and relevant documentation and artefacts made available to the public (e.g. on platforms such as GitHub or GitLab)?\n\nFor Explanation:\n*If yes, please provide the (1) platform name and (2) the URL to the portal’s account on this platform.",
+    "response_scoring": "{'yes': 10, 'no': 0}"
+  },
+  {
+    "question_id": "PT44",
+    "dimension": "Portal",
+    "indicator": "portal_sustainability",
+    "question_text": "Do you monitor the characteristics of the data published on the portal, such as the distribution across categories, static vs. real-time data and how these change over time?\n\nFor Explanation:\n* If yes, please provide the direct-URL to this feature",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "PT45",
+    "dimension": "Portal",
+    "indicator": "portal_sustainability",
+    "question_text": "Does this monitoring enable the portal team and/or data providers to take action to improve their performance on the national portal?\n\nFor Explanation:\n* If yes, please (1) explain how and (2) if applicable provide the direct-URL to this feature.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q1",
+    "dimension": "Quality",
+    "indicator": "quality_currency",
+    "question_text": "Is there a pre-defined approach to ensure that metadata is kept up-to-date?\n\nFor Explanation:\n* If yes, please briefly describe your approach.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q2",
+    "dimension": "Quality",
+    "indicator": "quality_currency",
+    "question_text": "What percentage of the metadata on the national portal is obtained from the source automatically, rather than edited manually? \n\nFor Explanation:\n* Please describe (1) the workflows you have to automate the harvesting of metadata and (2) for which types of data these apply to",
+    "response_scoring": "{'1': 20, 1: 20, '100%': 20, '90-99%': 18, '70-89%': 15, '50-69%': 10, '30-49%': 5, '<30%': 0}"
+  },
+  {
+    "question_id": "Q3",
+    "dimension": "Quality",
+    "indicator": "quality_currency",
+    "question_text": "What is the average delay from the moment the metadata describing a dataset is updated at the source, and the moment the change is visible on the portal?\n\nFor Explanation:\n* Please explain the approach for updating metadata in a timely manner",
+    "response_scoring": "{'within one day': 40, 'within one week': 15, 'within one month': 5, \"longer than one month or i don't know\": 0}"
+  },
+  {
+    "question_id": "Q4",
+    "dimension": "Quality",
+    "indicator": "quality_currency",
+    "question_text": "Do you undertake efforts to ensure that published data covers the full period from when it was first published until today, for example, the complete time series?\n\nFor Explanation:\n* If yes, please explain the measures in place to ensure complete series of datasets",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q5",
+    "dimension": "Quality",
+    "indicator": "quality_currency",
+    "question_text": "Have you implemented the DCAT-AP High Value Datasets tag to denote the High-Value Datasets in your (national) open data portal(s)?\n\nFor Explanation:\n* If yes, please specify how and highlight challenges if any.\n* If you are an EFTA or a candidate country to the EU, please select 'not applicable'.",
+    "response_scoring": "{'yes': 20, 'no': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "Q6",
+    "dimension": "Quality",
+    "indicator": "quality_currency",
+    "question_text": "Besides the DCAT-AP tag mentioned above, have you implemented any other measures to ensure that high-value datasets ((EU) 2023/138) are interoperable with datasets of other country?\n\nFor Explanation:\n* If yes, please specify how and highlight challenges if any.\n* If you are an EFTA or a candidate country to the EU, please select 'not applicable'.",
+    "response_scoring": "{'yes': 20, 'no': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "Q7",
+    "dimension": "Quality",
+    "indicator": "quality_monitoring",
+    "question_text": "Do you monitor the quality of the metadata available on your portal?\n\nFor Explanation:\n* If yes, please briefly explain how this monitoring takes place. \n* If applicable, please provide the URL to this monitoring mechanism.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q8",
+    "dimension": "Quality",
+    "indicator": "quality_monitoring",
+    "question_text": "Do you publish information on the quality of the metadata available on the portal?\n\nFor Explanation:\n* If yes, please provide the URL to this section.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q9",
+    "dimension": "Quality",
+    "indicator": "quality_monitoring",
+    "question_text": "Do you publish guidelines (e.g. written materials) and have tools in place, to assist publishers in publishing high-quality metadata? \n\nFor Explanation:\n* If yes, please (1) briefly describe this material and (2) provide the URLs to these materials and/or tools.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q10",
+    "dimension": "Quality",
+    "indicator": "quality_monitoring",
+    "question_text": "Do you set any standards on metadata quality that data providers must abide by (e.g. on the use of licence, minimum metadata describes, use of certain DCAT-AP properties, etc)\n\nFor Explanation:\n* If yes, please describe the standards you have in place, i.e. what is minimum information the metadata should describe",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q11",
+    "dimension": "Quality",
+    "indicator": "quality_monitoring",
+    "question_text": "Do your open data publication/licensing guidelines provide recommendations for the use of Creative Commons (CC) licences, specifically CC BY 4.0 and CC0?\n\nFor Explanation:\n* If yes, is this mandatory (e.g. prescribed by law) or recommended?\n* Please provide a URL link to the guidelines",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q12",
+    "dimension": "Quality",
+    "indicator": "quality_monitoring",
+    "question_text": "What percentage of the open data available on the national portal is accompanied by licensing information?",
+    "response_scoring": "{'>90%': 20, '71-90%': 15, '51-70%': 10, '31-50%': 5, '10-30%': 2, '<10%': 0}"
+  },
+  {
+    "question_id": "Q13",
+    "dimension": "Quality",
+    "indicator": "quality_monitoring",
+    "question_text": "How many different licences are used on your portal?",
+    "response_scoring": "{'1-4': 20, '5-10': 5, '>10': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "Q14",
+    "dimension": "Quality",
+    "indicator": "quality_monitoring",
+    "question_text": "Besides providing guidelines, are there regular activities conducted or mechanisms in place to  assist publishers in supplying high-quality datasets (metadata quality and data quality)?\n\nFor Explanation:\n* If yes, please explain the support you provide?",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q15",
+    "dimension": "Quality",
+    "indicator": "quality_dcat_compliance",
+    "question_text": "Does the national portal follow the DCAT-AP framework or, if not, are standards in place to ensure interoperability with DCAT-AP?\n\nFor explanation:\n* If the  portal follow the DCAT-AP framework, please describe how compliance with DCAT-AP is ensured\n* If the portal does not follow the DCAT-AP framework, please describe how interoperability with DCAT-AP is ensured",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q16",
+    "dimension": "Quality",
+    "indicator": "quality_dcat_compliance",
+    "question_text": "What is the percentage of metadata on your portal that is DCAT-AP compliant, in terms of mandatory classes?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q17",
+    "dimension": "Quality",
+    "indicator": "quality_dcat_compliance",
+    "question_text": "What is the percentage of metadata on your portal that uses DCAT-AP recommended classes?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q18",
+    "dimension": "Quality",
+    "indicator": "quality_dcat_compliance",
+    "question_text": "What is the percentage of metadata on your portal that uses DCAT-AP optional classes?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q19",
+    "dimension": "Quality",
+    "indicator": "quality_dcat_compliance",
+    "question_text": "Is there a national extension of the DCAT-AP standard developed for your country? \n\nFor Explanation:\n* If yes, please (1) briefly outline the reasons for this decision, and (2) what the main differences between the national variation and the EU standard are.\n* If applicable, please provide the URL to the documentation of the national DCAT-AP extension.",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "Q20",
+    "dimension": "Quality",
+    "indicator": "quality_dcat_compliance",
+    "question_text": "Do you investigate the most common causes for the lack of DCAT-AP compliance?\n\nFor Explanation:\n* If yes, what are the main causes for the lack of DCAT-AP compliance?",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q21",
+    "dimension": "Quality",
+    "indicator": "quality_dcat_compliance",
+    "question_text": "What is the percentage of datasets whose metadata provides a reference to where the data can be downloaded, or its API accessed (“download-URL” in the DCAT-AP specification)?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q22",
+    "dimension": "Quality",
+    "indicator": "quality_dcat_compliance",
+    "question_text": "What is the percentage of datasets whose metadata provides a reference to a web page from where the data can be accessed (“access-URL in the DCAT-AP specification)?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q23",
+    "dimension": "Quality",
+    "indicator": "quality_deployment",
+    "question_text": "Do you use a model (such as the 5-Star Open Data or FAIR) to assess the quality of deployment of data in your country?\n\nFor Explanation:\n* If yes, please briefly describe.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q24",
+    "dimension": "Quality",
+    "indicator": "quality_deployment",
+    "question_text": "Do you conduct activities to promote and familiarise data providers with ways to ensure higher quality data?\n\nFor Explanation:\n* If yes, please briefly describe.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "Q25",
+    "dimension": "Quality",
+    "indicator": "quality_deployment",
+    "question_text": "What percentage of datasets are made available under an open licence?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q26",
+    "dimension": "Quality",
+    "indicator": "quality_deployment",
+    "question_text": "What percentage of licences are provided in a structured data format?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q27",
+    "dimension": "Quality",
+    "indicator": "quality_deployment",
+    "question_text": "What percentage of datasets are provided in an open and machine-readable format?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q28",
+    "dimension": "Quality",
+    "indicator": "quality_deployment",
+    "question_text": "What percentage of datasets consistently use Uniform Resource Identifiers?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "Q29",
+    "dimension": "Quality",
+    "indicator": "quality_deployment",
+    "question_text": "What percentage of datasets link to other renowned sources to provide additional context for the users, e.g. in a linked data fashion?",
+    "response_scoring": "{'>90%': 25, '71-90%': 20, '51-70%': 15, '31-50%': 10, '10-30%': 5, '<10%': 0}"
+  },
+  {
+    "question_id": "I1",
+    "dimension": "Impact",
+    "indicator": "impact_awareness",
+    "question_text": "Do you have a definition of open data reuse in your country?\n \nFor Explanation:\n* If yes, please specify it.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "I2",
+    "dimension": "Impact",
+    "indicator": "impact_awareness",
+    "question_text": "Are there any processes in place to monitor the level of reuse of your country's open data?\n \nFor Explanation:\n* If yes, please (1) briefly describe these processes and (2) provide the URLs to support the answer.",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I3",
+    "dimension": "Impact",
+    "indicator": "impact_awareness",
+    "question_text": "Are there any activities in place to encourage public bodies to monitor the reuse of their own published data (e.g. incentives or obligations in place for public bodies or civil servants of national government)?\n \nFor Explanation:\n* If yes, please (1) briefly describe these activities/incentives and (2) provide the URLs to support the answer.",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I4",
+    "dimension": "Impact",
+    "indicator": "impact_awareness",
+    "question_text": "Does your country have processes in place to monitor and measure the level of reuse of high-value datasets ((EU) 2023/138)?\n \nFor Explanation:\n* If yes, please specify how and highlight challenges if any. \n* If you are an EFTA or a candidate country to the EU, please select 'not applicable'.",
+    "response_scoring": "{'yes': 20, 'no': 0, 'not applicable': 20}"
+  },
+  {
+    "question_id": "I5",
+    "dimension": "Impact",
+    "indicator": "impact_awareness",
+    "question_text": "Has your government specified what 'impact of open data' means (e.g. in a strategy document)?\n \nFor Explanation:\n* If yes, how do you define the impact of open data in your country? \n* If possible, please provide a URL to a public document describing it.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "I6",
+    "dimension": "Impact",
+    "indicator": "impact_awareness",
+    "question_text": "Do you have a methodology in place to measure the impact of open data in your country?\n \nFor Explanation:\n* If yes, please briefly describe the key points of this methodology.",
+    "response_scoring": "{'yes': 20, 'no': 0}"
+  },
+  {
+    "question_id": "I7",
+    "dimension": "Impact",
+    "indicator": "impact_awareness",
+    "question_text": "Is there collaboration between government and civil society or academia to create open data impact in your country?\n\nFor Explanation:\n* If yes, please provide an example\n* If possible, URLs to such projects and collaborations.",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I8",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Have any public bodies in your country launched or performed any activities in the past year to understand which and how (open) datasets are reused?\n\nFor Explanation:\n* If yes, which of the following activities?\n* Multiple answers are possible.",
+    "response_scoring": "{'yes': 40, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I8-a",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Automated feedback mechanisms tracking users´ access to datasets",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "I8-b",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Surveys",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "I8-c",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Interviews/workshops with reusers",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "I8-d",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Other",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "I9",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Have any public bodies in your country launched or performed any activities in the past year to better understand reusers' needs in order to further stimulate the reuse of open data?\n\nFor Explanation:\n* If yes, which of the following activities have been performed? Please describe how the activity has helped you better stimulate reuse.\n* Multiple answers are possible.",
+    "response_scoring": "{'yes': 40, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I9-a",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Regular feedback sessions with portal users",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "I9-b",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Social media sentiment analysis",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "I9-c",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Other",
+    "response_scoring": "{'yes': 0, 'no': 0}"
+  },
+  {
+    "question_id": "I10",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Have any public bodies in your country developed any systematic way of gathering reuse cases?\n\nFor Explanation:\n* If yes, please provide a brief explanation of the process: How does the gathering happen?",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I11",
+    "dimension": "Impact",
+    "indicator": "impact_measuring_reuse",
+    "question_text": "Are there any public bodies in your country that have developed a systematic ways of classifying the gathered reuse cases?\n\nFor Explanation:\n* If yes, please provide a brief explanation of the process: According to which categories are reuse cases classified (e.g. by policy field)?",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I12",
+    "dimension": "Impact",
+    "indicator": "impact_government",
+    "question_text": "Is any data on the impact created by open data on governmental challenges (e.g. efficiency, effectiveness, transparency, decision-making capacity) available in your country such as from research studies, impact assessments, or other systematic investigations that quantify the results or broader effects of open data being reused?\n\nFor Explanation:\n* If yes, please (1) specify what kind of data source proves this impact and (2) provide the URLs to this data.",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I13",
+    "dimension": "Impact",
+    "indicator": "impact_government",
+    "question_text": "Is the use of open data in your country having an impact on the efficiency and effectiveness of the government (at any level) in delivering public services? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I14",
+    "dimension": "Impact",
+    "indicator": "impact_government",
+    "question_text": "Is the use of open data in your country having an impact on transparency and accountability of public administrations?\n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I15",
+    "dimension": "Impact",
+    "indicator": "impact_government",
+    "question_text": "Is the use of open data in your country having an impact on policy-making processes (i.e. are public administrations making use of the data as evidence for the problem identification and policy formulation)? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I16",
+    "dimension": "Impact",
+    "indicator": "impact_government",
+    "question_text": "Is the use of open data in your country having an impact on decision-making processes (i.e. are public administrations making use of the data as evidence to be included in their daily operations)?\n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I17",
+    "dimension": "Impact",
+    "indicator": "impact_social",
+    "question_text": "Is any data on the impact created by open data on social challenges (e.g. inequality, healthcare, education) available in your country such as from research studies, impact assessments, or other systematic investigations that quantify the results or broader effects of open data being reused?\n\nFor Explanation:\n* If yes, please (1) specify what kind of data source proves this impact and (2) provide the URLs to this data.",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I18",
+    "dimension": "Impact",
+    "indicator": "impact_social",
+    "question_text": "Is the use of open data in your country having an impact on society´s ability to reduce inequality and better include minorities, migrants, and/or refugees? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I19",
+    "dimension": "Impact",
+    "indicator": "impact_social",
+    "question_text": "Is the use of open data in your country having an impact on issues about housing in urban areas? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I20",
+    "dimension": "Impact",
+    "indicator": "impact_social",
+    "question_text": "Is the use of open data in your country having an impact on the issues of health and wellbeing? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I21",
+    "dimension": "Impact",
+    "indicator": "impact_social",
+    "question_text": "Is the use of open data in your country having an impact on the society´s level of education and skills (e.g. data literacy)?\n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I22",
+    "dimension": "Impact",
+    "indicator": "impact_environmental",
+    "question_text": "Is any data on the impact created by open data on environmental challenges (e.g. climate change and environmental degradation, as highlighted in the European Green Deal) available in your country such as from research studies, impact assessments, or other systematic investigations that quantify the results or broader effects of open data being reused?\n\nFor Explanation:\n* If yes, please specify (1)  what kind of data source proves this impact and (2) provide the URLs to this data.",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I23",
+    "dimension": "Impact",
+    "indicator": "impact_environmental",
+    "question_text": "Is the use of open data in your country having an impact on the level of protection of biodiversity (e.g. maintaining a good air and water quality)? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I24",
+    "dimension": "Impact",
+    "indicator": "impact_environmental",
+    "question_text": "Is the use of open data in your country having an impact on the achievement of more environment-friendly cities (e.g., environment-friendly transport systems, waste management etc.)? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I25",
+    "dimension": "Impact",
+    "indicator": "impact_environmental",
+    "question_text": "Is the use of open data in your country having an impact on the fight against climate change, for example by undertaking predictive monitoring, preventive actions, or a differentiated response to connected disasters?\n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I26",
+    "dimension": "Impact",
+    "indicator": "impact_environmental",
+    "question_text": "Is the use of open data in your country having an impact on the consumption of energy based on fuel and the switch to renewables? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I27",
+    "dimension": "Impact",
+    "indicator": "impact_economic",
+    "question_text": "Is any data on the economic impact (e.g. GDP, employment, productivity, innovation,  new businesses created etc.) of open data available in your country such as from research studies, impact assessments, or other systematic investigations that quantify the results or broader effects of open data being reused?\n\nFor Explanation:\n* If yes, please specify what kind of data source proves this impact and provide the URLs to this data.",
+    "response_scoring": "{'yes': 20, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I28",
+    "dimension": "Impact",
+    "indicator": "impact_economic",
+    "question_text": "Is the use of open data in your country having an impact on the level of employment? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I29",
+    "dimension": "Impact",
+    "indicator": "impact_economic",
+    "question_text": "Is the use of open data in your country having an impact on the level of innovation and the adoption of new technologies? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I30",
+    "dimension": "Impact",
+    "indicator": "impact_economic",
+    "question_text": "Is the use of open data in your country having an impact on the level of entrepreneurship (especially of women and minorities) and business creation (especially with Small- and Medium-sized Enterprises)? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  },
+  {
+    "question_id": "I31",
+    "dimension": "Impact",
+    "indicator": "impact_economic",
+    "question_text": "Is the use of open data in your country having an impact on the level of productivity? \n\nFor Explanation:\n* If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain.",
+    "response_scoring": "{'yes': 15, 'no': 0, \"i don't know\": 0}"
+  }
+]

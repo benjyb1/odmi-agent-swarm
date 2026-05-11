@@ -1,0 +1,33 @@
+# Local environment and secrets
+.env
+.env.local
+
+# Python build artefacts
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+dist/
+*.egg-info/
+.venv/
+node_modules/
+
+# OS junk
+.DS_Store
+
+# Claude Code local
+.claude/settings.local.json
+
+# SQLite write-ahead and shared-memory files (the .db itself is committed)
+*.db-wal
+*.db-shm
+*.db-journal
+
+# Rendered PDFs of the report (regenerate from REPORT_PRELIM.md)
+docs/*.pdf
+
+# Office lock files
+~$*
+
+# Notes scratch directory (not for committing drafts of anything important)
+notes/
