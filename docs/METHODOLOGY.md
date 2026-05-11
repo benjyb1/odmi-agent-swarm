@@ -262,8 +262,11 @@ is the primary RQ5 output.
 
 ### Optimisation experiments
 
-Concrete variants run as named conditions, each writing into the same
-schema with a `condition_label` column:
+Two families of experimental conditions. Each variant writes into the
+same schema with a `condition_label` column.
+
+**Family 1: cost-side optimisations.** Aimed at the cost axis of the
+accuracy-cost surface.
 
 | Condition | Description |
 |---|---|
@@ -273,9 +276,26 @@ schema with a `condition_label` column:
 | `cache-hot` | Identical query within an hour returns the cached evidence rather than re-fetching. |
 | `model-fallback` | Cheaper model (e.g. Haiku) tried first; escalates to Sonnet only on Verifier reject. |
 
-Each variant produces a point on the accuracy-vs-cost surface. The
-contribution is not "the optimised pipeline" but "the shape of the
-trade-off for this task class."
+**Family 2: Verifier prompt strategies.** Aimed at the accuracy axis
+through different framings of the Verifier's adversarial role. Four
+strategies (full prompts in `docs/AGENT_DESIGN.md` Section 4.10):
+
+| Condition | Description |
+|---|---|
+| `verifier-disprove` | Default. Verifier is told the Researcher's claim and asked to find disproof. |
+| `verifier-negation` | Verifier is asked to answer the logical negation of the question. Affirmative for the negation rejects the Researcher. |
+| `verifier-steelman` | Two-step: articulate the strongest case for the Researcher, then attack even the strongest. |
+| `verifier-blind` | Verifier never sees the Researcher's answer label, only the source and quote. Forms its own answer, Python compares. |
+
+For each strategy we report: hallucination catch rate (rejected when
+hand-mark disagrees with the Researcher), false rejection rate
+(rejected when hand-mark agrees with the Researcher), and tokens per
+Verifier run.
+
+The contribution from Family 1 is the shape of the cost surface. The
+contribution from Family 2 is empirical evidence about which
+adversarial framings actually catch errors in agentic AI for policy
+QA. Both feed the dissertation.
 
 ### Contribution
 

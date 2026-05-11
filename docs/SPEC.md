@@ -217,6 +217,63 @@ Rationale: 2025 data is parsed and ready; 2024 needs re-extraction. The
 held-back design also gives a cleaner external-validity check, because
 prompt and rubric tuning never touch the 2024 evidence.
 
+### D15: Verifier prompt strategies as an experimental condition
+
+**Date:** 2026-05-11.
+
+The Verifier's prompt is itself an experimental variable. Four
+strategies are defined in `docs/AGENT_DESIGN.md` Section 4.10:
+`verifier-disprove` (default), `verifier-negation`, `verifier-steelman`,
+`verifier-blind`. They are compared on the same hand-marked set.
+Reporting: hallucination catch rate, false rejection rate, tokens per
+run.
+
+The Verifier may reuse the Researcher's URLs and search queries. Many
+ODMI questions ("does the portal expose an API?") have a single
+authoritative source that both agents will find. The Verifier's value
+is cognitive (the LLM's optimism bias used in reverse), not source
+independence. The previously-noted deny-list constraint is dropped.
+
+Substring check on the cited URL is the only structural mitigation
+against pure fabrication; everything else is the Verifier's reasoning
+under different prompt regimes.
+
+### D16: Adjudicator path at max retries
+
+**Date:** 2026-05-11.
+
+When the Researcher and Verifier disagree across all three retries, the
+Coordinator hands the case to an Adjudicator instead of marking the
+pair as rejected. The Adjudicator does not run new searches; it weighs
+the evidence already collected and either picks a winner or escalates
+to a human queue.
+
+Implementation: a Coordinator-internal LLM call, not a separately
+versioned agent file. Lives in the Coordinator module. Uses the same
+prompt versioning and cost logging. Full spec in
+`docs/AGENT_DESIGN.md` Section 5.11.
+
+Confidence threshold for picking a winner is 0.6 (below that, escalate
+to human). This threshold is provisional; see Q13 below.
+
+### D17: Decisions are revisited once we have real data
+
+**Date:** 2026-05-11.
+
+Standing principle. Decisions and open questions in this document are
+treated as best guesses until the swarm has actually run on real
+questions. Many design choices (Verifier strategy default, adjudicator
+threshold, retry count, language routing) cannot be settled in the
+abstract. We commit to revisit the open questions explicitly after:
+
+- the first 10 hand-marked France questions have been run through the
+  Researcher;
+- the four Verifier strategies have been compared on at least 20
+  pairs;
+- the Adjudicator has fired at least 5 times.
+
+Each revisit is logged as a change in the change log.
+
 ### D14: 22 May deliverable is a results-focused slide deck, not a written report
 
 **Date:** 2026-05-11.
@@ -309,10 +366,20 @@ Consequences:
 - **Q10:** Trusted-domain list for the Researcher's source validator.
   Per-country JSON files under `data/trusted_domains/<country>.json`.
   Populate during Phase A.
-- **Q11:** Substring check tolerance in the Verifier. Strict literal
-  match is brittle; normalised match (collapse whitespace, lowercase,
-  strip punctuation) is probably right. Decide before building the
-  Verifier.
+- **Q11:** Resolved. Substring check uses normalised match: lowercase,
+  collapse whitespace, strip punctuation. Strict literal match was
+  considered and rejected as brittle.
+- **Q12:** Which Verifier prompt strategy do we run by default in the
+  swarm? Empirical question, answered by the comparison experiment in
+  D15. Default to `verifier-disprove` until measurement shows otherwise.
+- **Q13:** Adjudicator confidence threshold for picking a winner vs
+  escalating to human. Provisional value 0.6 (per D16). Re-calibrate
+  after the Adjudicator has fired on at least 5 real cases.
+- **Q14:** Verifier prompt strategy comparison needs an "injected
+  hallucination" arm. We need cases where the Researcher is known to
+  be wrong, to measure the catch rate honestly. Either deliberately
+  feed the Verifier a fabricated Researcher claim, or hand-mark known
+  bad answers from a pilot. Decide before the comparison runs.
 
 ---
 
@@ -320,6 +387,7 @@ Consequences:
 
 | Date | Change |
 |---|---|
+| 2026-05-11 (evening) | D15 (Verifier prompt strategies as experimental condition), D16 (Adjudicator path at max retries), D17 (decisions revisited with real data). Q11 resolved (normalised substring match). Q12 (which Verifier strategy by default), Q13 (Adjudicator threshold), Q14 (injected-hallucination arm) opened. AGENT_DESIGN.md updated: Verifier reframed as cognitive flip, deny-list dropped, Section 4.10 added with four prompt strategies; Coordinator Section 5.11 adds the Adjudicator. METHODOLOGY.md updated with Verifier strategy comparison as Family 2 of optimisation experiments. |
 | 2026-05-11 (pm) | D12 (optimisation as first-class dimension), D13 (2025 ground truth, 2024 held-out), D14 (22 May = slide deck not report). Q5 resolved. Q6 opened. RQ5 added to METHODOLOGY. |
 | 2026-05-11 (am) | Project state reverse-engineered after five-week dormancy. Stale ODMI_Project_Knowledge.md / ODMI_Project_Setup.md deleted. CLAUDE.md, SPEC.md, METHODOLOGY.md, PROJECT_LOG.md rewritten. D8, D9, D10, D11 added. Option 3 (rubric as analytical lens) locked in. Hand-marks workspace created. First git commit on `main`. |
 | 2026-04-01 | SPEC.md first created (now superseded). Confirmed CLIProxyAPI (D1) and SQLite (D2). Project moved from `~/Projects` to `~/Desktop/Msc Project`. |

@@ -40,13 +40,15 @@ These are the rules every agent obeys.
 
 ## 2. Agent inventory
 
-Three primary agents make up the swarm.
+Three primary agents make up the swarm, plus an Adjudicator that
+fires only when the swarm fails to converge.
 
 | Agent | Status |
 |---|---|
 | Researcher | Designed below. Build first. |
-| Adversarial Verifier | Designed below. Build second. |
-| Coordinator | Designed below. Build third. |
+| Adversarial Verifier | Designed below. Build second. Has four prompt strategies tested as an experimental condition (Section 4.10). |
+| Coordinator | Designed below. Build third. Includes the Adjudicator sub-component. |
+| Adjudicator (Coordinator sub-component) | Fires when retry_count == 3 with no convergence. Section 5.11. |
 
 Two optional or deferred agents:
 
@@ -276,14 +278,26 @@ Researcher hands the output to the Verifier.
 
 ### 4.1 Remit
 
-Given the Researcher's claim and citation, independently fetch the cited
-URL to confirm the evidence quote is real, run an independent search for
-counter-evidence, and return either a pass (accept the Researcher's
-answer) or a fail (with specific, actionable feedback for the Researcher
-to retry).
+Given the Researcher's claim and citation, attempt to disprove it. The
+Verifier's value is cognitive: it deliberately inverts the LLM's
+natural optimism bias to cancel out hallucinations. It is not required
+to find different sources; many ODMI questions (e.g. "does the
+government portal expose an API?") have a single authoritative source
+that the Researcher and Verifier will both find. The Verifier's
+contribution is the adversarial framing, not source independence.
 
-The Verifier is prompted to disprove, not confirm. Its default stance is
-scepticism. This is the project's principal hallucination mitigation.
+Concretely, the Verifier:
+
+1. Confirms the evidence quote is actually present at the cited URL
+   (substring check). Pure hallucinations die here.
+2. Reasons over the evidence under a disprove-the-claim framing,
+   running its own searches as needed (which may overlap with the
+   Researcher's). The interesting failures are cases where the source
+   is real and the quote is real, but the interpretation is wrong.
+3. Returns pass, or fail with specific, actionable feedback for the
+   Researcher.
+
+This is the project's principal hallucination mitigation.
 
 ### 4.2 Inputs
 
@@ -322,10 +336,9 @@ class VerifierOutput(BaseModel):
   Used for the substring check, not for general reading.
 - **Playwright fetch.** Fallback when httpx returns dynamic-rendering
   failure (JS-heavy pages).
-- **Tavily web search.** Independent queries. Constraint: the
-  Verifier may not reuse any of `researcher_output.search_queries_used`
-  or `researcher_output.fetched_urls`. Implemented as a deny-list
-  filter in Python before the call.
+- **Tavily web search.** May overlap with the Researcher's queries
+  and URLs. The Verifier's strategic difference is its prompt (see
+  Section 4.10), not a deny-list on retrieval.
 - **Claude call** via CLIProxyAPI. The Verifier has its own prompt
   and its own row in `prompt_versions`.
 
@@ -353,11 +366,14 @@ The Verifier's run succeeds when all of:
 | `substring_not_found` | The Researcher's `evidence_quote` is not a substring of the fetched page | Mark `substring_check_result="fail"`. Strong signal toward `verdict="fail"`, but the model still considers independent evidence. |
 | `independent_search_empty` | All independent queries return zero hits | Mark in `notes`. If the substring check passed, the Verifier may still pass (low-confidence). If the substring check failed too, `verdict="fail"` with `rejection_reason="no corroborating evidence"`. |
 | `verifier_disagrees` | Claude's independent reasoning concludes a different answer | `verdict="fail"`, `verifier_answer` is the Verifier's own answer, `rejection_reason` explains the disagreement, `suggested_search_query` proposes how the Researcher should approach the next attempt. |
-| `query_overlap` | The model proposes an independent query that matches one the Researcher used | Python filters before calling Tavily, returns a "try a different query" notice to the model. |
 | `schema_invalid` | Model response fails Pydantic | One retry with stricter prompt. If still fails, write a row with `verdict="fail"`, `rejection_reason="verifier schema invalid"`. The Coordinator treats this as a fail and retries up to 3. |
 | `timeout` | Wall-clock over 45 seconds | Kill the call. Write a row with `verdict="fail"`, `rejection_reason="verifier timeout"`. |
 
-### 4.7 Prompt template (v1)
+### 4.7 Default prompt template (strategy: "disprove")
+
+The Verifier has multiple prompt strategies that we plan to compare as
+an experimental condition (see Section 4.10). The default below is the
+"disprove" strategy.
 
 ```
 You are an adversarial verifier reviewing a Researcher's claim for the
@@ -380,7 +396,8 @@ Independent verification already run by Python:
 
 1. Substring check: the evidence quote {substring_check_phrasing}
    found in the page at the cited URL.
-2. Independent web search using queries different from the Researcher's:
+2. Web search using your own queries (may overlap with the Researcher's
+   if the same source is the relevant one for this question):
    {independent_evidence_block}
 
 Your task:
@@ -396,7 +413,7 @@ If you accept, your verifier_answer must match the Researcher's answer.
 Return your verdict as JSON matching the VerifierOutput schema.
 ```
 
-Logged as `phase2_verifier`, version 1.
+Logged as `phase2_verifier_disprove`, version 1.
 
 ### 4.8 Worked walkthrough: P1 / France, accept path
 
@@ -451,6 +468,111 @@ on the page:
 - Coordinator increments `retry_count`, re-dispatches to the
   Researcher with this feedback.
 
+### 4.10 Verifier prompt strategies (experimental condition)
+
+The Verifier's prompt is itself an experimental variable. We test four
+strategies on the same hand-marked set and report which catches the
+most hallucinations without producing false rejections. This connects
+directly to RQ4 (which questions resist automation) and RQ5 (cost
+versus quality).
+
+Each strategy is a separate row in `prompt_versions` and produces a
+distinct `condition_label` in the run logs (per D12).
+
+**Strategy A: "disprove" (default, Section 4.7).**
+Tells the Verifier the Researcher's claim and explicitly asks it to
+find disproof. Default-rejection stance. Cheapest to implement,
+strongest prior on rejection.
+
+**Strategy B: "negation".**
+Reformulates the Researcher's question into its logical negation and
+asks the Verifier to answer the negation. If the Verifier confidently
+answers the negation in the affirmative, the Researcher's answer is
+wrong. For yes/no questions this is clean; for "other"-typed answers
+it needs adaptation.
+
+```
+The Researcher answered "{researcher.answer}" to:
+{question_text}
+
+Your task: find evidence that the answer is the OPPOSITE.
+That is, find evidence that for {country_name} the answer is NOT
+"{researcher.answer}". You may use the same sources the Researcher
+used.
+
+Return your verdict according to whether you found such evidence.
+```
+
+**Strategy C: "steelman then attack".**
+First articulate the strongest case for the Researcher's answer, then
+look for evidence that contradicts even the strongest case. This
+costs more tokens (two-step reasoning) and is intended to catch the
+case where the surface claim is plausible but the supporting evidence
+is weak.
+
+```
+The Researcher claims "{researcher.answer}" for:
+{question_text}
+
+Step 1: Articulate the single strongest piece of evidence that
+supports this claim. Quote it from the source.
+
+Step 2: Now search for evidence that contradicts even your steelman.
+Look specifically for:
+- A more recent source that supersedes the Researcher's
+- A specific exception or carve-out
+- A definitional ambiguity the Researcher glossed over
+
+Return verdict and full reasoning.
+```
+
+**Strategy D: "blind then compare".**
+The Verifier never sees the Researcher's answer. It sees the question,
+the URL, and the quote, and is asked to form its own answer. Python
+compares. If the answers differ, that's grounds for rejection. The
+Verifier's bias toward agreement is structurally removed.
+
+```
+{question_text}
+
+For the country {country_name}, here is a quote from {source_url}:
+"{evidence_quote}"
+
+Based on this quote and any additional research you wish to do, what
+is the answer to the question for this country?
+
+(You are not told the answer anyone else has produced. Form your own
+position.)
+```
+
+#### Experimental design
+
+For the first comparison, run the same N hand-marked questions through
+the Researcher once, then through the Verifier four times (one per
+strategy). Each strategy produces a verdict. Compare:
+
+- Hallucination catch rate: of the cases where the hand-mark disagrees
+  with the Researcher, which Verifier strategies reject?
+- False rejection rate: of the cases where the hand-mark agrees with
+  the Researcher, which Verifier strategies still reject?
+- Cost: tokens per Verifier run, by strategy.
+- Disagreement clustering: do strategies agree with each other, or
+  catch different errors?
+
+The pilot answers Q12 in SPEC.md: which strategy do we run by default
+in the swarm.
+
+#### Practical notes
+
+- Strategy A is the default and the simplest to implement first. The
+  comparison experiment happens once the swarm runs cleanly end-to-end
+  on a small set.
+- Strategy D needs care: the Verifier still receives the source_url
+  and the quote (those are part of "what's being verified"), but not
+  the answer label. The prompt above does this.
+- Strategy C has the highest token cost; report it as an
+  optimisation-relevant data point.
+
 ---
 
 ## 5. The Coordinator
@@ -477,8 +599,8 @@ class SwarmState(TypedDict):
 
     # mutable
     retry_count: int                        # 0 to 3
-    researcher_output: Optional[ResearcherOutput]
-    verifier_output: Optional[VerifierOutput]
+    researcher_outputs: list[ResearcherOutput]   # all attempts, ordered
+    verifier_outputs: list[VerifierOutput]       # all attempts, ordered
     last_rejection_feedback: Optional[VerifierFeedback]
     captcha_escalated: bool
 
@@ -487,11 +609,18 @@ class SwarmState(TypedDict):
     cumulative_output_tokens: int
     cumulative_wall_clock_ms: int
 
+    # adjudicator outcomes (only populated if the adjudicator fires)
+    adjudicator_output: Optional[AdjudicatorOutput]
+
     # terminal
     final_accepted: bool
     final_output: Optional[ResearcherOutput]
     final_failure_reason: Optional[str]
 ```
+
+The state keeps the full history of Researcher and Verifier attempts in
+ordered lists. The Adjudicator (Section 5.10) needs the full history
+when retries exhaust without convergence.
 
 ### 5.3 Graph edges
 
@@ -500,12 +629,18 @@ START → researcher
 researcher → verifier
 verifier → END                  if verdict=="pass"
 verifier → researcher           if verdict=="fail" AND retry_count<3
-verifier → END                  if verdict=="fail" AND retry_count==3
+verifier → adjudicator          if verdict=="fail" AND retry_count==3
+adjudicator → END               if adjudicator_verdict in {researcher_correct, verifier_correct, neither}
+adjudicator → human_queue       if adjudicator_verdict=="escalate_human"
 researcher → human_queue        if captcha_or_block detected
 human_queue → END               (always terminal for this pair)
 ```
 
 Conditional edges are expressed in LangGraph with the Command API.
+
+The adjudicator (Section 5.10) replaces the previous "fail at retry 3 →
+END" terminal. The Coordinator now has a tiebreaker step when the
+Researcher and Verifier cannot converge.
 
 ### 5.4 Inputs
 
@@ -519,30 +654,36 @@ For each pair, the Coordinator writes:
 
 - One row per Researcher attempt to `phase2_researcher_runs`.
 - One row per Verifier attempt to `phase2_verifier_runs`.
+- One row per adjudication (if any) to `phase2_adjudications`.
 - One row per pair to `phase2_final` with the accepted answer, the
-  cumulative cost, the retry count, and the terminal status.
+  cumulative cost, the retry count, whether the adjudicator was
+  involved, and the terminal status.
 
 ### 5.6 Tools and capabilities
 
 - **LangGraph StateGraph.** Typed state, conditional edges, Command
   API.
-- **Researcher and Verifier agents** as LangGraph nodes.
-- **SQLite logger.** Implements the three write paths above.
+- **Researcher, Verifier, Adjudicator** as LangGraph nodes.
+- **SQLite logger.** Implements the four write paths above.
 - **Human queue writer.** Appends to a `data/human_queue/<run_id>.csv`
-  for any pair that hits a CAPTCHA or access block. Does not block
-  other pairs.
+  for any pair that hits a CAPTCHA, access block, or
+  adjudicator-flagged escalation. Does not block other pairs.
 
 ### 5.7 Success criteria
 
 The Coordinator's run on a batch succeeds when every pair in the queue
 reaches a terminal state. A pair's terminal state is one of:
 
-- `accepted`: Verifier verdict was pass within 3 retries.
-- `rejected_max_retries`: Verifier rejected on attempt 3.
-- `escalated`: Researcher signalled CAPTCHA or access block.
+- `accepted_by_verifier`: Verifier verdict was pass within 3 retries.
+- `accepted_by_adjudicator`: Adjudicator picked a winner after retries
+  exhausted.
+- `escalated_captcha`: Researcher signalled CAPTCHA or access block.
+- `escalated_adjudicator`: Adjudicator could not pick a winner with
+  enough confidence.
 - `agent_failure`: any other failure mode that prevented termination.
 
-No infinite loops. No pair leaks past 3 retries.
+No infinite loops. No pair leaks past 3 retries (after which the
+adjudicator decides or escalates).
 
 ### 5.8 Fallbacks
 
@@ -550,8 +691,10 @@ No infinite loops. No pair leaks past 3 retries.
 |---|---|---|
 | `researcher_failure` | Researcher returns an unrecoverable error (e.g. schema_invalid after retry, timeout) | Treat as Verifier fail. Increment retry_count. Continue. |
 | `verifier_failure` | Verifier returns an unrecoverable error | Treat as Verifier fail. Increment retry_count. Continue. |
-| `max_retries_reached` | retry_count hits 3 with no accepted answer | Mark final_accepted=False, final_failure_reason="max retries". Write the rejected row. |
-| `captcha_or_block` | Researcher's notes contain the CAPTCHA marker | Mark captcha_escalated=True. Write the pair to the human queue. Mark final_failure_reason="escalated". |
+| `max_retries_reached` | retry_count hits 3 with no accepted answer | Hand off to the Adjudicator (Section 5.10), not directly to END. |
+| `adjudicator_failure` | Adjudicator returns an unrecoverable error | Escalate to human queue with `final_failure_reason="adjudicator_failure"`. |
+| `adjudicator_low_confidence` | Adjudicator returns `escalate_human` | Write to human queue with the full history attached. |
+| `captcha_or_block` | Researcher's notes contain the CAPTCHA marker | Mark captcha_escalated=True. Write the pair to the human queue. |
 | `coordinator_crash` | Out of scope at this version | Manual rerun. A resume-from-state mechanism is deferred. |
 
 ### 5.9 Worked walkthrough: P1 / France, accept path
@@ -580,6 +723,150 @@ No infinite loops. No pair leaks past 3 retries.
 6. New Researcher output written. Edge researcher → verifier.
 7. Verifier passes this time. Edge verifier → END.
 8. Two Researcher rows, two Verifier rows, one final row written.
+
+### 5.11 The Adjudicator (Coordinator sub-component)
+
+When the Researcher and Verifier disagree across all three retries, the
+Coordinator hands the case to the Adjudicator. The Adjudicator does not
+run new searches. Its job is to weigh the evidence already gathered and
+either pick a winner or escalate to human review.
+
+The Adjudicator is implemented as a Coordinator-internal LLM call, not
+as a separately-versioned agent file. It lives in the Coordinator
+module and uses the same DB conventions for prompt versioning and cost
+logging.
+
+#### 5.11.1 Remit
+
+After three rounds of Researcher and Verifier disagreement, decide
+whether the Researcher was correct, the Verifier was correct, neither
+was correct, or the case is too uncertain to settle without a human.
+
+#### 5.11.2 Inputs
+
+```python
+class AdjudicatorInput(BaseModel):
+    question_id: str
+    question_text: str
+    country_code: str
+    country_name: str
+    researcher_outputs: list[ResearcherOutput]   # all 3 attempts
+    verifier_outputs: list[VerifierOutput]       # all 3 attempts
+```
+
+#### 5.11.3 Outputs
+
+```python
+class AdjudicatorOutput(BaseModel):
+    adjudicator_verdict: Literal[
+        "researcher_correct",
+        "verifier_correct",
+        "neither",
+        "escalate_human",
+    ]
+    adjudicator_answer: Optional[Literal["yes", "no", "other", "not_applicable"]]
+    adjudicator_confidence: float            # 0.0-1.0
+    adjudicator_reasoning: str               # at least 50 chars
+    chosen_source_url: Optional[HttpUrl] = None
+    chosen_evidence_quote: Optional[str] = None
+```
+
+#### 5.11.4 Tools
+
+- Claude single call via CLIProxyAPI. No web search. No browser fetch.
+  The point of the Adjudicator is to weigh evidence already collected,
+  not to gather new evidence.
+
+#### 5.11.5 Success criteria
+
+1. Output validates against `AdjudicatorOutput`.
+2. `adjudicator_reasoning` is at least 50 characters.
+3. If `adjudicator_verdict` is one of `researcher_correct`,
+   `verifier_correct`, or `neither`, then `adjudicator_answer`,
+   `chosen_source_url`, and `chosen_evidence_quote` are populated.
+4. If `adjudicator_confidence < 0.6`, the verdict is auto-promoted to
+   `escalate_human` regardless of the model's nominal choice.
+5. Within token budget (5000 input + 800 output) and wall-clock 30s.
+
+#### 5.11.6 Fallbacks
+
+| Code | Trigger | Handler |
+|---|---|---|
+| `schema_invalid` | Output fails Pydantic | One retry; if still fails, force `escalate_human`. |
+| `low_confidence` | adjudicator_confidence below 0.6 | Promote to `escalate_human`. |
+| `timeout` | 30 seconds | Force `escalate_human`. |
+
+#### 5.11.7 Prompt template (v1)
+
+```
+You are an adjudicator. A Researcher and a Verifier have failed to
+agree on the answer to an ODMI question after three attempts. Decide
+which of them is correct based on the evidence they collected, or
+escalate to human review if you cannot be confident.
+
+Question:
+{question_text}
+
+Country: {country_name} ({country_code})
+
+The Researcher's final position:
+- Answer: {researcher_outputs[-1].answer}
+- Evidence quote: "{researcher_outputs[-1].evidence_quote}"
+- Source URL: {researcher_outputs[-1].source_url}
+- Confidence: {researcher_outputs[-1].answer_confidence}
+
+The Verifier's final position:
+- Verdict: fail
+- Counter-evidence: "{verifier_outputs[-1].counter_evidence_quote}"
+- Counter-source: {verifier_outputs[-1].counter_source_url}
+- Rejection reason: {verifier_outputs[-1].rejection_reason}
+
+Full history of the loop (all attempts):
+{history_block}
+
+Decide one of:
+- researcher_correct: the Researcher's final answer should stand.
+- verifier_correct: the Verifier's counter-position is the right answer.
+- neither: both are wrong; the correct answer is something else (and
+  you must say what).
+- escalate_human: the case is too uncertain to settle without human
+  judgement.
+
+Report adjudicator_confidence in [0.0, 1.0]. If your confidence is
+below 0.6 your verdict will be auto-promoted to escalate_human.
+
+Return JSON matching AdjudicatorOutput.
+```
+
+Logged as `phase2_adjudicator`, version 1.
+
+### 5.12 Worked walkthrough: adjudicator path
+
+Suppose for I1 / France (a subjective Impact question on the definition
+of open-data reuse) the loop plays out as:
+
+1. Researcher attempt 1: answer "yes", cites a Capgemini consultancy
+   summary. Verifier rejects: source is not authoritative for a
+   definition question.
+2. Researcher attempt 2: answer "yes", cites a French academic paper.
+   Verifier rejects: paper proposes one definition among several.
+3. Researcher attempt 3: answer "other", cites the data.gouv.fr glossary.
+   Verifier rejects: glossary entry is short and arguably matches an
+   official definition that would justify "yes".
+
+retry_count == 3. Edge verifier → adjudicator.
+
+The Adjudicator sees all three Researcher answers, all three Verifier
+counter-positions, and the question. It reasons that:
+
+- The Researcher's third attempt and the Verifier's most coherent
+  counter-position both have some merit.
+- Confidence in either side is moderate, not high.
+- adjudicator_confidence = 0.55, below 0.6.
+
+Verdict auto-promoted to `escalate_human`. The pair is written to
+`data/human_queue/<run_id>.csv` with the full history attached for
+Benjy to review.
 
 ---
 
