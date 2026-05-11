@@ -63,26 +63,73 @@ no more. Cite figures inline.
 - Note on the lock rule: each mark is committed to git before any swarm
   run; commit SHAs visible in the audit trail.
 
-### Slide 6 — Progress: tech prototype, early results
+### Slide 6 — Progress: tech prototype, first end-to-end result
 
-- The minimal answering agent: one (question, country) end-to-end through
-  search and structured output, writing to SQLite.
-- Example output for question P1 / France: actual answer string, source URL,
-  evidence quote, retrieval and answer confidences.
-- Numbers from the pilot run: N questions answered, accuracy against the
-  2025 ground truth, mean input tokens, mean output tokens, mean wall-clock
-  ms per question.
+The Researcher is built and running. First real walkthrough on
+**P1 / France**, the question "is there a national open data policy
+that includes legislation transposing the Open Data Directive?".
+
+**Pipeline executed in four steps:**
+
+1. Query generation: a small Claude call produced three queries (one
+   English, one French, one with a `site:data.gouv.fr` filter).
+   438 input + 69 output tokens, 2.6 seconds.
+2. Tavily search across the three queries: 15 unique results
+   covering data.gouv.fr, the European Commission digital-strategy
+   portal, CNIL, and Wikipedia.
+3. Main Claude call with the snippets pasted in. Returned a
+   structured answer matching the Pydantic contract on the first
+   attempt. 6,905 input + 1,170 output tokens, 20.5 seconds.
+4. Post-call validation: cited URL returned HTTP 200; domain trust
+   score 1.0 (data.gouv.fr is on the trusted list).
+
+**Result:**
+
+- Answer: `yes` (confidence 0.78).
+- Cited source: a data.gouv.fr article on high-value datasets that
+  references Directive 2019/1024.
+- Cumulative cost receipts (per D12): 7,343 input tokens, 1,239
+  output tokens, 23 seconds wall-clock, $0.041 estimated cost.
+- Outcome matches the hand-mark locked in commit `96dad99`.
+
+**One pattern already visible:** the Researcher's answer is correct
+but the chosen source is not the strongest available. A
+legifrance.gouv.fr citation or the EC digital-strategy page would be
+stronger primary evidence than a data.gouv.fr article. Exactly the
+kind of weakness the Adversarial Verifier should push back on,
+making it useful data for the strategy comparison later.
 
 ### Slide 7 — The accuracy-cost surface (preview)
 
-- Why this matters: existing agentic benchmarks (GAIA, AgentBench,
-  WebArena) report accuracy only. Operational deployment cares about
-  cost-per-correct-answer.
-- The optimisation variants we will test (per D12): baseline,
-  prompt-compressed, retrieval-tight, cache-hot, model-fallback.
-- A placeholder scatter plot: accuracy on the y-axis, cost (input + output
-  tokens) on the x-axis, with each rubric tier as a different marker. The
-  shape of this surface is one of the main outputs.
+Existing agentic benchmarks (GAIA, AgentBench, WebArena) report
+accuracy almost exclusively. For a system meant to replace a manual
+annual workflow at scale, the operational question is also: what
+does the answer cost?
+
+The project measures and reports across three optimisation families:
+
+**Family 1: prompt and retrieval.** baseline, prompt-compressed,
+retrieval-tight, cache-hot, model-fallback. Tests where token
+compression and retrieval trimming hurt accuracy.
+
+**Family 2: Verifier prompt strategy.** disprove (default),
+negation, steelman, blind. Tests which adversarial framing best
+catches Researcher hallucinations.
+
+**Family 3: model variants.** Haiku-4.5, Sonnet-4.6 (baseline),
+Opus-4.6, plus a tiered combination (cheap Researcher, mid-tier
+Verifier, premium Adjudicator). Anthropic's tiers span roughly 15x
+in price; we expect this to be the single biggest cost lever.
+
+**Headline figure:** accuracy on one axis, cumulative cost per
+question on the other. One marker per experimental condition,
+coloured by rubric tier. The shape of that surface is the main
+RQ5 output.
+
+**P1/France baseline data point** (added 2026-05-11):
+- Condition: `model-sonnet` + `verifier-disprove` (not yet run; Researcher only).
+- Cost: $0.041 per question on Sonnet-4.6.
+- At Haiku-4.5 we would expect roughly $0.015; at Opus-4.6, roughly $0.20.
 
 ### Slide 8 — Schedule and next steps
 
@@ -101,18 +148,21 @@ no more. Cite figures inline.
 
 ## Production checklist
 
-- [ ] Have at least 10 France hand-marks committed (the lock chain visible
-      in `git log`).
-- [ ] Have at least 5 prototype outputs in SQLite with real source URLs.
-- [ ] Computed real numbers: pilot accuracy on the 5 answers vs the 2025
-      ground truth, mean tokens per call, mean wall-clock latency.
-- [ ] Drawn Figure 1 (architecture) as SVG and committed under
+- [x] Researcher built and running end-to-end (P1/FR, 2026-05-11).
+- [ ] At least 10 France hand-marks committed (currently 2: P1, PT4).
+- [ ] At least 5 Researcher outputs in `phase2_researcher_runs` with
+      real source URLs (currently 0; first row pending the move from
+      `--dry-run` to a real save).
+- [ ] Three failure-scenario probes run: I1 (subjective Impact),
+      Q1 (quality), P10-a/b (multi-part).
+- [ ] Verifier built and tested on at least one probe.
+- [ ] Draft Figure 1 (architecture) as SVG under
       `docs/figures/architecture.svg`.
-- [ ] Drawn Figure 2 (mini Gantt) as SVG and committed under
+- [ ] Draft Figure 2 (mini Gantt) as SVG under
       `docs/figures/gantt_v1.svg`.
-- [ ] Drawn Figure 3 (placeholder accuracy-cost scatter) — does not need
-      real data yet, but the axes and the variant legend should be present.
-- [ ] Exported the deck to PDF or PPTX and added to the repo.
+- [ ] Draft Figure 3 (placeholder accuracy-cost scatter) with axes,
+      experimental-condition legend, and the P1/FR baseline marker.
+- [ ] Export the deck to PDF or PPTX, add to the repo.
 
 ## Production notes
 

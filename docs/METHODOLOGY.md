@@ -292,10 +292,38 @@ hand-mark disagrees with the Researcher), false rejection rate
 (rejected when hand-mark agrees with the Researcher), and tokens per
 Verifier run.
 
-The contribution from Family 1 is the shape of the cost surface. The
-contribution from Family 2 is empirical evidence about which
-adversarial framings actually catch errors in agentic AI for policy
-QA. Both feed the dissertation.
+**Family 3: model variants.** Aimed at the joint accuracy-cost
+surface through model selection. Anthropic's catalogue spans roughly
+15x in price between Haiku and Opus; the same accuracy at a fraction
+of the cost (or noticeably higher accuracy at the same cost) is
+worth reporting either way.
+
+| Condition | Researcher | Verifier | Adjudicator | Approx ratio vs `model-sonnet` |
+|---|---|---|---|---|
+| `model-haiku` | Haiku-4.5 | Haiku-4.5 | Haiku-4.5 | 0.3x |
+| `model-sonnet` (baseline) | Sonnet-4.6 | Sonnet-4.6 | Sonnet-4.6 | 1.0x |
+| `model-opus` | Opus-4.6 | Opus-4.6 | Opus-4.6 | 5.0x |
+| `model-tiered` | Haiku-4.5 | Sonnet-4.6 | Opus-4.6 | ~0.7x (Adjudicator fires rarely) |
+
+The tiered combination is the practical-deployment hypothesis: cheap
+drafting, mid-tier adversarial verification, premium reasoning only
+when the swarm fails to converge. If the tiered combination matches
+all-Sonnet accuracy at noticeably lower cost, that is itself an
+interesting deployment recommendation.
+
+The contributions:
+- Family 1: the shape of the cost surface across prompt and retrieval
+  optimisations.
+- Family 2: empirical evidence about which adversarial framings
+  actually catch errors in agentic AI for policy QA.
+- Family 3: how much of accuracy is model capability versus pipeline
+  design. For some question regimes, the answer is "doesn't matter
+  much" and Haiku is fine; for others, only Opus reaches
+  human-equivalent.
+
+All three feed the dissertation. The combined surface is the
+headline figure: accuracy on one axis, cumulative cost on the other,
+one marker per condition, coloured by rubric tier.
 
 ### Contribution
 

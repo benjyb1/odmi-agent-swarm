@@ -256,6 +256,39 @@ prompt versioning and cost logging. Full spec in
 Confidence threshold for picking a winner is 0.6 (below that, escalate
 to human). This threshold is provisional; see Q13 below.
 
+### D18: Model variants as a third family of optimisation experiments
+
+**Date:** 2026-05-11.
+
+Beyond prompt and retrieval optimisations (Family 1) and Verifier
+prompt strategies (Family 2), the model itself is an experimental
+variable. The Anthropic catalogue spans roughly 15x in price between
+Haiku and Opus. The same accuracy result at one-fifth the cost is a
+real finding; the same cost at meaningfully higher accuracy is also a
+real finding.
+
+Three model conditions for the Researcher (the same applies to the
+Verifier and Adjudicator separately):
+
+| Condition | Model | Approx price |
+|---|---|---|
+| `model-haiku` | claude-haiku-4-5-20251001 | $1/$5 per M tokens |
+| `model-sonnet` (baseline) | claude-sonnet-4-6 | $3/$15 per M tokens |
+| `model-opus` | claude-opus-4-6 | $15/$75 per M tokens |
+
+Reporting: for each (Researcher model × Verifier model × Adjudicator
+model) combination on the hand-marked sample, report accuracy, cost,
+and latency. The full cross-product is 3 × 3 × 3 = 27 combinations,
+which is too many. Run a reduced design: three "pure" combinations
+(all-Haiku, all-Sonnet, all-Opus) plus a "tiered" combination
+(Researcher=Haiku, Verifier=Sonnet, Adjudicator=Opus). Four conditions
+total.
+
+Open: Q15 below: which models for which agent. The tiered combination
+might be the most interesting practical finding (cheap Researcher,
+expensive Verifier to catch errors, premium Adjudicator only when
+needed).
+
 ### D17: Decisions are revisited once we have real data
 
 **Date:** 2026-05-11.
@@ -380,6 +413,11 @@ Consequences:
   be wrong, to measure the catch rate honestly. Either deliberately
   feed the Verifier a fabricated Researcher claim, or hand-mark known
   bad answers from a pilot. Decide before the comparison runs.
+- **Q15:** Model assignment in the tiered condition (per D18). First
+  candidate: Researcher=Haiku-4.5 (cheap retrieval and drafting),
+  Verifier=Sonnet-4.6 (adversarial reasoning where the marginal cost
+  matters most), Adjudicator=Opus-4.6 (premium reasoning, fires
+  rarely). Validate after the pure-tier conditions run.
 
 ---
 
@@ -387,6 +425,7 @@ Consequences:
 
 | Date | Change |
 |---|---|
+| 2026-05-11 (late evening) | D18 (model variants Haiku / Sonnet / Opus as a third optimisation family). Q15 opened (model assignment in the tiered combination). Foundation code landed: SQLite migrated to nine tables, Pydantic contracts, shared tools (search, fetch, substring, validator, LLM wrapper), Researcher v1 prompt and orchestration, run_researcher.py with --walkthrough. First end-to-end dry run on P1/FR succeeded: answer "yes" matching the hand-mark, $0.041 cost, 23s wall-clock, source on data.gouv.fr (domain trust 1.0). |
 | 2026-05-11 (evening) | D15 (Verifier prompt strategies as experimental condition), D16 (Adjudicator path at max retries), D17 (decisions revisited with real data). Q11 resolved (normalised substring match). Q12 (which Verifier strategy by default), Q13 (Adjudicator threshold), Q14 (injected-hallucination arm) opened. AGENT_DESIGN.md updated: Verifier reframed as cognitive flip, deny-list dropped, Section 4.10 added with four prompt strategies; Coordinator Section 5.11 adds the Adjudicator. METHODOLOGY.md updated with Verifier strategy comparison as Family 2 of optimisation experiments. |
 | 2026-05-11 (pm) | D12 (optimisation as first-class dimension), D13 (2025 ground truth, 2024 held-out), D14 (22 May = slide deck not report). Q5 resolved. Q6 opened. RQ5 added to METHODOLOGY. |
 | 2026-05-11 (am) | Project state reverse-engineered after five-week dormancy. Stale ODMI_Project_Knowledge.md / ODMI_Project_Setup.md deleted. CLAUDE.md, SPEC.md, METHODOLOGY.md, PROJECT_LOG.md rewritten. D8, D9, D10, D11 added. Option 3 (rubric as analytical lens) locked in. Hand-marks workspace created. First git commit on `main`. |
