@@ -1,6 +1,6 @@
 # ODMI Agent Swarm — Living Spec
 
-Last updated: 2026-05-11
+Last updated: 2026-05-12
 
 Single source of truth for project state. Updated every session. All numbered
 decisions go in here so they can be referenced as "per D7" elsewhere in the
@@ -289,6 +289,72 @@ might be the most interesting practical finding (cheap Researcher,
 expensive Verifier to catch errors, premium Adjudicator only when
 needed).
 
+### D19: Streamlit dashboard as the primary research control surface
+
+**Date:** 2026-05-12.
+
+A multi-page Streamlit app at `dashboard/Home.py` becomes the
+day-to-day interface for releasing subtrios, watching them progress,
+browsing results, and comparing Verifier strategies. The CLI scripts
+(`run_coordinator.py`, `dispatch_subtrios.py`, `run_researcher.py`,
+`run_verifier.py`) remain canonical and usable standalone. The
+dashboard is a viewer and a launcher; it never writes to the result
+tables directly.
+
+Rationale: a Streamlit app gets to first useful working state in hours,
+not days. The agent-as-subprocess model with SQLite as the only
+inter-process channel scales well enough for one user on one laptop.
+Spec at `docs/superpowers/specs/2026-05-12-dashboard-design.md`.
+
+Trade-off: Streamlit's session-state is per-tab. The Questions →
+Run Console hand-off only works inside a single tab. Documented in
+Q-DASH-3.
+
+### D20: Rolling-window credit budget enforcement
+
+**Date:** 2026-05-12.
+
+The dispatcher (`scripts/dispatch_subtrios.py`) enforces a three-layer
+credit policy against the rolling 5-hour Claude Max window:
+
+1. **Pre-flight prediction.** Estimate per-pair cost from the last 50
+   subtrios matching the exact `(researcher_model, verifier_model,
+   adjudicator_model, verifier_strategy)` tuple. Three fallback levels
+   if no exact match: ignore strategy, ignore adjudicator, cold-start
+   default $0.10/pair. Refuse to launch if projected cost exceeds
+   remaining budget; warn at 85%.
+2. **Live enforcement.** Re-check the rolling-window cost before each
+   new spawn. Stop dispatching when below the 5% low-water mark.
+3. **Clean shutdown.** `agents/tools/llm.py` catches
+   `anthropic.RateLimitError`, writes a final `claude_usage_log` row,
+   and raises `RateLimitedShutdown`. The Coordinator catches that and
+   exits with `EXIT_CODE_RATE_LIMITED = 42`. The dispatcher treats
+   that exit code as a global stop signal: SIGTERM all children, mark
+   their `subtrio_status` rows `interrupted_rate_limit`, exit cleanly.
+
+The arithmetic-equivalent cost figure (per Q9 — flat CLIProxyAPI
+subscription) is the input. Soft limit defaults to $5.00 per window,
+tunable in the dashboard sidebar.
+
+### D21: Three new schema tables for dashboard-era state
+
+**Date:** 2026-05-12.
+
+Added to `scripts/setup_sqlite.py` and via the idempotent
+`scripts/migrate_dashboard_tables.py` for the live DB:
+
+- `subtrio_status` — one row per subtrio. Stage, substage, retry,
+  cumulative cost, last message, process PID. `final_verdict` mirrors
+  `phase2_final.terminal_status` plus two dashboard-only values
+  (`interrupted_rate_limit`, `orphaned`).
+- `claude_usage_log` — one row per LLM call. Powers the rolling
+  5-hour budget widget. Tracks `context` (e.g. `researcher:Q3:RO`),
+  `subtrio_id`, `rate_limited` flag.
+- `model_defaults` — per-role default model (researcher / verifier /
+  adjudicator). Editable from the Models page.
+
+All three migrate idempotently. Seeded with Sonnet defaults.
+
 ### D17: Decisions are revisited once we have real data
 
 **Date:** 2026-05-11.
@@ -332,42 +398,63 @@ Consequences:
 
 ## Current status
 
-**Phase:** Phase A foundation. Results-and-slides sprint week (per D14).
+**Phase:** Phase A. End-to-end swarm built; dashboard live; hand-mark migration outstanding.
 
 ### Built (verified)
 
-- Repo structure with `agents/`, `data/`, `docs/`, `scripts/`, `tests/`,
-  `evaluation/`.
-- `pyproject.toml`, `.env.example`, `.gitignore`, `uv.lock`. Dependency tree
-  installed.
-- SQLite schema at `data/odmi.db` (five tables: `prompt_versions`, `questions`,
-  `phase1_classifications`, `phase2_runs`, `language_confidence`). All empty.
-- `scripts/parse_questions.py` parses the official 2025 ODMI questionnaire
-  spreadsheet into structured JSON. Output: 143 questions across 4 dimensions
-  and 17 indicators, at `data/questions/odmi_2025_questions.json`.
-- `agents/classifier.py` with Pydantic models and a v1 rubric prompt template.
-  No LLM call wired in this file.
-- `scripts/run_phase1.py` has a working LLM call but has never been executed.
-  Under D8 this script is off the critical path.
-- `tests/test_classifier.py` covers Pydantic model logic.
-- Two hand-marked France questions (P1 and PT4), both 9/9 Highly Likely.
-  Stored as a Word document at `data/ODMI_2025_Questions.docx`. To be migrated
-  to the CSV format defined in `data/hand_marks/PROTOCOL.md` and re-locked.
+- Repo structure with `agents/`, `data/`, `dashboard/`, `docs/`,
+  `scripts/`, `tests/`, `evaluation/`.
+- `pyproject.toml`, `.env.example`, `.gitignore`, `uv.lock`. Streamlit
+  + pandas + plotly added.
+- SQLite schema at `data/odmi.db` — twelve tables now: `prompt_versions`,
+  `questions`, `hand_marks`, `phase1_classifications`,
+  `phase2_researcher_runs`, `phase2_verifier_runs`, `phase2_adjudications`,
+  `phase2_final`, `subtrio_status`, `claude_usage_log`, `model_defaults`,
+  `language_confidence`. Idempotent migration via
+  `scripts/migrate_dashboard_tables.py`.
+- `scripts/parse_questions.py` parses the official 2025 questionnaire
+  into 143 JSON records at `data/questions/odmi_2025_questions.json`.
+- `agents/` — Pydantic contracts (`models.py`), shared tools
+  (`tools/{db,fetch,llm,search,substring,validator}.py`), Researcher,
+  Verifier (four strategies: disprove, negation, steelman, blind),
+  Adjudicator, and the errors module (`RateLimitedShutdown`).
+- `scripts/run_researcher.py`, `scripts/run_verifier.py`,
+  `scripts/run_coordinator.py`, `scripts/dispatch_subtrios.py`,
+  `scripts/cleanup_subtrios.py`. All CLI-usable standalone.
+- Streamlit dashboard at `dashboard/Home.py` plus eight pages under
+  `dashboard/pages/`: Run Console, Results, Questions, Strategy Lab,
+  Hand-marks, Models, Costs, Prompts. Live polling via
+  `st.fragment(run_every=...)`. Tested: 9/9 Playwright page loads,
+  4/4 AppTest cases, end-to-end Release smoke from the UI.
+- `agents/tools/llm.py` writes one `claude_usage_log` row per call
+  with `context` and `subtrio_id` threaded through.
+- End-to-end coordinator run on P1/FR completed: Researcher
+  yes(0.72) → Verifier rejected → Adjudicator accepted_researcher.
+- `tests/test_classifier.py` covers the Pydantic models for the
+  legacy classifier path.
+- Two hand-marked France questions (P1 and PT4), both 9/9 Highly
+  Likely, still in `data/ODMI_2025_Questions.docx`.
 
 ### Not yet built
 
-- LangGraph agent swarm (Coordinator, Researcher, Verifier). No code exists.
-- Hand-mark migration from the Word document to the CSV workspace.
-- Hand-mark schema in SQLite (table to be added).
-- Pilot batch of 10 hand-marks for France across the difficulty range.
-- Minimal answering-agent prototype: one question end-to-end on France
-  through CLIProxyAPI, written to SQLite with source URL and evidence
-  quote. Pre-cursor to the full Coordinator-Researcher-Verifier swarm.
+- Hand-mark migration from the Word document to the CSV workspace
+  (`data/hand_marks/france_handmarks.csv`). Blocking D9: without
+  committed hand-marks, swarm rows are exploratory only.
+- Pilot batch of 10 hand-marks for France across the difficulty range
+  (D10). Resolves Q1.
+- `agents/coordinator.py` resume semantics: an interrupted subtrio
+  is not auto-resumed; user must manually re-release.
+- Researcher CAPTCHA / 403 detection — currently no path to the
+  human queue from access blocks.
+- Human-queue CSV writer: `terminal_status=escalated_*` writes to
+  `phase2_final` but no `data/human_queue/<batch_id>.csv` file is
+  produced.
+- `run_coordinator.py --dry-run` and `--walkthrough` flags.
+- Question-bank → SQLite import (`questions` table is empty;
+  Questions page reads JSON).
 - 22 May slide deck (`docs/PROGRESS_SLIDES.md`).
-- Schema additions for D12: `input_tokens`, `output_tokens`,
-  `wall_clock_ms` on the run tables.
 - `evaluation/` analysis scripts.
-- Notion master page sync with the new state (still says Supabase + Opus).
+- Notion master page sync with the new state.
 
 ### Open questions
 
@@ -425,6 +512,7 @@ Consequences:
 
 | Date | Change |
 |---|---|
+| 2026-05-12 | D19 (Streamlit dashboard), D20 (rolling-window credit policy), D21 (three new schema tables: subtrio_status, claude_usage_log, model_defaults) added. Q-DASH-1..4 opened. Phase 2 complete: Verifier with four strategies built and smoke-tested. Phase 3 complete: Coordinator (run_coordinator.py), Adjudicator (agents/adjudicator.py), dispatcher (dispatch_subtrios.py), and cleanup_subtrios.py written. End-to-end P1/FR coordinator pass succeeded with all six LLM calls writing claude_usage_log rows carrying subtrio_id. Streamlit dashboard built (9 pages) and tested: 9/9 Playwright page loads clean, 4/4 AppTest cases pass, end-to-end Release from the UI spawns a real dispatcher subprocess and writes the subtrio_status row. |
 | 2026-05-11 (late evening) | D18 (model variants Haiku / Sonnet / Opus as a third optimisation family). Q15 opened (model assignment in the tiered combination). Foundation code landed: SQLite migrated to nine tables, Pydantic contracts, shared tools (search, fetch, substring, validator, LLM wrapper), Researcher v1 prompt and orchestration, run_researcher.py with --walkthrough. First end-to-end dry run on P1/FR succeeded: answer "yes" matching the hand-mark, $0.041 cost, 23s wall-clock, source on data.gouv.fr (domain trust 1.0). |
 | 2026-05-11 (evening) | D15 (Verifier prompt strategies as experimental condition), D16 (Adjudicator path at max retries), D17 (decisions revisited with real data). Q11 resolved (normalised substring match). Q12 (which Verifier strategy by default), Q13 (Adjudicator threshold), Q14 (injected-hallucination arm) opened. AGENT_DESIGN.md updated: Verifier reframed as cognitive flip, deny-list dropped, Section 4.10 added with four prompt strategies; Coordinator Section 5.11 adds the Adjudicator. METHODOLOGY.md updated with Verifier strategy comparison as Family 2 of optimisation experiments. |
 | 2026-05-11 (pm) | D12 (optimisation as first-class dimension), D13 (2025 ground truth, 2024 held-out), D14 (22 May = slide deck not report). Q5 resolved. Q6 opened. RQ5 added to METHODOLOGY. |

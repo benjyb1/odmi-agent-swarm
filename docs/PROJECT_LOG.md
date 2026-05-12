@@ -8,6 +8,182 @@ Entries newest first.
 
 ---
 
+## 2026-05-12 — Session 5: Dashboard end-to-end + coordinator built
+
+### Morning: failure-scenario probes and Verifier build
+
+Ran the three probe questions through the Researcher to populate the DB
+with realistic rows before building the Verifier:
+
+| Q | Country | Answer | Conf | Notable |
+|---|---|---|---|---|
+| P1 | FR | yes | 0.75 | Researcher cited a data.gouv.fr blog post, not the actual law |
+| I1 | FR | yes | 0.65 | Quote literally says *"Il n'existe pas de définition stricte"* — the model still answered yes |
+| Q1 | FR | other | 0.20 | Correctly bailed with low confidence |
+| P10-a | FR | no | 0.45 | Same Etalab URL as P10-b — citation drift |
+| P10-b | FR | no | 0.35 | Same Etalab URL as P10-a — citation drift |
+
+Built the Verifier (`agents/verifier.py` + `agents/prompts/verifier.py`)
+with four strategy prompts: disprove, negation, steelman, blind. Smoke
+tested with the default `disprove` strategy:
+
+- **P1/FR**: Verifier failed, found the actual transposition ordonnance
+  (`Ordonnance 2021-442` on Légifrance) and suggested it as the correct
+  query. System worked as designed — Researcher's weak source was
+  rejected, real legal text surfaced.
+- **I1/FR**: Verifier failed and explicitly cited that the quoted text
+  contradicts the yes answer. Pointed to the Code des relations entre
+  le public et l'administration as the right place to look for a formal
+  definition.
+
+This established Phase 2 (Verifier) as functionally working before
+moving to the dashboard.
+
+### Afternoon: dashboard design and build
+
+**Brainstorming and spec.** Worked through dashboard scope via the
+visual companion. Settled on Streamlit + subprocess pool over
+FastAPI+React (robustness vs build chain, the spec calls this a YAGNI
+win). User added three requirements mid-design: per-model logging and
+analytics, multi-country / multi-question selection through a browsable
+Questions page, and Claude credit-fallback handling. Spec written to
+`docs/superpowers/specs/2026-05-12-dashboard-design.md` and passed two
+rounds of spec review (one round of fixes for: Adjudicator file did
+not yet exist, RateLimitedShutdown contract undefined, model_defaults
+included a query_gen role with no surface, pre-flight cost arithmetic
+underspecified across model conditions, three minor enum mismatches).
+
+**Phase 1 — agent infrastructure built.**
+- `agents/errors.py`: `RateLimitedShutdown` exception and
+  `EXIT_CODE_RATE_LIMITED = 42` constant. One source of truth for the
+  rate-limit contract used by `llm.py`, the Coordinator, and the
+  dispatcher.
+- `agents/adjudicator.py` + `agents/prompts/adjudicator.py`: tiebreaker
+  for retries-exhausted cases. Single LLM call, no web search. Auto-
+  promotes to `escalate_human` if confidence drops below 0.6 (per
+  AGENT_DESIGN §5.11.5).
+- `scripts/run_coordinator.py`: per-pair state machine. Researcher →
+  Verifier → (Adjudicator on retry exhaustion). Writes
+  `subtrio_status` at every stage transition. **Plain Python rather
+  than LangGraph** (deviation from AGENT_DESIGN §5 noted in the file
+  header — the retry loop is linear; the graph runtime adds debugging
+  overhead with no behavioural benefit at this scale).
+- `scripts/dispatch_subtrios.py`: parallel pool. Pre-flight cost check
+  with a three-level fallback (model-tuple → triple → pair → cold-start
+  default of $0.10), live budget enforcement at the 5% low-water mark,
+  and clean shutdown on exit code 42 from any child.
+- `scripts/cleanup_subtrios.py`: orphan reaper. Finds
+  `subtrio_status` rows stale > 10 minutes in active stages and marks
+  them `orphaned`.
+- `scripts/migrate_dashboard_tables.py`: idempotent ALTER for the
+  three new tables (`subtrio_status`, `claude_usage_log`,
+  `model_defaults`) so the existing DB didn't have to be wiped.
+- `agents/tools/llm.py` instrumented: every LLM call now writes one
+  `claude_usage_log` row, and `anthropic.RateLimitError` is caught and
+  re-raised as `RateLimitedShutdown`. Added `usage_context` and
+  `subtrio_id` kwargs to `call_for_structured` and threaded them
+  through Researcher and Verifier so every usage log row carries the
+  originating subtrio.
+
+**Phase 2 — Streamlit dashboard built.** Nine pages plus the pinned
+Claude-session widget in the sidebar.
+
+- Home: KPI tiles + recent runs feed + hand-mark lock status + human
+  queue snapshot. Live refresh every 2 seconds.
+- Run Console: launcher (multi-country chips, multi-question chips
+  from the Questions page, per-agent model dropdowns, strategy,
+  parallel limit) with the pre-flight credit banner. Below: live
+  subtrio cards showing the three-stage pipeline (Researcher → Verifier
+  → Final) with stage-specific colour-coding.
+- Results: three tabs (Researcher / Verifier / Final) with column
+  filters and a JSON drawer for row inspection.
+- Strategy Lab: pick a Researcher row, run all four Verifier
+  strategies, see verdicts side by side (the D15 comparison).
+- Hand-marks: read-only mirror of the CSV workspace. Reminds the user
+  that editing happens in CSV + git.
+- Questions: full filterable table of all 143 questions with
+  hand-mark status badge and a "Send N → Run Console" hand-off.
+- Prompts: versioned prompt browser with full prompt text.
+- Models: defaults editor + per-model analytics + the D18 R×V
+  pass-rate cross-product heatmap.
+- Costs: rolling-window KPI tiles, daily cost chart, dimension/country
+  breakdown, recent usage log.
+
+### Evening: testing
+
+**End-to-end coordinator smoke (P1/FR, max-retries=0):**
+Researcher answered yes(0.72) → Verifier rejected → Adjudicator picked
+researcher_correct (0.72) → `phase2_final` row written with
+`terminal_status=accepted_by_adjudicator`. All six LLM calls wrote
+`claude_usage_log` rows carrying the subtrio_id and a `context` label
+identifying which agent made the call.
+
+**Front-end tests (Playwright headless on Streamlit at :8520):**
+9/9 pages clean. Found two real bugs during the run: pandas 3.0
+rejected writing strings into a float column in the Models heatmap
+(fixed by building it as `dtype=object` from the start); and
+`st.data_editor` checkboxes can't be driven from Playwright in headless
+mode (replaced with `st.multiselect` which is both more reliable for
+the user and trivially testable).
+
+**Streamlit AppTest cases:** 4/4 (Questions → Run Console hand-off via
+session_state, Models / Costs / Strategy Lab page loads).
+
+**Release smoke test:** opened the Run Console via AppTest, clicked
+the Release button. A real `dispatch_subtrios.py` subprocess was
+spawned (PID captured), the `subtrio_status` row was inserted, and
+the log file was written under `dashboard/logs/`. SIGTERM cleanup
+confirmed the subprocess responds.
+
+### Contract audit
+
+User flagged 32 questions about the contracts between
+`run_coordinator.py` and the other agents. Audited the actual code
+against each item. Most were correctly aligned; one real gap found and
+fixed (subtrio_id wasn't being threaded through from Researcher /
+Verifier to the LLM wrapper, so usage rows from those agents had NULL
+subtrio_id). Five non-blocking deferrals identified:
+
+- D22-D25 (resume semantics): no auto-resume from interrupted state.
+  A rate-limited subtrio sits with `stage=interrupted_rate_limit` until
+  manually re-released. Acceptable v1 because pre-flight is conservative.
+- A7 (CAPTCHA detection): the Researcher does not detect CAPTCHA / 403
+  pages and so the coordinator can't route them to a human queue.
+- B10 (human queue CSV): `terminal_status=escalated_*` writes to
+  `phase2_final` but no CSV at `data/human_queue/<batch_id>.csv` is
+  produced.
+- E26 / E27 (`run_coordinator.py` `--dry-run` / `--walkthrough`):
+  runner is silent-mode only. The older `run_researcher.py` has
+  `--walkthrough` for in-line stage inspection.
+- Question-bank → SQLite import is empty. The Questions page falls
+  back to the JSON file.
+
+### Open at end of session
+
+- D19 (Streamlit + subprocess pool), D20 (rolling-window credit
+  enforcement), D21 (three new schema tables) need formal entries in
+  `docs/SPEC.md` change log.
+- User has not yet driven the live dashboard at scale (only single-pair
+  smoke tests have run through it). A multi-pair batch through the UI
+  is the next confidence-building step.
+- Hand-marks are still in the Word document, not the CSV format. D9
+  cannot be enforced until the migration happens. Until then, swarm
+  rows are valid as exploratory output but not as evidence.
+
+### Next session
+
+1. Drive a real multi-question batch through the dashboard (suggest:
+   Q1-Q5 for France, sonnet on all three roles, parallel=3) and watch
+   the live cards. Confirm KPIs update in real time. Confirm Costs
+   page reflects the new spend.
+2. Migrate hand-marks from `data/ODMI_2025_Questions.docx` to
+   `data/hand_marks/france_handmarks.csv` and commit (locks the lock).
+3. Decide whether to tackle the five deferred items now (resume,
+   CAPTCHA, human-queue CSV, --dry-run, questions DB import) or carry
+   them as known gaps until a real workflow hits one.
+
+---
+
 ## 2026-05-11 — Session 3: Reset and re-foundation
 
 **What happened.** Five-week dormancy ended with an audit. The previous
