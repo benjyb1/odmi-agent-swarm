@@ -74,7 +74,11 @@ def _build_query_gen_message(input: ResearcherInput) -> str:
     )
 
 
-def generate_queries(input: ResearcherInput) -> tuple[List[str], LLMUsage]:
+def generate_queries(
+    input: ResearcherInput,
+    *,
+    subtrio_id: str | None = None,
+) -> tuple[List[str], LLMUsage]:
     prompt_id = db_helpers.ensure_prompt_version(
         _QUERY_GEN_NAME, _QUERY_GEN_VERSION,
         _QUERY_GEN_SYSTEM, _QUERY_GEN_DESCRIPTION,
@@ -86,6 +90,8 @@ def generate_queries(input: ResearcherInput) -> tuple[List[str], LLMUsage]:
         max_tokens=200,
         condition_label="query_gen",
         prompt_version_id=prompt_id,
+        usage_context=f"researcher_query_gen:{input.question_id}:{input.country_code}",
+        subtrio_id=subtrio_id,
     )
     return parsed.queries, usage
 
@@ -173,6 +179,7 @@ def run_researcher(
     condition_label: str = "baseline",
     max_results_per_query: int = 5,
     on_step: StepCallback = _noop,
+    subtrio_id: str | None = None,
 ) -> ResearcherRunResult:
     """Run the Researcher once on a single (question, country).
 
@@ -188,7 +195,7 @@ def run_researcher(
     # ----- Step 1: generate search queries -----
     on_step("query_gen_start", {})
     try:
-        queries, query_usage = generate_queries(input)
+        queries, query_usage = generate_queries(input, subtrio_id=subtrio_id)
     except StructuredOutputError as exc:
         on_step("query_gen_failed", {"error": str(exc)})
         return ResearcherRunResult(
@@ -249,6 +256,8 @@ def run_researcher(
             max_tokens=2000,
             condition_label=condition_label,
             prompt_version_id=prompt_id,
+            usage_context=f"researcher:{input.question_id}:{input.country_code}",
+            subtrio_id=subtrio_id,
         )
     except StructuredOutputError as exc:
         on_step("main_call_failed", {"error": str(exc)})

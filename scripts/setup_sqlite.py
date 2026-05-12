@@ -296,6 +296,62 @@ CREATE TABLE phase2_final (
 );
 
 -- ============================================================
+-- Live subtrio state (D19/D21 — dashboard design 2026-05-12).
+-- One row per subtrio. Mirrors phase2_final.terminal_status for
+-- final_verdict so the dashboard does not have to translate enums.
+-- ============================================================
+CREATE TABLE subtrio_status (
+    subtrio_id              TEXT PRIMARY KEY,
+    batch_id                TEXT NOT NULL,
+    question_id             TEXT NOT NULL,
+    country_code            TEXT NOT NULL,
+    stage                   TEXT,
+    substage                TEXT,
+    retry_count             INTEGER DEFAULT 0,
+    started_at              TEXT,
+    updated_at              TEXT,
+    ended_at                TEXT,
+    final_verdict           TEXT,
+    cumulative_cost_usd     REAL,
+    last_message            TEXT,
+    process_pid             INTEGER,
+    researcher_model        TEXT,
+    verifier_model          TEXT,
+    adjudicator_model       TEXT,
+    verifier_strategy       TEXT,
+    final_failure_reason    TEXT,
+    created_at              TEXT DEFAULT (datetime('now'))
+);
+
+-- ============================================================
+-- Claude usage log (D20 — every LLM call, for the rolling 5-h window).
+-- ============================================================
+CREATE TABLE claude_usage_log (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp           TEXT NOT NULL,
+    model               TEXT NOT NULL,
+    input_tokens        INTEGER NOT NULL,
+    output_tokens       INTEGER NOT NULL,
+    estimated_cost_usd  REAL,
+    rate_limited        INTEGER DEFAULT 0,
+    context             TEXT,
+    subtrio_id          TEXT
+);
+
+-- ============================================================
+-- Default model assignment per agent role (D21).
+-- Only top-level roles. Query-gen micro-calls inherit the parent.
+-- ============================================================
+CREATE TABLE model_defaults (
+    agent_role          TEXT PRIMARY KEY CHECK (agent_role IN (
+                            'researcher', 'verifier', 'adjudicator'
+                        )),
+    model               TEXT NOT NULL,
+    updated_at          TEXT NOT NULL,
+    updated_by          TEXT
+);
+
+-- ============================================================
 -- Language confidence (Phase B routing decisions).
 -- ============================================================
 CREATE TABLE language_confidence (
@@ -328,6 +384,13 @@ CREATE INDEX idx_p2final_run                    ON phase2_final(run_id);
 
 CREATE INDEX idx_classifications_country        ON phase1_classifications(country_code);
 CREATE INDEX idx_classifications_tier           ON phase1_classifications(tier);
+
+CREATE INDEX idx_subtrio_status_batch           ON subtrio_status(batch_id);
+CREATE INDEX idx_subtrio_status_stage           ON subtrio_status(stage);
+CREATE INDEX idx_subtrio_status_question_country ON subtrio_status(question_id, country_code);
+
+CREATE INDEX idx_claude_usage_ts                ON claude_usage_log(timestamp);
+CREATE INDEX idx_claude_usage_subtrio            ON claude_usage_log(subtrio_id);
 """
 
 TABLES = (
@@ -339,6 +402,9 @@ TABLES = (
     "phase2_verifier_runs",
     "phase2_adjudications",
     "phase2_final",
+    "subtrio_status",
+    "claude_usage_log",
+    "model_defaults",
     "language_confidence",
 )
 

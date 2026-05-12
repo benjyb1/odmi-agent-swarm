@@ -31,3 +31,12 @@ docs/*.pdf
 
 # Notes scratch directory (not for committing drafts of anything important)
 notes/
+
+# Brainstorm visual-companion working files
+.superpowers/
+
+# Dashboard runtime artefacts (per-batch dispatcher logs, test screenshots,
+# test reports). Run-specific; do not commit.
+dashboard/logs/
+dashboard/tests/screenshots/
+dashboard/tests/test_user_paths_report.json

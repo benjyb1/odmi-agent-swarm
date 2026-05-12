@@ -96,7 +96,11 @@ def _build_query_gen_message(inp: VerifierInput) -> str:
     )
 
 
-def generate_adversarial_queries(inp: VerifierInput) -> tuple[List[str], LLMUsage]:
+def generate_adversarial_queries(
+    inp: VerifierInput,
+    *,
+    subtrio_id: str | None = None,
+) -> tuple[List[str], LLMUsage]:
     prompt_id = db_helpers.ensure_prompt_version(
         _QUERY_GEN_NAME, _QUERY_GEN_VERSION,
         _QUERY_GEN_SYSTEM, _QUERY_GEN_DESCRIPTION,
@@ -108,6 +112,8 @@ def generate_adversarial_queries(inp: VerifierInput) -> tuple[List[str], LLMUsag
         max_tokens=200,
         condition_label="verifier_query_gen",
         prompt_version_id=prompt_id,
+        usage_context=f"verifier_query_gen:{inp.question_id}:{inp.country_code}",
+        subtrio_id=subtrio_id,
     )
     return parsed.queries, usage
 
@@ -234,6 +240,7 @@ def run_verifier(
     condition_label: str = "baseline",
     max_results_per_query: int = 5,
     on_step: StepCallback = _noop,
+    subtrio_id: str | None = None,
 ) -> VerifierRunResult:
     """Run the Verifier once on a single (question, country, researcher_output).
 
@@ -269,7 +276,7 @@ def run_verifier(
     # ----- Stage 2: adversarial query generation -----
     on_step("query_gen_start", {})
     try:
-        queries, query_usage = generate_adversarial_queries(inp)
+        queries, query_usage = generate_adversarial_queries(inp, subtrio_id=subtrio_id)
     except StructuredOutputError as exc:
         on_step("query_gen_failed", {"error": str(exc)})
         return VerifierRunResult(
@@ -337,6 +344,8 @@ def run_verifier(
             max_tokens=1500,
             condition_label=condition_label,
             prompt_version_id=prompt_id,
+            usage_context=f"verifier_{strategy}:{inp.question_id}:{inp.country_code}",
+            subtrio_id=subtrio_id,
         )
     except StructuredOutputError as exc:
         on_step("main_call_failed", {"error": str(exc)})

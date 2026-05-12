@@ -1,0 +1,409 @@
+"""Run Console — release subtrios and watch them live."""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import threading
+import uuid
+from pathlib import Path
+
+import pandas as pd
+import streamlit as st
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from dashboard.lib import db
+from dashboard.lib.sidebar import page_header, render_session_widget
+from scripts.dispatch_subtrios import (
+    DEFAULT_SOFT_LIMIT_USD,
+    dispatch,
+    estimate_pair_cost,
+)
+
+
+st.set_page_config(page_title="Run Console", page_icon="▶", layout="wide")
+page_header("Run Console", "Release subtrios and watch them progress live.")
+render_session_widget()
+
+
+# ============================================================
+# State helpers
+# ============================================================
+
+VERIFIER_STRATEGIES = [
+    "verifier-disprove",
+    "verifier-negation",
+    "verifier-steelman",
+    "verifier-blind",
+]
+
+MODEL_OPTIONS = [
+    "claude-sonnet-4-6",
+    "claude-haiku-4-5-20251001",
+    "claude-opus-4-6",
+]
+
+COUNTRIES = {
+    "FR": "France",
+    "RO": "Romania",
+    "DE": "Germany",
+    "NL": "Netherlands",
+    "HU": "Hungary",
+    "EE": "Estonia",
+}
+
+
+def _model_default(role: str) -> str:
+    defaults = db.model_defaults()
+    if len(defaults) == 0:
+        return MODEL_OPTIONS[0]
+    matched = defaults[defaults["agent_role"] == role]
+    if len(matched) == 0:
+        return MODEL_OPTIONS[0]
+    return matched.iloc[0]["model"]
+
+
+def _all_questions() -> pd.DataFrame:
+    return db.all_questions()
+
+
+# ============================================================
+# Launcher
+# ============================================================
+
+def render_launcher() -> None:
+    st.subheader("Release subtrios")
+
+    # Pull pre-staged questions from session_state if Questions page set them.
+    queued = st.session_state.get("queued_questions", [])
+
+    qs_df = _all_questions()
+    all_q_ids = qs_df["question_id"].tolist() if "question_id" in qs_df else []
+
+    col_c, col_q = st.columns([1, 2])
+    with col_c:
+        countries = st.multiselect(
+            "Countries",
+            options=list(COUNTRIES.keys()),
+            default=["FR"],
+            format_func=lambda c: f"{c} — {COUNTRIES[c]}",
+            help="Multi-select. N questions × M countries = N×M subtrios.",
+        )
+    with col_q:
+        questions = st.multiselect(
+            "Questions",
+            options=all_q_ids,
+            default=queued if queued else ["P1"] if "P1" in all_q_ids else [],
+            help="Pre-stage from the Questions page, or pick directly here.",
+        )
+        if queued:
+            st.caption(f"Pre-staged from Questions page: {', '.join(queued)}. "
+                       f"Clear: Questions page → deselect all → Send.")
+
+    col_a, col_b, col_d, col_e = st.columns(4)
+    with col_a:
+        researcher_model = st.selectbox(
+            "Researcher model", MODEL_OPTIONS,
+            index=MODEL_OPTIONS.index(_model_default("researcher"))
+                  if _model_default("researcher") in MODEL_OPTIONS else 0,
+        )
+    with col_b:
+        verifier_model = st.selectbox(
+            "Verifier model", MODEL_OPTIONS,
+            index=MODEL_OPTIONS.index(_model_default("verifier"))
+                  if _model_default("verifier") in MODEL_OPTIONS else 0,
+        )
+    with col_d:
+        adjudicator_model = st.selectbox(
+            "Adjudicator model", MODEL_OPTIONS,
+            index=MODEL_OPTIONS.index(_model_default("adjudicator"))
+                  if _model_default("adjudicator") in MODEL_OPTIONS else 0,
+        )
+    with col_e:
+        strategy = st.selectbox("Verifier strategy", VERIFIER_STRATEGIES)
+
+    col_p, col_r, col_m = st.columns(3)
+    with col_p:
+        parallel = st.number_input(
+            "Parallel limit", min_value=1, max_value=16, value=4, step=1,
+        )
+    with col_r:
+        max_retries = st.number_input(
+            "Max retries", min_value=0, max_value=5, value=3, step=1,
+        )
+    with col_m:
+        soft_limit = st.session_state.get("soft_limit_usd", DEFAULT_SOFT_LIMIT_USD)
+        st.metric("Window soft limit", f"${soft_limit:.2f}")
+
+    n_pairs = len(questions) * len(countries)
+
+    if n_pairs == 0:
+        st.warning("Pick at least one question and one country.")
+        return
+
+    # Pre-flight estimate
+    try:
+        est = estimate_pair_cost(
+            researcher_model=researcher_model,
+            verifier_model=verifier_model,
+            adjudicator_model=adjudicator_model,
+            strategy=strategy,
+            n_pairs=n_pairs,
+            soft_limit_usd=soft_limit,
+        )
+    except Exception as exc:  # noqa: BLE001
+        st.error(f"Pre-flight estimate failed: {exc}")
+        return
+
+    if est.projected_total_usd > est.budget_remaining_usd:
+        st.error(
+            f"⚠ Pre-flight credit check: {n_pairs} subtrios projected at "
+            f"${est.projected_total_usd:.2f} (fallback={est.fallback_level}, "
+            f"n={est.sample_size}). Budget remaining ${est.budget_remaining_usd:.2f}. "
+            f"**Will refuse to start unless you tick 'Force release'.**"
+        )
+    elif est.projected_total_usd > est.budget_remaining_usd * 0.85:
+        st.warning(
+            f"⚠ Projected cost ${est.projected_total_usd:.2f} is >85% of "
+            f"${est.budget_remaining_usd:.2f} remaining. Run may complete but "
+            f"will be close to the cap."
+        )
+    else:
+        st.info(
+            f"Pre-flight OK: ~${est.per_subtrio_usd:.3f}/pair × {n_pairs} "
+            f"(uplift 1.2x, fallback={est.fallback_level}) → "
+            f"projected ${est.projected_total_usd:.2f} of "
+            f"${est.budget_remaining_usd:.2f} remaining."
+        )
+
+    # Hand-mark lock check
+    hm = db.hand_marks()
+    if len(hm) > 0:
+        locked_keys = {
+            (r["question_id"], r["country_code"])
+            for _, r in hm.iterrows()
+            if r.get("locked_by_commit")
+        }
+    else:
+        locked_keys = set()
+    requested_keys = {(q, c) for q in questions for c in countries}
+    unlocked = requested_keys - locked_keys
+    if unlocked:
+        st.caption(
+            f"⚠ Hand-mark lock check: {len(unlocked)} of {len(requested_keys)} pairs "
+            "have no locked hand-mark. The release will proceed anyway and rows "
+            "will be tagged in notes."
+        )
+
+    col_force, col_btn = st.columns([2, 1])
+    with col_force:
+        force = st.checkbox(
+            "Force release (bypass budget refusal)", value=False,
+            disabled=est.projected_total_usd <= est.budget_remaining_usd,
+        )
+    with col_btn:
+        clicked = st.button(
+            f"▶ Release {n_pairs} subtrio(s)",
+            type="primary", use_container_width=True,
+            disabled=(n_pairs == 0),
+        )
+
+    if clicked:
+        _trigger_release(
+            questions=questions, countries=countries, strategy=strategy,
+            researcher_model=researcher_model, verifier_model=verifier_model,
+            adjudicator_model=adjudicator_model,
+            parallel=parallel, max_retries=max_retries,
+            soft_limit=soft_limit, force=force,
+        )
+
+
+def _trigger_release(
+    *, questions, countries, strategy,
+    researcher_model, verifier_model, adjudicator_model,
+    parallel, max_retries, soft_limit, force,
+) -> None:
+    """Spawn dispatch_subtrios.py as a fire-and-forget subprocess.
+
+    Streamlit can't easily run long-running blocking code in the main
+    thread. Spawning a subprocess and letting the dashboard poll the DB
+    is the simplest model.
+    """
+    batch_id = str(uuid.uuid4())
+    cmd = [
+        sys.executable, str(REPO_ROOT / "scripts" / "dispatch_subtrios.py"),
+        "--questions", *questions,
+        "--countries", *countries,
+        "--strategy", strategy,
+        "--researcher-model", researcher_model,
+        "--verifier-model", verifier_model,
+        "--adjudicator-model", adjudicator_model,
+        "--parallel", str(parallel),
+        "--max-retries", str(max_retries),
+        "--batch-id", batch_id,
+        "--soft-limit-usd", str(soft_limit),
+    ]
+    if force:
+        cmd.append("--force")
+
+    # Fire-and-forget; capture stdout to a log file.
+    logs_dir = REPO_ROOT / "dashboard" / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    log_path = logs_dir / f"batch_{batch_id}.log"
+    log_handle = open(log_path, "w")
+    proc = subprocess.Popen(
+        cmd, cwd=str(REPO_ROOT),
+        stdout=log_handle, stderr=subprocess.STDOUT,
+    )
+    st.session_state["last_batch_id"] = batch_id
+    st.session_state["last_batch_pid"] = proc.pid
+    st.session_state["last_batch_log"] = str(log_path)
+
+    st.success(
+        f"Released batch `{batch_id[:8]}` ({len(questions) * len(countries)} subtrios). "
+        f"PID {proc.pid}. Log: `{log_path.name}`."
+    )
+    st.toast("Dispatched. Watch the cards below.", icon="▶")
+
+
+# ============================================================
+# Active subtrio cards
+# ============================================================
+
+@st.fragment(run_every=1.5)
+def render_active_cards() -> None:
+    st.subheader("Active and recent subtrios")
+    recent = db.recent_subtrios(limit=20)
+    if len(recent) == 0:
+        st.info("No subtrios yet. Release one above.")
+        return
+
+    # Group: active first, then done/failed.
+    active_mask = recent["stage"].isin([
+        "queued", "researching", "verifying", "adjudicating",
+    ])
+    active = recent[active_mask]
+    finished = recent[~active_mask]
+
+    if len(active) > 0:
+        cols = st.columns(min(2, len(active)) or 1)
+        for i, (_, row) in enumerate(active.iterrows()):
+            with cols[i % len(cols)]:
+                _render_card(row, is_active=True)
+
+    if len(finished) > 0:
+        st.caption("Recently finished:")
+        cols = st.columns(min(2, len(finished)) or 1)
+        for i, (_, row) in enumerate(finished.head(6).iterrows()):
+            with cols[i % len(cols)]:
+                _render_card(row, is_active=False)
+
+
+def _render_card(row: pd.Series, *, is_active: bool) -> None:
+    """One subtrio card. Mimics the wireframe."""
+    stage = row.get("stage") or "?"
+    border_colour = {
+        "researching": "#2563eb",
+        "verifying": "#f59e0b",
+        "adjudicating": "#7c3aed",
+        "done": "#10b981",
+        "failed": "#dc2626",
+        "interrupted_rate_limit": "#dc2626",
+        "orphaned": "#6b7280",
+    }.get(stage, "#9ca3af")
+
+    with st.container(border=True):
+        col_h1, col_h2 = st.columns([3, 2])
+        with col_h1:
+            st.markdown(
+                f"**{row['question_id']}** · {row['country_code']}  "
+                f"&nbsp;<span style='color:{border_colour};font-weight:600'>"
+                f"{stage.upper()}</span>",
+                unsafe_allow_html=True,
+            )
+        with col_h2:
+            cost = row.get("cumulative_cost_usd")
+            cost_str = f"${cost:.3f}" if pd.notna(cost) else "—"
+            retry = int(row.get("retry_count") or 0)
+            st.caption(f"retry {retry}  ·  {cost_str}")
+
+        # Three-stage pipeline strip.
+        r_state, v_state, f_state = _stage_states(stage, row.get("final_verdict"))
+        p1, p2, p3 = st.columns(3)
+        with p1:
+            st.markdown(_pipeline_block("Researcher", r_state),
+                        unsafe_allow_html=True)
+        with p2:
+            st.markdown(_pipeline_block("Verifier", v_state),
+                        unsafe_allow_html=True)
+        with p3:
+            st.markdown(_pipeline_block("Final", f_state, row.get("final_verdict")),
+                        unsafe_allow_html=True)
+
+        msg = row.get("last_message")
+        if msg:
+            st.caption(f"`{msg}`")
+
+
+def _stage_states(stage: str, final_verdict: str | None) -> tuple[str, str, str]:
+    """Return (researcher_state, verifier_state, final_state) icons."""
+    if stage == "queued":
+        return ("waiting", "waiting", "waiting")
+    if stage == "researching":
+        return ("active", "waiting", "waiting")
+    if stage == "verifying":
+        return ("done", "active", "waiting")
+    if stage == "adjudicating":
+        return ("done", "done", "active")
+    if stage == "done":
+        if final_verdict in ("accepted_by_verifier",):
+            return ("done", "done", "passed")
+        if final_verdict in ("accepted_by_adjudicator",):
+            return ("done", "done", "adjud_passed")
+        if final_verdict and final_verdict.startswith("escalated"):
+            return ("done", "done", "escalated")
+        return ("done", "done", "passed")
+    if stage in ("failed", "interrupted_rate_limit", "orphaned"):
+        return ("done", "failed", "failed")
+    return ("waiting", "waiting", "waiting")
+
+
+def _pipeline_block(label: str, state: str, verdict: str | None = None) -> str:
+    """One block in the three-stage pipeline."""
+    styles = {
+        "waiting": ("#f3f4f6", "#9ca3af", "—"),
+        "active":  ("#dbeafe", "#2563eb", "active"),
+        "done":    ("#d1fae5", "#10b981", "✓"),
+        "passed":  ("#d1fae5", "#10b981", "✓ pass"),
+        "adjud_passed": ("#ede9fe", "#7c3aed", "✓ adj"),
+        "failed":  ("#fee2e2", "#dc2626", "✗"),
+        "escalated": ("#fef3c7", "#d97706", "→ human"),
+    }
+    bg, border, icon = styles.get(state, styles["waiting"])
+    text = label if state in ("waiting", "active") else f"{label} {icon}"
+    return (
+        f"<div style='background:{bg};border:1.5px solid {border};"
+        f"border-radius:6px;padding:6px 10px;text-align:center;"
+        f"font-size:12px;font-weight:600;color:#111827'>"
+        f"{text}</div>"
+    )
+
+
+# ============================================================
+# Layout
+# ============================================================
+
+render_launcher()
+st.divider()
+render_active_cards()
+
+st.caption(
+    "Cards auto-refresh every 1.5 seconds. "
+    "A released batch keeps running even if you close this tab; "
+    "watch the Home page or come back here to see progress."
+)

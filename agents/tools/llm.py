@@ -24,14 +24,17 @@ from __future__ import annotations
 import json
 import os
 import re
+import sqlite3
 import time
+from datetime import datetime
 from pathlib import Path
-from typing import TypeVar
+from typing import Optional, TypeVar
 
 import anthropic
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
+from agents.errors import RateLimitedShutdown
 from agents.models import LLMUsage
 
 # Load env once at import. Override the shell so stale globals do not win.
@@ -60,6 +63,51 @@ def _make_client() -> anthropic.Anthropic:
         api_key=os.environ["ANTHROPIC_API_KEY"],
         base_url=os.environ["ANTHROPIC_BASE_URL"],
     )
+
+
+_DB_PATH = _REPO_ROOT / "data" / "odmi.db"
+
+
+def _log_claude_usage(
+    *,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    estimated_cost_usd: float | None,
+    rate_limited: bool,
+    context: str | None,
+    subtrio_id: str | None,
+) -> None:
+    """Write one row to claude_usage_log.
+
+    Best-effort. A failure to write the usage row must not break the
+    caller's main flow, so all exceptions are swallowed with a stderr
+    note. The dashboard tolerates a missing or sparse log; the budget
+    widget shows "unknown" if the table is empty.
+    """
+    try:
+        with sqlite3.connect(_DB_PATH, timeout=5.0) as conn:
+            conn.execute(
+                """INSERT INTO claude_usage_log
+                   (timestamp, model, input_tokens, output_tokens,
+                    estimated_cost_usd, rate_limited, context, subtrio_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                    model,
+                    input_tokens,
+                    output_tokens,
+                    estimated_cost_usd,
+                    1 if rate_limited else 0,
+                    context,
+                    subtrio_id,
+                ),
+            )
+            conn.commit()
+    except Exception as exc:  # noqa: BLE001 - best-effort log
+        # Don't raise; main flow proceeds.
+        import sys as _sys
+        print(f"[llm.py] claude_usage_log write failed: {exc}", file=_sys.stderr)
 
 
 def estimate_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float | None:
@@ -112,6 +160,8 @@ def call_for_structured(
     timeout_s: float = 60.0,
     condition_label: str = "baseline",
     prompt_version_id: int | None = None,
+    usage_context: str | None = None,
+    subtrio_id: str | None = None,
 ) -> tuple[M, LLMUsage]:
     """Call Claude and parse the response into `output_schema`.
 
@@ -147,19 +197,51 @@ def call_for_structured(
         )
 
         started = time.monotonic()
-        response = client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            system=sys_text,
-            messages=[{"role": "user", "content": user_text}],
-            timeout=timeout_s,
-        )
+        try:
+            response = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=sys_text,
+                messages=[{"role": "user", "content": user_text}],
+                timeout=timeout_s,
+            )
+        except anthropic.RateLimitError as exc:
+            # Anthropic 429. Log a placeholder usage row, then raise the
+            # typed shutdown signal so the Coordinator can exit cleanly.
+            _log_claude_usage(
+                model=model,
+                input_tokens=0,
+                output_tokens=0,
+                estimated_cost_usd=None,
+                rate_limited=True,
+                context=usage_context,
+                subtrio_id=subtrio_id,
+            )
+            raise RateLimitedShutdown(
+                f"Anthropic rate limit hit for model={model}: {exc}"
+            ) from exc
+
         elapsed_ms = int((time.monotonic() - started) * 1000)
 
         cumulative_input_tokens += response.usage.input_tokens
         cumulative_output_tokens += response.usage.output_tokens
         cumulative_wall_clock_ms += elapsed_ms
+
+        # Per-call usage log (one row per actual Anthropic call, not per retry).
+        _log_claude_usage(
+            model=response.model,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+            estimated_cost_usd=estimate_cost_usd(
+                response.model,
+                response.usage.input_tokens,
+                response.usage.output_tokens,
+            ),
+            rate_limited=False,
+            context=usage_context,
+            subtrio_id=subtrio_id,
+        )
 
         raw_text = response.content[0].text if response.content else ""
         json_text = _extract_json(raw_text)

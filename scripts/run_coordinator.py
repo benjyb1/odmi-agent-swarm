@@ -1,0 +1,814 @@
+"""Run one Coordinator pass on a single (question, country) pair.
+
+The Coordinator is the per-pair orchestrator: Researcher → Verifier
+(→ Adjudicator on retry exhaustion). It owns the retry counter, writes
+to subtrio_status at each stage transition, and writes one row each to
+the phase2 result tables on terminal states.
+
+Usage:
+    uv run python scripts/run_coordinator.py P1 FR
+    uv run python scripts/run_coordinator.py P1 FR --strategy verifier-negation
+    uv run python scripts/run_coordinator.py P1 FR \\
+        --researcher-model claude-haiku-4-5-20251001 \\
+        --verifier-model claude-sonnet-4-6 \\
+        --adjudicator-model claude-opus-4-6 \\
+        --subtrio-id abc-123 --batch-id batch-456 \\
+        --max-retries 3
+
+Spec deviation note
+-------------------
+AGENT_DESIGN.md §5 specifies a LangGraph StateGraph. This implementation
+uses a plain Python state machine instead. Reasons: the retry-loop is
+linear, error handling is more straightforward to debug without a graph
+runtime, and the dashboard cares about explicit stage transitions
+which a flat Python function expresses directly. The behaviour matches
+the graph spec; only the implementation idiom differs.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sqlite3
+import sys
+import time
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import List, Optional
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from agents.adjudicator import run_adjudicator
+from agents.errors import EXIT_CODE_RATE_LIMITED, RateLimitedShutdown
+from agents.models import (
+    AdjudicatorInput,
+    AdjudicatorOutput,
+    ResearcherInput,
+    ResearcherOutput,
+    VerifierFeedback,
+    VerifierInput,
+    VerifierOutput,
+    VerifierStrategy,
+)
+from agents.researcher import ResearcherRunResult, run_researcher
+from agents.tools.db import DB_PATH, connect
+from agents.verifier import VerifierRunResult, run_verifier
+
+QUESTIONS_JSON = REPO_ROOT / "data" / "questions" / "odmi_2025_questions.json"
+
+COUNTRIES = {
+    "FR": {"country_name": "France",   "country_language": "fr",
+           "portal_url": "https://www.data.gouv.fr/"},
+    "RO": {"country_name": "Romania",  "country_language": "ro",
+           "portal_url": "https://data.gov.ro/"},
+    "DE": {"country_name": "Germany",  "country_language": "de",
+           "portal_url": "https://www.govdata.de/"},
+    "NL": {"country_name": "Netherlands", "country_language": "nl",
+           "portal_url": "https://data.overheid.nl/"},
+    "HU": {"country_name": "Hungary",  "country_language": "hu",
+           "portal_url": "https://data.gov.hu/"},
+    "EE": {"country_name": "Estonia",  "country_language": "et",
+           "portal_url": "https://avaandmed.eesti.ee/"},
+}
+
+
+# ============================================================
+# subtrio_status helpers
+# ============================================================
+
+def _iso_now() -> str:
+    return datetime.utcnow().isoformat(timespec="seconds") + "Z"
+
+
+def _upsert_subtrio_status(
+    *,
+    subtrio_id: str,
+    batch_id: str,
+    question_id: str,
+    country_code: str,
+    stage: str,
+    substage: Optional[str] = None,
+    retry_count: Optional[int] = None,
+    final_verdict: Optional[str] = None,
+    cumulative_cost_usd: Optional[float] = None,
+    last_message: Optional[str] = None,
+    researcher_model: Optional[str] = None,
+    verifier_model: Optional[str] = None,
+    adjudicator_model: Optional[str] = None,
+    verifier_strategy: Optional[str] = None,
+    final_failure_reason: Optional[str] = None,
+    ended: bool = False,
+) -> None:
+    """Insert or update one subtrio_status row.
+
+    Best-effort; database errors are logged to stderr but do not raise
+    because that would mask the real failure in the agent flow.
+    """
+    now = _iso_now()
+    try:
+        with connect() as conn:
+            existing = conn.execute(
+                "SELECT subtrio_id, started_at FROM subtrio_status WHERE subtrio_id = ?",
+                (subtrio_id,),
+            ).fetchone()
+
+            if existing is None:
+                conn.execute(
+                    """INSERT INTO subtrio_status (
+                        subtrio_id, batch_id, question_id, country_code,
+                        stage, substage, retry_count, started_at, updated_at,
+                        cumulative_cost_usd, last_message, process_pid,
+                        researcher_model, verifier_model, adjudicator_model,
+                        verifier_strategy
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        subtrio_id, batch_id, question_id, country_code,
+                        stage, substage, retry_count or 0, now, now,
+                        cumulative_cost_usd, last_message, os.getpid(),
+                        researcher_model, verifier_model, adjudicator_model,
+                        verifier_strategy,
+                    ),
+                )
+            else:
+                # Build a dynamic update so we only touch provided fields.
+                updates: List[str] = ["updated_at = ?"]
+                params: List = [now]
+                for name, val in [
+                    ("stage", stage),
+                    ("substage", substage),
+                    ("retry_count", retry_count),
+                    ("final_verdict", final_verdict),
+                    ("cumulative_cost_usd", cumulative_cost_usd),
+                    ("last_message", last_message),
+                    ("researcher_model", researcher_model),
+                    ("verifier_model", verifier_model),
+                    ("adjudicator_model", adjudicator_model),
+                    ("verifier_strategy", verifier_strategy),
+                    ("final_failure_reason", final_failure_reason),
+                ]:
+                    if val is not None:
+                        updates.append(f"{name} = ?")
+                        params.append(val)
+                if ended:
+                    updates.append("ended_at = ?")
+                    params.append(now)
+                params.append(subtrio_id)
+                conn.execute(
+                    f"UPDATE subtrio_status SET {', '.join(updates)} "
+                    f"WHERE subtrio_id = ?",
+                    params,
+                )
+            conn.commit()
+    except Exception as exc:  # noqa: BLE001
+        print(f"[coordinator] subtrio_status write failed: {exc}", file=sys.stderr)
+
+
+# ============================================================
+# Question / input loaders
+# ============================================================
+
+def _load_question(question_id: str) -> dict:
+    if not QUESTIONS_JSON.exists():
+        sys.exit(f"Question bank not found at {QUESTIONS_JSON}.")
+    questions = json.loads(QUESTIONS_JSON.read_text())
+    by_id = {q["question_id"]: q for q in questions}
+    if question_id not in by_id:
+        sys.exit(
+            f"Question {question_id!r} not found. "
+            f"Try one of {list(by_id)[:6]}..."
+        )
+    return by_id[question_id]
+
+
+def _build_researcher_input(
+    question_id: str,
+    country_code: str,
+    feedback: Optional[VerifierFeedback] = None,
+) -> ResearcherInput:
+    q = _load_question(question_id)
+    meta = COUNTRIES.get(country_code.upper())
+    if meta is None:
+        sys.exit(f"Country {country_code!r} not configured. Add to COUNTRIES.")
+    return ResearcherInput(
+        question_id=q["question_id"],
+        question_text=q["question_text"],
+        dimension=q["dimension"],
+        indicator=q["indicator"],
+        response_scoring=q.get("response_scoring", ""),
+        country_code=country_code.upper(),
+        country_name=meta["country_name"],
+        country_language=meta["country_language"],
+        portal_url=meta.get("portal_url"),
+        verifier_feedback=feedback,
+    )
+
+
+# ============================================================
+# DB write helpers (reuse the existing per-agent write paths)
+# ============================================================
+
+def _save_researcher_row(
+    *, result: ResearcherRunResult, inp: ResearcherInput,
+    run_id: str, pair_run_id: str, retry_count: int,
+    condition_label: str = "baseline",
+) -> int:
+    o = result.output
+    main = result.main_usage
+    with connect() as conn:
+        cur = conn.execute(
+            """INSERT INTO phase2_researcher_runs (
+                run_id, pair_run_id, question_id, country_code, retry_count,
+                answer, answer_explanation, evidence_quote, source_url,
+                retrieval_confidence, answer_confidence,
+                search_queries_used, fetched_urls,
+                domain_trust_score, language_route_used, notes,
+                failure_mode,
+                input_tokens, output_tokens, wall_clock_ms,
+                estimated_cost_usd, condition_label,
+                prompt_version_id, model_version, raw_response
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                      ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                run_id, pair_run_id, inp.question_id, inp.country_code, retry_count,
+                o.answer if o else None,
+                o.answer_explanation if o else None,
+                o.evidence_quote if o else None,
+                str(o.source_url) if o else None,
+                o.retrieval_confidence if o else None,
+                o.answer_confidence if o else None,
+                json.dumps(result.search_queries_used),
+                json.dumps(result.fetched_urls),
+                result.domain_trust,
+                o.language_route_used if o else None,
+                result.notes,
+                result.failure_mode,
+                result.cumulative_input_tokens,
+                result.cumulative_output_tokens,
+                result.cumulative_wall_clock_ms,
+                result.cumulative_cost_usd,
+                condition_label,
+                main.prompt_version_id if main else None,
+                main.model_version if main else (
+                    result.query_gen_usage.model_version if result.query_gen_usage else "unknown"
+                ),
+                main.raw_response if main else None,
+            ),
+        )
+        conn.commit()
+        return int(cur.lastrowid)
+
+
+def _save_verifier_row(
+    *, result: VerifierRunResult, inp: VerifierInput,
+    researcher_db_id: int,
+    run_id: str, pair_run_id: str, retry_count: int,
+    condition_label: str = "baseline",
+) -> int:
+    o = result.output
+    main = result.main_usage
+    with connect() as conn:
+        cur = conn.execute(
+            """INSERT INTO phase2_verifier_runs (
+                run_id, pair_run_id, question_id, country_code, retry_count,
+                strategy_label, researcher_run_id,
+                verdict, verifier_answer, verifier_confidence,
+                substring_check_result, substring_check_notes,
+                independent_search_queries, independent_evidence,
+                rejection_reason, counter_evidence_quote,
+                counter_source_url, suggested_search_query,
+                failure_mode,
+                input_tokens, output_tokens, wall_clock_ms,
+                estimated_cost_usd, condition_label,
+                prompt_version_id, model_version, raw_response
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                      ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                run_id, pair_run_id, inp.question_id, inp.country_code, retry_count,
+                result.strategy, researcher_db_id,
+                o.verdict if o else None,
+                o.verifier_answer if o else None,
+                o.verifier_confidence if o else None,
+                result.substring_result,
+                result.substring_notes,
+                json.dumps(result.adversarial_queries),
+                json.dumps([r.snippet[:300] for r in result.search_results]),
+                o.rejection_reason if o else None,
+                o.counter_evidence_quote if o else None,
+                str(o.counter_source_url) if o and o.counter_source_url else None,
+                o.suggested_search_query if o else None,
+                result.failure_mode,
+                result.cumulative_input_tokens,
+                result.cumulative_output_tokens,
+                result.cumulative_wall_clock_ms,
+                result.cumulative_cost_usd,
+                condition_label,
+                main.prompt_version_id if main else None,
+                main.model_version if main else (
+                    result.query_gen_usage.model_version if result.query_gen_usage else "unknown"
+                ),
+                main.raw_response if main else None,
+            ),
+        )
+        conn.commit()
+        return int(cur.lastrowid)
+
+
+def _save_adjudication_row(
+    *, result, inp: AdjudicatorInput,
+    run_id: str, pair_run_id: str,
+) -> int:
+    o = result.output
+    with connect() as conn:
+        cur = conn.execute(
+            """INSERT INTO phase2_adjudications (
+                run_id, pair_run_id, question_id, country_code,
+                adjudicator_verdict, adjudicator_answer, adjudicator_confidence,
+                adjudicator_reasoning, chosen_source_url, chosen_evidence_quote,
+                failure_mode,
+                input_tokens, output_tokens, wall_clock_ms,
+                estimated_cost_usd,
+                prompt_version_id, model_version, raw_response
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                run_id, pair_run_id, inp.question_id, inp.country_code,
+                o.adjudicator_verdict if o else None,
+                o.adjudicator_answer if o else None,
+                o.adjudicator_confidence if o else None,
+                o.adjudicator_reasoning if o else (result.notes or "(no output)"),
+                str(o.chosen_source_url) if o and o.chosen_source_url else None,
+                o.chosen_evidence_quote if o else None,
+                result.failure_mode,
+                result.cumulative_input_tokens,
+                result.cumulative_output_tokens,
+                result.cumulative_wall_clock_ms,
+                result.cumulative_cost_usd,
+                result.usage.prompt_version_id if result.usage else None,
+                result.usage.model_version if result.usage else "unknown",
+                result.usage.raw_response if result.usage else None,
+            ),
+        )
+        conn.commit()
+        return int(cur.lastrowid)
+
+
+def _save_final_row(
+    *, run_id: str, pair_run_id: str,
+    inp: ResearcherInput,
+    final_output: Optional[ResearcherOutput],
+    terminal_status: str,
+    retry_count: int,
+    adjudicator_involved: bool,
+    captcha_escalated: bool,
+    cumulative_input_tokens: int,
+    cumulative_output_tokens: int,
+    cumulative_wall_clock_ms: int,
+    cumulative_cost_usd: Optional[float],
+    final_failure_reason: Optional[str],
+) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            """INSERT INTO phase2_final (
+                run_id, pair_run_id, question_id, country_code,
+                terminal_status,
+                final_answer, final_answer_explanation,
+                final_evidence_quote, final_source_url,
+                final_retrieval_confidence, final_answer_confidence,
+                retry_count, adjudicator_involved, captcha_escalated,
+                cumulative_input_tokens, cumulative_output_tokens,
+                cumulative_wall_clock_ms, cumulative_cost_usd,
+                final_failure_reason
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                run_id, pair_run_id, inp.question_id, inp.country_code,
+                terminal_status,
+                final_output.answer if final_output else None,
+                final_output.answer_explanation if final_output else None,
+                final_output.evidence_quote if final_output else None,
+                str(final_output.source_url) if final_output else None,
+                final_output.retrieval_confidence if final_output else None,
+                final_output.answer_confidence if final_output else None,
+                retry_count, 1 if adjudicator_involved else 0,
+                1 if captcha_escalated else 0,
+                cumulative_input_tokens, cumulative_output_tokens,
+                cumulative_wall_clock_ms, cumulative_cost_usd,
+                final_failure_reason,
+            ),
+        )
+        conn.commit()
+        return int(cur.lastrowid)
+
+
+# ============================================================
+# The Coordinator's state machine
+# ============================================================
+
+def coordinate(
+    *,
+    question_id: str,
+    country_code: str,
+    strategy: VerifierStrategy = "verifier-disprove",
+    researcher_model: Optional[str] = None,
+    verifier_model: Optional[str] = None,
+    adjudicator_model: Optional[str] = None,
+    max_retries: int = 3,
+    subtrio_id: Optional[str] = None,
+    batch_id: Optional[str] = None,
+) -> tuple[str, Optional[ResearcherOutput]]:
+    """Run one pair end-to-end.
+
+    Returns (terminal_status, final_output).
+
+    Raises RateLimitedShutdown if any LLM call hits a 429; the caller
+    (main()) catches it, marks the subtrio as interrupted_rate_limit,
+    and exits with code 42.
+    """
+    subtrio_id = subtrio_id or str(uuid.uuid4())
+    batch_id = batch_id or str(uuid.uuid4())
+    run_id = batch_id   # one batch_id per coordinator invocation maps to run_id
+    pair_run_id = subtrio_id
+
+    print(f"\n>>> COORDINATOR START subtrio={subtrio_id[:8]} "
+          f"{question_id}/{country_code}", flush=True)
+
+    _upsert_subtrio_status(
+        subtrio_id=subtrio_id, batch_id=batch_id,
+        question_id=question_id, country_code=country_code,
+        stage="queued", retry_count=0,
+        researcher_model=researcher_model,
+        verifier_model=verifier_model,
+        adjudicator_model=adjudicator_model,
+        verifier_strategy=strategy,
+        last_message="coordinator started",
+    )
+
+    researcher_outputs: List[ResearcherOutput] = []
+    verifier_outputs: List[VerifierOutput] = []
+    feedback: Optional[VerifierFeedback] = None
+    cumulative_tokens_in = 0
+    cumulative_tokens_out = 0
+    cumulative_wall = 0
+    cumulative_cost = 0.0
+    last_researcher_db_id: Optional[int] = None
+    last_researcher_output: Optional[ResearcherOutput] = None
+    retry_count = 0
+
+    for attempt in range(max_retries + 1):
+        retry_count = attempt
+
+        # --- Researcher stage ---
+        _upsert_subtrio_status(
+            subtrio_id=subtrio_id, batch_id=batch_id,
+            question_id=question_id, country_code=country_code,
+            stage="researching", substage="search",
+            retry_count=retry_count,
+            last_message=f"researcher attempt {attempt + 1}",
+        )
+        r_inp = _build_researcher_input(question_id, country_code, feedback)
+        r_result = run_researcher(
+            r_inp,
+            subtrio_id=subtrio_id,
+            on_step=lambda e, p: _upsert_subtrio_status(
+                subtrio_id=subtrio_id, batch_id=batch_id,
+                question_id=question_id, country_code=country_code,
+                stage="researching", substage=e,
+                last_message=f"R{attempt + 1} · {e}",
+            ) if e in ("query_gen_start", "search_start", "main_call_start", "validation_start")
+            else None,
+        )
+        cumulative_tokens_in += r_result.cumulative_input_tokens
+        cumulative_tokens_out += r_result.cumulative_output_tokens
+        cumulative_wall += r_result.cumulative_wall_clock_ms
+        if r_result.cumulative_cost_usd:
+            cumulative_cost += r_result.cumulative_cost_usd
+
+        if r_result.output is None:
+            # Researcher failed unrecoverably; treat as Verifier fail and retry
+            print(f"  Researcher failed: {r_result.failure_mode}", flush=True)
+            if attempt == max_retries:
+                # Save what we can and bail.
+                final_status = "agent_failure"
+                _upsert_subtrio_status(
+                    subtrio_id=subtrio_id, batch_id=batch_id,
+                    question_id=question_id, country_code=country_code,
+                    stage="failed", final_verdict=final_status,
+                    cumulative_cost_usd=cumulative_cost,
+                    last_message=f"researcher failed: {r_result.failure_mode}",
+                    final_failure_reason=r_result.failure_mode,
+                    ended=True,
+                )
+                _save_final_row(
+                    run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
+                    final_output=None, terminal_status=final_status,
+                    retry_count=retry_count, adjudicator_involved=False,
+                    captcha_escalated=False,
+                    cumulative_input_tokens=cumulative_tokens_in,
+                    cumulative_output_tokens=cumulative_tokens_out,
+                    cumulative_wall_clock_ms=cumulative_wall,
+                    cumulative_cost_usd=cumulative_cost,
+                    final_failure_reason=r_result.failure_mode,
+                )
+                return final_status, None
+            feedback = VerifierFeedback(
+                rejection_reason=f"researcher failure: {r_result.failure_mode}",
+            )
+            continue
+
+        researcher_outputs.append(r_result.output)
+        last_researcher_output = r_result.output
+        last_researcher_db_id = _save_researcher_row(
+            result=r_result, inp=r_inp,
+            run_id=run_id, pair_run_id=pair_run_id, retry_count=retry_count,
+        )
+        print(f"  R{attempt+1}: {r_result.output.answer} "
+              f"({r_result.output.answer_confidence:.2f}) "
+              f"${r_result.cumulative_cost_usd or 0:.4f}", flush=True)
+
+        # --- Verifier stage ---
+        _upsert_subtrio_status(
+            subtrio_id=subtrio_id, batch_id=batch_id,
+            question_id=question_id, country_code=country_code,
+            stage="verifying", substage="substring_check",
+            retry_count=retry_count,
+            cumulative_cost_usd=cumulative_cost,
+            last_message=f"verifier attempt {attempt + 1} starting",
+        )
+        v_inp = VerifierInput(
+            question_id=question_id,
+            question_text=r_inp.question_text,
+            country_code=country_code,
+            country_name=r_inp.country_name,
+            researcher_output=r_result.output,
+            strategy=strategy,
+        )
+        v_result = run_verifier(
+            v_inp,
+            subtrio_id=subtrio_id,
+            on_step=lambda e, p: _upsert_subtrio_status(
+                subtrio_id=subtrio_id, batch_id=batch_id,
+                question_id=question_id, country_code=country_code,
+                stage="verifying", substage=e,
+                last_message=f"V{attempt + 1} · {e}",
+            ) if e in ("substring_check_start", "query_gen_start",
+                        "search_start", "main_call_start")
+            else None,
+        )
+        cumulative_tokens_in += v_result.cumulative_input_tokens
+        cumulative_tokens_out += v_result.cumulative_output_tokens
+        cumulative_wall += v_result.cumulative_wall_clock_ms
+        if v_result.cumulative_cost_usd:
+            cumulative_cost += v_result.cumulative_cost_usd
+
+        if v_result.output is None:
+            print(f"  Verifier failed: {v_result.failure_mode}", flush=True)
+            verifier_outputs.append(None)  # type: ignore
+            if attempt == max_retries:
+                final_status = "agent_failure"
+                _upsert_subtrio_status(
+                    subtrio_id=subtrio_id, batch_id=batch_id,
+                    question_id=question_id, country_code=country_code,
+                    stage="failed", final_verdict=final_status,
+                    cumulative_cost_usd=cumulative_cost,
+                    final_failure_reason=v_result.failure_mode,
+                    last_message=f"verifier failed: {v_result.failure_mode}",
+                    ended=True,
+                )
+                _save_final_row(
+                    run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
+                    final_output=last_researcher_output,
+                    terminal_status=final_status,
+                    retry_count=retry_count, adjudicator_involved=False,
+                    captcha_escalated=False,
+                    cumulative_input_tokens=cumulative_tokens_in,
+                    cumulative_output_tokens=cumulative_tokens_out,
+                    cumulative_wall_clock_ms=cumulative_wall,
+                    cumulative_cost_usd=cumulative_cost,
+                    final_failure_reason=v_result.failure_mode,
+                )
+                return final_status, last_researcher_output
+            feedback = VerifierFeedback(
+                rejection_reason=f"verifier failure: {v_result.failure_mode}",
+            )
+            continue
+
+        verifier_outputs.append(v_result.output)
+        _save_verifier_row(
+            result=v_result, inp=v_inp,
+            researcher_db_id=last_researcher_db_id,
+            run_id=run_id, pair_run_id=pair_run_id, retry_count=retry_count,
+        )
+
+        print(f"  V{attempt+1}: {v_result.output.verdict} "
+              f"({v_result.output.verifier_confidence:.2f}) "
+              f"${v_result.cumulative_cost_usd or 0:.4f}", flush=True)
+
+        # --- Verdict branching ---
+        if v_result.output.verdict == "pass":
+            final_status = "accepted_by_verifier"
+            _upsert_subtrio_status(
+                subtrio_id=subtrio_id, batch_id=batch_id,
+                question_id=question_id, country_code=country_code,
+                stage="done", final_verdict=final_status,
+                cumulative_cost_usd=cumulative_cost,
+                last_message="verifier passed",
+                ended=True,
+            )
+            _save_final_row(
+                run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
+                final_output=r_result.output, terminal_status=final_status,
+                retry_count=retry_count, adjudicator_involved=False,
+                captcha_escalated=False,
+                cumulative_input_tokens=cumulative_tokens_in,
+                cumulative_output_tokens=cumulative_tokens_out,
+                cumulative_wall_clock_ms=cumulative_wall,
+                cumulative_cost_usd=cumulative_cost,
+                final_failure_reason=None,
+            )
+            return final_status, r_result.output
+
+        # Verifier failed. Either retry or escalate to Adjudicator.
+        if attempt < max_retries:
+            feedback = VerifierFeedback(
+                rejection_reason=v_result.output.rejection_reason or "verifier rejected",
+                suggested_search_query=v_result.output.suggested_search_query,
+                failed_source_url=r_result.output.source_url,
+            )
+            print(f"  retry with feedback: {feedback.rejection_reason[:80]}",
+                  flush=True)
+            continue
+
+        # Retries exhausted → Adjudicator.
+        break
+
+    # --- Adjudicator stage ---
+    _upsert_subtrio_status(
+        subtrio_id=subtrio_id, batch_id=batch_id,
+        question_id=question_id, country_code=country_code,
+        stage="adjudicating", retry_count=retry_count,
+        cumulative_cost_usd=cumulative_cost,
+        last_message="retries exhausted, calling adjudicator",
+    )
+    # Build the AdjudicatorInput, but only over verifier_outputs that
+    # actually have a value (the placeholder Nones from failed runs are
+    # filtered out).
+    real_verifier_outputs = [v for v in verifier_outputs if v is not None]
+    if not real_verifier_outputs:
+        # Edge case: no actual Verifier output to weigh. Skip adjudication.
+        final_status = "agent_failure"
+        _upsert_subtrio_status(
+            subtrio_id=subtrio_id, batch_id=batch_id,
+            question_id=question_id, country_code=country_code,
+            stage="failed", final_verdict=final_status,
+            cumulative_cost_usd=cumulative_cost,
+            last_message="no verifier output available for adjudication",
+            ended=True,
+        )
+        _save_final_row(
+            run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
+            final_output=last_researcher_output,
+            terminal_status=final_status, retry_count=retry_count,
+            adjudicator_involved=False, captcha_escalated=False,
+            cumulative_input_tokens=cumulative_tokens_in,
+            cumulative_output_tokens=cumulative_tokens_out,
+            cumulative_wall_clock_ms=cumulative_wall,
+            cumulative_cost_usd=cumulative_cost,
+            final_failure_reason="no verifier output for adjudication",
+        )
+        return final_status, last_researcher_output
+
+    adj_inp = AdjudicatorInput(
+        question_id=question_id,
+        question_text=r_inp.question_text,
+        country_code=country_code,
+        country_name=r_inp.country_name,
+        researcher_outputs=researcher_outputs,
+        verifier_outputs=real_verifier_outputs,
+    )
+    adj_result = run_adjudicator(
+        adj_inp,
+        model=adjudicator_model,
+        subtrio_id=subtrio_id,
+    )
+    if adj_result.usage:
+        cumulative_tokens_in += adj_result.cumulative_input_tokens
+        cumulative_tokens_out += adj_result.cumulative_output_tokens
+        cumulative_wall += adj_result.cumulative_wall_clock_ms
+        if adj_result.cumulative_cost_usd:
+            cumulative_cost += adj_result.cumulative_cost_usd
+
+    _save_adjudication_row(
+        result=adj_result, inp=adj_inp,
+        run_id=run_id, pair_run_id=pair_run_id,
+    )
+
+    if adj_result.output is None or adj_result.output.adjudicator_verdict == "escalate_human":
+        final_status = "escalated_adjudicator"
+        chosen_output = last_researcher_output
+    elif adj_result.output.adjudicator_verdict == "researcher_correct":
+        final_status = "accepted_by_adjudicator"
+        chosen_output = researcher_outputs[-1]
+    elif adj_result.output.adjudicator_verdict == "verifier_correct":
+        final_status = "accepted_by_adjudicator"
+        # Build a synthetic ResearcherOutput from the Verifier's counter-evidence
+        v_last = real_verifier_outputs[-1]
+        chosen_output = ResearcherOutput(
+            answer=v_last.verifier_answer,
+            answer_explanation=v_last.rejection_reason or "verifier counter-position",
+            evidence_quote=v_last.counter_evidence_quote or "(no counter-evidence quote)",
+            source_url=str(v_last.counter_source_url or researcher_outputs[-1].source_url),
+            retrieval_confidence=0.7,
+            answer_confidence=v_last.verifier_confidence,
+        )
+    else:  # neither
+        final_status = "accepted_by_adjudicator"
+        chosen_output = ResearcherOutput(
+            answer=adj_result.output.adjudicator_answer or "other",
+            answer_explanation=adj_result.output.adjudicator_reasoning[:300],
+            evidence_quote=adj_result.output.chosen_evidence_quote
+                            or "(adjudicator did not provide quote)",
+            source_url=str(adj_result.output.chosen_source_url
+                           or researcher_outputs[-1].source_url),
+            retrieval_confidence=0.7,
+            answer_confidence=adj_result.output.adjudicator_confidence,
+        )
+
+    _upsert_subtrio_status(
+        subtrio_id=subtrio_id, batch_id=batch_id,
+        question_id=question_id, country_code=country_code,
+        stage="done", final_verdict=final_status,
+        cumulative_cost_usd=cumulative_cost,
+        last_message=f"adjudicator: {adj_result.output.adjudicator_verdict if adj_result.output else 'failed'}",
+        ended=True,
+    )
+    _save_final_row(
+        run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
+        final_output=chosen_output, terminal_status=final_status,
+        retry_count=retry_count, adjudicator_involved=True,
+        captcha_escalated=False,
+        cumulative_input_tokens=cumulative_tokens_in,
+        cumulative_output_tokens=cumulative_tokens_out,
+        cumulative_wall_clock_ms=cumulative_wall,
+        cumulative_cost_usd=cumulative_cost,
+        final_failure_reason=None,
+    )
+    return final_status, chosen_output
+
+
+# ============================================================
+# CLI
+# ============================================================
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Run one Coordinator pass.")
+    parser.add_argument("question_id")
+    parser.add_argument("country_code")
+    parser.add_argument("--strategy", default="verifier-disprove",
+                        choices=["verifier-disprove", "verifier-negation",
+                                 "verifier-steelman", "verifier-blind"])
+    parser.add_argument("--researcher-model", default=None)
+    parser.add_argument("--verifier-model", default=None)
+    parser.add_argument("--adjudicator-model", default=None)
+    parser.add_argument("--max-retries", type=int, default=3)
+    parser.add_argument("--subtrio-id", default=None)
+    parser.add_argument("--batch-id", default=None)
+    args = parser.parse_args()
+
+    subtrio_id = args.subtrio_id or str(uuid.uuid4())
+    batch_id = args.batch_id or str(uuid.uuid4())
+
+    try:
+        terminal_status, final_output = coordinate(
+            question_id=args.question_id,
+            country_code=args.country_code.upper(),
+            strategy=args.strategy,
+            researcher_model=args.researcher_model,
+            verifier_model=args.verifier_model,
+            adjudicator_model=args.adjudicator_model,
+            max_retries=args.max_retries,
+            subtrio_id=subtrio_id,
+            batch_id=batch_id,
+        )
+    except RateLimitedShutdown as exc:
+        print(f"\n[RATE LIMITED] {exc}", file=sys.stderr)
+        _upsert_subtrio_status(
+            subtrio_id=subtrio_id, batch_id=batch_id,
+            question_id=args.question_id, country_code=args.country_code.upper(),
+            stage="interrupted_rate_limit",
+            final_verdict="interrupted_rate_limit",
+            last_message=str(exc)[:200],
+            final_failure_reason="anthropic_rate_limit",
+            ended=True,
+        )
+        return EXIT_CODE_RATE_LIMITED
+
+    print(f"\n=== TERMINAL: {terminal_status} ===")
+    if final_output:
+        print(f"  answer: {final_output.answer} "
+              f"({final_output.answer_confidence:.2f})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
