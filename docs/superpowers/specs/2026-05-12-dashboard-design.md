@@ -69,6 +69,8 @@ DB is the only communication channel.
 
 ```sql
 -- 5.1 Live status of every subtrio currently or recently active.
+-- `final_verdict` mirrors `phase2_final.terminal_status` exactly so the
+-- dashboard does not have to translate between two enums.
 CREATE TABLE subtrio_status (
     subtrio_id          TEXT PRIMARY KEY,        -- UUID
     batch_id            TEXT NOT NULL,           -- groups a release together
@@ -77,14 +79,22 @@ CREATE TABLE subtrio_status (
     stage               TEXT,                    -- queued / researching /
                                                  --   verifying / adjudicating /
                                                  --   done / failed /
-                                                 --   interrupted_rate_limit
+                                                 --   interrupted_rate_limit /
+                                                 --   orphaned
     substage            TEXT,                    -- query_gen / search /
                                                  --   main_call / validation
     retry_count         INTEGER DEFAULT 0,
     started_at          TEXT,
     updated_at          TEXT,
     ended_at            TEXT,
-    final_verdict       TEXT,                    -- pass / fail / human_queue / error
+    final_verdict       TEXT,                    -- mirrors phase2_final.terminal_status:
+                                                 --   accepted_by_verifier /
+                                                 --   accepted_by_adjudicator /
+                                                 --   escalated_captcha /
+                                                 --   escalated_adjudicator /
+                                                 --   agent_failure
+                                                 -- plus dashboard-only:
+                                                 --   interrupted_rate_limit / orphaned
     cumulative_cost_usd REAL,
     last_message        TEXT,                    -- short line for the live widget
     process_pid         INTEGER,
@@ -111,9 +121,12 @@ CREATE TABLE claude_usage_log (
 CREATE INDEX idx_claude_usage_ts ON claude_usage_log(timestamp);
 
 -- 5.3 Default model assignment per agent role. Edited from the Models page.
+-- Only the three top-level agent roles are user-configurable. The
+-- Researcher and Verifier each include a small query-generation micro-call
+-- internally; those inherit the parent agent's model (no separate row).
 CREATE TABLE model_defaults (
     agent_role          TEXT PRIMARY KEY,        -- 'researcher' / 'verifier' /
-                                                 --   'adjudicator' / 'query_gen'
+                                                 --   'adjudicator'
     model               TEXT NOT NULL,           -- e.g. 'claude-sonnet-4-6'
     updated_at          TEXT NOT NULL,
     updated_by          TEXT
@@ -141,10 +154,20 @@ dispatch_subtrios.py
 ```
 
 Responsibilities:
-1. Pre-flight: estimate cost from the last 50 subtrio averages × N pairs ×
-   a retry uplift factor (default 1.2). Compare against the rolling
-   5-hour budget. Refuse to start if projected cost exceeds budget. Warn
-   if projected cost > 85% of budget.
+1. Pre-flight: estimate cost per pair from historical subtrios that
+   match the *exact* `(researcher_model, verifier_model,
+   adjudicator_model, verifier_strategy)` tuple, taking the mean of the
+   last 50 such matches. If fewer than 5 historical matches exist for
+   that tuple, fall back in this order:
+     a. ignore strategy, match on the model triple;
+     b. ignore strategy and adjudicator_model;
+     c. cold-start default: $0.10 per pair (a conservative upper bound
+        based on the existing P1 / I1 baseline runs).
+   Multiply by `n_pairs × retry_uplift_factor` (default 1.2). Compare
+   against the rolling 5-hour budget. Refuse to start if projected cost
+   exceeds budget. Warn if projected cost > 85% of budget. The cold-start
+   fallback is logged in the pre-flight banner so the user knows the
+   estimate is wide.
 2. Insert one `subtrio_status` row per pair with `stage="queued"`.
 3. Start a semaphore at `parallel_limit`. For each pair, acquire the
    semaphore and spawn `run_coordinator.py` with the right args. Release
@@ -152,10 +175,10 @@ Responsibilities:
 4. On every subprocess exit, re-check the rolling budget. If below the
    low-water mark (default 5%), stop dispatching and let in-flight
    subtrios drain.
-5. On any subtrio raising `RateLimitedShutdown` (propagated via exit code
-   42), terminate all running children with SIGTERM, mark their
-   `subtrio_status` rows `interrupted_rate_limit`, and exit cleanly with
-   a summary written to stderr.
+5. On any subtrio exiting with code 42 (the `RateLimitedShutdown`
+   contract; see §9.3), terminate all running children with SIGTERM,
+   mark their `subtrio_status` rows `interrupted_rate_limit`, and exit
+   cleanly with a summary written to stderr.
 
 ### 6.2 `scripts/run_coordinator.py`
 
@@ -305,12 +328,27 @@ Three layers:
    new subprocess, re-check the rolling 5-hour cost. If below 5% of the
    soft limit, stop spawning new subtrios. Already-running subtrios
    finish.
-3. **Clean shutdown on rate-limit error** (in `agents/tools/llm.py`):
-   wrap every call. On `anthropic.RateLimitError`, write a final
-   `claude_usage_log` row with `rate_limited=1`, then raise
-   `RateLimitedShutdown`. The Coordinator catches it, updates the
-   `subtrio_status` row, exits with code 42. The dispatcher catches
-   exit code 42 and orchestrates the kill-and-mark cycle.
+3. **Clean shutdown on rate-limit error**. New file
+   `agents/errors.py` defines:
+   ```python
+   class RateLimitedShutdown(RuntimeError):
+       """Raised by the LLM wrapper when Anthropic returns a 429.
+
+       The Coordinator catches it, flushes any partial state to the DB,
+       updates its subtrio_status row to interrupted_rate_limit, and
+       exits with EXIT_CODE_RATE_LIMITED (= 42). The dispatcher treats
+       exit code 42 as a global stop signal.
+       """
+
+   EXIT_CODE_RATE_LIMITED = 42
+   ```
+   `agents/tools/llm.py` wraps every `client.messages.create` in a
+   try/except for `anthropic.RateLimitError`. On hit, it writes a final
+   `claude_usage_log` row with `rate_limited=1` and re-raises as
+   `RateLimitedShutdown`. The Coordinator's outer handler catches
+   `RateLimitedShutdown`, updates the row, and calls
+   `sys.exit(EXIT_CODE_RATE_LIMITED)`. The dispatcher imports the same
+   constant from `agents/errors.py` so both ends agree on the contract.
 
 A `cleanup_subtrios.py` script reaps orphans after any uncontrolled exit.
 
@@ -329,27 +367,34 @@ in the CSV files and is committed to git, as D9 requires.
 
 Build in this order so each step is independently usable:
 
-1. **Schema migration**: add the three new tables to
-   `scripts/setup_sqlite.py`. Wire `claude_usage_log` into
+1. **Schema migration + errors module**: add the three new tables to
+   `scripts/setup_sqlite.py`. Create `agents/errors.py` with the
+   `RateLimitedShutdown` exception and `EXIT_CODE_RATE_LIMITED = 42`
+   constant. Wire `claude_usage_log` and the rate-limit catch into
    `agents/tools/llm.py`.
-2. **`scripts/run_coordinator.py`**: per AGENT_DESIGN §5. Standalone CLI
-   that can be invoked without the dashboard. Includes the
-   `subtrio_status` writes.
-3. **`scripts/dispatch_subtrios.py`**: pre-flight + Popen pool + clean
-   shutdown.
-4. **Streamlit shell**: `dashboard/Home.py`, sidebar, Claude session
+2. **`agents/adjudicator.py`** (new): the Adjudicator agent per
+   AGENT_DESIGN §5.11. The Coordinator depends on this file, so it must
+   exist before step 3 even as a thin stub.
+3. **`scripts/run_coordinator.py`**: per AGENT_DESIGN §5. Standalone CLI
+   that can be invoked without the dashboard. Owns the LangGraph state
+   graph (researcher → verifier → adjudicator) and the `subtrio_status`
+   writes at each transition. Catches `RateLimitedShutdown` and exits
+   with `EXIT_CODE_RATE_LIMITED`.
+4. **`scripts/dispatch_subtrios.py`**: pre-flight + Popen pool + clean
+   shutdown on exit code 42.
+5. **Streamlit shell**: `dashboard/Home.py`, sidebar, Claude session
    widget, navigation only. Nothing live yet.
-5. **Run Console page**: launcher → dispatch_subtrios.py + live subtrio
+6. **Run Console page**: launcher → dispatch_subtrios.py + live subtrio
    cards.
-6. **Questions page** with multi-select → Run Console hand-off.
-7. **Results page**: table + side drawer.
-8. **Hand-marks page**: read-only.
-9. **Models page**: defaults + analytics.
-10. **Costs page**: aggregate views.
-11. **Strategy Lab**: side-by-side strategy comparison.
-12. **Prompts page**: prompt_versions browser.
+7. **Questions page** with multi-select → Run Console hand-off.
+8. **Results page**: table + side drawer.
+9. **Hand-marks page**: read-only.
+10. **Models page**: defaults + analytics.
+11. **Costs page**: aggregate views.
+12. **Strategy Lab**: side-by-side strategy comparison.
+13. **Prompts page**: prompt_versions browser.
 
-Steps 1-3 are usable from the CLI alone. Step 5 is the first dashboard
+Steps 1-4 are usable from the CLI alone. Step 6 is the first dashboard
 milestone with end-to-end utility.
 
 ## 12. Testing
@@ -383,8 +428,19 @@ milestone with end-to-end utility.
   raw `subprocess.Popen`? Leaning Popen because each child is its own
   Python process with its own SQLite connection; multiprocessing's
   shared-memory features are not needed.
-- **Q-DASH-3**: Streamlit's session_state is per-tab. If the user opens
-  two tabs they will not share launcher state. Acceptable at v1.
+- **Q-DASH-3**: Streamlit's session_state is per-tab. The
+  Questions → Run Console handoff via `st.session_state["queued_questions"]`
+  therefore only works inside a single tab. If the user opens Run
+  Console in a fresh tab, the chips will be empty. Acceptable at v1; if
+  this bites, fallback is to persist `queued_questions` to a temp file
+  under `dashboard/.queued/` keyed by a query-string token.
+
+- **Q-DASH-4**: The orphan-detection window in `cleanup_subtrios.py` is
+  10 minutes by default. That means a live card may show a stale
+  "researching" status for up to 10 minutes after a child crash before
+  the cleanup script reaps it. Acceptable at v1 because the dispatcher
+  is the supervisor and most crashes are caught there. Lower to 2
+  minutes if the stale-card UX becomes a problem.
 
 ## 15. Numbered decisions to add to SPEC.md when implementation begins
 
