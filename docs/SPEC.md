@@ -1,6 +1,6 @@
 # ODMI Agent Swarm — Living Spec
 
-Last updated: 2026-05-12
+Last updated: 2026-05-13
 
 Single source of truth for project state. Updated every session. All numbered
 decisions go in here so they can be referenced as "per D7" elsewhere in the
@@ -442,14 +442,10 @@ Consequences:
   committed hand-marks, swarm rows are exploratory only.
 - Pilot batch of 10 hand-marks for France across the difficulty range
   (D10). Resolves Q1.
-- `agents/coordinator.py` resume semantics: an interrupted subtrio
-  is not auto-resumed; user must manually re-release.
-- Researcher CAPTCHA / 403 detection — currently no path to the
-  human queue from access blocks.
-- Human-queue CSV writer: `terminal_status=escalated_*` writes to
-  `phase2_final` but no `data/human_queue/<batch_id>.csv` file is
-  produced.
-- `run_coordinator.py --dry-run` and `--walkthrough` flags.
+- The three deliberate deferrals from the day-5 contract audit: resume
+  from interruption (D22-D25), Researcher CAPTCHA / 403 detection,
+  and the human-queue CSV writer. Trigger conditions, symptoms, and
+  build sketches live in `docs/KNOWN_GAPS.md`. Carry until one bites.
 - Question-bank → SQLite import (`questions` table is empty;
   Questions page reads JSON).
 - 22 May slide deck (`docs/PROGRESS_SLIDES.md`).
@@ -512,6 +508,7 @@ Consequences:
 
 | Date | Change |
 |---|---|
+| 2026-05-13 | Coordinator follow-ups. `run_coordinator.py --dry-run` and `--walkthrough` flags added. Dry-run gates the five `phase2_*` and `subtrio_status` writes; `claude_usage_log` deliberately stays on so real token spend keeps counting toward the rolling 5-h budget. Smoke test on P1/FR passed: zero new rows in gated tables, six usage-log rows recorded. `docs/KNOWN_GAPS.md` added: documents the three deferred failure modes (resume / D22-D25, CAPTCHA detection, human-queue CSV) with trigger conditions and build sketches; indexed from SPEC.md's "Where to look for what" table. |
 | 2026-05-12 | D19 (Streamlit dashboard), D20 (rolling-window credit policy), D21 (three new schema tables: subtrio_status, claude_usage_log, model_defaults) added. Q-DASH-1..4 opened. Phase 2 complete: Verifier with four strategies built and smoke-tested. Phase 3 complete: Coordinator (run_coordinator.py), Adjudicator (agents/adjudicator.py), dispatcher (dispatch_subtrios.py), and cleanup_subtrios.py written. End-to-end P1/FR coordinator pass succeeded with all six LLM calls writing claude_usage_log rows carrying subtrio_id. Streamlit dashboard built (9 pages) and tested: 9/9 Playwright page loads clean, 4/4 AppTest cases pass, end-to-end Release from the UI spawns a real dispatcher subprocess and writes the subtrio_status row. |
 | 2026-05-11 (late evening) | D18 (model variants Haiku / Sonnet / Opus as a third optimisation family). Q15 opened (model assignment in the tiered combination). Foundation code landed: SQLite migrated to nine tables, Pydantic contracts, shared tools (search, fetch, substring, validator, LLM wrapper), Researcher v1 prompt and orchestration, run_researcher.py with --walkthrough. First end-to-end dry run on P1/FR succeeded: answer "yes" matching the hand-mark, $0.041 cost, 23s wall-clock, source on data.gouv.fr (domain trust 1.0). |
 | 2026-05-11 (evening) | D15 (Verifier prompt strategies as experimental condition), D16 (Adjudicator path at max retries), D17 (decisions revisited with real data). Q11 resolved (normalised substring match). Q12 (which Verifier strategy by default), Q13 (Adjudicator threshold), Q14 (injected-hallucination arm) opened. AGENT_DESIGN.md updated: Verifier reframed as cognitive flip, deny-list dropped, Section 4.10 added with four prompt strategies; Coordinator Section 5.11 adds the Adjudicator. METHODOLOGY.md updated with Verifier strategy comparison as Family 2 of optimisation experiments. |

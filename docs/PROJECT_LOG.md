@@ -8,6 +8,51 @@ Entries newest first.
 
 ---
 
+## 2026-05-13 — Session 6: Coordinator follow-ups
+
+Short session. Two patches on top of the day-5 coordinator.
+
+**`--dry-run` and `--walkthrough` flags on `run_coordinator.py`.**
+- `--dry-run` short-circuits the five DB-write helpers
+  (`subtrio_status`, `phase2_researcher_runs`, `phase2_verifier_runs`,
+  `phase2_adjudications`, `phase2_final`). `claude_usage_log` is
+  deliberately not gated: the tokens are real even when the "run" is
+  fake, and suppressing the usage log would let the rolling 5-hour
+  budget under-count actual Anthropic spend.
+- `--walkthrough` prints every Researcher / Verifier / Adjudicator
+  stage event to stdout. Off by default so dashboard-spawned
+  subprocesses don't flood their per-batch log file.
+- Implementation: two module-level booleans (`_dry_run`,
+  `_walkthrough`) set at `coordinate()` entry. The five DB helpers
+  short-circuit when `_dry_run` is True. The two `on_step` lambdas
+  passed to Researcher and Verifier now chain through a verbose
+  printer.
+- Smoke test (P1/FR, `--max-retries 0 --dry-run --walkthrough`):
+  R1: yes (0.88) $0.021. V1: fail (0.72) $0.035 (substring check
+  correctly caught a stale guides.data.gouv.fr quote). Adjudicator:
+  researcher_correct (0.82). Terminal: `accepted_by_adjudicator`.
+  Five gated tables: zero new rows. Six `claude_usage_log` rows
+  captured with subtrio_id and context labels intact.
+
+**`docs/KNOWN_GAPS.md` written.** Forward-looking note documenting the
+three deferred failure modes from the day-5 contract audit:
+resume from interruption (D22-D25), CAPTCHA / 403 detection, human-queue
+CSV writer. Each entry covers trigger condition, observable symptom,
+current workaround, rough cost-to-build. Indexed from SPEC.md's
+"Where to look for what" table. The idea is that when something
+unexpected happens during a real run, the symptom-to-triage path is
+short.
+
+### Open at end of session
+
+Same as session 5. The two patches don't change the "next session"
+priority list:
+1. Drive a real multi-question batch through the dashboard.
+2. Migrate hand-marks from the Word doc to CSV + git commit (unlocks D9).
+3. Carry the three KNOWN_GAPS items until a real trigger appears.
+
+---
+
 ## 2026-05-12 — Session 5: Dashboard end-to-end + coordinator built
 
 ### Morning: failure-scenario probes and Verifier build
