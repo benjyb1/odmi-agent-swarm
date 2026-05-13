@@ -181,8 +181,9 @@ class DispatchResult:
 
 def dispatch(
     *,
-    questions: Sequence[str],
-    countries: Sequence[str],
+    questions: Sequence[str] = (),
+    countries: Sequence[str] = (),
+    pairs: Optional[Sequence[tuple[str, str]]] = None,
     strategy: str = "verifier-disprove",
     researcher_model: Optional[str] = None,
     verifier_model: Optional[str] = None,
@@ -194,18 +195,27 @@ def dispatch(
     force: bool = False,
     on_message: Optional[Callable[[str], None]] = None,
 ) -> DispatchResult:
-    """Spawn one Coordinator subprocess per (question, country).
+    """Spawn one Coordinator subprocess per pair.
+
+    Pass `pairs=[(qid, cc), ...]` to dispatch an explicit sparse set,
+    or `questions` + `countries` to dispatch the full cross product.
+    `pairs` takes precedence if both are given.
 
     Returns when all subprocesses have exited (or rate-limit shutdown
-    triggered a global terminate).
-
-    `force=True` bypasses the pre-flight budget refusal but the warning
-    is still logged.
+    triggered a global terminate). `force=True` bypasses the pre-flight
+    budget refusal but the warning is still logged.
     """
     batch_id = batch_id or str(uuid.uuid4())
     log = on_message or (lambda m: print(f"[dispatch] {m}", flush=True))
 
-    pairs = [(q, c.upper()) for q in questions for c in countries]
+    if pairs is not None:
+        normalised_pairs = [(q, c.upper()) for q, c in pairs]
+    else:
+        normalised_pairs = [
+            (q, c.upper()) for q in questions for c in countries
+        ]
+
+    pairs = normalised_pairs
     if not pairs:
         return DispatchResult(batch_id=batch_id, jobs=[],
                               messages=["no pairs to dispatch"])
@@ -372,8 +382,22 @@ def _mark_interrupted(subtrio_id: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Dispatch N coordinator subprocesses.")
-    parser.add_argument("--questions", nargs="+", required=True)
-    parser.add_argument("--countries", nargs="+", required=True)
+    parser.add_argument(
+        "--questions", nargs="+", default=[],
+        help="Question IDs. Combined with --countries as a cross product "
+             "unless --pairs is given.",
+    )
+    parser.add_argument(
+        "--countries", nargs="+", default=[],
+        help="Country codes. Combined with --questions as a cross product "
+             "unless --pairs is given.",
+    )
+    parser.add_argument(
+        "--pairs", nargs="+", default=None,
+        metavar="QID:CC",
+        help="Explicit pair list (e.g. P1:FR P2:DE). Overrides the "
+             "cross product. Use this when you want a sparse set.",
+    )
     parser.add_argument("--strategy", default="verifier-disprove")
     parser.add_argument("--researcher-model", default=None)
     parser.add_argument("--verifier-model", default=None)
@@ -385,9 +409,24 @@ def main() -> int:
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
+    explicit_pairs = None
+    if args.pairs:
+        try:
+            explicit_pairs = [tuple(p.split(":", 1)) for p in args.pairs]
+        except ValueError:
+            parser.error("--pairs entries must be QID:CC")
+        bad = [p for p in explicit_pairs if len(p) != 2 or not p[0] or not p[1]]
+        if bad:
+            parser.error(f"--pairs entries must be QID:CC; bad: {bad}")
+    elif not (args.questions and args.countries):
+        parser.error(
+            "either --pairs or both --questions and --countries are required"
+        )
+
     result = dispatch(
         questions=args.questions,
         countries=args.countries,
+        pairs=explicit_pairs,
         strategy=args.strategy,
         researcher_model=args.researcher_model,
         verifier_model=args.verifier_model,

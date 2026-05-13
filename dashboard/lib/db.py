@@ -263,6 +263,56 @@ def ground_truth_count() -> int:
     return int(row[0] or 0)
 
 
+def already_finalised(
+    question_ids: list[str], country_codes: list[str]
+) -> pd.DataFrame:
+    """For each requested (qid, cc) pair, return a row if at least one
+    `phase2_final` row exists. Columns: question_id, country_code,
+    n_runs, last_terminal_status, last_match_status, last_created_at.
+    Used by the Run Console to warn before re-running.
+    """
+    if not question_ids or not country_codes:
+        return pd.DataFrame(
+            columns=[
+                "question_id", "country_code", "n_runs",
+                "last_terminal_status", "last_match_status",
+                "last_created_at",
+            ]
+        )
+    q_marks = ",".join("?" for _ in question_ids)
+    c_marks = ",".join("?" for _ in country_codes)
+    return read_sql(
+        f"""
+        WITH per_pair AS (
+            SELECT f.question_id, f.country_code,
+                   f.terminal_status, f.created_at,
+                   {_MATCH_STATUS_SQL} AS match_status,
+                   ROW_NUMBER() OVER (
+                     PARTITION BY f.question_id, f.country_code
+                     ORDER BY f.id DESC
+                   ) AS rn,
+                   COUNT(*) OVER (
+                     PARTITION BY f.question_id, f.country_code
+                   ) AS n_runs
+            FROM phase2_final f
+            LEFT JOIN ground_truth gt
+              ON gt.question_id = f.question_id
+             AND gt.country_code = f.country_code
+            WHERE f.question_id IN ({q_marks})
+              AND f.country_code IN ({c_marks})
+        )
+        SELECT question_id, country_code, n_runs,
+               terminal_status AS last_terminal_status,
+               match_status    AS last_match_status,
+               created_at      AS last_created_at
+        FROM per_pair
+        WHERE rn = 1
+        ORDER BY question_id, country_code
+        """,
+        tuple(question_ids) + tuple(country_codes),
+    )
+
+
 # ============================================================
 # Claude usage / cost
 # ============================================================

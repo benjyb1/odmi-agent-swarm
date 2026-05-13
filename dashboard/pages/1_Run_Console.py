@@ -198,6 +198,62 @@ def render_launcher() -> None:
             "accuracy aggregates."
         )
 
+    # Duplicate-run check: which of the requested pairs already have a
+    # phase2_final row? Default behaviour is to skip them; opt-in
+    # checkbox to re-run anyway (appends new rows, doesn't overwrite).
+    dupes = db.already_finalised(questions, countries)
+    rerun_dupes = False
+    if len(dupes) > 0:
+        st.warning(
+            f"⚠ {len(dupes)} of {len(requested_keys)} pair(s) already "
+            "have a finalised run in the database."
+        )
+        with st.expander("Already-done pairs", expanded=True):
+            display = dupes[[
+                "question_id", "country_code", "n_runs",
+                "last_terminal_status", "last_match_status",
+                "last_created_at",
+            ]].rename(columns={
+                "question_id": "Q", "country_code": "Country",
+                "n_runs": "Runs", "last_terminal_status": "Last status",
+                "last_match_status": "vs ODMI",
+                "last_created_at": "Last run",
+            })
+            st.dataframe(display, use_container_width=True, hide_index=True)
+            st.caption(
+                "Default: skip these and only dispatch the rest. To wipe "
+                "a pair and start fresh, delete its rows from "
+                "`phase2_final`, `phase2_adjudications`, "
+                "`phase2_verifier_runs`, `phase2_researcher_runs`, and "
+                "`subtrio_status` (keep `claude_usage_log` for cost "
+                "audit), then re-release."
+            )
+            rerun_dupes = st.checkbox(
+                "Run them anyway and append new rows",
+                value=False, key="rerun_dupes",
+                help="Off (default): skip the duplicates and only "
+                     "dispatch the rest. On: dispatch every requested "
+                     "pair, including the duplicates, creating new "
+                     "phase2_final rows alongside the old ones.",
+            )
+
+    dupe_keys = {
+        (r["question_id"], r["country_code"]) for _, r in dupes.iterrows()
+    }
+    if rerun_dupes:
+        effective_pairs = requested_keys
+    else:
+        effective_pairs = requested_keys - dupe_keys
+
+    if len(dupe_keys) > 0 and not rerun_dupes:
+        skipped = len(dupe_keys)
+        st.caption(
+            f"✂ Skipping {skipped} duplicate pair(s); "
+            f"dispatching {len(effective_pairs)}."
+        )
+
+    n_effective = len(effective_pairs)
+
     col_force, col_btn = st.columns([2, 1])
     with col_force:
         force = st.checkbox(
@@ -206,16 +262,19 @@ def render_launcher() -> None:
         )
     with col_btn:
         clicked = st.button(
-            f"▶ Release {n_pairs} subtrio(s)",
+            f"▶ Release {n_effective} subtrio(s)",
             type="primary", use_container_width=True,
-            disabled=(n_pairs == 0),
+            disabled=(n_effective == 0),
         )
 
     if clicked:
         if mode.block_if_read_only():
             return
+        eff_questions = sorted({q for q, _ in effective_pairs})
+        eff_countries = sorted({c for _, c in effective_pairs})
         _trigger_release(
-            questions=questions, countries=countries, strategy=strategy,
+            questions=eff_questions, countries=eff_countries,
+            pair_filter=effective_pairs, strategy=strategy,
             researcher_model=researcher_model, verifier_model=verifier_model,
             adjudicator_model=adjudicator_model,
             parallel=parallel, max_retries=max_retries,
@@ -224,21 +283,21 @@ def render_launcher() -> None:
 
 
 def _trigger_release(
-    *, questions, countries, strategy,
+    *, questions, countries, pair_filter, strategy,
     researcher_model, verifier_model, adjudicator_model,
     parallel, max_retries, soft_limit, force,
 ) -> None:
     """Spawn dispatch_subtrios.py as a fire-and-forget subprocess.
 
-    Streamlit can't easily run long-running blocking code in the main
-    thread. Spawning a subprocess and letting the dashboard poll the DB
-    is the simplest model.
+    `pair_filter` is the exact set of (qid, cc) pairs to dispatch.
+    We pass it as `--pairs QID:CC ...` so the dispatcher honours the
+    sparse selection (i.e. the duplicate-skip from the launcher).
     """
     batch_id = str(uuid.uuid4())
+    pair_args = [f"{q}:{c}" for q, c in sorted(pair_filter)]
     cmd = [
         sys.executable, str(REPO_ROOT / "scripts" / "dispatch_subtrios.py"),
-        "--questions", *questions,
-        "--countries", *countries,
+        "--pairs", *pair_args,
         "--strategy", strategy,
         "--researcher-model", researcher_model,
         "--verifier-model", verifier_model,
@@ -265,7 +324,7 @@ def _trigger_release(
     st.session_state["last_batch_log"] = str(log_path)
 
     st.success(
-        f"Released batch `{batch_id[:8]}` ({len(questions) * len(countries)} subtrios). "
+        f"Released batch `{batch_id[:8]}` ({len(pair_filter)} subtrios). "
         f"PID {proc.pid}. Log: `{log_path.name}`."
     )
     st.toast("Dispatched. Watch the cards below.", icon="▶")
