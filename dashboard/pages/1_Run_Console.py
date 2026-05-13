@@ -96,16 +96,56 @@ def render_launcher() -> None:
             format_func=lambda c: f"{c} — {COUNTRIES[c]}",
             help="Multi-select. N questions × M countries = N×M subtrios.",
         )
+
+    # Look up which question_ids are already covered against the
+    # selected countries so the picker can sort the "still to do"
+    # questions to the top and label the rest as already covered.
+    n_covered_per_qid: dict[str, int] = {}
+    if countries and all_q_ids:
+        with sqlite3.connect(REPO_ROOT / "data" / "odmi.db") as _conn:
+            placeholders = ",".join("?" for _ in countries)
+            rows = _conn.execute(
+                f"""SELECT question_id, COUNT(DISTINCT country_code) AS n
+                    FROM phase2_final
+                    WHERE country_code IN ({placeholders})
+                    GROUP BY question_id""",
+                tuple(countries),
+            ).fetchall()
+        n_covered_per_qid = {qid: int(n) for qid, n in rows}
+
+    sorted_q_ids = sorted(
+        all_q_ids,
+        key=lambda q: (n_covered_per_qid.get(q, 0), q),
+    )
+
+    def _q_label(qid: str) -> str:
+        n_done = n_covered_per_qid.get(qid, 0)
+        if n_done == 0 or not countries:
+            return qid
+        return f"{qid}  ✓ already run in {n_done}/{len(countries)}"
+
     with col_q:
+        default_qids = (
+            queued
+            if queued
+            else ([sorted_q_ids[0]] if sorted_q_ids else [])
+        )
         questions = st.multiselect(
             "Questions",
-            options=all_q_ids,
-            default=queued if queued else ["P1"] if "P1" in all_q_ids else [],
-            help="Pre-stage from the Questions page, or pick directly here.",
+            options=sorted_q_ids,
+            default=default_qids,
+            format_func=_q_label,
+            help=(
+                "Questions you have not yet run against the selected "
+                "countries appear first. Already-covered ones sit at "
+                "the bottom with a tick."
+            ),
         )
         if queued:
-            st.caption(f"Pre-staged from Questions page: {', '.join(queued)}. "
-                       f"Clear: Questions page → deselect all → Send.")
+            st.caption(
+                f"Pre-staged from Questions page: {', '.join(queued)}. "
+                f"Clear: Questions page → deselect all → Send."
+            )
 
     col_a, col_b, col_d, col_e = st.columns(4)
     with col_a:

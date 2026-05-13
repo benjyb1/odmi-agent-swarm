@@ -153,7 +153,8 @@ if len(cov_per_country) > 0 and cov_per_country.sum() > 0:
 
 st.caption(
     f"{len(filtered):,} of {n_total:,} rows match the filters. "
-    "Newest run first within each country."
+    "Click a row to act on it. Scroll horizontally to see every "
+    "column."
 )
 
 display = filtered[[
@@ -170,78 +171,108 @@ display = filtered[[
     "match_status": "vs ODMI",
     "swarm_runs": "Runs",
     "last_run": "Last run",
-})
-st.dataframe(
+}).reset_index(drop=True)
+
+event = st.dataframe(
     display,
-    use_container_width=True,
+    width="stretch",
     hide_index=True,
-    height=min(640, 35 + 35 * len(display)),
+    height=min(640, 60 + 35 * len(display)),
+    selection_mode="single-row",
+    on_select="rerun",
+    key="db_grid",
     column_config={
+        "Q": st.column_config.TextColumn(width="small"),
+        "Country": st.column_config.TextColumn(width="small"),
+        "Dimension": st.column_config.TextColumn(width="medium"),
+        "Indicator": st.column_config.TextColumn(width="medium"),
         "vs ODMI": st.column_config.TextColumn(
-            "vs ODMI", width="small",
             help="match / differ / no_ground_truth / no_swarm_answer.",
         ),
         "Runs": st.column_config.NumberColumn(
-            "Runs", width="small",
             help="How many phase2_final rows exist for this pair.",
         ),
         "ODMI answer": st.column_config.TextColumn(width="medium"),
-        "Swarm answer": st.column_config.TextColumn(width="small"),
+        "Swarm answer": st.column_config.TextColumn(width="medium"),
+        "Last run": st.column_config.TextColumn(width="medium"),
     },
 )
 
 
 # ============================================================
-# Delete a pair
+# Selection-driven action panel
 # ============================================================
 
+selected_rows = []
+if event is not None and event.selection:
+    selected_rows = event.selection.rows or []
+
 st.divider()
-st.subheader("Delete a pair's swarm rows")
-st.caption(
-    "Removes every row from `phase2_final`, `phase2_adjudications`, "
-    "`phase2_verifier_runs`, `phase2_researcher_runs`, and "
-    "`subtrio_status` for the chosen pair. `claude_usage_log` is kept "
-    "so cost audit stays intact. After deletion the pair counts as "
-    "fresh on the Run Console."
-)
 
-covered_only = grid[grid["swarm_runs"] > 0].copy()
-covered_only["pair_label"] = covered_only.apply(
-    lambda r: f"{r['question_id']} / {r['country_code']} "
-              f"(runs: {int(r['swarm_runs'])}, vs ODMI: {r['match_status']})",
-    axis=1,
-)
-
-if len(covered_only) == 0:
-    st.info("No covered pairs to delete.")
-else:
-    pair_label = st.selectbox(
-        "Pair",
-        options=[None] + covered_only["pair_label"].tolist(),
-        format_func=lambda v: "pick a pair…" if v is None else v,
-        key="db_delete_pick",
+if not selected_rows:
+    st.info(
+        "Click any row above to inspect or delete its swarm rows. "
+        "Only pairs with at least one swarm run can be deleted."
     )
-    if pair_label:
-        row = covered_only[covered_only["pair_label"] == pair_label].iloc[0]
-        qid = row["question_id"]
-        cc = row["country_code"]
+else:
+    row = display.iloc[selected_rows[0]]
+    qid = row["Q"]
+    cc = row["Country"]
+    n_runs = int(row["Runs"]) if pd.notna(row["Runs"]) else 0
+
+    full_row = filtered[
+        (filtered["question_id"] == qid)
+        & (filtered["country_code"] == cc)
+    ].iloc[0]
+
+    st.subheader(f"Selected: {qid} · {cc}")
+    info_cols = st.columns([1, 1, 1, 1])
+    info_cols[0].metric("Dimension", full_row.get("dimension") or "—")
+    info_cols[1].metric("Indicator", full_row.get("indicator") or "—")
+    info_cols[2].metric("Swarm runs", n_runs)
+    info_cols[3].metric(
+        "vs ODMI",
+        (row["vs ODMI"] or "—").replace("_", " "),
+    )
+
+    swarm_ans = full_row.get("swarm_answer")
+    odmi_ans = full_row.get("odmi_response")
+    st.markdown(
+        f"**ODMI answer:** {odmi_ans!r}  ·  "
+        f"**Swarm answer:** "
+        f"{swarm_ans if pd.notna(swarm_ans) else '— (not run)'}"
+    )
+    gt_expl = full_row.get("ground_truth_explanation") if (
+        "ground_truth_explanation" in full_row
+    ) else None
+    if pd.notna(gt_expl) and str(gt_expl).strip():
+        with st.expander("ODMI explanation"):
+            st.write(gt_expl)
+
+    if n_runs == 0:
+        st.caption(
+            "This pair has no swarm rows yet, so there's nothing to "
+            "delete. Use the Run Console to release a subtrio for it."
+        )
+    else:
         counts = db.pair_row_counts(qid, cc)
         total = sum(counts.values())
-        st.write(
-            f"**{qid} / {cc}** — about to delete **{total}** row(s) "
-            "across the five swarm tables:"
+        st.markdown(
+            f"**Delete impact:** {total} row(s) across the five swarm "
+            "tables. `claude_usage_log` stays for cost audit."
         )
         st.write(
-            {k: v for k, v in counts.items() if v > 0} or "(nothing to delete)"
+            {k: v for k, v in counts.items() if v > 0}
+            or "(nothing to delete)"
         )
         confirm = st.checkbox(
             f"I want to delete every swarm row for {qid} / {cc}",
-            key="db_delete_confirm",
+            key=f"db_delete_confirm_{qid}_{cc}",
         )
         if st.button(
-            f"Delete {qid} / {cc} now",
+            f"🗑 Delete {qid} / {cc} now",
             type="primary", disabled=not confirm,
-            key="db_delete_go",
+            key=f"db_delete_go_{qid}_{cc}",
         ):
             if mode.block_if_read_only():
                 st.stop()
