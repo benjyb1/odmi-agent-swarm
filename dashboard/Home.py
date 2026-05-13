@@ -34,124 +34,189 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Inline styles. Mirrors the palette of MSc Progress Slides 3.pptx.
+# Dark-first design language. The CSS targets Streamlit's dark theme so
+# every surface uses charcoal cards on a near-black page, with a teal
+# accent system and an Inter sans-serif stack to keep typography
+# consistent across macOS and Windows.
 st.markdown(
     """
     <style>
-      html, body, [class*="css"] {
-        font-family: -apple-system, BlinkMacSystemFont, "Inter",
-                     "Segoe UI", Roboto, "Helvetica Neue",
-                     "Calibri", Arial, sans-serif;
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+      html, body, [class*="css"], [class*="st-"], .stMarkdown, .stText,
+      [data-testid="stAppViewContainer"], [data-testid="stSidebar"] {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont,
+                     "Segoe UI", Roboto, "Helvetica Neue", Arial,
+                     sans-serif !important;
+        font-feature-settings: "ss01", "cv01", "cv11";
       }
       [data-testid="stHeader"] { background: transparent; }
-      .block-container { padding-top: 1rem; padding-bottom: 2rem; }
+      .block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
+
+      /* The whole page background. Streamlit dark theme is the target. */
+      [data-testid="stAppViewContainer"] {
+        background: #0B0F19;
+      }
+      [data-testid="stSidebar"] {
+        background: #0B0F19;
+        border-right: 1px solid #1F2937;
+      }
 
       .odmi-hero {
-        background: linear-gradient(135deg, #1A202C 0%, #1E3A5F 100%);
-        color: #FFFFFF;
-        padding: 28px 36px 26px 36px;
-        border-radius: 14px;
-        margin-bottom: 22px;
-        box-shadow: 0 12px 30px rgba(26, 32, 44, 0.18);
+        background:
+          radial-gradient(120% 100% at 0% 0%, #16B8A4 0%, transparent 38%),
+          linear-gradient(135deg, #0E1726 0%, #1E2B45 100%);
+        color: #F8FAFC;
+        padding: 32px 38px 28px 38px;
+        border-radius: 18px;
+        margin-bottom: 24px;
+        border: 1px solid #1F2A44;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.06);
       }
       .odmi-eyebrow {
-        color: #14B8A6;
+        color: #5EEAD4;
         font-size: 11px;
         letter-spacing: 0.16em;
         font-weight: 700;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
         text-transform: uppercase;
       }
       .odmi-title {
-        font-size: 32px;
+        font-size: 34px;
         font-weight: 700;
         margin: 0;
-        letter-spacing: -0.01em;
+        letter-spacing: -0.02em;
+        color: #F8FAFC;
       }
       .odmi-sub {
-        color: #CBD5E0;
+        color: #94A3B8;
         font-size: 14px;
-        margin-top: 8px;
-        max-width: 720px;
+        line-height: 1.55;
+        margin-top: 10px;
+        max-width: 760px;
       }
 
       .odmi-kpi {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 10px;
-        padding: 16px 18px 14px 18px;
+        background: linear-gradient(180deg, #111827 0%, #0F172A 100%);
+        border: 1px solid #1F2937;
+        border-radius: 14px;
+        padding: 18px 20px 16px 20px;
         position: relative;
         overflow: hidden;
-        height: 124px;
+        height: 132px;
+        transition: transform 0.15s ease, border-color 0.15s ease;
+      }
+      .odmi-kpi:hover {
+        border-color: #2D3B53;
+        transform: translateY(-1px);
       }
       .odmi-kpi::before {
         content: "";
         position: absolute;
         left: 0; right: 0; top: 0;
-        height: 4px;
-        background: var(--accent, #0D9488);
+        height: 3px;
+        background: var(--accent, #14B8A6);
       }
       .odmi-kpi-label {
-        color: #718096;
+        color: #94A3B8;
         font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.09em;
+        font-weight: 600;
+        letter-spacing: 0.10em;
         text-transform: uppercase;
       }
       .odmi-kpi-value {
-        color: #1A202C;
-        font-size: 32px;
+        color: #F1F5F9;
+        font-size: 34px;
         font-weight: 700;
-        line-height: 1.1;
-        margin: 6px 0 4px 0;
+        line-height: 1.05;
+        margin: 8px 0 6px 0;
+        letter-spacing: -0.02em;
       }
       .odmi-kpi-cap {
-        color: #4A5568;
+        color: #94A3B8;
         font-size: 12px;
+        line-height: 1.4;
       }
 
       .odmi-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 18px 22px 16px 22px;
-        margin-bottom: 16px;
+        background: #111827;
+        border: 1px solid #1F2937;
+        border-radius: 16px;
+        padding: 20px 24px 18px 24px;
+        margin-bottom: 18px;
       }
       .odmi-card h3 {
-        color: #1A202C;
+        color: #F1F5F9;
         font-size: 16px;
         font-weight: 700;
-        margin: 0 0 12px 0;
+        margin: 0 0 14px 0;
+        letter-spacing: -0.005em;
       }
       .odmi-card .eyebrow {
-        color: #0D9488;
+        color: #5EEAD4;
         font-size: 10px;
         font-weight: 700;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
+      }
+      .odmi-card p, .odmi-card div, .odmi-card span {
+        color: #CBD5E0;
       }
       .odmi-divider {
-        border-top: 1px solid #E2E8F0;
+        border-top: 1px solid #1F2937;
         margin: 22px 0;
       }
       .odmi-foot {
-        color: #718096;
+        color: #64748B;
         font-size: 11px;
         text-align: center;
         margin-top: 12px;
       }
 
-      /* Streamlit dataframe — tighten borders. */
+      /* Streamlit dataframe — dark surface, subtle border. */
       [data-testid="stDataFrame"] {
-        border: 1px solid #E2E8F0;
-        border-radius: 10px;
+        border: 1px solid #1F2937;
+        border-radius: 12px;
         overflow: hidden;
       }
 
       /* Tighten altair chart wrapper. */
       [data-testid="stAltairChart"] > div {
-        background: transparent;
+        background: transparent !important;
+      }
+
+      /* Streamlit's native metric (used in the progress strip and elsewhere). */
+      [data-testid="stMetric"] {
+        background: #111827;
+        border: 1px solid #1F2937;
+        border-radius: 12px;
+        padding: 14px 16px 12px 16px;
+      }
+      [data-testid="stMetricLabel"] p,
+      [data-testid="stMetricLabel"] {
+        color: #94A3B8 !important;
+        font-size: 11px !important;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 600;
+      }
+      [data-testid="stMetricValue"] {
+        color: #F1F5F9 !important;
+      }
+      [data-testid="stMetricDelta"] {
+        color: #94A3B8 !important;
+      }
+
+      /* Section divider lines */
+      hr {
+        border-color: #1F2937 !important;
+      }
+
+      /* Captions and small text everywhere — slate, not the default off-white. */
+      .stCaption, [data-testid="stCaptionContainer"] {
+        color: #64748B !important;
       }
     </style>
     """,
@@ -171,39 +236,43 @@ def render_hero() -> None:
     active = db.active_subtrios()
     cost = float(summary.get("cost") or 0.0)
 
+    chip_style = (
+        "background: rgba(255,255,255,0.04); border:1px solid #2A3550; "
+        "border-radius: 12px; padding: 10px 16px;"
+    )
+    label_style = (
+        "color:#94A3B8; font-size:10px; letter-spacing:0.12em; "
+        "font-weight:600; text-transform:uppercase;"
+    )
+    value_style = (
+        "color:#F8FAFC; font-size:22px; font-weight:700; "
+        "letter-spacing:-0.01em; margin-top:4px;"
+    )
+
     st.markdown(
         f"""
         <div class="odmi-hero">
           <div class="odmi-eyebrow">ODMI Agent Swarm · Live Control Surface</div>
           <div class="odmi-title">Dashboard</div>
           <div class="odmi-sub">
-            Three-agent swarm answering EU Open Data Maturity Index
+            A three-agent swarm answering EU Open Data Maturity Index
             questions across 36 countries. Researcher proposes, Verifier
             tries to disprove, Adjudicator decides on retry exhaustion.
-            Everything you see below is read straight from the audit-trail
+            Everything below is read straight from the audit-trail
             SQLite store.
           </div>
-          <div style="display:flex; gap:34px; margin-top:18px;">
-            <div>
-              <div style="color:#A0AEC0; font-size:11px; letter-spacing:0.09em;
-                          text-transform:uppercase;">In flight</div>
-              <div style="color:#FFFFFF; font-size:22px; font-weight:700;">
-                {len(active)}
-              </div>
+          <div style="display:flex; gap:14px; margin-top:22px; flex-wrap:wrap;">
+            <div style="{chip_style}">
+              <div style="{label_style}">In flight</div>
+              <div style="{value_style}">{len(active)}</div>
             </div>
-            <div>
-              <div style="color:#A0AEC0; font-size:11px; letter-spacing:0.09em;
-                          text-transform:uppercase;">Finalised</div>
-              <div style="color:#FFFFFF; font-size:22px; font-weight:700;">
-                {len(finals)}
-              </div>
+            <div style="{chip_style}">
+              <div style="{label_style}">Finalised</div>
+              <div style="{value_style}">{len(finals)}</div>
             </div>
-            <div>
-              <div style="color:#A0AEC0; font-size:11px; letter-spacing:0.09em;
-                          text-transform:uppercase;">5h spend</div>
-              <div style="color:#FFFFFF; font-size:22px; font-weight:700;">
-                {format_gbp(cost)}
-              </div>
+            <div style="{chip_style}">
+              <div style="{label_style}">5h spend</div>
+              <div style="{value_style}">{format_gbp(cost)}</div>
             </div>
           </div>
         </div>
@@ -319,6 +388,7 @@ def country_outcomes_chart() -> None:
     totals = df.groupby("country_code")["n"].sum().sort_values(ascending=False)
     country_order = totals.index.tolist()
 
+    _FONT = "Inter, -apple-system, Segoe UI, Roboto, sans-serif"
     chart = (
         alt.Chart(df)
         .mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4)
@@ -328,19 +398,24 @@ def country_outcomes_chart() -> None:
                 title="Country",
                 sort=country_order,
                 axis=alt.Axis(
-                    labelFontSize=12, titleFontSize=12,
-                    labelColor="#1A202C", titleColor="#718096",
-                    labelFont="Calibri", titleFont="Calibri",
+                    labelFontSize=12, titleFontSize=11,
+                    labelColor="#E2E8F0", titleColor="#94A3B8",
+                    labelFont=_FONT, titleFont=_FONT,
+                    labelFontWeight=600, titleFontWeight=500,
                     domain=False, ticks=False,
+                    titlePadding=14,
                 ),
             ),
             y=alt.Y(
                 "n:Q", title="Finalised pairs", stack="zero",
                 axis=alt.Axis(
-                    labelFontSize=11, titleFontSize=12,
-                    labelColor="#718096", titleColor="#718096",
-                    labelFont="Calibri", titleFont="Calibri",
-                    grid=True, gridColor="#EDF2F7", domain=False,
+                    labelFontSize=11, titleFontSize=11,
+                    labelColor="#94A3B8", titleColor="#94A3B8",
+                    labelFont=_FONT, titleFont=_FONT,
+                    titleFontWeight=500,
+                    grid=True, gridColor="#1F2937",
+                    domain=False, ticks=False,
+                    titlePadding=14,
                 ),
             ),
             color=alt.Color(
@@ -350,18 +425,21 @@ def country_outcomes_chart() -> None:
                     domain=[
                         "Matches ODMI", "Differs from ODMI", "No ground truth",
                     ],
-                    range=["#38A169", "#C53030", "#A0AEC0"],
+                    range=["#10B981", "#EF4444", "#475569"],
                 ),
                 legend=alt.Legend(
-                    orient="bottom", labelFontSize=11,
-                    titleFontSize=11, labelFont="Calibri",
-                    titleFont="Calibri",
+                    orient="bottom", labelFontSize=12, titleFontSize=11,
+                    labelFont=_FONT, titleFont=_FONT,
+                    labelColor="#E2E8F0", titleColor="#94A3B8",
+                    symbolType="square", symbolSize=140,
+                    padding=14,
                 ),
             ),
             tooltip=["country_code", "outcome", "n"],
         )
-        .properties(height=300, background="transparent")
+        .properties(height=320, background="transparent")
         .configure_view(strokeWidth=0)
+        .configure(font=_FONT)
     )
     st.altair_chart(chart, use_container_width=True)
 
@@ -370,9 +448,11 @@ def country_outcomes_chart() -> None:
     denom = n_match + n_differ
     pct_match = (n_match / denom) if denom > 0 else 0
     st.markdown(
-        f'<div style="color:#718096; font-size:12px; margin-top:8px;">'
-        f'{int(totals.sum())} finalised pairs across {len(country_order)} '
-        f'country/countries. Accuracy vs ODMI 2025: {pct_match:.0%} '
+        f'<div style="color:#94A3B8; font-size:12px; margin-top:10px;">'
+        f'<strong style="color:#E2E8F0;">{int(totals.sum())}</strong> '
+        f'finalised pairs across {len(country_order)} '
+        f'country/countries. Accuracy vs ODMI 2025: '
+        f'<strong style="color:#5EEAD4;">{pct_match:.0%}</strong> '
         f'({n_match} match, {n_differ} differ). ODMI assessments are '
         f'one cycle old, so a real-world change since 2025 looks like '
         f'a swarm error here.'
@@ -443,10 +523,11 @@ def render_coverage_summary() -> None:
         return
 
     st.markdown(
-        f'<div style="color:#4A5568; font-size:13px; margin-bottom:10px;">'
-        f'<b>{gt_total:,}</b> ODMI answers loaded across 36 countries × 143 '
-        f'questions. Swarm has covered '
-        f'<b>{accuracy["n_finalised"]}</b> pairs so far.'
+        f'<div style="color:#94A3B8; font-size:13px; margin-bottom:12px;">'
+        f'<strong style="color:#F1F5F9;">{gt_total:,}</strong> ODMI answers '
+        f'loaded across 36 countries × 143 questions. Swarm has covered '
+        f'<strong style="color:#5EEAD4;">{accuracy["n_finalised"]}</strong> '
+        f'pairs so far.'
         f'</div>',
         unsafe_allow_html=True,
     )
@@ -458,11 +539,13 @@ def render_coverage_summary() -> None:
         chip_html = '<div style="display:flex; flex-wrap:wrap; gap:8px;">'
         for country, n in sorted(per_country.items()):
             chip_html += (
-                '<div style="background:#F7FAFC; border:1px solid #E2E8F0; '
-                'border-radius:8px; padding:8px 12px; min-width:90px;">'
-                f'<div style="color:#1A202C; font-weight:700; font-size:14px;">{country}</div>'
-                f'<div style="color:#0F766E; font-weight:700; font-size:18px;">{n}</div>'
-                '<div style="color:#718096; font-size:10px;">pairs run</div>'
+                '<div style="background:#0F172A; border:1px solid #1F2937; '
+                'border-radius:10px; padding:10px 14px; min-width:96px;">'
+                f'<div style="color:#94A3B8; font-weight:600; font-size:11px; '
+                f'letter-spacing:0.08em;">{country}</div>'
+                f'<div style="color:#5EEAD4; font-weight:700; font-size:20px; '
+                f'margin-top:2px;">{n}</div>'
+                '<div style="color:#64748B; font-size:10px;">pairs run</div>'
                 '</div>'
             )
         chip_html += "</div>"
