@@ -76,6 +76,42 @@ COUNTRIES = {
 
 
 # ============================================================
+# Dry-run and walkthrough flags
+# ============================================================
+#
+# `_dry_run` is a module-level switch set by `coordinate()` at entry.
+# When True, every DB write helper short-circuits — no row touches
+# subtrio_status, phase2_researcher_runs, phase2_verifier_runs,
+# phase2_adjudications, or phase2_final. `claude_usage_log` is NOT
+# gated because the underlying tokens are billed regardless; suppressing
+# the log would make the rolling-window budget under-count real spend.
+#
+# `_walkthrough` is set the same way. When True, the coordinator prints
+# every stage transition and forwarded on_step event to stdout in a
+# readable format. Off by default so dashboard-spawned subprocesses
+# don't flood their batch log.
+
+_dry_run: bool = False
+_walkthrough: bool = False
+
+
+def _print_step(prefix: str, event: str, payload: dict) -> None:
+    """Verbose stage logger used when --walkthrough is on."""
+    if not _walkthrough:
+        return
+    parts = [f"  [{prefix}]", event]
+    if payload:
+        # Trim large payload values for readability.
+        for k, v in payload.items():
+            if isinstance(v, str) and len(v) > 100:
+                v = v[:97] + "..."
+            if isinstance(v, list) and len(v) > 5:
+                v = f"[{len(v)} items]"
+            parts.append(f"{k}={v}")
+    print(" ".join(str(p) for p in parts), flush=True)
+
+
+# ============================================================
 # subtrio_status helpers
 # ============================================================
 
@@ -106,7 +142,11 @@ def _upsert_subtrio_status(
 
     Best-effort; database errors are logged to stderr but do not raise
     because that would mask the real failure in the agent flow.
+    Skipped entirely when --dry-run is set.
     """
+    if _dry_run:
+        _print_step("subtrio_status (dry-run skip)", stage, {"substage": substage})
+        return
     now = _iso_now()
     try:
         with connect() as conn:
@@ -215,6 +255,10 @@ def _save_researcher_row(
     run_id: str, pair_run_id: str, retry_count: int,
     condition_label: str = "baseline",
 ) -> int:
+    if _dry_run:
+        _print_step("phase2_researcher_runs (dry-run skip)", "insert",
+                    {"answer": result.output.answer if result.output else None})
+        return -1
     o = result.output
     main = result.main_usage
     with connect() as conn:
@@ -267,6 +311,10 @@ def _save_verifier_row(
     run_id: str, pair_run_id: str, retry_count: int,
     condition_label: str = "baseline",
 ) -> int:
+    if _dry_run:
+        _print_step("phase2_verifier_runs (dry-run skip)", "insert",
+                    {"verdict": result.output.verdict if result.output else None})
+        return -1
     o = result.output
     main = result.main_usage
     with connect() as conn:
@@ -320,6 +368,10 @@ def _save_adjudication_row(
     *, result, inp: AdjudicatorInput,
     run_id: str, pair_run_id: str,
 ) -> int:
+    if _dry_run:
+        _print_step("phase2_adjudications (dry-run skip)", "insert",
+                    {"verdict": result.output.adjudicator_verdict if result.output else None})
+        return -1
     o = result.output
     with connect() as conn:
         cur = conn.execute(
@@ -368,6 +420,11 @@ def _save_final_row(
     cumulative_cost_usd: Optional[float],
     final_failure_reason: Optional[str],
 ) -> int:
+    if _dry_run:
+        _print_step("phase2_final (dry-run skip)", "insert",
+                    {"status": terminal_status,
+                     "answer": final_output.answer if final_output else None})
+        return -1
     with connect() as conn:
         cur = conn.execute(
             """INSERT INTO phase2_final (
@@ -416,6 +473,8 @@ def coordinate(
     max_retries: int = 3,
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
+    dry_run: bool = False,
+    walkthrough: bool = False,
 ) -> tuple[str, Optional[ResearcherOutput]]:
     """Run one pair end-to-end.
 
@@ -425,13 +484,22 @@ def coordinate(
     (main()) catches it, marks the subtrio as interrupted_rate_limit,
     and exits with code 42.
     """
+    global _dry_run, _walkthrough
+    _dry_run = dry_run
+    _walkthrough = walkthrough
+
     subtrio_id = subtrio_id or str(uuid.uuid4())
     batch_id = batch_id or str(uuid.uuid4())
     run_id = batch_id   # one batch_id per coordinator invocation maps to run_id
     pair_run_id = subtrio_id
 
-    print(f"\n>>> COORDINATOR START subtrio={subtrio_id[:8]} "
+    dr_tag = " [DRY-RUN]" if dry_run else ""
+    print(f"\n>>> COORDINATOR START{dr_tag} subtrio={subtrio_id[:8]} "
           f"{question_id}/{country_code}", flush=True)
+    if walkthrough:
+        print(f"    strategy={strategy} retries={max_retries} "
+              f"R={researcher_model or 'default'} V={verifier_model or 'default'} "
+              f"A={adjudicator_model or 'default'}", flush=True)
 
     _upsert_subtrio_status(
         subtrio_id=subtrio_id, batch_id=batch_id,
@@ -467,17 +535,18 @@ def coordinate(
             last_message=f"researcher attempt {attempt + 1}",
         )
         r_inp = _build_researcher_input(question_id, country_code, feedback)
-        r_result = run_researcher(
-            r_inp,
-            subtrio_id=subtrio_id,
-            on_step=lambda e, p: _upsert_subtrio_status(
-                subtrio_id=subtrio_id, batch_id=batch_id,
-                question_id=question_id, country_code=country_code,
-                stage="researching", substage=e,
-                last_message=f"R{attempt + 1} · {e}",
-            ) if e in ("query_gen_start", "search_start", "main_call_start", "validation_start")
-            else None,
-        )
+
+        def _r_step(e, p, _att=attempt):
+            _print_step(f"R{_att + 1}", e, p)
+            if e in ("query_gen_start", "search_start", "main_call_start", "validation_start"):
+                _upsert_subtrio_status(
+                    subtrio_id=subtrio_id, batch_id=batch_id,
+                    question_id=question_id, country_code=country_code,
+                    stage="researching", substage=e,
+                    last_message=f"R{_att + 1} · {e}",
+                )
+
+        r_result = run_researcher(r_inp, subtrio_id=subtrio_id, on_step=_r_step)
         cumulative_tokens_in += r_result.cumulative_input_tokens
         cumulative_tokens_out += r_result.cumulative_output_tokens
         cumulative_wall += r_result.cumulative_wall_clock_ms
@@ -543,18 +612,18 @@ def coordinate(
             researcher_output=r_result.output,
             strategy=strategy,
         )
-        v_result = run_verifier(
-            v_inp,
-            subtrio_id=subtrio_id,
-            on_step=lambda e, p: _upsert_subtrio_status(
-                subtrio_id=subtrio_id, batch_id=batch_id,
-                question_id=question_id, country_code=country_code,
-                stage="verifying", substage=e,
-                last_message=f"V{attempt + 1} · {e}",
-            ) if e in ("substring_check_start", "query_gen_start",
-                        "search_start", "main_call_start")
-            else None,
-        )
+        def _v_step(e, p, _att=attempt):
+            _print_step(f"V{_att + 1}", e, p)
+            if e in ("substring_check_start", "query_gen_start",
+                     "search_start", "main_call_start"):
+                _upsert_subtrio_status(
+                    subtrio_id=subtrio_id, batch_id=batch_id,
+                    question_id=question_id, country_code=country_code,
+                    stage="verifying", substage=e,
+                    last_message=f"V{_att + 1} · {e}",
+                )
+
+        v_result = run_verifier(v_inp, subtrio_id=subtrio_id, on_step=_v_step)
         cumulative_tokens_in += v_result.cumulative_input_tokens
         cumulative_tokens_out += v_result.cumulative_output_tokens
         cumulative_wall += v_result.cumulative_wall_clock_ms
@@ -690,6 +759,7 @@ def coordinate(
         adj_inp,
         model=adjudicator_model,
         subtrio_id=subtrio_id,
+        on_step=lambda e, p: _print_step("A", e, p),
     )
     if adj_result.usage:
         cumulative_tokens_in += adj_result.cumulative_input_tokens
@@ -773,6 +843,18 @@ def main() -> int:
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--subtrio-id", default=None)
     parser.add_argument("--batch-id", default=None)
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help=(
+            "Skip writes to subtrio_status, phase2_researcher_runs, "
+            "phase2_verifier_runs, phase2_adjudications, and phase2_final. "
+            "claude_usage_log is still written (the tokens are real)."
+        ),
+    )
+    parser.add_argument(
+        "--walkthrough", action="store_true",
+        help="Print every Researcher / Verifier / Adjudicator stage event to stdout.",
+    )
     args = parser.parse_args()
 
     subtrio_id = args.subtrio_id or str(uuid.uuid4())
@@ -789,6 +871,8 @@ def main() -> int:
             max_retries=args.max_retries,
             subtrio_id=subtrio_id,
             batch_id=batch_id,
+            dry_run=args.dry_run,
+            walkthrough=args.walkthrough,
         )
     except RateLimitedShutdown as exc:
         print(f"\n[RATE LIMITED] {exc}", file=sys.stderr)

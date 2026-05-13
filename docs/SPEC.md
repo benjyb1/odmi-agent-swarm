@@ -535,3 +535,4 @@ Consequences:
 | Where are the hand-marks? | `data/hand_marks/france_handmarks.csv`. |
 | Where is the prelim draft? | `docs/REPORT_PRELIM.md`. |
 | Where are citations? | `docs/references.bib`. |
+| Known gaps and anticipated failure modes? | `docs/KNOWN_GAPS.md`. |
