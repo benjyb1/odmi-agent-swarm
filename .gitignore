@@ -17,6 +17,7 @@ node_modules/
 
 # Claude Code local
 .claude/settings.local.json
+.claude/worktrees/
 
 # SQLite write-ahead and shared-memory files (the .db itself is committed)
 *.db-wal
