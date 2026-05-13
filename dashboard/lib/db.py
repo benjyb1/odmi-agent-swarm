@@ -111,17 +111,33 @@ def finals(limit: int = 200) -> pd.DataFrame:
     )
 
 
-def result_cards() -> pd.DataFrame:
-    """One row per finalised (question, country) pair, with the question
-    text joined in and the latest Verifier run's verdict / counter-evidence
-    pulled alongside.
+_MATCH_STATUS_SQL = """
+    CASE
+      WHEN gt.response IS NULL OR TRIM(gt.response) = ''
+        THEN 'no_ground_truth'
+      WHEN f.final_answer IS NULL OR TRIM(f.final_answer) = ''
+        THEN 'no_swarm_answer'
+      WHEN LOWER(TRIM(f.final_answer)) = LOWER(TRIM(gt.response))
+        THEN 'match'
+      WHEN LOWER(TRIM(f.final_answer)) = 'yes'
+           AND (LOWER(TRIM(gt.response)) LIKE 'yes%')
+        THEN 'match'
+      WHEN LOWER(TRIM(f.final_answer)) = 'no'
+           AND LOWER(TRIM(gt.response)) = 'no'
+        THEN 'match'
+      ELSE 'differ'
+    END
+"""
 
-    Designed for the Results page Cards view: each row contains
-    everything needed to render one scannable card showing the question,
-    the answer, the proof, and how the swarm reached the verdict.
+
+def result_cards() -> pd.DataFrame:
+    """One row per finalised pair, joined with questions, latest Verifier,
+    and ODMI ground truth. Adds match_status, ground_truth_response, and
+    ground_truth_explanation columns so the Cards view can render the
+    swarm answer next to ODMI's recorded answer with a match badge.
     """
     return read_sql(
-        """
+        f"""
         WITH latest_verifier AS (
             SELECT pair_run_id,
                    verdict, verifier_confidence, strategy_label,
@@ -148,37 +164,103 @@ def result_cards() -> pd.DataFrame:
             v.rejection_reason,
             v.counter_evidence_quote,
             v.counter_source_url,
-            v.substring_check_result
+            v.substring_check_result,
+            gt.response        AS ground_truth_response,
+            gt.decision        AS ground_truth_decision,
+            gt.awarded_score   AS ground_truth_awarded_score,
+            gt.max_score       AS ground_truth_max_score,
+            gt.explanation     AS ground_truth_explanation,
+            gt.cycle_year      AS ground_truth_cycle,
+            {_MATCH_STATUS_SQL} AS match_status
         FROM phase2_final f
-        LEFT JOIN questions q  ON q.question_id = f.question_id
+        LEFT JOIN questions q   ON q.question_id = f.question_id
         LEFT JOIN latest_verifier v ON v.pair_run_id = f.pair_run_id
+        LEFT JOIN ground_truth gt
+              ON gt.question_id = f.question_id
+             AND gt.country_code = f.country_code
         ORDER BY f.created_at DESC, f.id DESC
         """
     )
 
 
 def country_outcome_counts() -> pd.DataFrame:
-    """Per-country counts of finalised pairs, split success vs failed.
+    """Per-country counts of finalised pairs, split by match against
+    ODMI ground truth. Match = swarm final_answer agrees with the
+    `response` column on the corresponding ground_truth row. Countries
+    with zero finalised pairs are excluded.
 
-    Success = terminal_status starts with 'accepted_'. Failed =
-    everything else, which today means 'rejected_*' and 'escalated_*'.
-    Countries with zero finalised pairs are excluded.
-
-    Returned columns: country_code, outcome ('Successful' | 'Failed'),
-    n. Long format, ready to feed straight to altair.
+    Returned columns: country_code, outcome ('Matches ODMI' |
+    'Differs from ODMI' | 'No ground truth'), n.
     """
     df = read_sql(
-        """SELECT country_code,
-                  CASE WHEN terminal_status LIKE 'accepted_%'
-                       THEN 'Successful'
-                       ELSE 'Failed'
-                  END AS outcome,
-                  COUNT(*) AS n
-           FROM phase2_final
-           WHERE country_code IS NOT NULL
-           GROUP BY country_code, outcome"""
+        f"""
+        WITH per_pair AS (
+            SELECT f.country_code,
+                   {_MATCH_STATUS_SQL} AS match_status
+            FROM phase2_final f
+            LEFT JOIN ground_truth gt
+              ON gt.question_id = f.question_id
+             AND gt.country_code = f.country_code
+            WHERE f.country_code IS NOT NULL
+        )
+        SELECT country_code,
+               CASE match_status
+                 WHEN 'match' THEN 'Matches ODMI'
+                 WHEN 'differ' THEN 'Differs from ODMI'
+                 ELSE 'No ground truth'
+               END AS outcome,
+               COUNT(*) AS n
+        FROM per_pair
+        GROUP BY country_code, outcome
+        """
     )
     return df
+
+
+def accuracy_summary() -> dict:
+    """Overall accuracy of the swarm against ODMI ground truth.
+
+    Returns {n_finalised, n_match, n_differ, n_no_truth, accuracy}.
+    `accuracy` is matches / (matches + differs), excluding pairs
+    without a ground-truth row.
+    """
+    with _conn() as conn:
+        row = conn.execute(
+            f"""SELECT
+                  COUNT(*) AS n_finalised,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'match'
+                           THEN 1 ELSE 0 END) AS n_match,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'differ'
+                           THEN 1 ELSE 0 END) AS n_differ,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) IN
+                           ('no_ground_truth', 'no_swarm_answer')
+                           THEN 1 ELSE 0 END) AS n_no_truth
+                FROM phase2_final f
+                LEFT JOIN ground_truth gt
+                  ON gt.question_id = f.question_id
+                 AND gt.country_code = f.country_code""",
+        ).fetchone()
+    n_finalised = int(row["n_finalised"] or 0)
+    n_match = int(row["n_match"] or 0)
+    n_differ = int(row["n_differ"] or 0)
+    n_no_truth = int(row["n_no_truth"] or 0)
+    denom = n_match + n_differ
+    accuracy = (n_match / denom) if denom > 0 else None
+    return {
+        "n_finalised": n_finalised,
+        "n_match": n_match,
+        "n_differ": n_differ,
+        "n_no_truth": n_no_truth,
+        "accuracy": accuracy,
+    }
+
+
+def ground_truth_count() -> int:
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM ground_truth"
+        ).fetchone()
+    return int(row[0] or 0)
 
 
 # ============================================================

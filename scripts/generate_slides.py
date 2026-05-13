@@ -59,10 +59,8 @@ def fetch_stats() -> dict:
     with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
         n_questions = cur.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
-        n_hand_marks = cur.execute("SELECT COUNT(*) FROM hand_marks").fetchone()[0]
-        n_locked = cur.execute(
-            "SELECT COUNT(*) FROM hand_marks "
-            "WHERE locked_by_commit IS NOT NULL"
+        n_ground_truth = cur.execute(
+            "SELECT COUNT(*) FROM ground_truth"
         ).fetchone()[0]
         n_researcher = cur.execute(
             "SELECT COUNT(*) FROM phase2_researcher_runs"
@@ -75,16 +73,50 @@ def fetch_stats() -> dict:
         ).fetchone()[0]
         n_finals = cur.execute("SELECT COUNT(*) FROM phase2_final").fetchone()[0]
 
+        # Per-country match vs differ vs ODMI ground truth.
         country_outcomes = cur.execute(
-            """SELECT country_code,
-                      SUM(CASE WHEN terminal_status LIKE 'accepted_%' THEN 1
-                               ELSE 0 END) AS successful,
-                      SUM(CASE WHEN terminal_status LIKE 'accepted_%' THEN 0
-                               ELSE 1 END) AS failed
-               FROM phase2_final
-               GROUP BY country_code
-               ORDER BY country_code"""
+            """SELECT f.country_code,
+                      SUM(CASE
+                          WHEN LOWER(TRIM(f.final_answer)) =
+                               LOWER(TRIM(gt.response))
+                            OR (LOWER(TRIM(f.final_answer)) = 'yes'
+                                AND LOWER(TRIM(gt.response)) LIKE 'yes%')
+                          THEN 1 ELSE 0 END) AS matched,
+                      SUM(CASE
+                          WHEN gt.response IS NOT NULL
+                               AND NOT (
+                                 LOWER(TRIM(f.final_answer)) =
+                                 LOWER(TRIM(gt.response))
+                                 OR (LOWER(TRIM(f.final_answer)) = 'yes'
+                                     AND LOWER(TRIM(gt.response)) LIKE 'yes%')
+                               )
+                          THEN 1 ELSE 0 END) AS differed
+               FROM phase2_final f
+               LEFT JOIN ground_truth gt
+                  ON gt.question_id = f.question_id
+                 AND gt.country_code = f.country_code
+               GROUP BY f.country_code
+               ORDER BY f.country_code"""
         ).fetchall()
+
+        accuracy_row = cur.execute(
+            """SELECT
+                  SUM(CASE
+                      WHEN LOWER(TRIM(f.final_answer)) =
+                           LOWER(TRIM(gt.response))
+                        OR (LOWER(TRIM(f.final_answer)) = 'yes'
+                            AND LOWER(TRIM(gt.response)) LIKE 'yes%')
+                      THEN 1 ELSE 0 END) AS matched,
+                  COUNT(gt.response) AS comparable
+               FROM phase2_final f
+               LEFT JOIN ground_truth gt
+                  ON gt.question_id = f.question_id
+                 AND gt.country_code = f.country_code
+               WHERE gt.response IS NOT NULL"""
+        ).fetchone()
+        n_match = int(accuracy_row[0] or 0)
+        n_comparable = int(accuracy_row[1] or 0)
+        accuracy = (n_match / n_comparable) if n_comparable > 0 else None
 
         cost_total = cur.execute(
             "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM claude_usage_log"
@@ -100,13 +132,15 @@ def fetch_stats() -> dict:
 
     return {
         "n_questions": n_questions,
-        "n_hand_marks": n_hand_marks,
-        "n_locked": n_locked,
+        "n_ground_truth": n_ground_truth,
         "n_researcher": n_researcher,
         "n_verifier": n_verifier,
         "n_adjudications": n_adjudications,
         "n_finals": n_finals,
         "country_outcomes": country_outcomes,
+        "n_match": n_match,
+        "n_comparable": n_comparable,
+        "accuracy": accuracy,
         "cost_total": cost_total,
         "avg_runtime_s": avg_runtime,
     }
@@ -374,21 +408,25 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
     gap = Inches(0.07)
     x0 = Inches(0.5)
 
+    acc_str = (
+        f"{stats['accuracy']:.0%}" if stats["accuracy"] is not None else "—"
+    )
     add_kpi(slide, x0 + 0 * (col_w + gap), y, col_w, h,
-            label="Questions loaded",
-            value=str(stats["n_questions"]),
-            caption="ODMI 2025 catalogue, all four dimensions.")
-    add_kpi(slide, x0 + 1 * (col_w + gap), y, col_w, h,
-            label="Hand-marks locked",
-            value=f"{stats['n_locked']} / {stats['n_hand_marks']}",
-            caption="Stamped with the commit SHA per D9.",
-            accent=NAVY)
-    add_kpi(slide, x0 + 2 * (col_w + gap), y, col_w, h,
-            label="Finalised pairs",
+            label="Pairs finalised",
             value=str(stats["n_finals"]),
             caption=f"{stats['n_researcher']} R · {stats['n_verifier']} V · "
-                    f"{stats['n_adjudications']} A.",
+                    f"{stats['n_adjudications']} A.")
+    add_kpi(slide, x0 + 1 * (col_w + gap), y, col_w, h,
+            label="Accuracy vs ODMI",
+            value=acc_str,
+            caption=f"{stats['n_match']} / {stats['n_comparable']} match "
+                    f"against ODMI 2025.",
             accent=SUCCESS)
+    add_kpi(slide, x0 + 2 * (col_w + gap), y, col_w, h,
+            label="Ground-truth coverage",
+            value=f"{stats['n_ground_truth']:,}",
+            caption="ODMI answers loaded (36 countries × 143 questions).",
+            accent=NAVY)
     add_kpi(slide, x0 + 3 * (col_w + gap), y, col_w, h,
             label="Total LLM spend",
             value=f"${stats['cost_total']:.2f}",
@@ -406,10 +444,11 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
                   "(P2/NL) has needed the Adjudicator. Average runtime ~32s.",
              accent=TEAL)
     add_card(slide, Inches(0.5) + card_w + gap2, y2, card_w, card_h,
-             title="Live dashboard with full audit trail",
-             body="Nine Streamlit pages over the SQLite store. Every LLM "
-                  "call logs tokens, latency, cost, prompt version. "
-                  "Hand-marks lock to a commit SHA so D9 is automatic.",
+             title="Live dashboard with ODMI ground truth",
+             body="Streamlit app over SQLite. Every LLM call logs "
+                  "tokens, latency, cost, prompt version. Each finalised "
+                  "swarm pair is compared to ODMI's recorded answer "
+                  "automatically (5,148 ground-truth rows loaded).",
              accent=NAVY)
 
     page_footer(slide, prs, 2, 6)
@@ -510,21 +549,21 @@ def slide_dashboard_highlights(prs: Presentation) -> None:
          "strategy and the model triple, dispatch a batch. Cost is "
          "estimated before the run starts.",
          "▶", TEAL),
-        ("Results · Cards view",
-         "One bordered card per finalised pair. Question, answer, "
-         "evidence quote, and a clickable source URL — all on the same "
-         "screen, scannable.",
+        ("Results · Cards view with ODMI side-by-side",
+         "One card per finalised pair: question, swarm answer with "
+         "evidence quote, clickable source URL, plus ODMI's recorded "
+         "answer and explanation. Match / differ badge at a glance.",
          "📋", NAVY),
-        ("In-app hand-marking",
-         "Pick a question, slide three score sliders, hit Save. The "
-         "page writes the CSV, commits it, and stamps the SHA into "
-         "the DB so D9 is automatic.",
-         "✍", TEAL_DARK),
-        ("Country chart + cost tracking",
-         "Live stacked bar of accept vs reject per country on the Home "
-         "page. Costs page shows the rolling 5-hour spend and the "
-         "per-model breakdown.",
+        ("Accuracy chart vs ODMI",
+         "Per-country stacked bar of pairs that match ODMI 2025 versus "
+         "those that differ. Headline accuracy KPI is read straight off "
+         "the comparison.",
          "📊", SUCCESS),
+        ("Cost tracking and rolling budget",
+         "Costs page shows the 5-hour rolling spend, per-model "
+         "breakdown, and per-strategy averages. Rate-limit hits and "
+         "soft-limit progress on every page's sidebar.",
+         "💷", TEAL_DARK),
     ]
 
     y = Inches(1.35)
@@ -639,22 +678,22 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
             size=9, colour=MUTED, align=PP_ALIGN.RIGHT,
         )
 
-    for i, (country, successful, failed) in enumerate(outcomes):
-        total = successful + failed
+    for i, (country, matched, differed) in enumerate(outcomes):
+        total = matched + differed
         if total == 0:
             continue
         bar_x = plot_left + Emu(int(bar_slot * i + gap))
 
-        if failed > 0:
-            f_h = Emu(int(plot_height * failed / max_total))
-            f_top = plot_top + plot_height - f_h
-            add_filled_rect(slide, bar_x, f_top, bar_w, f_h, fill=DANGER)
+        if differed > 0:
+            d_h = Emu(int(plot_height * differed / max_total))
+            d_top = plot_top + plot_height - d_h
+            add_filled_rect(slide, bar_x, d_top, bar_w, d_h, fill=DANGER)
 
-        if successful > 0:
-            f_h = Emu(int(plot_height * failed / max_total))
-            s_h = Emu(int(plot_height * successful / max_total))
-            s_top = plot_top + plot_height - f_h - s_h
-            add_filled_rect(slide, bar_x, s_top, bar_w, s_h, fill=SUCCESS)
+        if matched > 0:
+            d_h = Emu(int(plot_height * differed / max_total))
+            m_h = Emu(int(plot_height * matched / max_total))
+            m_top = plot_top + plot_height - d_h - m_h
+            add_filled_rect(slide, bar_x, m_top, bar_w, m_h, fill=SUCCESS)
 
         lab_y = plot_top + plot_height + Inches(0.08)
         lab = add_textbox(
@@ -670,7 +709,7 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
             bar_w + Inches(0.8), Inches(0.22),
         )
         set_text(
-            val.text_frame, f"{successful} / {total}",
+            val.text_frame, f"{matched} / {total}",
             size=9, colour=MUTED, align=PP_ALIGN.CENTER,
         )
 
@@ -680,13 +719,14 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
     add_filled_rect(slide, leg_x, leg_y, Inches(0.18), Inches(0.18), fill=SUCCESS)
     leg1 = add_textbox(slide, leg_x + Inches(0.28), leg_y - Inches(0.03),
                        Inches(3.6), Inches(0.25))
-    set_text(leg1.text_frame, "Accepted (Verifier or Adjudicator)",
+    set_text(leg1.text_frame, "Matches ODMI 2025",
              size=10, colour=BODY)
     add_filled_rect(slide, leg_x + Inches(3.6), leg_y, Inches(0.18), Inches(0.18),
                     fill=DANGER)
     leg2 = add_textbox(slide, leg_x + Inches(3.88), leg_y - Inches(0.03),
                        Inches(4.0), Inches(0.25))
-    set_text(leg2.text_frame, "Rejected or escalated", size=10, colour=BODY)
+    set_text(leg2.text_frame, "Differs from ODMI 2025",
+             size=10, colour=BODY)
 
     note_y = leg_y + Inches(0.45)
     add_filled_rect(slide, chart_box_x, note_y, Inches(0.08), Inches(0.6),
@@ -697,10 +737,12 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
     )
     set_text(
         nb.text_frame,
-        "Caveat: every pair so far is a Policy-dimension question on a "
-        "high-resource country. The Verifier has not yet been asked to "
-        "disprove a known-wrong Researcher answer. The 100% accept rate "
-        "is consistent with the swarm working — and with it being too lenient.",
+        "Comparison is to ODMI's 2025 merged_responses. The current "
+        "sample is small and Policy-dimension heavy. ODMI's assessments "
+        "are one cycle old, so where the swarm differs that does not "
+        "automatically mean the swarm is wrong: the country may have "
+        "changed since the assessment. Each disagreement is worth a "
+        "human glance.",
         size=10, colour=BODY,
     )
 
@@ -748,27 +790,28 @@ def slide_next_steps(prs: Presentation) -> None:
             row_y += item_h
 
     short_items = [
-        ("Hand-mark the Phase A pilot",
-         "10 France questions across all four rubric tiers. Submit "
-         "from the dashboard; D9 lock happens on save."),
-        ("Baseline + strategy comparison",
-         "Run the swarm on the locked 10 with all four Verifier "
-         "strategies. First real accuracy and rejection numbers."),
-        ("First analysis pass",
-         "Accuracy and cost stratified by rubric tier × ODMI dimension. "
-         "Draft methodology + early-results in the dissertation."),
+        ("Scale to harder questions",
+         "Run the swarm beyond Policy on the easy four countries: "
+         "Portal, Quality, and Impact dimensions. Track where accuracy "
+         "starts to fall."),
+        ("Add the lower-resource countries",
+         "Bring Hungary and Estonia into the regular sweep. Country-"
+         "language fetch is the biggest unknown."),
+        ("Verifier strategy comparison",
+         "Four strategies on the same Researcher rows. Hallucination "
+         "catch rate, false rejection rate, tokens per Verifier run."),
     ]
 
     long_items = [
-        ("Phase B — six-country matrix",
-         "FR, DE, NL, RO, HU, EE. Cost–accuracy surface comes "
-         "out of the Haiku / Sonnet / Opus / tiered model experiments."),
+        ("Phase B saturation, six countries",
+         "FR, DE, NL, RO, HU, EE × all 143 questions. Cost–accuracy "
+         "surface across the Haiku / Sonnet / Opus / tiered model mix."),
         ("External validity (2024 cycle)",
          "Pipeline frozen, then run against the 2024 ODMI cycle as a "
          "held-out test. Delta against 2025 is itself a result."),
         ("Dissertation by 2 August 2026",
          "Failure-mode taxonomy and accuracy–cost surface as the two "
-         "primary contributions. Phase C as a stretch."),
+         "primary contributions. Phase C (36 countries) as a stretch."),
     ]
 
     column(x_l, "NEXT TWO WEEKS", DARK, short_items)

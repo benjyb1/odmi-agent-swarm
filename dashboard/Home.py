@@ -228,21 +228,23 @@ def _kpi_html(label: str, value: str, caption: str, accent: str) -> str:
 @st.fragment(run_every=3)
 def kpi_tiles() -> None:
     active = db.active_subtrios()
-    finals = db.finals(limit=1000)
     researcher = db.researcher_runs(limit=1000)
     verifier = db.verifier_runs(limit=1000)
     summary = db.rolling_window_summary()
+    accuracy = db.accuracy_summary()
 
     cost = float(summary.get("cost") or 0.0)
     n_calls = int(summary.get("n_calls") or 0)
 
-    if len(verifier) > 0:
-        pass_count = int((verifier["verdict"] == "pass").sum())
-        pass_rate = f"{pass_count / len(verifier):.0%}"
-        pass_cap = f"{pass_count} of {len(verifier)} runs passed."
+    if accuracy["accuracy"] is not None:
+        acc_value = f"{accuracy['accuracy']:.0%}"
+        acc_caption = (
+            f"{accuracy['n_match']} match / "
+            f"{accuracy['n_differ']} differ vs ODMI 2025."
+        )
     else:
-        pass_rate = "—"
-        pass_cap = "No Verifier runs yet."
+        acc_value = "—"
+        acc_caption = "No comparable pairs yet."
 
     active_cap = "Coordinators idle."
     if len(active) > 0:
@@ -264,9 +266,9 @@ def kpi_tiles() -> None:
     with cols[1]:
         st.markdown(
             _kpi_html(
-                "Total runs",
-                f"{len(researcher)} / {len(verifier)}",
-                f"{len(finals)} pairs finalised. R / V counts.",
+                "Pairs finalised",
+                str(accuracy["n_finalised"]),
+                f"{len(researcher)} R · {len(verifier)} V swarm calls.",
                 "#1E3A5F",
             ),
             unsafe_allow_html=True,
@@ -274,7 +276,7 @@ def kpi_tiles() -> None:
     with cols[2]:
         st.markdown(
             _kpi_html(
-                "Verifier pass rate", pass_rate, pass_cap, "#38A169",
+                "Accuracy vs ODMI", acc_value, acc_caption, "#38A169",
             ),
             unsafe_allow_html=True,
         )
@@ -300,8 +302,8 @@ def country_outcomes_chart() -> None:
 
     st.markdown(
         '<div class="odmi-card">'
-        '<div class="eyebrow">FINALISED PAIRS</div>'
-        '<h3>Pairs by country, success vs failure</h3>',
+        '<div class="eyebrow">SWARM vs ODMI</div>'
+        '<h3>Pairs by country, match vs differ against ODMI 2025</h3>',
         unsafe_allow_html=True,
     )
 
@@ -342,10 +344,12 @@ def country_outcomes_chart() -> None:
             ),
             color=alt.Color(
                 "outcome:N",
-                title="Outcome",
+                title="vs ODMI ground truth",
                 scale=alt.Scale(
-                    domain=["Successful", "Failed"],
-                    range=["#38A169", "#C53030"],
+                    domain=[
+                        "Matches ODMI", "Differs from ODMI", "No ground truth",
+                    ],
+                    range=["#38A169", "#C53030", "#A0AEC0"],
                 ),
                 legend=alt.Legend(
                     orient="bottom", labelFontSize=11,
@@ -360,16 +364,17 @@ def country_outcomes_chart() -> None:
     )
     st.altair_chart(chart, use_container_width=True)
 
-    pct_success = (
-        df[df["outcome"] == "Successful"]["n"].sum() / df["n"].sum()
-        if df["n"].sum() > 0 else 0
-    )
+    n_match = int(df[df["outcome"] == "Matches ODMI"]["n"].sum())
+    n_differ = int(df[df["outcome"] == "Differs from ODMI"]["n"].sum())
+    denom = n_match + n_differ
+    pct_match = (n_match / denom) if denom > 0 else 0
     st.markdown(
         f'<div style="color:#718096; font-size:12px; margin-top:8px;">'
         f'{int(totals.sum())} finalised pairs across {len(country_order)} '
-        f'country/countries. Overall accept rate: {pct_success:.0%}. '
-        f'Success = accepted_by_verifier or accepted_by_adjudicator. '
-        f'Failure includes rejected_* and escalated_*.'
+        f'country/countries. Accuracy vs ODMI 2025: {pct_match:.0%} '
+        f'({n_match} match, {n_differ} differ). ODMI assessments are '
+        f'one cycle old, so a real-world change since 2025 looks like '
+        f'a swarm error here.'
         f'</div>'
         '</div>',
         unsafe_allow_html=True,
@@ -412,39 +417,51 @@ def recent_runs_panel() -> None:
 
 
 # ============================================================
-# Hand-marks status + Human queue (right column)
+# Coverage summary + Human queue (right column)
 # ============================================================
 
-def render_hand_marks_status() -> None:
-    hm = db.hand_marks()
-    questions = db.all_questions()
+def render_coverage_summary() -> None:
+    """Per-country ground-truth coverage from ODMI 2025."""
+    accuracy = db.accuracy_summary()
+    gt_total = db.ground_truth_count()
+    finals = db.finals(limit=10000)
 
     st.markdown(
         '<div class="odmi-card">'
-        '<div class="eyebrow">AUDIT TRAIL · D9 LOCK</div>'
-        '<h3>Hand-marks status</h3>',
+        '<div class="eyebrow">GROUND TRUTH · ODMI 2025</div>'
+        '<h3>Coverage</h3>',
         unsafe_allow_html=True,
     )
 
-    if len(questions) == 0:
-        st.warning("No questions loaded. Run `scripts/load_questions.py`.")
-    elif len(hm) == 0:
+    if gt_total == 0:
         st.warning(
-            f"0 of {len(questions)} questions hand-marked. "
-            "Hand-marks must be locked (D9) before swarm runs count as evidence."
+            "No ODMI ground truth loaded. Run "
+            "`uv run python scripts/load_ground_truth.py`."
         )
-    else:
-        by_country = hm.groupby("country_code").size().to_dict()
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    st.markdown(
+        f'<div style="color:#4A5568; font-size:13px; margin-bottom:10px;">'
+        f'<b>{gt_total:,}</b> ODMI answers loaded across 36 countries × 143 '
+        f'questions. Swarm has covered '
+        f'<b>{accuracy["n_finalised"]}</b> pairs so far.'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    if len(finals) > 0:
+        per_country = (
+            finals.groupby("country_code").size().to_dict()
+        )
         chip_html = '<div style="display:flex; flex-wrap:wrap; gap:8px;">'
-        for country, n in sorted(by_country.items()):
-            pct = n / len(questions)
+        for country, n in sorted(per_country.items()):
             chip_html += (
                 '<div style="background:#F7FAFC; border:1px solid #E2E8F0; '
                 'border-radius:8px; padding:8px 12px; min-width:90px;">'
                 f'<div style="color:#1A202C; font-weight:700; font-size:14px;">{country}</div>'
                 f'<div style="color:#0F766E; font-weight:700; font-size:18px;">{n}</div>'
-                f'<div style="color:#718096; font-size:10px;">'
-                f'of {len(questions)} · {pct:.0%}</div>'
+                '<div style="color:#718096; font-size:10px;">pairs run</div>'
                 '</div>'
             )
         chip_html += "</div>"
@@ -504,7 +521,7 @@ left, right = st.columns([3, 2])
 with left:
     recent_runs_panel()
 with right:
-    render_hand_marks_status()
+    render_coverage_summary()
     render_human_queue()
 
 st.markdown(

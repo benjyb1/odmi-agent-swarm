@@ -68,12 +68,20 @@ def _path_summary(row: pd.Series) -> str:
     return "Path unknown."
 
 
+_MATCH_BADGE = {
+    "match": ("🟢 Matches ODMI", "#38A169"),
+    "differ": ("🔴 Differs from ODMI", "#C53030"),
+    "no_ground_truth": ("⚪ No ODMI record", "#718096"),
+    "no_swarm_answer": ("⚪ Swarm had no answer", "#718096"),
+}
+
+
 def _render_card(row: pd.Series) -> None:
     chip = _status_chip(row["terminal_status"])
     title = f"**{row['question_id']} · {row['country_code']}** — {chip}"
 
     with st.container(border=True):
-        # Top row: title + answer.
+        # Top row: title + answer + match badge.
         c1, c2 = st.columns([3, 1])
         with c1:
             st.markdown(title)
@@ -84,6 +92,16 @@ def _render_card(row: pd.Series) -> None:
         with c2:
             answer = (row.get("final_answer") or "—").strip() or "—"
             st.markdown(f"### Answer: `{answer}`")
+            match_status = row.get("match_status") or "no_ground_truth"
+            badge_text, badge_colour = _MATCH_BADGE.get(
+                match_status, ("⚪ Unknown", "#718096")
+            )
+            st.markdown(
+                f"<div style='font-size:11px; font-weight:700; "
+                f"color:{badge_colour}; margin-top:-8px;'>"
+                f"{badge_text}</div>",
+                unsafe_allow_html=True,
+            )
 
         # Question text.
         if pd.notna(row.get("question_text")):
@@ -102,6 +120,31 @@ def _render_card(row: pd.Series) -> None:
         if pd.notna(row.get("final_source_url")):
             url = row["final_source_url"]
             st.markdown(f"**Source:** [{url}]({url})")
+
+        # ODMI ground truth (D22) — the independent comparison point.
+        gt_response = row.get("ground_truth_response")
+        if pd.notna(gt_response) and str(gt_response).strip():
+            st.markdown(
+                "**ODMI's recorded answer "
+                f"({int(row.get('ground_truth_cycle') or 2025)}):** "
+                f"`{gt_response}`"
+            )
+            gt_expl = row.get("ground_truth_explanation")
+            if pd.notna(gt_expl) and str(gt_expl).strip():
+                with st.expander("ODMI explanation"):
+                    st.write(gt_expl)
+                    awarded = row.get("ground_truth_awarded_score")
+                    max_s = row.get("ground_truth_max_score")
+                    if pd.notna(awarded) and pd.notna(max_s):
+                        st.caption(
+                            f"ODMI awarded {awarded:g} / {max_s:g} "
+                            f"({(awarded / max_s):.0%}) on this question for "
+                            f"{row['country_code']}."
+                        )
+        else:
+            st.caption(
+                "No ODMI ground-truth row joined for this pair."
+            )
 
         # Path + verifier line.
         st.caption(_path_summary(row))
@@ -174,8 +217,33 @@ def render_cards_tab() -> None:
         )
         return
 
+    # Headline accuracy strip against ODMI ground truth.
+    n_total = len(cards)
+    n_match = int((cards["match_status"] == "match").sum())
+    n_differ = int((cards["match_status"] == "differ").sum())
+    n_no_gt = int(cards["match_status"].isin(
+        ["no_ground_truth", "no_swarm_answer"]
+    ).sum())
+    denom = n_match + n_differ
+    accuracy = (n_match / denom) if denom > 0 else 0.0
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("Pairs finalised", n_total)
+    k2.metric("Match ODMI", n_match)
+    k3.metric("Differ from ODMI", n_differ)
+    k4.metric(
+        "Accuracy vs ODMI",
+        f"{accuracy:.0%}" if denom > 0 else "—",
+    )
+    st.caption(
+        "Comparison is against ODMI's 2025 `merged_responses` answers "
+        "per (question, country). Pairs without a ground-truth row are "
+        "excluded from accuracy. ODMI's data may be one cycle behind "
+        f"reality, so genuine swarm-vs-ODMI disagreements are not "
+        f"automatically swarm errors. ({n_no_gt} unmatched joins.)"
+    )
+
     # Filters — keep them light so the page stays scannable.
-    fcol1, fcol2, fcol3 = st.columns([1, 1, 2])
+    fcol1, fcol2, fcol3, fcol4 = st.columns([1, 1, 1, 1])
     with fcol1:
         countries = sorted(cards["country_code"].dropna().unique().tolist())
         c_filter = st.multiselect(
@@ -184,14 +252,25 @@ def render_cards_tab() -> None:
     with fcol2:
         statuses = sorted(cards["terminal_status"].dropna().unique().tolist())
         s_filter = st.multiselect(
-            "Outcome", statuses,
+            "Swarm outcome", statuses,
             default=statuses,
             format_func=lambda s: s.replace("_", " ").title(),
             key="cards_status",
         )
     with fcol3:
+        match_opts = sorted(cards["match_status"].dropna().unique().tolist())
+        m_filter = st.multiselect(
+            "vs ODMI", match_opts, default=match_opts,
+            format_func=lambda s: {
+                "match": "Matches", "differ": "Differs",
+                "no_ground_truth": "No ground truth",
+                "no_swarm_answer": "No swarm answer",
+            }.get(s, s),
+            key="cards_match",
+        )
+    with fcol4:
         text_filter = st.text_input(
-            "Search question text or question_id",
+            "Search question text / id",
             key="cards_text",
             placeholder="e.g. portal, P21, sparql",
         )
@@ -199,6 +278,7 @@ def render_cards_tab() -> None:
     filtered = cards[
         cards["country_code"].isin(c_filter)
         & cards["terminal_status"].isin(s_filter)
+        & cards["match_status"].isin(m_filter)
     ]
     if text_filter:
         needle = text_filter.lower()

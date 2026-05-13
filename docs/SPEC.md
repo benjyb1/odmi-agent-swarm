@@ -394,6 +394,74 @@ Consequences:
   prototype (Claude Code), and a small set of real results to put on
   slides.
 
+### D22: Ground truth from `merged_responses` is the evaluation set; hand-marks are dropped
+
+**Date:** 2026-05-13.
+
+The 2025 ODMI questionnaire xlsx ships a `merged_responses` sheet
+with 5,148 rows: every (question_id, country_code) pair across 36
+countries and 143 questions, with `response` (the country's actual
+answer), `decision` (whether ODMI accepted it), `awarded_score`,
+`max_score`, and `explanation`. This is the ground truth.
+
+Hand-marking was the dangling remnant of the Phase 1 classifier that
+D8 already removed from the critical path. With ODMI's own per-pair
+answers available, the rubric stratification is no longer load-bearing
+on evaluation. The dissertation evaluates by comparing each swarm
+`final_answer` against the matching `response` row from
+`merged_responses`, then stratifies accuracy and cost by ODMI
+dimension (Policy / Portal / Quality / Impact), country, and indicator
+rather than by custom rubric tier.
+
+Supersedes the operational role of:
+- **D6** (rubric definition) – kept as reference, not used at runtime.
+- **D8** (rubric as analytical lens) – analytical lens role taken
+  over by ODMI dimension.
+- **D9** (hand-mark lock rule) – no longer relevant; ground truth
+  is loaded from the xlsx and immutable per cycle.
+- **D10** (hand-mark sample size and stratification) – moot.
+
+Consequences:
+- New SQLite table `ground_truth` mirrors `merged_responses` and is
+  loaded by `scripts/load_ground_truth.py`. The xlsx is canonical;
+  the DB is the join surface for swarm-vs-truth analysis.
+- The Hand-marks page is removed from the dashboard sidebar. The
+  `hand_marks` SQLite table and the two existing locked rows stay
+  in the schema as inert audit-trail history; they're not consulted
+  during evaluation.
+- The country chart on the Home page and the Results page Cards
+  view will surface the match / mismatch against ground truth.
+- RQ2 (rubric stratification) is dropped or reframed as "accuracy
+  varies across ODMI dimensions." RQ5 still stands but the cost
+  surface is stratified by ODMI dimension rather than rubric tier.
+- The dissertation's contribution shifts from "novel rubric +
+  benchmark" to "country-scale agentic-LLM benchmark with cost
+  surface and failure-mode taxonomy." Less methodological novelty,
+  more empirical depth, more defensible against the available
+  timeline.
+
+Data-leakage caveat: ODMI publishes the `merged_responses` answers
+on data.europa.eu, so the Researcher's Tavily search could in
+principle find ODMI's own answer page mid-run. The mitigation is to
+add the data.europa.eu Open Data Maturity sub-domain to a
+deny-list during evaluation runs, and to record any swarm pair whose
+source URL came from there. Tracked as Q-DASH-LEAK below.
+
+### D23: Streamlit Cloud auto-deploys on push to `main`
+
+**Date:** 2026-05-13.
+
+The public dashboard at
+`https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/`
+redeploys automatically whenever the `main` branch advances.
+`ODMI_READ_ONLY=1` is set in the app's secrets so the Run Console,
+Verifier Strategies, and Hand-marks buttons (where present) short-
+circuit with a toast. Every commit to `main` that touches the
+dashboard must be followed by a `git push origin main`; the deploy
+takes 3–5 minutes for a full rebuild, ~30 s for an incremental
+one. Verification: open the URL after a push and confirm the new
+content is live before claiming the change is done.
+
 ---
 
 ## Current status
