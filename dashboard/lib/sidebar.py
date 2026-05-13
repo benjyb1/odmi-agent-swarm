@@ -11,14 +11,38 @@ from pathlib import Path
 
 import streamlit as st
 
-from dashboard.lib import db
+from dashboard.lib import db, mode
 
 
 DEFAULT_SOFT_LIMIT_USD = 5.0
 
 
+def render_read_only_banner() -> None:
+    """Show a small badge in the sidebar when ODMI_READ_ONLY is set."""
+    if not mode.is_read_only():
+        return
+    with st.sidebar:
+        st.markdown(
+            """
+            <div style="background:#0F766E; color:#FFFFFF; padding:10px 12px;
+                        border-radius:8px; margin-bottom:14px;
+                        font-size:12px; line-height:1.45;">
+              <div style="font-weight:700; letter-spacing:0.08em;
+                          font-size:11px; margin-bottom:4px;">
+                🔒 READ-ONLY DEMO
+              </div>
+              The dashboard reads from a snapshot of the SQLite store.
+              Buttons that would dispatch LLM calls or commit hand-marks
+              are disabled and will pop a toast instead.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 def render_session_widget() -> None:
     """Pin the Claude session widget to the sidebar."""
+    render_read_only_banner()
     soft_limit = st.session_state.get("soft_limit_usd", DEFAULT_SOFT_LIMIT_USD)
     summary = db.rolling_window_summary()
 

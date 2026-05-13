@@ -15,7 +15,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from dashboard.lib import db
+from dashboard.lib import db, mode
 from dashboard.lib.sidebar import page_header, render_session_widget
 
 
@@ -92,12 +92,14 @@ with col_a:
     if missing:
         if st.button(f"▶ Run missing strategies: {', '.join(missing)}",
                      type="primary", use_container_width=True):
-            _launch_strategies(picked_row, missing)
+            if not mode.block_if_read_only():
+                _launch_strategies(picked_row, missing)
     else:
         st.success("All four strategies already run for this row.")
 with col_b:
     if st.button("▶ Re-run ALL four strategies", use_container_width=True):
-        _launch_strategies(picked_row, strategies)
+        if not mode.block_if_read_only():
+            _launch_strategies(picked_row, strategies)
 
 
 def _launch_strategies(row, strategy_list):

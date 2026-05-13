@@ -21,7 +21,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from dashboard.lib import db
+from dashboard.lib import db, mode
 from dashboard.lib.sidebar import page_header, render_session_widget
 
 
@@ -289,6 +289,9 @@ with st.expander(
                 "💾 Save, commit, and lock", type="primary",
                 use_container_width=True,
             )
+
+        if submitted and mode.block_if_read_only():
+            submitted = False
 
         if submitted:
             errors = []

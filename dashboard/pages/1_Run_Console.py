@@ -17,7 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from dashboard.lib import db
+from dashboard.lib import db, mode
 from dashboard.lib.sidebar import page_header, render_session_widget
 from scripts.dispatch_subtrios import (
     DEFAULT_SOFT_LIMIT_USD,
@@ -214,6 +214,8 @@ def render_launcher() -> None:
         )
 
     if clicked:
+        if mode.block_if_read_only():
+            return
         _trigger_release(
             questions=questions, countries=countries, strategy=strategy,
             researcher_model=researcher_model, verifier_model=verifier_model,
