@@ -31,9 +31,10 @@ def render_read_only_banner() -> None:
                           font-size:11px; margin-bottom:4px;">
                 🔒 READ-ONLY DEMO
               </div>
-              The dashboard reads from a snapshot of the SQLite store.
-              Buttons that would dispatch LLM calls or commit hand-marks
-              are disabled and will pop a toast instead.
+              This is a public mirror of a private local dashboard.
+              Live ODMI ground-truth comparison and historical swarm
+              runs are visible. Buttons that would dispatch new LLM
+              calls are disabled and will pop a toast instead.
             </div>
             """,
             unsafe_allow_html=True,

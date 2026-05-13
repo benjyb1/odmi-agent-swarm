@@ -4,7 +4,15 @@ Locked methodological choices for the ODMI Agent Swarm dissertation. This is
 the document an examiner reads to understand what was done and why. Changes
 to anything here require a new numbered decision in `docs/SPEC.md`.
 
-Last reviewed: 2026-05-11.
+Last reviewed: 2026-05-13.
+
+> **2026-05-13 update (per D22).** Sections 3 and 4 below — the
+> three-dimension answerability rubric and the hand-marking protocol —
+> are retained as historical record but are no longer operational.
+> Evaluation now uses ODMI's own `merged_responses` answers as ground
+> truth, stratified by the ODMI dimension (Policy / Portal / Quality /
+> Impact) rather than a custom rubric tier. See Section 6 for the live
+> evaluation methodology.
 
 ---
 
@@ -32,9 +40,9 @@ succeeds and where it fails.
 ODMI questionnaire items at a quality level that approximates the existing
 human process for a controlled baseline country?
 
-**RQ2.** How does answer quality vary along three a priori axes of question
-difficulty — Evidence Accessibility, Answer Determinism, and Source
-Complexity?
+**RQ2.** How does answer quality vary across the four ODMI dimensions
+(Policy, Portal, Quality, Impact) and across the indicators within
+them? *(Reframed at D22 from the original rubric-tier formulation.)*
 
 **RQ3.** How does answer quality vary across language and portal-maturity
 regimes when the same system is run on a stratified six-country sample?
@@ -44,10 +52,10 @@ of agentic LLMs as currently constituted, and what reformulations would bring
 them in scope?
 
 **RQ5.** What is the trade-off between answer quality and computational cost
-(input tokens, output tokens, wall-clock latency) for ODMI questions of
-different rubric profiles? Are some classes of question cheap-and-correct,
-others expensive-and-still-wrong, and where in the rubric space does each
-regime sit?
+(input tokens, output tokens, wall-clock latency) across ODMI dimension ×
+country × optimisation condition? Are some classes of question
+cheap-and-correct, others expensive-and-still-wrong, and where in this
+surface does each regime sit?
 
 ---
 
@@ -206,28 +214,50 @@ unresolved is flagged for human review.
 
 ## 6. Evaluation methodology
 
-### Ground-truth cycles (per D13)
+### Ground truth (per D13, D22)
 
-The 2025 ODMI cycle is the primary evaluation set. The parsed 2025
-questionnaire and France's 2025 response sheet are already in the repo.
-The 2024 cycle is held back as an independent external-validity set; it
-is extracted from PDFs and run only after the pipeline is finalised on
-2025. Prompt and rubric tuning never touch 2024 evidence.
+The 2025 ODMI cycle's `merged_responses` sheet ships every country's
+answer to every question with ODMI's accepted decision and explanation:
+5,148 (question, country) rows across 36 countries × 143 questions.
+This is the primary evaluation set. Loaded into the SQLite `ground_truth`
+table by `scripts/load_ground_truth.py`.
+
+The 2024 cycle is held back as an independent external-validity set
+(extracted from the 2024 PDFs only after the pipeline is finalised
+on 2025). Prompt and retrieval tuning never touch 2024 evidence.
 
 ### Stage 1: retrospective benchmark (2025)
 
-Run the finalised swarm on the (question, country) pairs from the 2025
-ODMI cycle for the Phase B six-country set. Every pair has a known human
-answer. Compute, separately:
+Run the swarm on (question, country) pairs from the 2025 ODMI cycle for
+the Phase B six-country set. Compare each swarm `final_answer` against
+the `response` column on the corresponding `ground_truth` row. The match
+SQL lives in `dashboard/lib/db.py:_MATCH_STATUS_SQL` and classifies each
+pair as `match`, `differ`, `no_ground_truth`, or `no_swarm_answer`.
+"Yes"-family multi-tier responses (`yes`, `yes, 3-5`, `yes, >9`, etc.)
+all match a swarm `yes`.
 
-- **Accuracy** stratified by rubric tier, ODMI dimension, country, and
-  language.
-- **Cost** stratified by the same axes: input tokens, output tokens, total
-  tokens, wall-clock latency. Mean and 95th-percentile per stratum.
+Compute, separately:
+
+- **Accuracy** stratified by ODMI dimension (Policy / Portal / Quality /
+  Impact), indicator, country, and (Phase B) language. Single fraction
+  per stratum: matches / (matches + differs).
+- **Cost** stratified by the same axes: input tokens, output tokens,
+  wall-clock latency. Mean and 95th-percentile per stratum.
 - **Cost-per-correct-answer** as a joint metric.
-- **Failure mode taxonomy** with categorical labels: wrong source,
-  outdated evidence, hallucinated source, irretrievable source, ambiguous
-  question, language-comprehension failure.
+- **Failure mode taxonomy** by post-hoc clustering of the differ-pairs:
+  wrong source, outdated evidence (ODMI may be a cycle behind reality),
+  hallucinated source, irretrievable source, ambiguous question,
+  language-comprehension failure.
+
+### Data-leakage mitigation
+
+ODMI publishes the `merged_responses` answers on data.europa.eu, so a
+Researcher's Tavily search could in principle surface ODMI's own answer
+page mid-run. The mitigation is a deny-list on the evaluation-cycle's
+data.europa.eu sub-domain enforced inside `agents/tools/search.py`, and
+any swarm pair whose chosen source URL points there gets flagged for
+manual review and excluded from accuracy aggregates. The flag column
+on `phase2_final` is the tracking surface for this.
 
 ### Stage 2: external-validity test (2024)
 
@@ -256,9 +286,9 @@ in Q6 / SPEC.md:
   CLIProxyAPI / Claude Max routing per D1 (with a footnote noting the
   arithmetic equivalent if the calls had been billed direct).
 
-Reporting groups answers by (rubric_tier × ODMI_dimension × country) and
-reports both accuracy and cost. The cost surface across the rubric space
-is the primary RQ5 output.
+Reporting groups answers by (ODMI dimension × country × condition) and
+reports both accuracy and cost. The cost surface across this space is
+the primary RQ5 output.
 
 ### Optimisation experiments
 
@@ -287,10 +317,10 @@ strategies (full prompts in `docs/AGENT_DESIGN.md` Section 4.10):
 | `verifier-steelman` | Two-step: articulate the strongest case for the Researcher, then attack even the strongest. |
 | `verifier-blind` | Verifier never sees the Researcher's answer label, only the source and quote. Forms its own answer, Python compares. |
 
-For each strategy we report: hallucination catch rate (rejected when
-hand-mark disagrees with the Researcher), false rejection rate
-(rejected when hand-mark agrees with the Researcher), and tokens per
-Verifier run.
+For each strategy we report: hallucination catch rate (Verifier rejects
+a Researcher answer that also differs from ODMI ground truth), false
+rejection rate (Verifier rejects a Researcher answer that matches ODMI
+ground truth), and tokens per Verifier run.
 
 **Family 3: model variants.** Aimed at the joint accuracy-cost
 surface through model selection. Anthropic's catalogue spans roughly
@@ -322,8 +352,9 @@ The contributions:
   human-equivalent.
 
 All three feed the dissertation. The combined surface is the
-headline figure: accuracy on one axis, cumulative cost on the other,
-one marker per condition, coloured by rubric tier.
+headline figure: accuracy (matches / matches + differs vs ODMI) on
+one axis, cumulative cost on the other, one marker per condition,
+coloured by ODMI dimension.
 
 ### Contribution
 
@@ -337,13 +368,13 @@ them.
 
 | Confound | Mitigation |
 |---|---|
-| Evaluator bias (same researcher hand-marks and analyses). | Hand-marks locked to git before swarm runs (D9). Commit SHA stored alongside each mark. |
-| Hallucination by the Researcher agent. | Adversarial Verifier with independent retrieval. Dual confidence scoring. |
+| Ground-truth contamination (Researcher could find ODMI's published answer mid-run). | Deny-list on the evaluation cycle's data.europa.eu sub-domain enforced inside `agents/tools/search.py`. Any pair whose source URL was from a denied domain is flagged on `phase2_final` and excluded from accuracy aggregates. |
+| Ground-truth staleness (ODMI assessments are one cycle old; reality may have moved on). | Each swarm-vs-ODMI disagreement is reviewed by hand before being counted as a swarm error. Pairs where reality has moved are recorded as `evidence_disagreement_explained` rather than as failures. |
+| Hallucination by the Researcher agent. | Adversarial Verifier with independent retrieval. Dual confidence scoring. Substring check on the Researcher's cited URL. |
 | Prompt drift across iterations. | Prompt versioning (D5). Every score links to the exact prompt version that produced it. |
-| Selection bias in hand-mark sample. | Stratification design (D10). Sample composition locked before marking begins. |
 | Language quality variance. | Static language confidence table populated by an early pilot. Native / DeepL / human routing per language. |
-| Cycle ambiguity (2024 vs 2025 vs 2026). | Resolved in D13. 2025 primary; 2024 held-out external-validity set; 2026 is the live deployment. |
-| Cost gaming via prompt or retrieval tuning. | Optimisation variants are reported separately with explicit condition labels. The accuracy-cost surface is the output, not "the optimised pipeline." Baseline is always reported alongside any optimised variant. |
+| Cycle ambiguity (2024 vs 2025 vs 2026). | 2025 ground truth primary (per D13/D22); 2024 held back as external-validity test; 2026 is the live deployment. |
+| Cost gaming via prompt or retrieval tuning. | Optimisation variants are reported separately with explicit `condition_label`. The accuracy-cost surface is the output, not "the optimised pipeline." Baseline is always reported alongside any optimised variant. |
 
 ---
 

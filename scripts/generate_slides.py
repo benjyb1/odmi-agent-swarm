@@ -417,16 +417,16 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
             caption=f"{stats['n_researcher']} R · {stats['n_verifier']} V · "
                     f"{stats['n_adjudications']} A.")
     add_kpi(slide, x0 + 1 * (col_w + gap), y, col_w, h,
+            label="Ground-truth coverage",
+            value=f"{stats['n_ground_truth']:,}",
+            caption="ODMI answers loaded (36 countries × 143 questions).",
+            accent=NAVY)
+    add_kpi(slide, x0 + 2 * (col_w + gap), y, col_w, h,
             label="Accuracy vs ODMI",
             value=acc_str,
             caption=f"{stats['n_match']} / {stats['n_comparable']} match "
                     f"against ODMI 2025.",
             accent=SUCCESS)
-    add_kpi(slide, x0 + 2 * (col_w + gap), y, col_w, h,
-            label="Ground-truth coverage",
-            value=f"{stats['n_ground_truth']:,}",
-            caption="ODMI answers loaded (36 countries × 143 questions).",
-            accent=NAVY)
     add_kpi(slide, x0 + 3 * (col_w + gap), y, col_w, h,
             label="Total LLM spend",
             value=f"${stats['cost_total']:.2f}",

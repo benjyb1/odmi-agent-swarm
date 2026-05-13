@@ -28,15 +28,14 @@ BASE_URL = "http://127.0.0.1:8520"
 
 # Each tuple: (label, path, optional click after load)
 PAGES = [
-    ("home",         "/"),
-    ("run_console",  "/Run_Console"),
-    ("results",      "/Results"),
-    ("questions",    "/Questions"),
-    ("strategy_lab", "/Strategy_Lab"),
-    ("hand_marks",   "/Hand_marks"),
-    ("models",       "/Models"),
-    ("costs",        "/Costs"),
-    ("prompts",      "/Prompts"),
+    ("home",                 "/"),
+    ("run_console",          "/Run_Console"),
+    ("results",              "/Results"),
+    ("questions",            "/Questions"),
+    ("verifier_strategies",  "/Verifier_Strategies"),
+    ("models",               "/Models"),
+    ("costs",                "/Costs"),
+    ("prompts",              "/Prompts"),
 ]
 
 

@@ -11,9 +11,8 @@ At the start of every session, read these in order:
 
 1. `docs/SPEC.md` — the living spec. Numbered decisions, current status, change log,
    open questions. The single source of truth for project state.
-2. `docs/METHODOLOGY.md` — the locked methodological choices. Rubric definitions,
-   hand-marking protocol, evaluation plan. This is what an examiner needs to
-   understand the methodology.
+2. `docs/METHODOLOGY.md` — the locked methodological choices. Evaluation against
+   ODMI ground truth, stratification by ODMI dimension, optimisation experiments.
 3. Notion master page (id `331acc75-be02-8163-9169-e327fed97055`) — research
    narrative, supervision log, weekly observations. Fetch via the Notion MCP if
    asked about anything not in the repo.
@@ -25,9 +24,7 @@ examiner's scrutiny.
 
 - **Receipts everywhere.** Every prompt is versioned in `prompt_versions`. Every
   LLM call writes a row that includes model version, prompt version, full raw
-  response, and a timestamp. Every hand-mark is dated and committed to git before
-  any automated run touches the same question. The git history is the decision
-  history.
+  response, and a timestamp. The git history is the decision history.
 - **No hallucination.** If a source does not confirm a claim, the system does
   not pretend it does. All agent outputs trace to a specific URL with a quoted
   passage.
@@ -36,41 +33,50 @@ examiner's scrutiny.
   sufficient.
 - **Reproducibility.** An examiner with the repo and a copy of the SQLite file
   must be able to replay every evaluation from logs alone.
-- **Honest evaluation.** Negative results count. If the rubric fails to predict
-  difficulty, that is a finding worth reporting, not a problem to hide.
+- **Honest evaluation.** Negative results count. Disagreements between the swarm
+  and ODMI ground truth are findings worth reporting, not problems to hide.
 
-## Audit-trail rule (Option 3 specific)
+## Evaluation (per D22)
 
-The three-dimension rubric is no longer a runtime classifier. It is an
-analytical lens for stratifying swarm results. To avoid evaluator bias, hand-marks
-must be locked before swarm runs.
+The swarm is evaluated by direct comparison against ODMI's published answers
+for each (question, country) pair.
 
-- Hand-marks live in `data/hand_marks/` as CSV.
-- A hand-mark is "locked" when it has been committed to git.
-- No swarm result may reference a hand-mark that was not committed before the
-  swarm run started.
-- The mirror table `hand_marks` in SQLite records the git commit SHA that locked
-  each row.
+- Ground truth lives in the SQLite `ground_truth` table, mirrored from
+  the `merged_responses` sheet of `data/questions/2025_odm_questionnaire_data.xlsx`
+  by `scripts/load_ground_truth.py`. 5,148 rows: 36 countries × 143 questions.
+- Each finalised swarm pair joins to its ground-truth row and is classified
+  `match` / `differ` / `no_ground_truth` by the SQL CASE in
+  `dashboard/lib/db.py:_MATCH_STATUS_SQL`.
+- Stratification axis is the ODMI dimension (Policy / Portal / Quality / Impact)
+  plus country, not a custom rubric.
+- ODMI's answers can be one cycle old: a swarm-vs-ODMI disagreement is not
+  automatically a swarm error. Each disagreement deserves a human glance.
+- Data-leakage risk: ODMI publishes its own answers on data.europa.eu, so a
+  Researcher's Tavily search could surface the answer page. The mitigation
+  is a deny-list on the evaluation-cycle domain (tracked in SPEC).
 
-If you are about to run the swarm and the relevant hand-marks are uncommitted,
-stop and commit first.
+D6/D8/D9/D10 (the rubric and hand-marking workflow) are superseded by D22.
+Hand-mark CSV files and the `hand_marks` SQLite table remain in the repo as
+inert audit-trail history only.
 
 ## Repo layout
 
 ```
-agents/             # Agent code (only classifier.py exists)
+agents/             # Researcher, Verifier, Adjudicator, shared tools
+dashboard/          # Streamlit dashboard (Home + 7 pages + lib helpers)
 data/
-  questions/        # Parsed ODMI question bank (JSON + xlsx)
-  hand_marks/       # Hand-marked rubric scores (the audit-trail evidence)
-  odmi.db           # SQLite — every classification, every run, every prompt
+  questions/        # ODMI question bank (xlsx + parsed JSON)
+  hand_marks/       # Inert. Audit-trail only, superseded by D22.
+  odmi.db           # SQLite. Schema in scripts/setup_sqlite.py.
 docs/
   SPEC.md           # Living spec. Updated every session.
-  METHODOLOGY.md    # Locked methodology. Rubric + hand-marking + evaluation.
+  METHODOLOGY.md    # Locked methodology: ODMI ground truth, evaluation plan.
   PROJECT_LOG.md    # Session-by-session technical log.
-  REPORT_PRELIM.md  # Preliminary project report (due 22 May 2026).
-  references.bib    # BibTeX bibliography for the report and dissertation.
-evaluation/         # Analysis scripts (empty for now)
-scripts/            # Setup and runner scripts
+  REPORT_PRELIM.md  # Preliminary report (due 22 May 2026).
+  references.bib    # BibTeX bibliography.
+  PROGRESS_SLIDES_*.pptx  # Generated by scripts/generate_slides.py.
+evaluation/         # Analysis scripts (empty for now).
+scripts/            # Setup and runner scripts.
 tests/              # pytest
 .env                # Never committed. Local API keys.
 ```
@@ -90,31 +96,36 @@ tests/              # pytest
 ## Tech stack
 
 - Python 3.11+, `uv` for dependency management.
-- LangGraph for the Phase 2 agent swarm (Coordinator, Researcher, Adversarial
-  Verifier). Not built yet.
-- Claude (Sonnet currently) routed through CLIProxyAPI on `localhost:8317`, using
-  Benjy's Claude Max subscription. No direct Anthropic API billing.
+- Researcher / Verifier / Adjudicator built; Coordinator is a plain Python
+  state machine, not LangGraph (see `scripts/run_coordinator.py` for why).
+- Claude (Sonnet currently) routed through CLIProxyAPI on `localhost:8317`,
+  using Benjy's Claude Max subscription. No direct Anthropic API billing.
 - Tavily for web search; Playwright for browser automation; DeepL for
   low-resource language fallback (Phase B onward).
 - SQLite at `data/odmi.db` is the primary data store. Schema in
   `scripts/setup_sqlite.py`.
+- Streamlit dashboard at `dashboard/Home.py`; deployed publicly to
+  Streamlit Cloud (see D23). `ODMI_READ_ONLY=1` disables write buttons there.
 
 ## Common commands
 
 ```bash
-# Activate env
-source .venv/bin/activate
-
 # Create or refresh DB
 uv run python scripts/setup_sqlite.py
+uv run python scripts/load_questions.py
+uv run python scripts/load_ground_truth.py
 
-# Parse the official questionnaire xlsx into JSON
-uv run python scripts/parse_questions.py
+# Launch the dashboard locally
+uv run streamlit run dashboard/Home.py
+
+# Dispatch a swarm batch
+uv run python scripts/dispatch_subtrios.py --questions P1 --countries FR DE
+
+# Regenerate the slide deck against current DB state
+uv run python scripts/generate_slides.py
 
 # Run unit tests
 uv run pytest
-
-# (Phase 1 runner exists but is not wired for option 3 — see SPEC D8.)
 ```
 
 ## Working preferences
@@ -129,6 +140,8 @@ uv run pytest
 
 ## What's actually built
 
-See `docs/SPEC.md` for the current status block. As of 2026-05-11: repo
-scaffolded, SQLite schema deployed (empty), questions parsed (143 questions),
-no LLM calls executed yet, no swarm code, partial hand-marks (two questions).
+See `docs/SPEC.md` for the current status block. As of 2026-05-13: full
+three-agent swarm running end-to-end, nine-page Streamlit dashboard live
+(local and on Streamlit Cloud), 143 questions catalogued, 5,148 ODMI
+ground-truth rows loaded, 11 finalised swarm pairs across FR/DE/NL/RO with
+100% match against ODMI on the current Policy-dimension sample.

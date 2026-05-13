@@ -466,7 +466,7 @@ content is live before claiming the change is done.
 
 ## Current status
 
-**Phase:** Phase A. End-to-end swarm built; dashboard live; hand-mark migration outstanding.
+**Phase:** Phase A. Swarm running end-to-end; dashboard live (local + Streamlit Cloud); ODMI ground truth loaded; ready to scale to harder questions and more countries.
 
 ### Built (verified)
 
@@ -499,24 +499,34 @@ content is live before claiming the change is done.
 - End-to-end coordinator run on P1/FR completed: Researcher
   yes(0.72) → Verifier rejected → Adjudicator accepted_researcher.
 - `tests/test_classifier.py` covers the Pydantic models for the
-  legacy classifier path.
-- Two hand-marked France questions (P1 and PT4), both 9/9 Highly
-  Likely, still in `data/ODMI_2025_Questions.docx`.
+  legacy classifier path (kept as inert audit-trail history).
+- `ground_truth` table loaded: 5,148 ODMI 2025 answers across all 36
+  countries × 143 questions. Joined to every finalised pair via
+  `_MATCH_STATUS_SQL` in `dashboard/lib/db.py`.
+- 11 finalised swarm pairs across FR / DE / NL / RO, all matching
+  ODMI 2025. Total spend ~$1.02.
+- Streamlit Cloud public deploy at
+  `https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/`
+  (set to public viewer access, `ODMI_READ_ONLY=1` in secrets).
+- Slide deck `docs/PROGRESS_SLIDES_2026-05-13.pptx` regenerated against
+  the ground-truth schema.
 
 ### Not yet built
 
-- Hand-mark migration from the Word document to the CSV workspace
-  (`data/hand_marks/france_handmarks.csv`). Blocking D9: without
-  committed hand-marks, swarm rows are exploratory only.
-- Pilot batch of 10 hand-marks for France across the difficulty range
-  (D10). Resolves Q1.
-- The three deliberate deferrals from the day-5 contract audit: resume
-  from interruption (D22-D25), Researcher CAPTCHA / 403 detection,
-  and the human-queue CSV writer. Trigger conditions, symptoms, and
-  build sketches live in `docs/KNOWN_GAPS.md`. Carry until one bites.
-- Question-bank → SQLite import (`questions` table is empty;
-  Questions page reads JSON).
-- 22 May slide deck (`docs/PROGRESS_SLIDES.md`).
+- Scale-out beyond Policy: Portal, Quality, and Impact dimensions on
+  the current four-country set.
+- Add Hungary and Estonia to the regular sweep (Phase B saturation).
+- Verifier strategy comparison (D15/Q12): only `verifier-disprove`
+  has run so far; negation, steelman, blind still to compare.
+- Family-1 cost-side experiments (prompt-compressed, retrieval-tight,
+  cache-hot, model-fallback). Family-3 model variants
+  (Haiku / Sonnet / Opus / tiered).
+- The three deliberate deferrals from the day-5 contract audit:
+  resume-from-interruption, Researcher CAPTCHA / 403 detection, and
+  the human-queue CSV writer (`docs/KNOWN_GAPS.md`).
+- Data-leakage deny-list inside `agents/tools/search.py` for the
+  evaluation cycle's data.europa.eu sub-domain (per D22).
+- External-validity test against the 2024 cycle.
 - `evaluation/` analysis scripts.
 - Notion master page sync with the new state.
 
@@ -576,6 +586,7 @@ content is live before claiming the change is done.
 
 | Date | Change |
 |---|---|
+| 2026-05-13 (evening) | D22 added: ODMI ground truth supersedes hand-marks. New `ground_truth` SQLite table loaded from `merged_responses` (5,148 rows, 36 countries × 143 questions) via `scripts/load_ground_truth.py`. `dashboard/lib/db.py:_MATCH_STATUS_SQL` classifies each finalised pair against ODMI's recorded answer; Results Cards now show ODMI's answer next to the swarm's with a match badge; Home page KPI strip and country chart rebuild on accuracy vs ODMI rather than terminal_status; Hand-marks page removed from sidebar; slide deck regenerated against the new schema. D23 added: Streamlit Cloud auto-deploys on push to `main`, dashboard verifier needed after every dashboard-touching push. METHODOLOGY.md Section 6 rewritten; Sections 3 and 4 retained as historical record with a header note. RQ2 reframed to ODMI dimensions. Sample sizes for hand-marking (D10) are no longer load-bearing. |
 | 2026-05-13 | Coordinator follow-ups. `run_coordinator.py --dry-run` and `--walkthrough` flags added. Dry-run gates the five `phase2_*` and `subtrio_status` writes; `claude_usage_log` deliberately stays on so real token spend keeps counting toward the rolling 5-h budget. Smoke test on P1/FR passed: zero new rows in gated tables, six usage-log rows recorded. `docs/KNOWN_GAPS.md` added: documents the three deferred failure modes (resume / D22-D25, CAPTCHA detection, human-queue CSV) with trigger conditions and build sketches; indexed from SPEC.md's "Where to look for what" table. |
 | 2026-05-12 | D19 (Streamlit dashboard), D20 (rolling-window credit policy), D21 (three new schema tables: subtrio_status, claude_usage_log, model_defaults) added. Q-DASH-1..4 opened. Phase 2 complete: Verifier with four strategies built and smoke-tested. Phase 3 complete: Coordinator (run_coordinator.py), Adjudicator (agents/adjudicator.py), dispatcher (dispatch_subtrios.py), and cleanup_subtrios.py written. End-to-end P1/FR coordinator pass succeeded with all six LLM calls writing claude_usage_log rows carrying subtrio_id. Streamlit dashboard built (9 pages) and tested: 9/9 Playwright page loads clean, 4/4 AppTest cases pass, end-to-end Release from the UI spawns a real dispatcher subprocess and writes the subtrio_status row. |
 | 2026-05-11 (late evening) | D18 (model variants Haiku / Sonnet / Opus as a third optimisation family). Q15 opened (model assignment in the tiered combination). Foundation code landed: SQLite migrated to nine tables, Pydantic contracts, shared tools (search, fetch, substring, validator, LLM wrapper), Researcher v1 prompt and orchestration, run_researcher.py with --walkthrough. First end-to-end dry run on P1/FR succeeded: answer "yes" matching the hand-mark, $0.041 cost, 23s wall-clock, source on data.gouv.fr (domain trust 1.0). |
@@ -591,13 +602,15 @@ content is live before claiming the change is done.
 
 | Question | Where |
 |---|---|
-| What is the rubric? | `docs/METHODOLOGY.md`. |
-| What is the hand-marking protocol? | `data/hand_marks/PROTOCOL.md`. |
+| What is the evaluation methodology? | `docs/METHODOLOGY.md` (Section 6). |
+| Where is the ODMI ground truth? | SQLite table `ground_truth`, loaded from `data/questions/2025_odm_questionnaire_data.xlsx` (sheet `merged_responses`) by `scripts/load_ground_truth.py`. |
+| How is "match vs ODMI" defined? | `_MATCH_STATUS_SQL` in `dashboard/lib/db.py`. |
 | Why did we make decision X? | This file (`docs/SPEC.md`), search for "Dx". |
 | What did I do last session? | `docs/PROJECT_LOG.md`. |
 | What did the supervisor say? | Notion supervision log. |
 | Where are the parsed questions? | `data/questions/odmi_2025_questions.json`. |
-| Where are the hand-marks? | `data/hand_marks/france_handmarks.csv`. |
+| Where is the live dashboard? | `https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/` (public, read-only). |
 | Where is the prelim draft? | `docs/REPORT_PRELIM.md`. |
 | Where are citations? | `docs/references.bib`. |
 | Known gaps and anticipated failure modes? | `docs/KNOWN_GAPS.md`. |
+| Hand-mark CSVs (historical, superseded by D22)? | `data/hand_marks/`. |

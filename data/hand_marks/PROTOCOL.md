@@ -1,9 +1,23 @@
 # Hand-Marking Protocol
 
+> **Superseded by D22 on 2026-05-13.** ODMI's `merged_responses`
+> sheet ships per-country answers for all 5,148 (question, country)
+> pairs. Evaluation now compares the swarm's `final_answer` against
+> that ground truth directly. The custom three-dimension rubric and
+> the hand-marking workflow described below are retained as historical
+> record only. The two existing France hand-marks (P1, PT4) remain in
+> the `hand_marks` SQLite table as inert audit-trail history. No new
+> hand-marks are needed.
+>
+> See `docs/METHODOLOGY.md` Section 6 for the live evaluation
+> methodology.
+
+---
+
+## Original protocol (historical record)
+
 How to score a (question, country) pair against the answerability rubric so
-that another evaluator could reproduce the result. This protocol is locked.
-Any change requires a numbered decision in `docs/SPEC.md` and a new version
-of this file.
+that another evaluator could reproduce the result. This protocol was locked.
 
 Version 1, dated 2026-05-11.
 

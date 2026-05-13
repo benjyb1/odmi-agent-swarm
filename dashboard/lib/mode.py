@@ -2,13 +2,13 @@
 
 Set `ODMI_READ_ONLY=1` (e.g. in Streamlit Community Cloud's app
 secrets) to flip the dashboard into a view-only mode. The Run
-Console, Verifier Strategies workbench, and Hand-marks form keep
-rendering their UI but their submit handlers short-circuit and
-show a toast saying the action only runs on a local install.
+Console and the Verifier Strategies workbench keep rendering their
+UI but their submit handlers short-circuit and show a toast saying
+the action only runs on a local install.
 
-Why: the LLM dispatch path needs CLIProxyAPI on localhost:8317,
-and the hand-mark save path needs a writable filesystem and a git
-identity for the D9 commit. Neither survives a hosted deploy.
+Why: the LLM dispatch path needs CLIProxyAPI on localhost:8317.
+The public Streamlit Cloud deploy is a read-only mirror of the
+local dashboard's data, not a place to fire swarm runs.
 """
 
 from __future__ import annotations
@@ -18,9 +18,9 @@ import os
 import streamlit as st
 
 LOCAL_ONLY_MESSAGE = (
-    "This action runs LLM calls or writes to git, which only works "
-    "on a local install. Clone the repo and run "
-    "`uv run streamlit run dashboard/Home.py`."
+    "This action dispatches LLM calls through CLIProxyAPI on "
+    "localhost:8317, so it only works on a local install. Clone the "
+    "repo and run `uv run streamlit run dashboard/Home.py`."
 )
 
 

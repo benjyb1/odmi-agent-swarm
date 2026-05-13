@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -181,23 +182,20 @@ def render_launcher() -> None:
             f"${est.budget_remaining_usd:.2f} remaining."
         )
 
-    # Hand-mark lock check
-    hm = db.hand_marks()
-    if len(hm) > 0:
-        locked_keys = {
-            (r["question_id"], r["country_code"])
-            for _, r in hm.iterrows()
-            if r.get("locked_by_commit")
-        }
-    else:
-        locked_keys = set()
+    # Ground-truth coverage check (per D22, superseded the hand-mark lock check).
     requested_keys = {(q, c) for q in questions for c in countries}
-    unlocked = requested_keys - locked_keys
-    if unlocked:
+    with sqlite3.connect(REPO_ROOT / "data" / "odmi.db") as _gt_conn:
+        gt_rows = _gt_conn.execute(
+            "SELECT question_id, country_code FROM ground_truth"
+        ).fetchall()
+    gt_keys = {(qid, cc) for qid, cc in gt_rows}
+    missing = requested_keys - gt_keys
+    if missing:
         st.caption(
-            f"⚠ Hand-mark lock check: {len(unlocked)} of {len(requested_keys)} pairs "
-            "have no locked hand-mark. The release will proceed anyway and rows "
-            "will be tagged in notes."
+            f"⚠ Ground-truth coverage: {len(missing)} of "
+            f"{len(requested_keys)} pairs have no ODMI ground-truth row. "
+            "Release proceeds; those pairs will not contribute to "
+            "accuracy aggregates."
         )
 
     col_force, col_btn = st.columns([2, 1])

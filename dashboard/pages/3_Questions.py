@@ -26,7 +26,13 @@ if len(qs) == 0:
     st.error("No questions loaded. Run scripts/parse_questions.py first.")
     st.stop()
 
-hm = db.hand_marks()
+# How many swarm pairs have already been finalised per question_id.
+# Useful when picking questions: avoid duplicating ones already covered.
+finals = db.finals(limit=10000)
+runs_per_qid = (
+    finals.groupby("question_id").size().to_dict()
+    if len(finals) > 0 and "question_id" in finals.columns else {}
+)
 
 # ============================================================
 # Filters
@@ -44,13 +50,6 @@ with col3:
         "Indicator", indicators, default=indicators,
     )
 
-# Hand-mark filter
-hm_state = st.radio(
-    "Hand-mark status",
-    ["All", "Locked (any country)", "Unlocked (any country)", "Not marked"],
-    horizontal=True,
-)
-
 filtered = qs.copy()
 filtered = filtered[filtered["dimension"].isin(dim_filter)]
 filtered = filtered[filtered["indicator"].isin(ind_filter)]
@@ -61,33 +60,9 @@ if search:
         | filtered["question_id"].fillna("").str.lower().str.contains(needle)
     ]
 
-# Map hand-mark status onto each question.
-if len(hm) > 0:
-    locked_qs = set(hm[hm["locked_by_commit"].notna()]["question_id"])
-    marked_qs = set(hm["question_id"])
-else:
-    locked_qs = set()
-    marked_qs = set()
-
-
-def _hm_label(qid: str) -> str:
-    if qid in locked_qs:
-        return "🔒 locked"
-    if qid in marked_qs:
-        return "✏ unlocked"
-    return "⚠ not marked"
-
-
-filtered["hand_mark"] = filtered["question_id"].map(_hm_label)
-
-if hm_state == "Locked (any country)":
-    filtered = filtered[filtered["question_id"].isin(locked_qs)]
-elif hm_state == "Unlocked (any country)":
-    filtered = filtered[
-        filtered["question_id"].isin(marked_qs - locked_qs)
-    ]
-elif hm_state == "Not marked":
-    filtered = filtered[~filtered["question_id"].isin(marked_qs)]
+filtered["runs"] = filtered["question_id"].map(
+    lambda q: runs_per_qid.get(q, 0)
+)
 
 # ============================================================
 # Selection widget + table
@@ -98,7 +73,7 @@ elif hm_state == "Not marked":
 # Streamlit versions and is testable with normal locators.
 
 display_cols = ["question_id", "dimension", "indicator",
-                "question_text", "hand_mark"]
+                "question_text", "runs"]
 display_cols = [c for c in display_cols if c in filtered.columns]
 
 st.dataframe(
@@ -110,7 +85,10 @@ st.dataframe(
         "dimension": st.column_config.TextColumn("Dim", width="small"),
         "indicator": st.column_config.TextColumn("Indicator", width="medium"),
         "question_text": st.column_config.TextColumn("Question", width="large"),
-        "hand_mark": st.column_config.TextColumn("Hand-mark", width="small"),
+        "runs": st.column_config.NumberColumn(
+            "Swarm runs", help="Finalised pairs across all countries.",
+            width="small",
+        ),
     },
 )
 

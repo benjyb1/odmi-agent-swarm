@@ -8,6 +8,62 @@ Entries newest first.
 
 ---
 
+## 2026-05-13 — Session 7: ODMI ground truth supersedes hand-marking
+
+The hand-mark workflow has been the dangling tail of D8 for weeks. This
+session it got removed.
+
+**The trigger.** Realising that `2025_odm_questionnaire_data.xlsx` ships
+the `merged_responses` sheet: 5,148 (question, country) rows with the
+country's actual answer, ODMI's accepted decision, awarded score, and
+the rationale text. Every pair already has ground truth. The custom
+three-dimension rubric and the hand-mark CSV workflow were both
+constructed before this fact was used.
+
+**The pivot.** Added a new SQLite `ground_truth` table and
+`scripts/load_ground_truth.py`. Loaded all 5,148 rows for cycle 2025.
+Replaced the rubric stratification axis with the ODMI dimension axis
+(Policy / Portal / Quality / Impact) which is already in the data.
+
+**Match logic.** `dashboard/lib/db.py:_MATCH_STATUS_SQL` does
+case-insensitive trimmed comparison of `final_answer` against
+`response`, with a `yes`-prefix special case so swarm `yes` matches
+ODMI multi-tier responses (`yes, 3-5`, `yes, >9`, etc.).
+
+**Dashboard.** Home KPI strip now shows Accuracy vs ODMI; country chart
+splits bars into Matches / Differs from ODMI rather than Verifier
+success / failure. Results Cards view shows ODMI's recorded answer
+next to the swarm's with a match badge and an expandable ODMI
+explanation. Hand-marks page removed from the sidebar.
+
+**Numbers at the moment of the cut-over.** 11 finalised swarm pairs
+across FR / DE / NL / RO, all matching ODMI 2025 (Policy dimension,
+high-resource countries). Total spend around $1.02. The 100% will not
+survive the move to harder dimensions, which is the point.
+
+**Spec.** D22 added (ground truth supersedes hand-marks; D6/D8/D9/D10
+no longer operational; data-leakage deny-list flagged). D23 added
+(Streamlit Cloud auto-deploys on push to `main`, verify the URL after
+every dashboard-touching push). RQ2 reframed in METHODOLOGY.md.
+Sections 3 and 4 of METHODOLOGY retained as historical record with a
+header note.
+
+**Slide deck.** Regenerated against the new schema. KPI strip now
+reads Pairs finalised / Accuracy vs ODMI / Ground-truth coverage /
+Total LLM spend. Country chart legend reads Matches / Differs from
+ODMI 2025. Caveat strip explains that ODMI assessments are one cycle
+old, so a disagreement is not automatically a swarm error.
+
+**Doc sweep.** CLAUDE.md, README.md, SPEC.md, METHODOLOGY.md, and the
+read-only-mode copy on the dashboard all rewritten to match.
+
+**What is next.** Verifier strategy comparison (D15/Q12), scale-out
+to harder ODMI dimensions, add Hungary and Estonia. Then the deny-list
+mitigation for data.europa.eu in `agents/tools/search.py` before the
+first big saturated run.
+
+---
+
 ## 2026-05-13 — Session 6: Coordinator follow-ups
 
 Short session. Two patches on top of the day-5 coordinator.
