@@ -419,8 +419,8 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
     add_kpi(slide, x0 + 0 * (col_w + gap), y, col_w, h,
             label="Pairs finalised",
             value=str(stats["n_finals"]),
-            caption=f"{stats['n_researcher']} R · {stats['n_verifier']} V · "
-                    f"{stats['n_adjudications']} A.")
+            caption=f"{stats['n_researcher']} Researcher · {stats['n_verifier']} Verifier · "
+                    f"{stats['n_adjudications']} Adjudicator.")
     add_kpi(slide, x0 + 1 * (col_w + gap), y, col_w, h,
             label="Ground-truth coverage",
             value=f"{stats['n_ground_truth']:,}",
@@ -444,9 +444,9 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
     gap2 = Inches(0.15)
     add_card(slide, Inches(0.5), y2, card_w, card_h,
              title="Three-agent swarm, end-to-end",
-             body="Researcher proposes, Verifier tries to disprove, "
-                  "Adjudicator decides on retry exhaustion. One pair "
-                  "(P2/NL) has needed the Adjudicator. Average runtime ~32s.",
+             body=f"Researcher proposes, Verifier tries to disprove, "
+                  f"Adjudicator steps in when retries are exhausted. "
+                  f"Average runtime ~{stats['avg_runtime_s']:.0f}s.",
              accent=TEAL)
     add_card(slide, Inches(0.5) + card_w + gap2, y2, card_w, card_h,
              title="Live dashboard with ODMI ground truth",
@@ -456,7 +456,7 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
                   "automatically (5,148 ground-truth rows loaded).",
              accent=NAVY)
 
-    page_footer(slide, prs, 2, 6)
+    page_footer(slide, prs, 2, 7)
 
 
 def slide_how_it_works(prs: Presentation) -> None:
@@ -540,7 +540,7 @@ def slide_how_it_works(prs: Presentation) -> None:
         size=11, colour=BODY,
     )
 
-    page_footer(slide, prs, 3, 6)
+    page_footer(slide, prs, 3, 7)
 
 
 def slide_dashboard_highlights(prs: Presentation) -> None:
@@ -615,7 +615,7 @@ def slide_dashboard_highlights(prs: Presentation) -> None:
         )
         set_text(b_box.text_frame, body, size=10.5, colour=BODY)
 
-    page_footer(slide, prs, 5, 6)
+    page_footer(slide, prs, 5, 7)
 
 
 def slide_country_chart(prs: Presentation, stats: dict) -> None:
@@ -643,7 +643,7 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
             "phase2_final rows, this chart populates.",
             size=14, colour=BODY,
         )
-        page_footer(slide, prs, 4, 6)
+        page_footer(slide, prs, 4, 7)
         return
 
     max_total = max(s + f for _, s, f in outcomes) or 1
@@ -751,7 +751,22 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
         size=10, colour=BODY,
     )
 
-    page_footer(slide, prs, 4, 6)
+    page_footer(slide, prs, 4, 7)
+
+
+def slide_swarm_in_action(prs: Presentation) -> None:
+    _img = REPO_ROOT / "docs" / "assets" / "swarm_in_action.png"
+    if not _img.exists():
+        return
+    slide = new_slide(prs)
+    header(slide, "Run Console — live view while the swarm runs",
+           eyebrow="Swarm in action")
+    slide.shapes.add_picture(
+        str(_img),
+        Inches(0.5), Inches(1.15),
+        prs.slide_width - Inches(1.0), Inches(4.15),
+    )
+    page_footer(slide, prs, 6, 7)
 
 
 def slide_next_steps(prs: Presentation) -> None:
@@ -808,21 +823,22 @@ def slide_next_steps(prs: Presentation) -> None:
     ]
 
     long_items = [
-        ("Phase B saturation, six countries",
-         "FR, DE, NL, RO, HU, EE × all 143 questions. Cost–accuracy "
-         "surface across the Haiku / Sonnet / Opus / tiered model mix."),
-        ("External validity (2024 cycle)",
-         "Pipeline frozen, then run against the 2024 ODMI cycle as a "
-         "held-out test. Delta against 2025 is itself a result."),
-        ("Dissertation by 2 August 2026",
-         "Failure-mode taxonomy and accuracy–cost surface as the two "
-         "primary contributions. Phase C (36 countries) as a stretch."),
+        ("Scale to all six countries",
+         "Run all 143 questions across FR, DE, NL, RO, HU and EE — "
+         "the full Phase B matrix."),
+        ("Model cost-effectiveness experiments",
+         "Compare Haiku, Sonnet and Opus on accuracy and cost across "
+         "the matrix. Build the cost-accuracy surface and identify the "
+         "optimal strategy."),
+        ("July — dissertation write-up",
+         "Analyse results, write methodology and findings chapters. "
+         "Submission deadline: 2 August 2026."),
     ]
 
     column(x_l, "NEXT TWO WEEKS", DARK, short_items)
-    column(x_r, "TOWARDS 2 AUGUST 2026", NAVY, long_items)
+    column(x_r, "JUNE AND JULY", NAVY, long_items)
 
-    page_footer(slide, prs, 6, 6)
+    page_footer(slide, prs, 7, 7)
 
 
 # ============================================================
@@ -839,6 +855,7 @@ def build_deck(stats: dict) -> Presentation:
     slide_how_it_works(prs)
     slide_country_chart(prs, stats)
     slide_dashboard_highlights(prs)
+    slide_swarm_in_action(prs)
     slide_next_steps(prs)
     return prs
 
