@@ -250,25 +250,28 @@ def add_kpi(
 ) -> None:
     add_outlined_rect(slide, x, y, w, h, fill=SURFACE)
     add_filled_rect(slide, x, y, w, Inches(0.06), fill=accent)
-    pad_x = Inches(0.25)
 
-    label_box = add_textbox(slide, x + pad_x, y + Inches(0.2),
-                            w - 2 * pad_x, Inches(0.25))
+    pad_x = Inches(0.22)
+    inner_w = w - 2 * pad_x
+
+    # Label sits just under the accent stripe.
+    label_box = add_textbox(slide, x + pad_x, y + Inches(0.18),
+                            inner_w, Inches(0.22))
     set_text(label_box.text_frame, label.upper(),
              size=9, bold=True, colour=MUTED)
 
-    value_box = add_textbox(
-        slide, x + pad_x, y + Inches(0.45),
-        w - 2 * pad_x, Inches(0.7),
-    )
+    # Value is the hero. Height matches the font's natural line so the
+    # caption below doesn't get walked on.
+    value_y = y + Inches(0.46)
+    value_h = Inches(0.6)
+    value_box = add_textbox(slide, x + pad_x, value_y, inner_w, value_h)
     set_text(value_box.text_frame, value,
-             size=28, bold=True, colour=HEAD)
+             size=22, bold=True, colour=HEAD)
 
     if caption:
-        cap_box = add_textbox(
-            slide, x + pad_x, y + h - Inches(0.35),
-            w - 2 * pad_x, Inches(0.25),
-        )
+        cap_y = value_y + value_h + Inches(0.04)
+        cap_h = max(Inches(0.2), y + h - cap_y - Inches(0.1))
+        cap_box = add_textbox(slide, x + pad_x, cap_y, inner_w, cap_h)
         set_text(cap_box.text_frame, caption, size=9.5, colour=BODY)
 
 
@@ -365,8 +368,8 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
     slide = new_slide(prs)
     header(slide, "What is built", eyebrow="Capability snapshot")
 
-    y = Inches(1.35)
-    h = Inches(1.05)
+    y = Inches(1.25)
+    h = Inches(1.5)
     col_w = Inches(2.225)
     gap = Inches(0.07)
     x0 = Inches(0.5)
@@ -392,9 +395,9 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
             caption="Via CLIProxyAPI on Claude Max.",
             accent=TEAL_BRIGHT)
 
-    y2 = Inches(2.75)
+    y2 = Inches(2.95)
     card_w = Inches(4.55)
-    card_h = Inches(1.65)
+    card_h = Inches(1.55)
     gap2 = Inches(0.15)
     add_card(slide, Inches(0.5), y2, card_w, card_h,
              title="Three-agent swarm, end-to-end",
@@ -579,9 +582,9 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
     outcomes = stats["country_outcomes"]
 
     chart_box_x = Inches(0.5)
-    chart_box_y = Inches(1.4)
+    chart_box_y = Inches(1.3)
     chart_box_w = prs.slide_width - Inches(1.0)
-    chart_box_h = Inches(3.4)
+    chart_box_h = Inches(2.7)
 
     add_outlined_rect(slide, chart_box_x, chart_box_y, chart_box_w, chart_box_h,
                       fill=WHITE, border=BORDER)
@@ -602,9 +605,9 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
     max_total = max(s + f for _, s, f in outcomes) or 1
 
     plot_left = chart_box_x + Inches(0.8)
-    plot_top = chart_box_y + Inches(0.4)
+    plot_top = chart_box_y + Inches(0.3)
     plot_width = chart_box_w - Inches(1.3)
-    plot_height = chart_box_h - Inches(1.0)
+    plot_height = chart_box_h - Inches(0.95)
 
     bar_slot = plot_width / len(outcomes)
     bar_w = Emu(int(bar_slot * 0.55))
@@ -671,20 +674,21 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
             size=9, colour=MUTED, align=PP_ALIGN.CENTER,
         )
 
-    leg_y = chart_box_y + chart_box_h - Inches(0.35)
-    leg_x = chart_box_x + Inches(0.8)
+    # Legend sits below the chart card, not inside it.
+    leg_y = chart_box_y + chart_box_h + Inches(0.18)
+    leg_x = chart_box_x + Inches(0.1)
     add_filled_rect(slide, leg_x, leg_y, Inches(0.18), Inches(0.18), fill=SUCCESS)
-    leg1 = add_textbox(slide, leg_x + Inches(0.25), leg_y - Inches(0.02),
+    leg1 = add_textbox(slide, leg_x + Inches(0.28), leg_y - Inches(0.03),
                        Inches(3.6), Inches(0.25))
     set_text(leg1.text_frame, "Accepted (Verifier or Adjudicator)",
              size=10, colour=BODY)
-    add_filled_rect(slide, leg_x + Inches(3.5), leg_y, Inches(0.18), Inches(0.18),
+    add_filled_rect(slide, leg_x + Inches(3.6), leg_y, Inches(0.18), Inches(0.18),
                     fill=DANGER)
-    leg2 = add_textbox(slide, leg_x + Inches(3.75), leg_y - Inches(0.02),
+    leg2 = add_textbox(slide, leg_x + Inches(3.88), leg_y - Inches(0.03),
                        Inches(4.0), Inches(0.25))
     set_text(leg2.text_frame, "Rejected or escalated", size=10, colour=BODY)
 
-    note_y = chart_box_y + chart_box_h + Inches(0.18)
+    note_y = leg_y + Inches(0.45)
     add_filled_rect(slide, chart_box_x, note_y, Inches(0.08), Inches(0.6),
                     fill=WARNING)
     nb = add_textbox(
