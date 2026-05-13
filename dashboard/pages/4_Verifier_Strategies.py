@@ -1,4 +1,5 @@
-"""Strategy Lab — compare the four Verifier strategies on a given Researcher row."""
+"""Verifier Strategies — compare the four adversarial prompt strategies
+on the same Researcher row (D15, Q12)."""
 
 from __future__ import annotations
 
@@ -18,8 +19,13 @@ from dashboard.lib import db
 from dashboard.lib.sidebar import page_header, render_session_widget
 
 
-st.set_page_config(page_title="Strategy Lab", page_icon="⚖", layout="wide")
-page_header("Strategy Lab", "Run all four Verifier strategies on the same Researcher row and compare.")
+st.set_page_config(page_title="Verifier Strategies", page_icon="⚖", layout="wide")
+page_header(
+    "Verifier Strategies",
+    "Compare the four adversarial prompt strategies (disprove, negation, "
+    "steelman, blind) on the same Researcher row. Used to decide which "
+    "strategy catches errors most reliably (D15, Q12).",
+)
 render_session_widget()
 
 
