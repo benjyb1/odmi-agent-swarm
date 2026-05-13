@@ -111,6 +111,52 @@ def finals(limit: int = 200) -> pd.DataFrame:
     )
 
 
+def result_cards() -> pd.DataFrame:
+    """One row per finalised (question, country) pair, with the question
+    text joined in and the latest Verifier run's verdict / counter-evidence
+    pulled alongside.
+
+    Designed for the Results page Cards view: each row contains
+    everything needed to render one scannable card showing the question,
+    the answer, the proof, and how the swarm reached the verdict.
+    """
+    return read_sql(
+        """
+        WITH latest_verifier AS (
+            SELECT pair_run_id,
+                   verdict, verifier_confidence, strategy_label,
+                   rejection_reason, counter_evidence_quote, counter_source_url,
+                   substring_check_result
+            FROM phase2_verifier_runs v
+            WHERE id = (
+                SELECT MAX(id) FROM phase2_verifier_runs
+                WHERE pair_run_id = v.pair_run_id
+            )
+        )
+        SELECT
+            f.id, f.pair_run_id, f.question_id, f.country_code,
+            f.terminal_status, f.retry_count, f.adjudicator_involved,
+            f.final_answer, f.final_answer_explanation,
+            f.final_evidence_quote, f.final_source_url,
+            f.final_retrieval_confidence, f.final_answer_confidence,
+            f.cumulative_cost_usd, f.cumulative_wall_clock_ms,
+            f.created_at,
+            q.dimension, q.indicator, q.question_text,
+            v.verdict          AS verifier_verdict,
+            v.verifier_confidence,
+            v.strategy_label   AS verifier_strategy,
+            v.rejection_reason,
+            v.counter_evidence_quote,
+            v.counter_source_url,
+            v.substring_check_result
+        FROM phase2_final f
+        LEFT JOIN questions q  ON q.question_id = f.question_id
+        LEFT JOIN latest_verifier v ON v.pair_run_id = f.pair_run_id
+        ORDER BY f.created_at DESC, f.id DESC
+        """
+    )
+
+
 def country_outcome_counts() -> pd.DataFrame:
     """Per-country counts of finalised pairs, split success vs failed.
 
