@@ -454,15 +454,73 @@ def _pipeline_block(label: str, state: str, verdict: str | None = None) -> str:
 
 
 # ============================================================
+# Live progress strip
+# ============================================================
+
+_ACTIVE_STAGES = {"queued", "researching", "verifying", "adjudicating"}
+
+
+@st.fragment(run_every=1.5)
+def render_progress_strip() -> None:
+    """Top-of-page status: how many subtrios are in flight right now,
+    plus a progress bar for the most recently dispatched batch (if any).
+    """
+    active = db.active_subtrios()
+    n_active = len(active)
+    stage_counts = (
+        active["stage"].value_counts().to_dict() if n_active > 0 else {}
+    )
+
+    last_batch_id = st.session_state.get("last_batch_id")
+    batch_df = (
+        db.subtrios_by_batch(last_batch_id)
+        if last_batch_id else None
+    )
+
+    c1, c2, c3, c4, c5 = st.columns([1, 1, 1, 1, 1])
+    c1.metric("In flight", n_active)
+    c2.metric("Researching", int(stage_counts.get("researching", 0)))
+    c3.metric("Verifying", int(stage_counts.get("verifying", 0)))
+    c4.metric("Adjudicating", int(stage_counts.get("adjudicating", 0)))
+    c5.metric("Queued", int(stage_counts.get("queued", 0)))
+
+    if batch_df is not None and len(batch_df) > 0:
+        n_total = len(batch_df)
+        n_done = int((batch_df["stage"] == "done").sum())
+        n_active_batch = int(
+            batch_df["stage"].isin(list(_ACTIVE_STAGES)).sum()
+        )
+        n_other = n_total - n_done - n_active_batch
+        progress = n_done / n_total if n_total > 0 else 0
+        st.progress(
+            progress,
+            text=(
+                f"Latest batch `{last_batch_id[:8]}` — "
+                f"{n_done}/{n_total} done · {n_active_batch} in flight"
+                + (f" · {n_other} other" if n_other else "")
+            ),
+        )
+
+    if n_active > 0:
+        previews = ", ".join(
+            f"{r['question_id']}/{r['country_code']} ({r['stage']})"
+            for _, r in active.head(6).iterrows()
+        )
+        st.caption(f"Active: {previews}")
+
+
+# ============================================================
 # Layout
 # ============================================================
 
+render_progress_strip()
+st.divider()
 render_launcher()
 st.divider()
 render_active_cards()
 
 st.caption(
-    "Cards auto-refresh every 1.5 seconds. "
+    "Progress strip refreshes every 1.5 seconds. "
     "A released batch keeps running even if you close this tab; "
     "watch the Home page or come back here to see progress."
 )
