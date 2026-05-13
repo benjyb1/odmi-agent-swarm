@@ -12,7 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from dashboard.lib import db
+from dashboard.lib import db, mode
 from dashboard.lib.sidebar import page_header, render_session_widget
 
 
@@ -206,6 +206,45 @@ def _render_card(row: pd.Series) -> None:
                 f"pair_run_id `{row['pair_run_id']}` · "
                 f"created_at {row['created_at']}"
             )
+
+        # Destructive action: wipe every swarm row for this pair.
+        with st.expander("🗑 Delete all swarm rows for this pair"):
+            qid = row["question_id"]
+            cc = row["country_code"]
+            counts = db.pair_row_counts(qid, cc)
+            total = sum(counts.values())
+            st.caption(
+                f"Removes {total} row(s) across `phase2_final` "
+                f"({counts['phase2_final']}), "
+                f"`phase2_adjudications` ({counts['phase2_adjudications']}), "
+                f"`phase2_verifier_runs` ({counts['phase2_verifier_runs']}), "
+                f"`phase2_researcher_runs` "
+                f"({counts['phase2_researcher_runs']}), and "
+                f"`subtrio_status` ({counts['subtrio_status']}). "
+                "`claude_usage_log` is kept so the cost audit stays "
+                "intact. Action is irreversible from the UI."
+            )
+            confirm_key = f"confirm_delete_{row['pair_run_id']}"
+            confirmed = st.checkbox(
+                f"I want to delete {qid}/{cc}",
+                key=confirm_key,
+            )
+            if st.button(
+                f"Delete {qid}/{cc} now",
+                key=f"delete_{row['pair_run_id']}",
+                type="primary",
+                disabled=not confirmed,
+            ):
+                if mode.block_if_read_only():
+                    return
+                deleted = db.delete_pair(qid, cc)
+                st.success(
+                    f"Deleted {sum(deleted.values())} row(s) for "
+                    f"{qid}/{cc}. Re-running this pair is now safe; "
+                    "the Run Console will treat it as fresh."
+                )
+                st.toast(f"Wiped {qid}/{cc}", icon="🗑")
+                st.rerun()
 
 
 def render_cards_tab() -> None:

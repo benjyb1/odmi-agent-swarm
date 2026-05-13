@@ -263,6 +263,96 @@ def ground_truth_count() -> int:
     return int(row[0] or 0)
 
 
+_SWARM_TABLES_TO_CLEAR = [
+    "phase2_final",
+    "phase2_adjudications",
+    "phase2_verifier_runs",
+    "phase2_researcher_runs",
+    "subtrio_status",
+]
+
+
+def pair_row_counts(question_id: str, country_code: str) -> dict[str, int]:
+    """Row counts per swarm table for a (question, country) pair.
+
+    Useful for showing the user what `delete_pair` is about to wipe.
+    `claude_usage_log` is intentionally excluded: it's the cost-audit
+    record and is keyed by `subtrio_id`, not by question/country, so
+    it stays put.
+    """
+    counts: dict[str, int] = {}
+    with _conn() as conn:
+        for table in _SWARM_TABLES_TO_CLEAR:
+            row = conn.execute(
+                f"SELECT COUNT(*) FROM {table} "
+                f"WHERE question_id = ? AND country_code = ?",
+                (question_id, country_code),
+            ).fetchone()
+            counts[table] = int(row[0] or 0)
+    return counts
+
+
+def delete_pair(question_id: str, country_code: str) -> dict[str, int]:
+    """Delete every swarm row for a (question, country) pair.
+
+    Returns the number of rows deleted per table. `claude_usage_log`
+    is intentionally NOT touched (cost audit preserved).
+    """
+    deleted: dict[str, int] = {}
+    with _conn() as conn:
+        for table in _SWARM_TABLES_TO_CLEAR:
+            cur = conn.execute(
+                f"DELETE FROM {table} "
+                f"WHERE question_id = ? AND country_code = ?",
+                (question_id, country_code),
+            )
+            deleted[table] = cur.rowcount
+        conn.commit()
+    return deleted
+
+
+def coverage_grid() -> pd.DataFrame:
+    """Long-format DataFrame of every ODMI (question, country) pair
+    (5,148 rows) left-joined with the latest swarm final and match
+    status. Source of truth for the Database page.
+
+    Columns: question_id, country_code, country_name, dimension,
+    indicator, odmi_response, awarded_score, max_score, swarm_answer,
+    terminal_status, last_run, match_status, swarm_runs (count).
+    """
+    return read_sql(
+        f"""
+        WITH latest_finals AS (
+            SELECT f.*,
+                   ROW_NUMBER() OVER (
+                     PARTITION BY f.question_id, f.country_code
+                     ORDER BY f.id DESC
+                   ) AS rn,
+                   COUNT(*) OVER (
+                     PARTITION BY f.question_id, f.country_code
+                   ) AS n_runs
+            FROM phase2_final f
+        )
+        SELECT
+          gt.question_id, gt.country_code, gt.country_name,
+          gt.dimension, gt.indicator,
+          gt.response       AS odmi_response,
+          gt.awarded_score, gt.max_score,
+          f.final_answer    AS swarm_answer,
+          f.terminal_status,
+          f.created_at      AS last_run,
+          {_MATCH_STATUS_SQL} AS match_status,
+          COALESCE(f.n_runs, 0) AS swarm_runs
+        FROM ground_truth gt
+        LEFT JOIN latest_finals f
+          ON f.question_id = gt.question_id
+         AND f.country_code = gt.country_code
+         AND f.rn = 1
+        ORDER BY gt.country_code, gt.question_id
+        """
+    )
+
+
 def already_finalised(
     question_ids: list[str], country_codes: list[str]
 ) -> pd.DataFrame:
