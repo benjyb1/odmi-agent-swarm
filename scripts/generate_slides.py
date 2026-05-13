@@ -392,37 +392,24 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
             caption="Via CLIProxyAPI on Claude Max.",
             accent=TEAL_BRIGHT)
 
-    y2 = Inches(2.6)
+    y2 = Inches(2.75)
     card_w = Inches(4.55)
-    card_h = Inches(1.25)
+    card_h = Inches(1.65)
     gap2 = Inches(0.15)
     add_card(slide, Inches(0.5), y2, card_w, card_h,
-             title="Three-agent swarm",
-             body="Researcher → Verifier (four prompt strategies) → "
-                  "Adjudicator. Coordinator owns retries and writes every "
-                  "stage to SQLite.",
+             title="Three-agent swarm, end-to-end",
+             body="Researcher proposes, Verifier tries to disprove, "
+                  "Adjudicator decides on retry exhaustion. One pair "
+                  "(P2/NL) has needed the Adjudicator. Average runtime ~32s.",
              accent=TEAL)
     add_card(slide, Inches(0.5) + card_w + gap2, y2, card_w, card_h,
-             title="Live dashboard",
-             body="Nine-page Streamlit app: Run Console, Results, Questions, "
-                  "Verifier Strategies, Hand-marks, Models, Costs, Prompts.",
+             title="Live dashboard with full audit trail",
+             body="Nine Streamlit pages over the SQLite store. Every LLM "
+                  "call logs tokens, latency, cost, prompt version. "
+                  "Hand-marks lock to a commit SHA so D9 is automatic.",
              accent=NAVY)
 
-    y3 = y2 + card_h + gap2
-    add_card(slide, Inches(0.5), y3, card_w, card_h,
-             title="Audit-trail discipline",
-             body="Every LLM call logs tokens, latency, cost, prompt "
-                  "version. Hand-marks lock to a commit SHA. Reproducible "
-                  "from logs alone.",
-             accent=TEAL_DARK)
-    add_card(slide, Inches(0.5) + card_w + gap2, y3, card_w, card_h,
-             title="In-app hand-marking",
-             body="Add a hand-mark from the dashboard. The page writes the "
-                  "CSV, commits the change, and syncs the DB so D9 is "
-                  "satisfied automatically.",
-             accent=SUCCESS)
-
-    page_footer(slide, prs, 2, 9)
+    page_footer(slide, prs, 2, 6)
 
 
 def slide_how_it_works(prs: Presentation) -> None:
@@ -506,79 +493,82 @@ def slide_how_it_works(prs: Presentation) -> None:
         size=11, colour=BODY,
     )
 
-    page_footer(slide, prs, 3, 9)
+    page_footer(slide, prs, 3, 6)
 
 
-def slide_evaluation(prs: Presentation) -> None:
+def slide_dashboard_highlights(prs: Presentation) -> None:
     slide = new_slide(prs)
-    header(slide, "How we will measure it", eyebrow="Methodology")
+    header(slide, "Best bits of the dashboard",
+           eyebrow="What I'll demo live")
 
-    y = Inches(1.4)
-    h = Inches(1.5)
-    w = Inches(2.95)
-    gap = Inches(0.12)
-    x0 = Inches(0.5)
+    items = [
+        ("Run Console",
+         "Multiselect questions × countries, pick the Verifier "
+         "strategy and the model triple, dispatch a batch. Cost is "
+         "estimated before the run starts.",
+         "▶", TEAL),
+        ("Results · Cards view",
+         "One bordered card per finalised pair. Question, answer, "
+         "evidence quote, and a clickable source URL — all on the same "
+         "screen, scannable.",
+         "📋", NAVY),
+        ("In-app hand-marking",
+         "Pick a question, slide three score sliders, hit Save. The "
+         "page writes the CSV, commits it, and stamps the SHA into "
+         "the DB so D9 is automatic.",
+         "✍", TEAL_DARK),
+        ("Country chart + cost tracking",
+         "Live stacked bar of accept vs reject per country on the Home "
+         "page. Costs page shows the rolling 5-hour spend and the "
+         "per-model breakdown.",
+         "📊", SUCCESS),
+    ]
 
-    def rubric_card(x, name, sub, hint, accent):
-        add_outlined_rect(slide, x, y, w, h)
-        score_box = add_textbox(slide, x + Inches(0.2), y + Inches(0.15),
-                                w - Inches(0.4), Inches(0.4))
-        set_text(score_box.text_frame, "0 – 3",
-                 size=20, bold=True, colour=accent)
+    y = Inches(1.35)
+    w = Inches(4.55)
+    h = Inches(1.85)
+    gap = Inches(0.15)
 
-        title_box = add_textbox(slide, x + Inches(0.2), y + Inches(0.55),
-                                w - Inches(0.4), Inches(0.3))
-        set_text(title_box.text_frame, name, size=13, bold=True, colour=HEAD)
+    for i, (title, body, glyph, accent) in enumerate(items):
+        col = i % 2
+        row = i // 2
+        x = Inches(0.5) + col * (w + gap)
+        yy = y + row * (h + gap)
 
-        sub_box = add_textbox(slide, x + Inches(0.2), y + Inches(0.82),
-                              w - Inches(0.4), Inches(0.25))
-        set_text(sub_box.text_frame, sub, size=10, colour=MUTED)
+        add_outlined_rect(slide, x, yy, w, h)
+        add_filled_rect(slide, x, yy, Inches(0.08), h, fill=accent)
 
-        hint_box = add_textbox(slide, x + Inches(0.2), y + Inches(1.05),
-                               w - Inches(0.4), Inches(0.4))
-        set_text(hint_box.text_frame, hint, size=10, colour=BODY)
+        # Glyph bubble.
+        bubble_d = Inches(0.55)
+        bubble = slide.shapes.add_shape(
+            MSO_SHAPE.OVAL,
+            x + Inches(0.3), yy + Inches(0.25),
+            bubble_d, bubble_d,
+        )
+        bubble.fill.solid()
+        bubble.fill.fore_color.rgb = accent
+        bubble.line.fill.background()
+        set_text(
+            bubble.text_frame, glyph,
+            size=18, bold=True, colour=WHITE, align=PP_ALIGN.CENTER,
+        )
 
-    rubric_card(x0, "Evidence Accessibility", "EA",
-                "Findable on the open web for this country?", TEAL_DARK)
-    rubric_card(x0 + w + gap, "Answer Determinism", "AD",
-                "Could two evaluators agree from the same evidence?", NAVY)
-    rubric_card(x0 + 2 * (w + gap), "Source Complexity", "SC",
-                "One source or four cross-referenced ones?", TEAL_BRIGHT)
+        # Title.
+        t_box = add_textbox(
+            slide, x + Inches(1.0), yy + Inches(0.28),
+            w - Inches(1.2), Inches(0.4),
+        )
+        set_text(t_box.text_frame, title,
+                 size=15, bold=True, colour=HEAD)
 
-    tier_y = y + h + Inches(0.15)
-    tier_box = add_textbox(slide, x0, tier_y,
-                           prs.slide_width - 2 * x0, Inches(0.3))
-    set_text(
-        tier_box.text_frame,
-        "Composite 0–9 → tiers: Highly Likely (7–9) · Likely (5–6) · "
-        "Unlikely (3–4) · Very Unlikely (0–2).",
-        size=11, bold=True, colour=HEAD,
-    )
+        # Body.
+        b_box = add_textbox(
+            slide, x + Inches(1.0), yy + Inches(0.7),
+            w - Inches(1.2), h - Inches(0.8),
+        )
+        set_text(b_box.text_frame, body, size=10.5, colour=BODY)
 
-    note_y = tier_y + Inches(0.6)
-    note_h = Inches(1.4)
-    add_outlined_rect(slide, x0, note_y, prs.slide_width - 2 * x0, note_h,
-                      fill=SURFACE, border=BORDER)
-    eb = add_textbox(slide, x0 + Inches(0.2), note_y + Inches(0.12),
-                     prs.slide_width - 2 * x0 - Inches(0.4), Inches(0.3))
-    set_text(eb.text_frame, "HEADLINE RESEARCH QUESTION (RQ5)",
-             size=9, bold=True, colour=TEAL)
-
-    nb = add_textbox(slide, x0 + Inches(0.2), note_y + Inches(0.42),
-                     prs.slide_width - 2 * x0 - Inches(0.4),
-                     note_h - Inches(0.5))
-    set_text(
-        nb.text_frame,
-        "Trade-off between answer quality and computational cost across "
-        "rubric profiles. Every LLM call logs input tokens, output "
-        "tokens, wall-clock, and $. The output is a cost–accuracy surface "
-        "stratified by rubric tier × ODMI dimension × country. "
-        "Optimisation conditions: prompt compression, retrieval scope, "
-        "Verifier strategy, and the Haiku / Sonnet / Opus model family.",
-        size=11, colour=BODY,
-    )
-
-    page_footer(slide, prs, 4, 9)
+    page_footer(slide, prs, 5, 6)
 
 
 def slide_country_chart(prs: Presentation, stats: dict) -> None:
@@ -606,7 +596,7 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
             "phase2_final rows, this chart populates.",
             size=14, colour=BODY,
         )
-        page_footer(slide, prs, 5, 9)
+        page_footer(slide, prs, 4, 6)
         return
 
     max_total = max(s + f for _, s, f in outcomes) or 1
@@ -710,216 +700,77 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
         size=10, colour=BODY,
     )
 
-    page_footer(slide, prs, 5, 9)
+    page_footer(slide, prs, 4, 6)
 
 
-def slide_decisions(prs: Presentation) -> None:
+def slide_next_steps(prs: Presentation) -> None:
     slide = new_slide(prs)
-    header(slide, "Decisions taken and open questions",
-           eyebrow="What's locked, what's still to settle")
+    header(slide, "Where this goes next",
+           eyebrow="Short term and long term")
 
     col_w = Inches(4.55)
     gap = Inches(0.2)
     x_l = Inches(0.5)
     x_r = x_l + col_w + gap
-    y = Inches(1.4)
-    h = Inches(3.7)
+    y = Inches(1.35)
+    h_col = Inches(3.85)
 
-    add_outlined_rect(slide, x_l, y, col_w, h, fill=SURFACE)
-    add_filled_rect(slide, x_l, y, col_w, Inches(0.45), fill=DARK)
-    lhead = add_textbox(slide, x_l + Inches(0.2), y + Inches(0.1),
-                        col_w - Inches(0.4), Inches(0.3))
-    set_text(lhead.text_frame, "LOCKED DECISIONS",
-             size=11, bold=True, colour=WHITE)
+    def column(x, header_label, header_fill, items):
+        add_outlined_rect(slide, x, y, col_w, h_col, fill=SURFACE)
+        add_filled_rect(slide, x, y, col_w, Inches(0.45), fill=header_fill)
+        head_box = add_textbox(slide, x + Inches(0.25), y + Inches(0.1),
+                               col_w - Inches(0.5), Inches(0.3))
+        set_text(head_box.text_frame, header_label,
+                 size=11, bold=True, colour=WHITE)
 
-    locked_items = [
-        ("D1", "LLM access via CLIProxyAPI on Claude Max — no Anthropic billing."),
-        ("D2", "SQLite as the single, hand-portable evaluation store."),
-        ("D7", "Phased rollout: FR → 6-country matrix → all 36 EU countries."),
-        ("D8", "Rubric is analytical, not a runtime classifier."),
-        ("D9", "Hand-marks are locked by git commit before any swarm run."),
-        ("D12", "Tokens, latency, cost are first-class research dimensions."),
-        ("D15", "Verifier prompt strategies as an experimental variable."),
-        ("D16", "Adjudicator fires at retry exhaustion; threshold 0.6."),
-        ("D18", "Haiku / Sonnet / Opus / tiered as a third family of experiments."),
-    ]
-    item_y = y + Inches(0.55)
-    for tag, text in locked_items:
-        tag_box = add_textbox(slide, x_l + Inches(0.2), item_y,
-                              Inches(0.45), Inches(0.25))
-        set_text(tag_box.text_frame, tag, size=10, bold=True, colour=TEAL_DARK)
-        item_box = add_textbox(slide, x_l + Inches(0.7), item_y,
-                               col_w - Inches(0.9), Inches(0.3))
-        set_text(item_box.text_frame, text, size=10, colour=BODY)
-        item_y += Inches(0.34)
+        item_h = (h_col - Inches(0.45) - Inches(0.2)) / len(items)
+        row_y = y + Inches(0.55)
+        for title, body in items:
+            num_x = x + Inches(0.2)
+            num_w = Inches(0.4)
+            t_box = add_textbox(slide, num_x + num_w + Inches(0.05), row_y,
+                                col_w - num_w - Inches(0.3), Inches(0.28))
+            set_text(t_box.text_frame, title, size=11, bold=True, colour=HEAD)
 
-    add_outlined_rect(slide, x_r, y, col_w, h, fill=SURFACE)
-    add_filled_rect(slide, x_r, y, col_w, Inches(0.45), fill=NAVY)
-    rhead = add_textbox(slide, x_r + Inches(0.2), y + Inches(0.1),
-                        col_w - Inches(0.4), Inches(0.3))
-    set_text(rhead.text_frame, "OPEN QUESTIONS",
-             size=11, bold=True, colour=WHITE)
+            b_box = add_textbox(slide, num_x + num_w + Inches(0.05),
+                                row_y + Inches(0.28),
+                                col_w - num_w - Inches(0.3),
+                                item_h - Inches(0.32))
+            set_text(b_box.text_frame, body, size=10, colour=BODY)
 
-    open_items = [
-        ("Q1", "Final per-tier hand-mark sample size."),
-        ("Q4", "Language-confidence table for Phase B's six countries."),
-        ("Q10", "Trusted-domain JSON list per country."),
-        ("Q12", "Default Verifier strategy after comparison."),
-        ("Q13", "Recalibration of the Adjudicator's 0.6 threshold."),
-        ("Q14", "Injected-hallucination arm for strategy comparison."),
-        ("Q15", "Model mix for the tiered condition (Researcher / Verifier / Adjudicator)."),
-    ]
-    item_y = y + Inches(0.55)
-    for tag, text in open_items:
-        tag_box = add_textbox(slide, x_r + Inches(0.2), item_y,
-                              Inches(0.45), Inches(0.25))
-        set_text(tag_box.text_frame, tag, size=10, bold=True, colour=NAVY)
-        item_box = add_textbox(slide, x_r + Inches(0.7), item_y,
-                               col_w - Inches(0.9), Inches(0.35))
-        set_text(item_box.text_frame, text, size=10, colour=BODY)
-        item_y += Inches(0.4)
+            # Accent bullet on the left.
+            add_filled_rect(slide, num_x, row_y + Inches(0.08),
+                            Inches(0.18), Inches(0.18), fill=TEAL)
+            row_y += item_h
 
-    page_footer(slide, prs, 6, 9)
-
-
-def slide_short_term(prs: Presentation) -> None:
-    slide = new_slide(prs)
-    header(slide, "Short-term next steps",
-           eyebrow="Next two weeks")
-
-    items = [
+    short_items = [
         ("Hand-mark the Phase A pilot",
          "10 France questions across all four rubric tiers. Submit "
-         "from the dashboard; D9 lock happens on save.",
-         "now", TEAL_BRIGHT),
-        ("Baseline run on the pilot",
-         "Full swarm on the 10 with verifier-disprove and all-Sonnet. "
-         "First real accuracy-by-tier numbers.",
-         "now", TEAL_BRIGHT),
-        ("Verifier strategy comparison",
-         "Run the other three strategies (negation, steelman, blind) "
-         "on the same Researcher rows.",
-         "next", TEAL),
-        ("Family-1 cost experiments",
-         "Prompt-compressed and retrieval-tight variants on the same "
-         "pilot, comparing cost surface against the baseline.",
-         "next", TEAL),
+         "from the dashboard; D9 lock happens on save."),
+        ("Baseline + strategy comparison",
+         "Run the swarm on the locked 10 with all four Verifier "
+         "strategies. First real accuracy and rejection numbers."),
         ("First analysis pass",
          "Accuracy and cost stratified by rubric tier × ODMI dimension. "
-         "Draft methodology + early-results sections in REPORT_PRELIM.md.",
-         "then", TEAL_DARK),
+         "Draft methodology + early-results in the dissertation."),
     ]
 
-    y = Inches(1.35)
-    h = Inches(0.65)
-    gap = Inches(0.1)
-    for i, (title, body, tag, colour) in enumerate(items):
-        add_numbered_step(
-            slide, Inches(0.5), y + i * (h + gap),
-            prs.slide_width - Inches(1.0), h,
-            number=i + 1, title=title, body=body,
-            tag=tag, tag_colour=colour,
-        )
-
-    page_footer(slide, prs, 7, 9)
-
-
-def slide_long_term(prs: Presentation) -> None:
-    slide = new_slide(prs)
-    header(slide, "Long-term roadmap",
-           eyebrow="Towards 2 August 2026")
-
-    milestones = [
-        ("Phase B — six countries",
-         "FR, DE, NL, RO, HU, EE. Hand-marks re-run per country. "
-         "Verifier strategy comparison saturated.",
-         "Jun", NAVY),
-        ("Family-3 model variants",
-         "Pure Haiku / pure Sonnet / pure Opus / tiered. The "
-         "headline cost–accuracy surface comes out of this experiment.",
-         "Jun", NAVY),
-        ("External validity test",
-         "Pipeline frozen, then run against 2024 ODMI cycle as the "
-         "held-out set. Delta against 2025 is itself a result.",
-         "Jul", TEAL_DARK),
-        ("Phase C and live 2026 cycle",
-         "Stretch: all 36 EU countries. Live 2026 indicators submitted "
-         "to human review; acceptance rate is the headline metric.",
-         "Jul", TEAL_DARK),
-        ("Dissertation submission",
-         "Failure mode taxonomy and accuracy–cost surface as primary "
-         "contributions. Final manuscript due 2 August 2026.",
-         "Aug", TEAL),
+    long_items = [
+        ("Phase B — six-country matrix",
+         "FR, DE, NL, RO, HU, EE. Cost–accuracy surface comes "
+         "out of the Haiku / Sonnet / Opus / tiered model experiments."),
+        ("External validity (2024 cycle)",
+         "Pipeline frozen, then run against the 2024 ODMI cycle as a "
+         "held-out test. Delta against 2025 is itself a result."),
+        ("Dissertation by 2 August 2026",
+         "Failure-mode taxonomy and accuracy–cost surface as the two "
+         "primary contributions. Phase C as a stretch."),
     ]
 
-    y = Inches(1.35)
-    h = Inches(0.65)
-    gap = Inches(0.1)
-    for i, (title, body, tag, colour) in enumerate(milestones):
-        add_numbered_step(
-            slide, Inches(0.5), y + i * (h + gap),
-            prs.slide_width - Inches(1.0), h,
-            number=i + 1, title=title, body=body,
-            tag=tag, tag_colour=colour,
-        )
+    column(x_l, "NEXT TWO WEEKS", DARK, short_items)
+    column(x_r, "TOWARDS 2 AUGUST 2026", NAVY, long_items)
 
-    page_footer(slide, prs, 8, 9)
-
-
-def slide_snapshot(prs: Presentation, stats: dict) -> None:
-    slide = new_slide(prs)
-    header(slide, "Snapshot today", eyebrow="Numbers as of generation")
-
-    y = Inches(1.35)
-    h = Inches(1.45)
-    col_w = Inches(2.225)
-    gap = Inches(0.07)
-    x0 = Inches(0.5)
-
-    avg_s = stats["avg_runtime_s"]
-
-    add_kpi(slide, x0, y, col_w, h,
-            label="Questions catalogue", value=str(stats["n_questions"]),
-            caption="Loaded into SQLite.")
-    add_kpi(slide, x0 + (col_w + gap), y, col_w, h,
-            label="Hand-marks locked",
-            value=str(stats["n_locked"]),
-            caption="Stamped with commit SHA per D9.", accent=NAVY)
-    add_kpi(slide, x0 + 2 * (col_w + gap), y, col_w, h,
-            label="Finalised pairs",
-            value=str(stats["n_finals"]),
-            caption=f"Avg runtime {avg_s:.1f}s.", accent=SUCCESS)
-    add_kpi(slide, x0 + 3 * (col_w + gap), y, col_w, h,
-            label="LLM spend",
-            value=f"${stats['cost_total']:.2f}",
-            caption="Across all live runs to date.", accent=TEAL_BRIGHT)
-
-    note_y = y + h + Inches(0.5)
-    add_filled_rect(slide, Inches(0.5), note_y, Inches(0.08), Inches(0.8),
-                    fill=TEAL)
-    nb = add_textbox(slide, Inches(0.7), note_y, prs.slide_width - Inches(1.2),
-                     Inches(0.85))
-    tf = nb.text_frame
-    tf.clear()
-    p = tf.paragraphs[0]
-    r1 = p.add_run()
-    r1.text = "All nine dashboard pages live. "
-    r1.font.name = FONT
-    r1.font.size = Pt(13)
-    r1.font.bold = True
-    r1.font.color.rgb = HEAD
-    r2 = p.add_run()
-    r2.text = (
-        "Hand-marking, swarm dispatch, results scanning, cost tracking, "
-        "and prompt versioning all controllable from the Streamlit UI. "
-        "Next supervisor checkpoint: harder questions, harder countries, "
-        "and the first real Verifier-rejection on record."
-    )
-    r2.font.name = FONT
-    r2.font.size = Pt(12)
-    r2.font.color.rgb = BODY
-
-    page_footer(slide, prs, 9, 9)
+    page_footer(slide, prs, 6, 6)
 
 
 # ============================================================
@@ -934,12 +785,9 @@ def build_deck(stats: dict) -> Presentation:
     slide_title(prs)
     slide_what_is_built(prs, stats)
     slide_how_it_works(prs)
-    slide_evaluation(prs)
     slide_country_chart(prs, stats)
-    slide_decisions(prs)
-    slide_short_term(prs)
-    slide_long_term(prs)
-    slide_snapshot(prs, stats)
+    slide_dashboard_highlights(prs)
+    slide_next_steps(prs)
     return prs
 
 
