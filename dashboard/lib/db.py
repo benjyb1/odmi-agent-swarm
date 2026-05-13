@@ -111,6 +111,30 @@ def finals(limit: int = 200) -> pd.DataFrame:
     )
 
 
+def country_outcome_counts() -> pd.DataFrame:
+    """Per-country counts of finalised pairs, split success vs failed.
+
+    Success = terminal_status starts with 'accepted_'. Failed =
+    everything else, which today means 'rejected_*' and 'escalated_*'.
+    Countries with zero finalised pairs are excluded.
+
+    Returned columns: country_code, outcome ('Successful' | 'Failed'),
+    n. Long format, ready to feed straight to altair.
+    """
+    df = read_sql(
+        """SELECT country_code,
+                  CASE WHEN terminal_status LIKE 'accepted_%'
+                       THEN 'Successful'
+                       ELSE 'Failed'
+                  END AS outcome,
+                  COUNT(*) AS n
+           FROM phase2_final
+           WHERE country_code IS NOT NULL
+           GROUP BY country_code, outcome"""
+    )
+    return df
+
+
 # ============================================================
 # Claude usage / cost
 # ============================================================

@@ -9,6 +9,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import altair as alt
 import pandas as pd
 import streamlit as st
 
@@ -101,6 +102,52 @@ def recent_runs_panel() -> None:
     st.dataframe(display, use_container_width=True, hide_index=True)
 
 
+@st.fragment(run_every=5)
+def country_outcomes_chart() -> None:
+    st.subheader("Pairs finalised per country")
+    df = db.country_outcome_counts()
+    if len(df) == 0:
+        st.info(
+            "No finalised pairs yet. Once the Coordinator writes "
+            "`phase2_final` rows, this chart populates."
+        )
+        return
+
+    totals = df.groupby("country_code")["n"].sum().sort_values(ascending=False)
+    country_order = totals.index.tolist()
+
+    chart = (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X(
+                "country_code:N",
+                title="Country",
+                sort=country_order,
+            ),
+            y=alt.Y("n:Q", title="Finalised pairs", stack="zero"),
+            color=alt.Color(
+                "outcome:N",
+                title="Outcome",
+                scale=alt.Scale(
+                    domain=["Successful", "Failed"],
+                    range=["#2ca02c", "#d62728"],
+                ),
+            ),
+            tooltip=["country_code", "outcome", "n"],
+        )
+        .properties(height=300)
+    )
+    st.altair_chart(chart, use_container_width=True)
+    st.caption(
+        f"{int(totals.sum())} finalised pairs across "
+        f"{len(country_order)} country/countries. "
+        "Success = terminal_status accepted_by_verifier or "
+        "accepted_by_adjudicator. Failure includes rejected_* and "
+        "escalated_*."
+    )
+
+
 def hand_marks_and_queue() -> None:
     col1, col2 = st.columns(2)
 
@@ -156,6 +203,8 @@ def hand_marks_and_queue() -> None:
 # ============================================================
 
 kpi_tiles()
+st.divider()
+country_outcomes_chart()
 st.divider()
 recent_runs_panel()
 st.divider()
