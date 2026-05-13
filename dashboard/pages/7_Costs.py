@@ -14,11 +14,17 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from dashboard.lib import db
+from dashboard.lib.currency import USD_TO_GBP, format_gbp, to_gbp
 from dashboard.lib.sidebar import page_header, render_session_widget
 
 
 st.set_page_config(page_title="Costs", page_icon="💰", layout="wide")
-page_header("Costs", "Token usage and arithmetic-equivalent cost. CLIProxyAPI is a flat fee; figures are reproducible USD equivalents (Q9 in SPEC.md).")
+page_header(
+    "Costs",
+    "Token usage and arithmetic-equivalent cost in pounds. CLIProxyAPI "
+    "is a flat-rate sub, so the figures are the equivalent of direct "
+    "Anthropic billing converted at the rate in dashboard/lib/currency.py.",
+)
 render_session_widget()
 
 
@@ -33,7 +39,7 @@ with col3:
     st.metric("Tokens (out)", f"{int(summary.get('out_tok') or 0):,}")
 with col4:
     cost = float(summary.get("cost") or 0.0)
-    st.metric("Window cost", f"${cost:.2f}")
+    st.metric("Window cost", format_gbp(cost))
 
 st.divider()
 
@@ -43,11 +49,16 @@ daily = db.cost_by_day(days=30)
 if len(daily) == 0:
     st.info("No usage records yet.")
 else:
-    chart = px.bar(daily, x="day", y="cost",
-                   labels={"cost": "Cost ($)", "day": "Date"})
+    daily = daily.copy()
+    daily["cost_gbp"] = daily["cost"].apply(lambda x: to_gbp(x) or 0.0)
+    chart = px.bar(daily, x="day", y="cost_gbp",
+                   labels={"cost_gbp": "Cost (£)", "day": "Date"})
     chart.update_layout(height=300, margin=dict(t=10, b=10))
     st.plotly_chart(chart, use_container_width=True)
-    st.dataframe(daily, use_container_width=True, hide_index=True)
+    daily_display = daily[["day", "n_calls", "in_tok", "out_tok", "cost_gbp"]].rename(
+        columns={"cost_gbp": "cost_£"}
+    )
+    st.dataframe(daily_display, use_container_width=True, hide_index=True)
 
 st.divider()
 
@@ -65,11 +76,22 @@ ORDER BY total_cost DESC
 """
 by_dim = db.read_sql(sql)
 if len(by_dim) > 0:
-    by_dim["avg_cost"] = by_dim["avg_cost"].round(4)
-    by_dim["total_cost"] = by_dim["total_cost"].round(4)
-    st.dataframe(by_dim, use_container_width=True, hide_index=True)
+    by_dim["avg_cost_£"] = (
+        by_dim["avg_cost"].apply(lambda x: to_gbp(x) or 0.0).round(4)
+    )
+    by_dim["total_cost_£"] = (
+        by_dim["total_cost"].apply(lambda x: to_gbp(x) or 0.0).round(4)
+    )
+    by_dim_display = by_dim[[
+        "dimension", "country_code", "n", "avg_cost_£", "total_cost_£",
+    ]]
+    st.dataframe(by_dim_display, use_container_width=True, hide_index=True)
 else:
     st.info("No Researcher runs joined to questions yet.")
+
+st.caption(
+    f"Rate: 1 USD = £{USD_TO_GBP}. Update in `dashboard/lib/currency.py`."
+)
 
 st.divider()
 

@@ -2,7 +2,8 @@
 
 Pins the Claude session status at the bottom. Reads claude_usage_log
 to estimate the rolling 5-hour window. The soft limit is a config
-value (Q-DASH-1, set to $5 by default).
+value (Q-DASH-1), stored internally as a USD amount because the cost
+estimates from Anthropic pricing arrive in USD, and rendered in £.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ from pathlib import Path
 import streamlit as st
 
 from dashboard.lib import db, mode
+from dashboard.lib.currency import USD_TO_GBP, format_gbp, to_gbp
 
 
 DEFAULT_SOFT_LIMIT_USD = 5.0
@@ -57,7 +59,10 @@ def render_session_widget() -> None:
     with st.sidebar:
         st.markdown("---")
         st.caption("**CLAUDE SESSION (rolling 5h)**")
-        st.progress(pct_used, text=f"${cost:.2f} / ${soft_limit:.2f}")
+        st.progress(
+            pct_used,
+            text=f"{format_gbp(cost)} / {format_gbp(soft_limit)}",
+        )
         st.caption(
             f"Calls: {n_calls}  |  Tokens: {in_tok + out_tok:,}  "
             f"|  In: {in_tok:,}  |  Out: {out_tok:,}"
@@ -65,12 +70,15 @@ def render_session_widget() -> None:
         if rl_hits > 0:
             st.error(f"{rl_hits} rate-limit hit(s) in window")
         with st.expander("Adjust soft limit", expanded=False):
-            new_limit = st.number_input(
-                "Soft limit ($)", min_value=0.5, max_value=100.0,
-                value=float(soft_limit), step=0.5, key="_soft_limit_input",
+            current_limit_gbp = to_gbp(soft_limit) or 0.0
+            new_limit_gbp = st.number_input(
+                "Soft limit (£)", min_value=0.4, max_value=80.0,
+                value=float(current_limit_gbp), step=0.5,
+                key="_soft_limit_input",
             )
-            if new_limit != soft_limit:
-                st.session_state["soft_limit_usd"] = new_limit
+            new_limit_usd = new_limit_gbp / USD_TO_GBP
+            if abs(new_limit_usd - soft_limit) > 0.005:
+                st.session_state["soft_limit_usd"] = new_limit_usd
 
 
 def page_header(title: str, subtitle: str | None = None) -> None:

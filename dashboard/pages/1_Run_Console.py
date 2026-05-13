@@ -19,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from dashboard.lib import db, mode
+from dashboard.lib.currency import format_gbp
 from dashboard.lib.sidebar import page_header, render_session_widget
 from scripts.dispatch_subtrios import (
     DEFAULT_SOFT_LIMIT_USD,
@@ -139,7 +140,7 @@ def render_launcher() -> None:
         )
     with col_m:
         soft_limit = st.session_state.get("soft_limit_usd", DEFAULT_SOFT_LIMIT_USD)
-        st.metric("Window soft limit", f"${soft_limit:.2f}")
+        st.metric("Window soft limit", format_gbp(soft_limit))
 
     n_pairs = len(questions) * len(countries)
 
@@ -164,22 +165,23 @@ def render_launcher() -> None:
     if est.projected_total_usd > est.budget_remaining_usd:
         st.error(
             f"⚠ Pre-flight credit check: {n_pairs} subtrios projected at "
-            f"${est.projected_total_usd:.2f} (fallback={est.fallback_level}, "
-            f"n={est.sample_size}). Budget remaining ${est.budget_remaining_usd:.2f}. "
+            f"{format_gbp(est.projected_total_usd)} "
+            f"(fallback={est.fallback_level}, n={est.sample_size}). "
+            f"Budget remaining {format_gbp(est.budget_remaining_usd)}. "
             f"**Will refuse to start unless you tick 'Force release'.**"
         )
     elif est.projected_total_usd > est.budget_remaining_usd * 0.85:
         st.warning(
-            f"⚠ Projected cost ${est.projected_total_usd:.2f} is >85% of "
-            f"${est.budget_remaining_usd:.2f} remaining. Run may complete but "
-            f"will be close to the cap."
+            f"⚠ Projected cost {format_gbp(est.projected_total_usd)} is "
+            f">85% of {format_gbp(est.budget_remaining_usd)} remaining. "
+            f"Run may complete but will be close to the cap."
         )
     else:
         st.info(
-            f"Pre-flight OK: ~${est.per_subtrio_usd:.3f}/pair × {n_pairs} "
-            f"(uplift 1.2x, fallback={est.fallback_level}) → "
-            f"projected ${est.projected_total_usd:.2f} of "
-            f"${est.budget_remaining_usd:.2f} remaining."
+            f"Pre-flight OK: ~{format_gbp(est.per_subtrio_usd, places=3)}"
+            f"/pair × {n_pairs} (uplift 1.2x, fallback={est.fallback_level})"
+            f" → projected {format_gbp(est.projected_total_usd)} of "
+            f"{format_gbp(est.budget_remaining_usd)} remaining."
         )
 
     # Ground-truth coverage check (per D22, superseded the hand-mark lock check).
@@ -387,7 +389,7 @@ def _render_card(row: pd.Series, *, is_active: bool) -> None:
             )
         with col_h2:
             cost = row.get("cumulative_cost_usd")
-            cost_str = f"${cost:.3f}" if pd.notna(cost) else "—"
+            cost_str = format_gbp(cost, places=3) if pd.notna(cost) else "—"
             retry = int(row.get("retry_count") or 0)
             st.caption(f"retry {retry}  ·  {cost_str}")
 

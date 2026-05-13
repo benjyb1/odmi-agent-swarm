@@ -593,7 +593,7 @@ def coordinate(
         )
         print(f"  R{attempt+1}: {r_result.output.answer} "
               f"({r_result.output.answer_confidence:.2f}) "
-              f"${r_result.cumulative_cost_usd or 0:.4f}", flush=True)
+              f"£{(r_result.cumulative_cost_usd or 0) * 0.79:.4f}", flush=True)
 
         # --- Verifier stage ---
         _upsert_subtrio_status(
@@ -671,7 +671,7 @@ def coordinate(
 
         print(f"  V{attempt+1}: {v_result.output.verdict} "
               f"({v_result.output.verifier_confidence:.2f}) "
-              f"${v_result.cumulative_cost_usd or 0:.4f}", flush=True)
+              f"£{(v_result.cumulative_cost_usd or 0) * 0.79:.4f}", flush=True)
 
         # --- Verdict branching ---
         if v_result.output.verdict == "pass":

@@ -106,6 +106,9 @@ tests/              # pytest
   `scripts/setup_sqlite.py`.
 - Streamlit dashboard at `dashboard/Home.py`; deployed publicly to
   Streamlit Cloud (see D23). `ODMI_READ_ONLY=1` disables write buttons there.
+- Costs are displayed in pounds via `dashboard/lib/currency.py`
+  (`USD_TO_GBP=0.79`). The SQLite column is still named
+  `estimated_cost_usd` — only the presentation layer converts.
 
 ## Common commands
 

@@ -24,6 +24,10 @@ from pptx.enum.text import PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+import sys
+sys.path.insert(0, str(REPO_ROOT))
+from dashboard.lib.currency import USD_TO_GBP
+
 DB_PATH = REPO_ROOT / "data" / "odmi.db"
 OUT_DIR = REPO_ROOT / "docs"
 
@@ -142,6 +146,7 @@ def fetch_stats() -> dict:
         "n_comparable": n_comparable,
         "accuracy": accuracy,
         "cost_total": cost_total,
+        "cost_total_gbp": (cost_total or 0.0) * USD_TO_GBP,
         "avg_runtime_s": avg_runtime,
     }
 
@@ -429,7 +434,7 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
             accent=SUCCESS)
     add_kpi(slide, x0 + 3 * (col_w + gap), y, col_w, h,
             label="Total LLM spend",
-            value=f"${stats['cost_total']:.2f}",
+            value=f"£{stats['cost_total_gbp']:.2f}",
             caption="Via CLIProxyAPI on Claude Max.",
             accent=TEAL_BRIGHT)
 

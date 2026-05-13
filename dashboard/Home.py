@@ -19,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from dashboard.lib import db
+from dashboard.lib.currency import format_gbp
 from dashboard.lib.sidebar import render_session_widget
 
 
@@ -201,7 +202,7 @@ def render_hero() -> None:
               <div style="color:#A0AEC0; font-size:11px; letter-spacing:0.09em;
                           text-transform:uppercase;">5h spend</div>
               <div style="color:#FFFFFF; font-size:22px; font-weight:700;">
-                ${cost:.2f}
+                {format_gbp(cost)}
               </div>
             </div>
           </div>
@@ -284,7 +285,7 @@ def kpi_tiles() -> None:
         st.markdown(
             _kpi_html(
                 "5h window spend",
-                f"${cost:.2f}",
+                format_gbp(cost),
                 f"{n_calls} LLM calls in the rolling window.",
                 "#0D9488",
             ),
@@ -407,10 +408,10 @@ def recent_runs_panel() -> None:
     ]].copy()
     display.columns = [
         "Question", "Country", "Stage", "Verdict",
-        "Retries", "Cost $", "Last message", "Updated",
+        "Retries", "Cost £", "Last message", "Updated",
     ]
-    display["Cost $"] = display["Cost $"].apply(
-        lambda x: f"${x:.4f}" if pd.notna(x) else "—"
+    display["Cost £"] = display["Cost £"].apply(
+        lambda x: format_gbp(x, places=4) if pd.notna(x) else "—"
     )
     st.dataframe(display, use_container_width=True, hide_index=True)
     st.markdown("</div>", unsafe_allow_html=True)

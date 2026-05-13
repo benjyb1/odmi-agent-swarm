@@ -509,7 +509,19 @@ content is live before claiming the change is done.
   `https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/`
   (set to public viewer access, `ODMI_READ_ONLY=1` in secrets).
 - Slide deck `docs/PROGRESS_SLIDES_2026-05-13.pptx` regenerated against
-  the ground-truth schema.
+  the ground-truth schema, costs in £.
+- `dashboard/pages/5_Database.py` — the 5,148-pair coverage grid with
+  filters and a "delete a pair's swarm rows" form.
+- `db.delete_pair`, `db.pair_row_counts`, `db.coverage_grid`,
+  `db.already_finalised` helpers.
+- Run Console: progress strip at the top (5 metrics + a live progress
+  bar for the latest batch), pre-flight duplicate detection, opt-in
+  re-run-anyway checkbox.
+- `scripts/dispatch_subtrios.py` accepts `--pairs QID:CC` for sparse
+  dispatches; the dashboard always uses it.
+- `dashboard/lib/currency.py` — USD→GBP display layer (`USD_TO_GBP=0.79`).
+  Every cost display in the dashboard, the slide deck, and the runner
+  CLI prints uses it.
 
 ### Not yet built
 
@@ -586,6 +598,7 @@ content is live before claiming the change is done.
 
 | Date | Change |
 |---|---|
+| 2026-05-13 (late evening) | Follow-ups after D22. New `dashboard/pages/5_Database.py` shows all 5,148 ODMI ground-truth pairs joined with the latest swarm answer; filters by country / dimension / coverage state / free-text; deletes one pair's swarm rows from the UI. New `db.delete_pair` / `pair_row_counts` / `coverage_grid` helpers. Each Results card grew a `🗑 Delete all swarm rows for this pair` expander with confirmation. Run Console launcher now refuses duplicates by default (with a checkbox to opt-in), and the dispatcher gained a `--pairs QID:CC` CLI argument so sparse sets flow through. Run Console gained a top-of-page progress strip (5 metrics + an `st.progress` bar tracking the latest batch). Currency switched to GBP everywhere it's displayed (dashboard, slides, CLI prints): new `dashboard/lib/currency.py` with `USD_TO_GBP=0.79` and `format_gbp()`. Soft-limit slider accepts £ in; converts to USD for the dispatcher under the hood. `estimated_cost_usd` column name unchanged (the underlying unit is still USD). |
 | 2026-05-13 (evening) | D22 added: ODMI ground truth supersedes hand-marks. New `ground_truth` SQLite table loaded from `merged_responses` (5,148 rows, 36 countries × 143 questions) via `scripts/load_ground_truth.py`. `dashboard/lib/db.py:_MATCH_STATUS_SQL` classifies each finalised pair against ODMI's recorded answer; Results Cards now show ODMI's answer next to the swarm's with a match badge; Home page KPI strip and country chart rebuild on accuracy vs ODMI rather than terminal_status; Hand-marks page removed from sidebar; slide deck regenerated against the new schema. D23 added: Streamlit Cloud auto-deploys on push to `main`, dashboard verifier needed after every dashboard-touching push. METHODOLOGY.md Section 6 rewritten; Sections 3 and 4 retained as historical record with a header note. RQ2 reframed to ODMI dimensions. Sample sizes for hand-marking (D10) are no longer load-bearing. |
 | 2026-05-13 | Coordinator follow-ups. `run_coordinator.py --dry-run` and `--walkthrough` flags added. Dry-run gates the five `phase2_*` and `subtrio_status` writes; `claude_usage_log` deliberately stays on so real token spend keeps counting toward the rolling 5-h budget. Smoke test on P1/FR passed: zero new rows in gated tables, six usage-log rows recorded. `docs/KNOWN_GAPS.md` added: documents the three deferred failure modes (resume / D22-D25, CAPTCHA detection, human-queue CSV) with trigger conditions and build sketches; indexed from SPEC.md's "Where to look for what" table. |
 | 2026-05-12 | D19 (Streamlit dashboard), D20 (rolling-window credit policy), D21 (three new schema tables: subtrio_status, claude_usage_log, model_defaults) added. Q-DASH-1..4 opened. Phase 2 complete: Verifier with four strategies built and smoke-tested. Phase 3 complete: Coordinator (run_coordinator.py), Adjudicator (agents/adjudicator.py), dispatcher (dispatch_subtrios.py), and cleanup_subtrios.py written. End-to-end P1/FR coordinator pass succeeded with all six LLM calls writing claude_usage_log rows carrying subtrio_id. Streamlit dashboard built (9 pages) and tested: 9/9 Playwright page loads clean, 4/4 AppTest cases pass, end-to-end Release from the UI spawns a real dispatcher subprocess and writes the subtrio_status row. |
@@ -610,6 +623,8 @@ content is live before claiming the change is done.
 | What did the supervisor say? | Notion supervision log. |
 | Where are the parsed questions? | `data/questions/odmi_2025_questions.json`. |
 | Where is the live dashboard? | `https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/` (public, read-only). |
+| Coverage of every pair / delete a bad result? | Sidebar → Database. |
+| How are costs displayed? | All £ via `dashboard/lib/currency.py` (rate `USD_TO_GBP=0.79`). Underlying column is still `estimated_cost_usd`. |
 | Where is the prelim draft? | `docs/REPORT_PRELIM.md`. |
 | Where are citations? | `docs/references.bib`. |
 | Known gaps and anticipated failure modes? | `docs/KNOWN_GAPS.md`. |

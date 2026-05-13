@@ -216,7 +216,7 @@ def make_walkthrough_callback(*, enabled: bool):
             print(
                 f"    tokens: {payload['input_tokens']}+{payload['output_tokens']}, "
                 f"{payload['wall_clock_ms']} ms"
-                + (f", ${payload['cost_usd']:.6f}" if payload["cost_usd"] else "")
+                + (f", £{payload['cost_usd'] * 0.79:.6f}" if payload["cost_usd"] else "")
             )
             return
         if event == "main_call_failed":
@@ -428,7 +428,7 @@ def main() -> None:
     print(f"    output_tokens:  {result.cumulative_output_tokens}")
     print(f"    wall_clock_ms:  {result.cumulative_wall_clock_ms}")
     if result.cumulative_cost_usd is not None:
-        print(f"    estimated_cost: ${result.cumulative_cost_usd:.6f}")
+        print(f"    estimated_cost: £{result.cumulative_cost_usd * 0.79:.6f}")
     print()
 
     if args.dry_run:

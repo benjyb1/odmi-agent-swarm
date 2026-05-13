@@ -38,6 +38,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from agents.errors import EXIT_CODE_RATE_LIMITED
 from agents.tools.db import DB_PATH, connect
+from dashboard.lib.currency import format_gbp
 
 
 # Cold-start default per spec §6.1: conservative upper bound based on
@@ -235,16 +236,19 @@ def dispatch(
         soft_limit_usd=soft_limit_usd,
     )
     log(
-        f"pre-flight: {len(pairs)} pairs, est ${estimate.per_subtrio_usd:.3f}/pair "
+        f"pre-flight: {len(pairs)} pairs, est "
+        f"{format_gbp(estimate.per_subtrio_usd, places=3)}/pair "
         f"(fallback={estimate.fallback_level}, n={estimate.sample_size}), "
-        f"projected ${estimate.projected_total_usd:.2f}, "
-        f"window-used ${estimate.rolling_window_cost_usd:.2f} of ${soft_limit_usd:.2f}, "
-        f"remaining ${estimate.budget_remaining_usd:.2f}"
+        f"projected {format_gbp(estimate.projected_total_usd)}, "
+        f"window-used {format_gbp(estimate.rolling_window_cost_usd)} of "
+        f"{format_gbp(soft_limit_usd)}, remaining "
+        f"{format_gbp(estimate.budget_remaining_usd)}"
     )
     if estimate.projected_total_usd > estimate.budget_remaining_usd and not force:
         msg = (
-            f"REFUSED: projected ${estimate.projected_total_usd:.2f} > "
-            f"budget remaining ${estimate.budget_remaining_usd:.2f}. "
+            f"REFUSED: projected {format_gbp(estimate.projected_total_usd)}"
+            f" > budget remaining "
+            f"{format_gbp(estimate.budget_remaining_usd)}. "
             f"Use force=True or wait."
         )
         log(msg)
@@ -278,8 +282,9 @@ def dispatch(
             current_cost = rolling_window_cost_usd()
             if current_cost >= soft_limit_usd * (1 - LOW_WATER_FRACTION):
                 msg = (
-                    f"budget low-water hit: ${current_cost:.2f} "
-                    f">= ${soft_limit_usd * (1 - LOW_WATER_FRACTION):.2f}; "
+                    f"budget low-water hit: {format_gbp(current_cost)} "
+                    f">= "
+                    f"{format_gbp(soft_limit_usd * (1 - LOW_WATER_FRACTION))}; "
                     f"skipping {job.question_id}/{job.country_code}"
                 )
                 log(msg)

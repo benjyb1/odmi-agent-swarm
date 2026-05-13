@@ -8,6 +8,62 @@ Entries newest first.
 
 ---
 
+## 2026-05-13 — Session 8: Database page, per-pair delete, dedup, £
+
+A second pass on top of Session 7's ground-truth pivot. The pieces
+that landed:
+
+**Database page.** New `dashboard/pages/5_Database.py`. Shows the full
+5,148-pair coverage grid (every ODMI question × country, with the
+latest swarm answer joined in if any). Filters: country, dimension,
+coverage state (`All` / `Covered` / `Not yet covered` / `Matches` /
+`Differs`), free-text search across question_id, ODMI answer, and
+swarm answer. Below the grid: a delete-a-pair form that previews how
+many rows would be removed from each table before the user confirms.
+
+**Per-card delete on Results.** Each Results card grew a
+`🗑 Delete all swarm rows for this pair` expander. Two-step
+confirmation. `claude_usage_log` is left alone so cost audit stays
+intact.
+
+**Run Console duplicate check.** `db.already_finalised(qids, ccs)`
+returns one row per requested pair that already has a `phase2_final`.
+The launcher renders an amber warning with the list. Default is to
+skip the duplicates; an opt-in checkbox runs them anyway. To support
+sparse dispatches, `scripts/dispatch_subtrios.py` gained a
+`--pairs QID:CC` CLI argument, and the Run Console always passes
+that now instead of `--questions × --countries`.
+
+**Progress strip.** Top-of-page on the Run Console: five small
+metric tiles (In flight / Researching / Verifying / Adjudicating /
+Queued) plus an `st.progress` bar for the most recently dispatched
+batch. Updates every 1.5 s as a separate fragment.
+
+**Currency switch.** Every cost display now reads as £. New
+`dashboard/lib/currency.py` exposes `USD_TO_GBP=0.79` and
+`format_gbp()`. Sites updated: Home KPI strip and hero, sidebar
+session widget, Run Console pre-flight, Results card technical
+details, Costs page chart + tables, generate_slides.py KPI, and every
+runner-script CLI print (`run_coordinator`, `run_researcher`,
+`run_verifier`, `dispatch_subtrios`). Soft-limit slider takes £
+input and converts to USD for the dispatcher. The
+`estimated_cost_usd` SQLite column is unchanged.
+
+**Doc sweep.** SPEC.md change log + Current Status + "Where to look
+for what" updated. CLAUDE.md notes the £ display layer. README's
+quickstart already covered the relevant commands so no rewrite
+needed. PROJECT_LOG (this entry) is the narrative.
+
+**Memory.** New feedback memory captures the "after a substantial
+change, sweep the canonical docs and commit + push" ritual so future
+sessions don't drift again.
+
+**What's next.** Same as Session 7's next-section: scale to harder
+ODMI dimensions, add Hungary and Estonia, run the Verifier strategy
+comparison.
+
+---
+
 ## 2026-05-13 — Session 7: ODMI ground truth supersedes hand-marking
 
 The hand-mark workflow has been the dangling tail of D8 for weeks. This

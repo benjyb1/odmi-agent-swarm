@@ -13,6 +13,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from dashboard.lib import db, mode
+from dashboard.lib.currency import format_gbp
 from dashboard.lib.sidebar import page_header, render_session_widget
 
 
@@ -136,9 +137,13 @@ def _render_card(row: pd.Series) -> None:
                     awarded = row.get("ground_truth_awarded_score")
                     max_s = row.get("ground_truth_max_score")
                     if pd.notna(awarded) and pd.notna(max_s):
+                        pct_str = (
+                            f"{(awarded / max_s):.0%}"
+                            if max_s and max_s > 0 else "—"
+                        )
                         st.caption(
                             f"ODMI awarded {awarded:g} / {max_s:g} "
-                            f"({(awarded / max_s):.0%}) on this question for "
+                            f"({pct_str}) on this question for "
                             f"{row['country_code']}."
                         )
         else:
@@ -195,7 +200,7 @@ def _render_card(row: pd.Series) -> None:
             with cols[2]:
                 st.metric(
                     "Cost",
-                    f"${cost:.4f}" if pd.notna(cost) else "—",
+                    format_gbp(cost, places=4) if pd.notna(cost) else "—",
                 )
             with cols[3]:
                 st.metric(
