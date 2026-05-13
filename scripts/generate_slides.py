@@ -1,9 +1,10 @@
 """Generate the supervisor-meeting slide deck from live DB state.
 
-Reads SQLite for current counts, costs, and per-country outcomes, then
-writes a .pptx beside `docs/PROGRESS_SLIDES.md`. Re-runnable. The deck
-is a status snapshot, not a polished talk, so headlines stay terse and
-every number is read from the DB at generation time.
+Styled after `MSc Progress Slides 3.pptx`: 16:9 widescreen, dark hero
+header bar on every slide, Calibri throughout, teal accent palette,
+white cards with thin accent stripes. Every number on the deck is
+queried from SQLite at generation time, so re-running this script
+produces an up-to-date deck.
 
     uv run python scripts/generate_slides.py
 
@@ -19,31 +20,46 @@ from pathlib import Path
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import PP_ALIGN
 from pptx.util import Emu, Inches, Pt
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = REPO_ROOT / "data" / "odmi.db"
 OUT_DIR = REPO_ROOT / "docs"
 
-NAVY = RGBColor(0x14, 0x2B, 0x57)
-GREEN = RGBColor(0x2C, 0xA0, 0x2C)
-RED = RGBColor(0xD6, 0x27, 0x28)
-GREY = RGBColor(0x55, 0x55, 0x55)
+
+# ============================================================
+# Palette and type system (mirrors MSc Progress Slides 3.pptx)
+# ============================================================
+
+DARK = RGBColor(0x1A, 0x20, 0x2C)
+HEAD = RGBColor(0x1A, 0x20, 0x2C)
+BODY = RGBColor(0x2D, 0x37, 0x48)
+MUTED = RGBColor(0x71, 0x80, 0x96)
+WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+PALE = RGBColor(0xCB, 0xD5, 0xE0)
+SURFACE = RGBColor(0xF7, 0xFA, 0xFC)
+BORDER = RGBColor(0xE2, 0xE8, 0xF0)
+TEAL = RGBColor(0x0D, 0x94, 0x88)
+TEAL_DARK = RGBColor(0x0F, 0x76, 0x6E)
+TEAL_BRIGHT = RGBColor(0x14, 0xB8, 0xA6)
+SUCCESS = RGBColor(0x38, 0xA1, 0x69)
+WARNING = RGBColor(0xD6, 0x9E, 0x2E)
+DANGER = RGBColor(0xC5, 0x30, 0x30)
+NAVY = RGBColor(0x1E, 0x3A, 0x5F)
+
+FONT = "Calibri"
 
 
 # ============================================================
-# Data layer
+# Data
 # ============================================================
 
 def fetch_stats() -> dict:
     with sqlite3.connect(DB_PATH) as conn:
         cur = conn.cursor()
-        n_questions = cur.execute(
-            "SELECT COUNT(*) FROM questions"
-        ).fetchone()[0]
-        n_hand_marks = cur.execute(
-            "SELECT COUNT(*) FROM hand_marks"
-        ).fetchone()[0]
+        n_questions = cur.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+        n_hand_marks = cur.execute("SELECT COUNT(*) FROM hand_marks").fetchone()[0]
         n_locked = cur.execute(
             "SELECT COUNT(*) FROM hand_marks "
             "WHERE locked_by_commit IS NOT NULL"
@@ -57,9 +73,7 @@ def fetch_stats() -> dict:
         n_adjudications = cur.execute(
             "SELECT COUNT(*) FROM phase2_adjudications"
         ).fetchone()[0]
-        n_finals = cur.execute(
-            "SELECT COUNT(*) FROM phase2_final"
-        ).fetchone()[0]
+        n_finals = cur.execute("SELECT COUNT(*) FROM phase2_final").fetchone()[0]
 
         country_outcomes = cur.execute(
             """SELECT country_code,
@@ -73,8 +87,7 @@ def fetch_stats() -> dict:
         ).fetchall()
 
         cost_total = cur.execute(
-            "SELECT COALESCE(SUM(estimated_cost_usd), 0) "
-            "FROM claude_usage_log"
+            "SELECT COALESCE(SUM(estimated_cost_usd), 0) FROM claude_usage_log"
         ).fetchone()[0]
 
         avg_runtime = cur.execute(
@@ -100,145 +113,813 @@ def fetch_stats() -> dict:
 
 
 # ============================================================
-# Slide helpers
+# Low-level builders
 # ============================================================
 
-def add_title_slide(prs: Presentation, title: str, subtitle: str) -> None:
-    layout = prs.slide_layouts[0]
-    slide = prs.slides.add_slide(layout)
-    slide.shapes.title.text = title
-    if len(slide.placeholders) > 1:
-        slide.placeholders[1].text = subtitle
-
-
-def add_text_slide(prs: Presentation, title: str, bullets: list[str]) -> None:
-    layout = prs.slide_layouts[1]
-    slide = prs.slides.add_slide(layout)
-    slide.shapes.title.text = title
-
-    body = slide.placeholders[1].text_frame
-    body.clear()
-    for i, bullet in enumerate(bullets):
-        para = body.paragraphs[0] if i == 0 else body.add_paragraph()
-        para.text = bullet
-        para.font.size = Pt(18)
-
-
-def add_two_col_slide(
-    prs: Presentation, title: str,
-    left_header: str, left_items: list[str],
-    right_header: str, right_items: list[str],
+def set_text(
+    tf, text: str, *,
+    size: int = 12,
+    bold: bool = False,
+    colour: RGBColor = BODY,
+    align: PP_ALIGN = PP_ALIGN.LEFT,
+    font: str = FONT,
 ) -> None:
-    layout = prs.slide_layouts[5]
-    slide = prs.slides.add_slide(layout)
-    slide.shapes.title.text = title
-
-    width = Inches(4.4)
-    height = Inches(5.2)
-    top = Inches(1.4)
-
-    for col_idx, (header, items, left) in enumerate([
-        (left_header, left_items, Inches(0.5)),
-        (right_header, right_items, Inches(5.1)),
-    ]):
-        box = slide.shapes.add_textbox(left, top, width, height)
-        tf = box.text_frame
-        tf.word_wrap = True
-        head = tf.paragraphs[0]
-        head.text = header
-        head.font.bold = True
-        head.font.size = Pt(20)
-        head.font.color.rgb = NAVY
-        for item in items:
-            para = tf.add_paragraph()
-            para.text = f"• {item}"
-            para.font.size = Pt(15)
-            para.space_before = Pt(6)
+    tf.clear()
+    p = tf.paragraphs[0]
+    p.alignment = align
+    run = p.add_run()
+    run.text = text
+    run.font.name = font
+    run.font.size = Pt(size)
+    run.font.bold = bold
+    run.font.color.rgb = colour
 
 
-def add_country_chart_slide(
-    prs: Presentation, title: str, country_outcomes: list[tuple]
-) -> None:
-    layout = prs.slide_layouts[5]
-    slide = prs.slides.add_slide(layout)
-    slide.shapes.title.text = title
+def add_textbox(slide, x, y, w, h):
+    box = slide.shapes.add_textbox(x, y, w, h)
+    box.text_frame.word_wrap = True
+    box.text_frame.margin_left = Emu(0)
+    box.text_frame.margin_right = Emu(0)
+    box.text_frame.margin_top = Emu(0)
+    box.text_frame.margin_bottom = Emu(0)
+    return box
 
-    if not country_outcomes:
-        box = slide.shapes.add_textbox(
-            Inches(1), Inches(2), Inches(8), Inches(1)
+
+def add_filled_rect(slide, x, y, w, h, *, fill: RGBColor, line_visible: bool = False):
+    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill
+    if not line_visible:
+        shape.line.fill.background()
+    return shape
+
+
+def add_outlined_rect(
+    slide, x, y, w, h, *,
+    fill: RGBColor = WHITE,
+    border: RGBColor = BORDER,
+):
+    shape = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = fill
+    shape.line.color.rgb = border
+    shape.line.width = Emu(6350)  # ~0.5pt
+    return shape
+
+
+# ============================================================
+# Slide template
+# ============================================================
+
+HEADER_HEIGHT = Inches(1.05)
+
+
+def new_slide(prs: Presentation) -> object:
+    blank = prs.slide_layouts[6]
+    slide = prs.slides.add_slide(blank)
+    add_filled_rect(slide, 0, 0, prs.slide_width, HEADER_HEIGHT, fill=DARK)
+    return slide
+
+
+def header(slide, title: str, eyebrow: str | None = None) -> None:
+    pad = Inches(0.5)
+    if eyebrow:
+        eyebrow_box = add_textbox(slide, pad, Inches(0.18), Inches(8.5), Inches(0.25))
+        set_text(
+            eyebrow_box.text_frame, eyebrow.upper(),
+            size=9, bold=True, colour=TEAL_BRIGHT,
         )
-        box.text_frame.text = "No finalised pairs in the DB yet."
+        title_top = Inches(0.42)
+    else:
+        title_top = Inches(0.28)
+
+    title_box = add_textbox(slide, pad, title_top, Inches(8.5), Inches(0.55))
+    set_text(
+        title_box.text_frame, title,
+        size=24, bold=True, colour=WHITE,
+    )
+
+
+def page_footer(slide, prs: Presentation, page_num: int, total: int) -> None:
+    pad = Inches(0.5)
+    foot_y = prs.slide_height - Inches(0.32)
+    fbox = add_textbox(slide, pad, foot_y, prs.slide_width - 2 * pad, Inches(0.2))
+    set_text(
+        fbox.text_frame,
+        f"ODMI Agent Swarm  ·  Benjy Bream  ·  King's College London  ·  "
+        f"{page_num} / {total}",
+        size=8, colour=MUTED,
+    )
+
+
+# ============================================================
+# Card builders
+# ============================================================
+
+def add_card(
+    slide, x, y, w, h, *,
+    title: str, body: str,
+    accent: RGBColor = TEAL,
+    title_size: int = 14,
+    body_size: int = 11,
+) -> None:
+    add_outlined_rect(slide, x, y, w, h)
+    add_filled_rect(slide, x, y, Inches(0.08), h, fill=accent)
+    pad_x = Inches(0.25)
+    pad_y = Inches(0.15)
+    inner_x = x + Inches(0.18) + pad_x
+    inner_w = w - Inches(0.18) - 2 * pad_x
+
+    title_box = add_textbox(slide, inner_x, y + pad_y, inner_w, Inches(0.35))
+    set_text(
+        title_box.text_frame, title,
+        size=title_size, bold=True, colour=HEAD,
+    )
+
+    body_box = add_textbox(
+        slide, inner_x, y + pad_y + Inches(0.35),
+        inner_w, h - pad_y - Inches(0.4),
+    )
+    set_text(body_box.text_frame, body, size=body_size, colour=BODY)
+
+
+def add_kpi(
+    slide, x, y, w, h, *,
+    label: str, value: str, caption: str = "",
+    accent: RGBColor = TEAL,
+) -> None:
+    add_outlined_rect(slide, x, y, w, h, fill=SURFACE)
+    add_filled_rect(slide, x, y, w, Inches(0.06), fill=accent)
+    pad_x = Inches(0.25)
+
+    label_box = add_textbox(slide, x + pad_x, y + Inches(0.2),
+                            w - 2 * pad_x, Inches(0.25))
+    set_text(label_box.text_frame, label.upper(),
+             size=9, bold=True, colour=MUTED)
+
+    value_box = add_textbox(
+        slide, x + pad_x, y + Inches(0.45),
+        w - 2 * pad_x, Inches(0.7),
+    )
+    set_text(value_box.text_frame, value,
+             size=28, bold=True, colour=HEAD)
+
+    if caption:
+        cap_box = add_textbox(
+            slide, x + pad_x, y + h - Inches(0.35),
+            w - 2 * pad_x, Inches(0.25),
+        )
+        set_text(cap_box.text_frame, caption, size=9.5, colour=BODY)
+
+
+def add_numbered_step(
+    slide, x, y, w, h, *,
+    number: int, title: str, body: str,
+    tag: str | None = None,
+    tag_colour: RGBColor = TEAL,
+) -> None:
+    add_outlined_rect(slide, x, y, w, h, fill=SURFACE)
+
+    circle_d = Inches(0.5)
+    circle = slide.shapes.add_shape(
+        MSO_SHAPE.OVAL,
+        x + Inches(0.2), y + (h - circle_d) / 2,
+        circle_d, circle_d,
+    )
+    circle.fill.solid()
+    circle.fill.fore_color.rgb = DARK
+    circle.line.fill.background()
+    set_text(
+        circle.text_frame, str(number),
+        size=16, bold=True, colour=WHITE, align=PP_ALIGN.CENTER,
+    )
+
+    inner_x = x + Inches(0.85)
+    inner_w = w - Inches(1.1)
+
+    title_box = add_textbox(slide, inner_x, y + Inches(0.18), inner_w, Inches(0.3))
+    set_text(title_box.text_frame, title, size=13, bold=True, colour=HEAD)
+
+    body_box = add_textbox(slide, inner_x, y + Inches(0.5), inner_w, h - Inches(0.6))
+    set_text(body_box.text_frame, body, size=10.5, colour=BODY)
+
+    if tag:
+        tag_w = Inches(0.7)
+        tag_box = add_textbox(
+            slide, x + w - tag_w - Inches(0.15),
+            y + Inches(0.18), tag_w, Inches(0.25),
+        )
+        set_text(
+            tag_box.text_frame, tag.upper(),
+            size=9, bold=True, colour=tag_colour, align=PP_ALIGN.RIGHT,
+        )
+
+
+# ============================================================
+# Slides
+# ============================================================
+
+def slide_title(prs: Presentation) -> None:
+    blank = prs.slide_layouts[6]
+    slide = prs.slides.add_slide(blank)
+    add_filled_rect(slide, 0, 0, prs.slide_width, prs.slide_height, fill=DARK)
+
+    add_filled_rect(slide, 0, Inches(2.0), Inches(0.6), Inches(2.0), fill=TEAL)
+
+    eyebrow = add_textbox(slide, Inches(1.0), Inches(1.2), Inches(8), Inches(0.4))
+    set_text(
+        eyebrow.text_frame,
+        "MSc ADVANCED COMPUTING · INDIVIDUAL PROJECT · STATUS BRIEFING",
+        size=10, bold=True, colour=TEAL_BRIGHT,
+    )
+
+    title = add_textbox(slide, Inches(1.0), Inches(1.65), Inches(8.5), Inches(2.2))
+    tf = title.text_frame
+    tf.clear()
+    for i, line in enumerate(["Agentic AI for Open", "Data Maturity", "Assessment"]):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        run = p.add_run()
+        run.text = line
+        run.font.name = FONT
+        run.font.size = Pt(40)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+
+    sub = add_textbox(slide, Inches(1.0), Inches(4.0), Inches(8.5), Inches(0.6))
+    set_text(
+        sub.text_frame,
+        "Status snapshot and next steps for supervisor review",
+        size=14, colour=PALE,
+    )
+
+    today = datetime.now().strftime("%d %B %Y")
+    foot = add_textbox(slide, Inches(1.0), Inches(5.0), Inches(8.5), Inches(0.4))
+    set_text(
+        foot.text_frame,
+        f"Benjy Bream  ·  King's College London  ·  {today}",
+        size=11, colour=WHITE,
+    )
+
+
+def slide_what_is_built(prs: Presentation, stats: dict) -> None:
+    slide = new_slide(prs)
+    header(slide, "What is built", eyebrow="Capability snapshot")
+
+    y = Inches(1.35)
+    h = Inches(1.05)
+    col_w = Inches(2.225)
+    gap = Inches(0.07)
+    x0 = Inches(0.5)
+
+    add_kpi(slide, x0 + 0 * (col_w + gap), y, col_w, h,
+            label="Questions loaded",
+            value=str(stats["n_questions"]),
+            caption="ODMI 2025 catalogue, all four dimensions.")
+    add_kpi(slide, x0 + 1 * (col_w + gap), y, col_w, h,
+            label="Hand-marks locked",
+            value=f"{stats['n_locked']} / {stats['n_hand_marks']}",
+            caption="Stamped with the commit SHA per D9.",
+            accent=NAVY)
+    add_kpi(slide, x0 + 2 * (col_w + gap), y, col_w, h,
+            label="Finalised pairs",
+            value=str(stats["n_finals"]),
+            caption=f"{stats['n_researcher']} R · {stats['n_verifier']} V · "
+                    f"{stats['n_adjudications']} A.",
+            accent=SUCCESS)
+    add_kpi(slide, x0 + 3 * (col_w + gap), y, col_w, h,
+            label="Total LLM spend",
+            value=f"${stats['cost_total']:.2f}",
+            caption="Via CLIProxyAPI on Claude Max.",
+            accent=TEAL_BRIGHT)
+
+    y2 = Inches(2.6)
+    card_w = Inches(4.55)
+    card_h = Inches(1.25)
+    gap2 = Inches(0.15)
+    add_card(slide, Inches(0.5), y2, card_w, card_h,
+             title="Three-agent swarm",
+             body="Researcher → Verifier (four prompt strategies) → "
+                  "Adjudicator. Coordinator owns retries and writes every "
+                  "stage to SQLite.",
+             accent=TEAL)
+    add_card(slide, Inches(0.5) + card_w + gap2, y2, card_w, card_h,
+             title="Live dashboard",
+             body="Nine-page Streamlit app: Run Console, Results, Questions, "
+                  "Verifier Strategies, Hand-marks, Models, Costs, Prompts.",
+             accent=NAVY)
+
+    y3 = y2 + card_h + gap2
+    add_card(slide, Inches(0.5), y3, card_w, card_h,
+             title="Audit-trail discipline",
+             body="Every LLM call logs tokens, latency, cost, prompt "
+                  "version. Hand-marks lock to a commit SHA. Reproducible "
+                  "from logs alone.",
+             accent=TEAL_DARK)
+    add_card(slide, Inches(0.5) + card_w + gap2, y3, card_w, card_h,
+             title="In-app hand-marking",
+             body="Add a hand-mark from the dashboard. The page writes the "
+                  "CSV, commits the change, and syncs the DB so D9 is "
+                  "satisfied automatically.",
+             accent=SUCCESS)
+
+    page_footer(slide, prs, 2, 9)
+
+
+def slide_how_it_works(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "How the swarm answers one question",
+           eyebrow="Coordinator state machine")
+
+    row_y = Inches(1.6)
+    row_h = Inches(1.65)
+    box_w = Inches(2.7)
+    gap = Inches(0.45)
+    x_start = (prs.slide_width - (3 * box_w + 2 * gap)) // 2
+
+    def agent_box(x, label, role, accent):
+        add_outlined_rect(slide, x, row_y, box_w, row_h)
+        add_filled_rect(slide, x, row_y, box_w, Inches(0.35), fill=accent)
+        lab = add_textbox(slide, x + Inches(0.2), row_y + Inches(0.05),
+                          box_w - Inches(0.4), Inches(0.27))
+        set_text(lab.text_frame, label, size=12, bold=True, colour=WHITE)
+        body = add_textbox(
+            slide, x + Inches(0.2), row_y + Inches(0.5),
+            box_w - Inches(0.4), row_h - Inches(0.6),
+        )
+        set_text(body.text_frame, role, size=10.5, colour=BODY)
+
+    x1 = x_start
+    x2 = x1 + box_w + gap
+    x3 = x2 + box_w + gap
+
+    agent_box(
+        x1, "RESEARCHER",
+        "Tavily search → fetch URL → reason → return "
+        "{answer, source_url, evidence_quote, confidence}.",
+        TEAL,
+    )
+    agent_box(
+        x2, "VERIFIER",
+        "Same source URL. Adversarial prompt (default: find disproof). "
+        "Returns pass / fail with counter-evidence if any.",
+        NAVY,
+    )
+    agent_box(
+        x3, "ADJUDICATOR",
+        "Fires only on retry exhaustion. Reads the full history. "
+        "Picks a winner or escalates to a human queue.",
+        DANGER,
+    )
+
+    arrow_y = row_y + row_h // 2
+    for left, right in [(x1 + box_w, x2), (x2 + box_w, x3)]:
+        arrow = slide.shapes.add_shape(
+            MSO_SHAPE.RIGHT_ARROW,
+            left + Inches(0.05), arrow_y - Inches(0.12),
+            gap - Inches(0.1), Inches(0.24),
+        )
+        arrow.fill.solid()
+        arrow.fill.fore_color.rgb = MUTED
+        arrow.line.fill.background()
+
+    callout_y = row_y + row_h + Inches(0.35)
+    add_outlined_rect(
+        slide, Inches(0.5), callout_y,
+        prs.slide_width - Inches(1.0), Inches(0.9),
+        fill=SURFACE, border=TEAL,
+    )
+    cap = add_textbox(
+        slide, Inches(0.7), callout_y + Inches(0.12),
+        prs.slide_width - Inches(1.4), Inches(0.35),
+    )
+    set_text(cap.text_frame, "TERMINATION RULE",
+             size=9, bold=True, colour=TEAL)
+    body = add_textbox(
+        slide, Inches(0.7), callout_y + Inches(0.42),
+        prs.slide_width - Inches(1.4), Inches(0.45),
+    )
+    set_text(
+        body.text_frame,
+        "Coordinator retries Researcher up to 3× when the Verifier "
+        "rejects. After that, Adjudicator decides. Confidence below 0.6 "
+        "escalates to a human queue.",
+        size=11, colour=BODY,
+    )
+
+    page_footer(slide, prs, 3, 9)
+
+
+def slide_evaluation(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "How we will measure it", eyebrow="Methodology")
+
+    y = Inches(1.4)
+    h = Inches(1.5)
+    w = Inches(2.95)
+    gap = Inches(0.12)
+    x0 = Inches(0.5)
+
+    def rubric_card(x, name, sub, hint, accent):
+        add_outlined_rect(slide, x, y, w, h)
+        score_box = add_textbox(slide, x + Inches(0.2), y + Inches(0.15),
+                                w - Inches(0.4), Inches(0.4))
+        set_text(score_box.text_frame, "0 – 3",
+                 size=20, bold=True, colour=accent)
+
+        title_box = add_textbox(slide, x + Inches(0.2), y + Inches(0.55),
+                                w - Inches(0.4), Inches(0.3))
+        set_text(title_box.text_frame, name, size=13, bold=True, colour=HEAD)
+
+        sub_box = add_textbox(slide, x + Inches(0.2), y + Inches(0.82),
+                              w - Inches(0.4), Inches(0.25))
+        set_text(sub_box.text_frame, sub, size=10, colour=MUTED)
+
+        hint_box = add_textbox(slide, x + Inches(0.2), y + Inches(1.05),
+                               w - Inches(0.4), Inches(0.4))
+        set_text(hint_box.text_frame, hint, size=10, colour=BODY)
+
+    rubric_card(x0, "Evidence Accessibility", "EA",
+                "Findable on the open web for this country?", TEAL_DARK)
+    rubric_card(x0 + w + gap, "Answer Determinism", "AD",
+                "Could two evaluators agree from the same evidence?", NAVY)
+    rubric_card(x0 + 2 * (w + gap), "Source Complexity", "SC",
+                "One source or four cross-referenced ones?", TEAL_BRIGHT)
+
+    tier_y = y + h + Inches(0.15)
+    tier_box = add_textbox(slide, x0, tier_y,
+                           prs.slide_width - 2 * x0, Inches(0.3))
+    set_text(
+        tier_box.text_frame,
+        "Composite 0–9 → tiers: Highly Likely (7–9) · Likely (5–6) · "
+        "Unlikely (3–4) · Very Unlikely (0–2).",
+        size=11, bold=True, colour=HEAD,
+    )
+
+    note_y = tier_y + Inches(0.6)
+    note_h = Inches(1.4)
+    add_outlined_rect(slide, x0, note_y, prs.slide_width - 2 * x0, note_h,
+                      fill=SURFACE, border=BORDER)
+    eb = add_textbox(slide, x0 + Inches(0.2), note_y + Inches(0.12),
+                     prs.slide_width - 2 * x0 - Inches(0.4), Inches(0.3))
+    set_text(eb.text_frame, "HEADLINE RESEARCH QUESTION (RQ5)",
+             size=9, bold=True, colour=TEAL)
+
+    nb = add_textbox(slide, x0 + Inches(0.2), note_y + Inches(0.42),
+                     prs.slide_width - 2 * x0 - Inches(0.4),
+                     note_h - Inches(0.5))
+    set_text(
+        nb.text_frame,
+        "Trade-off between answer quality and computational cost across "
+        "rubric profiles. Every LLM call logs input tokens, output "
+        "tokens, wall-clock, and $. The output is a cost–accuracy surface "
+        "stratified by rubric tier × ODMI dimension × country. "
+        "Optimisation conditions: prompt compression, retrieval scope, "
+        "Verifier strategy, and the Haiku / Sonnet / Opus model family.",
+        size=11, colour=BODY,
+    )
+
+    page_footer(slide, prs, 4, 9)
+
+
+def slide_country_chart(prs: Presentation, stats: dict) -> None:
+    slide = new_slide(prs)
+    header(slide, "Results so far, per country",
+           eyebrow="Finalised pairs · success vs failure")
+
+    outcomes = stats["country_outcomes"]
+
+    chart_box_x = Inches(0.5)
+    chart_box_y = Inches(1.4)
+    chart_box_w = prs.slide_width - Inches(1.0)
+    chart_box_h = Inches(3.4)
+
+    add_outlined_rect(slide, chart_box_x, chart_box_y, chart_box_w, chart_box_h,
+                      fill=WHITE, border=BORDER)
+
+    if not outcomes:
+        msg = add_textbox(slide, chart_box_x + Inches(0.3),
+                          chart_box_y + Inches(1.2),
+                          chart_box_w - Inches(0.6), Inches(0.5))
+        set_text(
+            msg.text_frame,
+            "No finalised pairs yet. Once the Coordinator writes "
+            "phase2_final rows, this chart populates.",
+            size=14, colour=BODY,
+        )
+        page_footer(slide, prs, 5, 9)
         return
 
-    chart_left = Inches(1.0)
-    chart_top = Inches(1.6)
-    chart_width = Inches(8.0)
-    chart_height = Inches(4.5)
+    max_total = max(s + f for _, s, f in outcomes) or 1
 
-    max_total = max(s + f for _, s, f in country_outcomes) or 1
-    bar_slot = chart_width / len(country_outcomes)
-    bar_width = Emu(int(bar_slot * 0.6))
-    gap = (bar_slot - bar_width) / 2
+    plot_left = chart_box_x + Inches(0.8)
+    plot_top = chart_box_y + Inches(0.4)
+    plot_width = chart_box_w - Inches(1.3)
+    plot_height = chart_box_h - Inches(1.0)
 
-    for i, (country, successful, failed) in enumerate(country_outcomes):
+    bar_slot = plot_width / len(outcomes)
+    bar_w = Emu(int(bar_slot * 0.55))
+    gap = (bar_slot - bar_w) // 2
+
+    axis = slide.shapes.add_connector(
+        1, plot_left - Inches(0.05), plot_top,
+        plot_left - Inches(0.05), plot_top + plot_height,
+    )
+    axis.line.color.rgb = BORDER
+    axis.line.width = Emu(6350)
+
+    base = slide.shapes.add_connector(
+        1, plot_left - Inches(0.05), plot_top + plot_height,
+        plot_left + plot_width, plot_top + plot_height,
+    )
+    base.line.color.rgb = BORDER
+    base.line.width = Emu(6350)
+
+    for tick in range(0, max_total + 1):
+        ratio = tick / max_total
+        ty = plot_top + plot_height - Emu(int(plot_height * ratio))
+        lbl = add_textbox(
+            slide, plot_left - Inches(0.55), ty - Inches(0.1),
+            Inches(0.45), Inches(0.2),
+        )
+        set_text(
+            lbl.text_frame, str(tick),
+            size=9, colour=MUTED, align=PP_ALIGN.RIGHT,
+        )
+
+    for i, (country, successful, failed) in enumerate(outcomes):
         total = successful + failed
         if total == 0:
             continue
-
-        scale = chart_height / max_total
-        s_height = Emu(int(scale * successful))
-        f_height = Emu(int(scale * failed))
-
-        bar_left = chart_left + Emu(int(bar_slot * i + gap))
+        bar_x = plot_left + Emu(int(bar_slot * i + gap))
 
         if failed > 0:
-            fail_top = chart_top + chart_height - f_height
-            shape = slide.shapes.add_shape(
-                MSO_SHAPE.RECTANGLE,
-                bar_left, fail_top, bar_width, f_height,
-            )
-            shape.fill.solid()
-            shape.fill.fore_color.rgb = RED
-            shape.line.fill.background()
+            f_h = Emu(int(plot_height * failed / max_total))
+            f_top = plot_top + plot_height - f_h
+            add_filled_rect(slide, bar_x, f_top, bar_w, f_h, fill=DANGER)
 
         if successful > 0:
-            succ_top = chart_top + chart_height - f_height - s_height
-            shape = slide.shapes.add_shape(
-                MSO_SHAPE.RECTANGLE,
-                bar_left, succ_top, bar_width, s_height,
-            )
-            shape.fill.solid()
-            shape.fill.fore_color.rgb = GREEN
-            shape.line.fill.background()
+            f_h = Emu(int(plot_height * failed / max_total))
+            s_h = Emu(int(plot_height * successful / max_total))
+            s_top = plot_top + plot_height - f_h - s_h
+            add_filled_rect(slide, bar_x, s_top, bar_w, s_h, fill=SUCCESS)
 
-        label_top = chart_top + chart_height + Inches(0.05)
-        label = slide.shapes.add_textbox(
-            bar_left - Inches(0.2), label_top,
-            bar_width + Inches(0.4), Inches(0.4),
+        lab_y = plot_top + plot_height + Inches(0.08)
+        lab = add_textbox(
+            slide, bar_x - Inches(0.4), lab_y,
+            bar_w + Inches(0.8), Inches(0.25),
         )
-        para = label.text_frame.paragraphs[0]
-        para.text = f"{country} ({total})"
-        para.font.size = Pt(14)
-        para.font.bold = True
+        set_text(
+            lab.text_frame, country,
+            size=12, bold=True, colour=HEAD, align=PP_ALIGN.CENTER,
+        )
+        val = add_textbox(
+            slide, bar_x - Inches(0.4), lab_y + Inches(0.22),
+            bar_w + Inches(0.8), Inches(0.22),
+        )
+        set_text(
+            val.text_frame, f"{successful} / {total}",
+            size=9, colour=MUTED, align=PP_ALIGN.CENTER,
+        )
 
-    legend = slide.shapes.add_textbox(
-        Inches(1.0), Inches(6.4), Inches(8.0), Inches(0.3)
+    leg_y = chart_box_y + chart_box_h - Inches(0.35)
+    leg_x = chart_box_x + Inches(0.8)
+    add_filled_rect(slide, leg_x, leg_y, Inches(0.18), Inches(0.18), fill=SUCCESS)
+    leg1 = add_textbox(slide, leg_x + Inches(0.25), leg_y - Inches(0.02),
+                       Inches(3.6), Inches(0.25))
+    set_text(leg1.text_frame, "Accepted (Verifier or Adjudicator)",
+             size=10, colour=BODY)
+    add_filled_rect(slide, leg_x + Inches(3.5), leg_y, Inches(0.18), Inches(0.18),
+                    fill=DANGER)
+    leg2 = add_textbox(slide, leg_x + Inches(3.75), leg_y - Inches(0.02),
+                       Inches(4.0), Inches(0.25))
+    set_text(leg2.text_frame, "Rejected or escalated", size=10, colour=BODY)
+
+    note_y = chart_box_y + chart_box_h + Inches(0.18)
+    add_filled_rect(slide, chart_box_x, note_y, Inches(0.08), Inches(0.6),
+                    fill=WARNING)
+    nb = add_textbox(
+        slide, chart_box_x + Inches(0.2), note_y + Inches(0.04),
+        chart_box_w - Inches(0.3), Inches(0.55),
     )
-    para = legend.text_frame.paragraphs[0]
-    run1 = para.add_run()
-    run1.text = "■ "
-    run1.font.color.rgb = GREEN
-    run1.font.size = Pt(13)
-    run2 = para.add_run()
-    run2.text = "Accepted by Verifier or Adjudicator    "
-    run2.font.size = Pt(13)
-    run3 = para.add_run()
-    run3.text = "■ "
-    run3.font.color.rgb = RED
-    run3.font.size = Pt(13)
-    run4 = para.add_run()
-    run4.text = "Rejected or escalated"
-    run4.font.size = Pt(13)
+    set_text(
+        nb.text_frame,
+        "Caveat: every pair so far is a Policy-dimension question on a "
+        "high-resource country. The Verifier has not yet been asked to "
+        "disprove a known-wrong Researcher answer. The 100% accept rate "
+        "is consistent with the swarm working — and with it being too lenient.",
+        size=10, colour=BODY,
+    )
+
+    page_footer(slide, prs, 5, 9)
+
+
+def slide_decisions(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "Decisions taken and open questions",
+           eyebrow="What's locked, what's still to settle")
+
+    col_w = Inches(4.55)
+    gap = Inches(0.2)
+    x_l = Inches(0.5)
+    x_r = x_l + col_w + gap
+    y = Inches(1.4)
+    h = Inches(3.7)
+
+    add_outlined_rect(slide, x_l, y, col_w, h, fill=SURFACE)
+    add_filled_rect(slide, x_l, y, col_w, Inches(0.45), fill=DARK)
+    lhead = add_textbox(slide, x_l + Inches(0.2), y + Inches(0.1),
+                        col_w - Inches(0.4), Inches(0.3))
+    set_text(lhead.text_frame, "LOCKED DECISIONS",
+             size=11, bold=True, colour=WHITE)
+
+    locked_items = [
+        ("D1", "LLM access via CLIProxyAPI on Claude Max — no Anthropic billing."),
+        ("D2", "SQLite as the single, hand-portable evaluation store."),
+        ("D7", "Phased rollout: FR → 6-country matrix → all 36 EU countries."),
+        ("D8", "Rubric is analytical, not a runtime classifier."),
+        ("D9", "Hand-marks are locked by git commit before any swarm run."),
+        ("D12", "Tokens, latency, cost are first-class research dimensions."),
+        ("D15", "Verifier prompt strategies as an experimental variable."),
+        ("D16", "Adjudicator fires at retry exhaustion; threshold 0.6."),
+        ("D18", "Haiku / Sonnet / Opus / tiered as a third family of experiments."),
+    ]
+    item_y = y + Inches(0.55)
+    for tag, text in locked_items:
+        tag_box = add_textbox(slide, x_l + Inches(0.2), item_y,
+                              Inches(0.45), Inches(0.25))
+        set_text(tag_box.text_frame, tag, size=10, bold=True, colour=TEAL_DARK)
+        item_box = add_textbox(slide, x_l + Inches(0.7), item_y,
+                               col_w - Inches(0.9), Inches(0.3))
+        set_text(item_box.text_frame, text, size=10, colour=BODY)
+        item_y += Inches(0.34)
+
+    add_outlined_rect(slide, x_r, y, col_w, h, fill=SURFACE)
+    add_filled_rect(slide, x_r, y, col_w, Inches(0.45), fill=NAVY)
+    rhead = add_textbox(slide, x_r + Inches(0.2), y + Inches(0.1),
+                        col_w - Inches(0.4), Inches(0.3))
+    set_text(rhead.text_frame, "OPEN QUESTIONS",
+             size=11, bold=True, colour=WHITE)
+
+    open_items = [
+        ("Q1", "Final per-tier hand-mark sample size."),
+        ("Q4", "Language-confidence table for Phase B's six countries."),
+        ("Q10", "Trusted-domain JSON list per country."),
+        ("Q12", "Default Verifier strategy after comparison."),
+        ("Q13", "Recalibration of the Adjudicator's 0.6 threshold."),
+        ("Q14", "Injected-hallucination arm for strategy comparison."),
+        ("Q15", "Model mix for the tiered condition (Researcher / Verifier / Adjudicator)."),
+    ]
+    item_y = y + Inches(0.55)
+    for tag, text in open_items:
+        tag_box = add_textbox(slide, x_r + Inches(0.2), item_y,
+                              Inches(0.45), Inches(0.25))
+        set_text(tag_box.text_frame, tag, size=10, bold=True, colour=NAVY)
+        item_box = add_textbox(slide, x_r + Inches(0.7), item_y,
+                               col_w - Inches(0.9), Inches(0.35))
+        set_text(item_box.text_frame, text, size=10, colour=BODY)
+        item_y += Inches(0.4)
+
+    page_footer(slide, prs, 6, 9)
+
+
+def slide_short_term(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "Short-term next steps",
+           eyebrow="Next two weeks")
+
+    items = [
+        ("Hand-mark the Phase A pilot",
+         "10 France questions across all four rubric tiers. Submit "
+         "from the dashboard; D9 lock happens on save.",
+         "now", TEAL_BRIGHT),
+        ("Baseline run on the pilot",
+         "Full swarm on the 10 with verifier-disprove and all-Sonnet. "
+         "First real accuracy-by-tier numbers.",
+         "now", TEAL_BRIGHT),
+        ("Verifier strategy comparison",
+         "Run the other three strategies (negation, steelman, blind) "
+         "on the same Researcher rows.",
+         "next", TEAL),
+        ("Family-1 cost experiments",
+         "Prompt-compressed and retrieval-tight variants on the same "
+         "pilot, comparing cost surface against the baseline.",
+         "next", TEAL),
+        ("First analysis pass",
+         "Accuracy and cost stratified by rubric tier × ODMI dimension. "
+         "Draft methodology + early-results sections in REPORT_PRELIM.md.",
+         "then", TEAL_DARK),
+    ]
+
+    y = Inches(1.35)
+    h = Inches(0.65)
+    gap = Inches(0.1)
+    for i, (title, body, tag, colour) in enumerate(items):
+        add_numbered_step(
+            slide, Inches(0.5), y + i * (h + gap),
+            prs.slide_width - Inches(1.0), h,
+            number=i + 1, title=title, body=body,
+            tag=tag, tag_colour=colour,
+        )
+
+    page_footer(slide, prs, 7, 9)
+
+
+def slide_long_term(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "Long-term roadmap",
+           eyebrow="Towards 2 August 2026")
+
+    milestones = [
+        ("Phase B — six countries",
+         "FR, DE, NL, RO, HU, EE. Hand-marks re-run per country. "
+         "Verifier strategy comparison saturated.",
+         "Jun", NAVY),
+        ("Family-3 model variants",
+         "Pure Haiku / pure Sonnet / pure Opus / tiered. The "
+         "headline cost–accuracy surface comes out of this experiment.",
+         "Jun", NAVY),
+        ("External validity test",
+         "Pipeline frozen, then run against 2024 ODMI cycle as the "
+         "held-out set. Delta against 2025 is itself a result.",
+         "Jul", TEAL_DARK),
+        ("Phase C and live 2026 cycle",
+         "Stretch: all 36 EU countries. Live 2026 indicators submitted "
+         "to human review; acceptance rate is the headline metric.",
+         "Jul", TEAL_DARK),
+        ("Dissertation submission",
+         "Failure mode taxonomy and accuracy–cost surface as primary "
+         "contributions. Final manuscript due 2 August 2026.",
+         "Aug", TEAL),
+    ]
+
+    y = Inches(1.35)
+    h = Inches(0.65)
+    gap = Inches(0.1)
+    for i, (title, body, tag, colour) in enumerate(milestones):
+        add_numbered_step(
+            slide, Inches(0.5), y + i * (h + gap),
+            prs.slide_width - Inches(1.0), h,
+            number=i + 1, title=title, body=body,
+            tag=tag, tag_colour=colour,
+        )
+
+    page_footer(slide, prs, 8, 9)
+
+
+def slide_snapshot(prs: Presentation, stats: dict) -> None:
+    slide = new_slide(prs)
+    header(slide, "Snapshot today", eyebrow="Numbers as of generation")
+
+    y = Inches(1.35)
+    h = Inches(1.45)
+    col_w = Inches(2.225)
+    gap = Inches(0.07)
+    x0 = Inches(0.5)
+
+    avg_s = stats["avg_runtime_s"]
+
+    add_kpi(slide, x0, y, col_w, h,
+            label="Questions catalogue", value=str(stats["n_questions"]),
+            caption="Loaded into SQLite.")
+    add_kpi(slide, x0 + (col_w + gap), y, col_w, h,
+            label="Hand-marks locked",
+            value=str(stats["n_locked"]),
+            caption="Stamped with commit SHA per D9.", accent=NAVY)
+    add_kpi(slide, x0 + 2 * (col_w + gap), y, col_w, h,
+            label="Finalised pairs",
+            value=str(stats["n_finals"]),
+            caption=f"Avg runtime {avg_s:.1f}s.", accent=SUCCESS)
+    add_kpi(slide, x0 + 3 * (col_w + gap), y, col_w, h,
+            label="LLM spend",
+            value=f"${stats['cost_total']:.2f}",
+            caption="Across all live runs to date.", accent=TEAL_BRIGHT)
+
+    note_y = y + h + Inches(0.5)
+    add_filled_rect(slide, Inches(0.5), note_y, Inches(0.08), Inches(0.8),
+                    fill=TEAL)
+    nb = add_textbox(slide, Inches(0.7), note_y, prs.slide_width - Inches(1.2),
+                     Inches(0.85))
+    tf = nb.text_frame
+    tf.clear()
+    p = tf.paragraphs[0]
+    r1 = p.add_run()
+    r1.text = "All nine dashboard pages live. "
+    r1.font.name = FONT
+    r1.font.size = Pt(13)
+    r1.font.bold = True
+    r1.font.color.rgb = HEAD
+    r2 = p.add_run()
+    r2.text = (
+        "Hand-marking, swarm dispatch, results scanning, cost tracking, "
+        "and prompt versioning all controllable from the Streamlit UI. "
+        "Next supervisor checkpoint: harder questions, harder countries, "
+        "and the first real Verifier-rejection on record."
+    )
+    r2.font.name = FONT
+    r2.font.size = Pt(12)
+    r2.font.color.rgb = BODY
+
+    page_footer(slide, prs, 9, 9)
 
 
 # ============================================================
@@ -248,140 +929,23 @@ def add_country_chart_slide(
 def build_deck(stats: dict) -> Presentation:
     prs = Presentation()
     prs.slide_width = Inches(10)
-    prs.slide_height = Inches(7.5)
+    prs.slide_height = Inches(5.625)
 
-    today = datetime.now().strftime("%d %B %Y")
-    add_title_slide(
-        prs,
-        "ODMI Agent Swarm",
-        f"Status and next steps — supervisor meeting, {today}",
-    )
-
-    # ----- Slide 2: what's built -----
-    add_text_slide(
-        prs,
-        "What is built",
-        [
-            f"Question bank parsed and loaded: {stats['n_questions']} ODMI 2025 items in SQLite.",
-            f"Hand-mark workspace live: {stats['n_locked']} of {stats['n_hand_marks']} marks locked (D9 commit-SHA stamped).",
-            "Three-agent swarm: Researcher → Verifier (4 strategies) → Adjudicator. LangGraph-style Coordinator.",
-            "Streamlit dashboard with 9 pages: Run Console, Results, Questions, Strategy Lab, Hand-marks, Models, Costs, Prompts.",
-            f"Live runs: {stats['n_researcher']} Researcher, {stats['n_verifier']} Verifier, "
-            f"{stats['n_adjudications']} Adjudication, {stats['n_finals']} finalised pairs.",
-            f"Spend to date: ${stats['cost_total']:.2f} via Claude Max through CLIProxyAPI.",
-        ],
-    )
-
-    # ----- Slide 3: how the system works -----
-    add_text_slide(
-        prs,
-        "How the swarm answers one question",
-        [
-            "Coordinator pulls (question, country), opens a subtrio with a UUID, retry count = 0.",
-            "Researcher: Tavily search → fetch_url → reason → return {answer, source_url, evidence_quote, confidence}.",
-            "Verifier: same source URL, adversarial prompt (default: 'find disproof'). Returns pass/fail.",
-            "If Verifier rejects, Coordinator retries the Researcher up to 3 times.",
-            "On exhaustion, Adjudicator reads the full history and picks a winner or escalates to a human queue.",
-            "Every stage writes to SQLite. Every LLM call logs tokens, cost, latency, prompt version.",
-        ],
-    )
-
-    # ----- Slide 4: evaluation methodology -----
-    add_text_slide(
-        prs,
-        "How we will measure it",
-        [
-            "Answerability rubric (3 × 0–3 scales): Evidence Accessibility, Answer Determinism, Source Complexity. Composite 0–9 → 4 tiers.",
-            "Rubric is an analytical lens, not a runtime classifier (D8). Hand-marks are the ground truth.",
-            "D9 audit-trail rule: every hand-mark must be locked in git before any related swarm run.",
-            "Headline RQ5: cost–accuracy surface across the rubric space. Token, latency, $ per correct answer.",
-            "Optimisation experiments: prompt compression × retrieval scope × Verifier strategy × model variant (Haiku / Sonnet / Opus / tiered).",
-            "External validity: 2025 cycle is primary; 2024 cycle is the held-out test set (D13).",
-        ],
-    )
-
-    # ----- Slide 5: results so far -----
-    add_country_chart_slide(
-        prs,
-        "Pairs finalised per country, success vs failure",
-        stats["country_outcomes"],
-    )
-
-    # ----- Slide 6: decisions taken / open -----
-    add_two_col_slide(
-        prs,
-        "Decisions: taken and open",
-        "Locked (D-numbered)", [
-            "D1: LLM via CLIProxyAPI on Claude Max.",
-            "D2: SQLite as single store. Schema in setup_sqlite.py.",
-            "D7: Phased rollout — FR → 6-country matrix → all 36.",
-            "D8: Rubric is analytical, not a classifier.",
-            "D12: Tokens, latency, cost are first-class research dimensions.",
-            "D15: Verifier prompt strategies as experimental variable.",
-            "D16: Adjudicator at retry exhaustion.",
-            "D18: Model variants (Haiku/Sonnet/Opus/tiered) as experiments.",
-        ],
-        "Open questions", [
-            "Q1: Final per-tier hand-mark sample size.",
-            "Q4: Language-confidence table for Phase B.",
-            "Q10: Trusted-domain JSON per country.",
-            "Q12: Which Verifier strategy is the default.",
-            "Q13: Adjudicator confidence threshold for picking a winner.",
-            "Q14: Injected-hallucination arm for the strategy comparison.",
-            "Q15: Researcher/Verifier/Adjudicator model mix in the tiered condition.",
-        ],
-    )
-
-    # ----- Slide 7: short term -----
-    add_text_slide(
-        prs,
-        "Short-term next steps (next 2 weeks)",
-        [
-            "Hand-mark 10 France questions across all four rubric tiers, commit + sync.",
-            "Run swarm on the full 10-question pilot with verifier-disprove, all-Sonnet baseline.",
-            "First real Family-1 cost-side experiments: prompt-compressed vs baseline on same 10.",
-            "Begin Family-2 Verifier strategy comparison with the four prompts.",
-            "First analysis pass: accuracy by rubric tier × dimension, cost per correct answer.",
-            "Draft results + methodology sections of the dissertation as the data lands.",
-        ],
-    )
-
-    # ----- Slide 8: long term -----
-    add_text_slide(
-        prs,
-        "Long-term roadmap",
-        [
-            "Phase B — six-country matrix (FR, DE, NL, RO, HU, EE). Hand-marks re-run per country.",
-            "Family-3 model variants: pure Haiku, pure Sonnet, pure Opus, tiered. Cost–accuracy surface.",
-            "External validity: rerun the pipeline against the 2024 cycle, untouched, as held-out test.",
-            "Phase C — all 36 EU countries (stretch). Live 2026 cycle deployment in parallel.",
-            "Failure mode taxonomy as a primary research output.",
-            "Final dissertation submission: 2 August 2026.",
-        ],
-    )
-
-    # ----- Slide 9: KPIs / one-look snapshot -----
-    avg_seconds = stats["avg_runtime_s"]
-    add_text_slide(
-        prs,
-        "Snapshot today",
-        [
-            f"Questions in catalogue: {stats['n_questions']}.",
-            f"Hand-marks locked: {stats['n_locked']}.",
-            f"Subtrios finalised: {stats['n_finals']}.",
-            f"Average subtrio runtime: {avg_seconds:.1f} s.",
-            f"Total LLM spend: ${stats['cost_total']:.2f}.",
-            "All 9 dashboard pages live and rendering against real data.",
-        ],
-    )
-
+    slide_title(prs)
+    slide_what_is_built(prs, stats)
+    slide_how_it_works(prs)
+    slide_evaluation(prs)
+    slide_country_chart(prs, stats)
+    slide_decisions(prs)
+    slide_short_term(prs)
+    slide_long_term(prs)
+    slide_snapshot(prs, stats)
     return prs
 
 
 def main() -> None:
     stats = fetch_stats()
     prs = build_deck(stats)
-
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_path = OUT_DIR / (
         f"PROGRESS_SLIDES_{datetime.now().strftime('%Y-%m-%d')}.pptx"
