@@ -456,7 +456,7 @@ def slide_what_is_built(prs: Presentation, stats: dict) -> None:
                   "automatically (5,148 ground-truth rows loaded).",
              accent=NAVY)
 
-    page_footer(slide, prs, 2, 7)
+    page_footer(slide, prs, 2, 8)
 
 
 def slide_how_it_works(prs: Presentation) -> None:
@@ -494,8 +494,10 @@ def slide_how_it_works(prs: Presentation) -> None:
     )
     agent_box(
         x2, "VERIFIER",
-        "Same source URL. Adversarial prompt (default: find disproof). "
-        "Returns pass / fail with counter-evidence if any.",
+        "Substring-checks the Researcher's quote, runs an independent "
+        "search, and reasons adversarially (default strategy: find a "
+        "way to disprove the claim). Returns pass / fail with "
+        "counter-evidence.",
         NAVY,
     )
     agent_box(
@@ -567,7 +569,7 @@ def slide_how_it_works(prs: Presentation) -> None:
         size=10, colour=BODY,
     )
 
-    page_footer(slide, prs, 3, 7)
+    page_footer(slide, prs, 3, 8)
 
 
 def slide_dashboard_highlights(prs: Presentation) -> None:
@@ -642,7 +644,95 @@ def slide_dashboard_highlights(prs: Presentation) -> None:
         )
         set_text(b_box.text_frame, body, size=10.5, colour=BODY)
 
-    page_footer(slide, prs, 5, 7)
+    page_footer(slide, prs, 6, 8)
+
+
+def slide_data_leakage(prs: Presentation) -> None:
+    """Five-layer defence against ODMI source leakage (SPEC D24)."""
+    slide = new_slide(prs)
+    header(
+        slide, "Why ODMI publications are banned",
+        eyebrow="Data-leakage controls · D24",
+    )
+
+    intro = add_textbox(
+        slide, Inches(0.5), Inches(1.25),
+        prs.slide_width - Inches(1.0), Inches(0.45),
+    )
+    set_text(
+        intro.text_frame,
+        "The swarm is validated against ODMI's published "
+        "merged_responses. Any URL that hosts, mirrors, or summarises "
+        "ODMI's own answers leaks the signal we are predicting, so it "
+        "must never reach the agents. Five layers enforce this:",
+        size=11, colour=BODY,
+    )
+
+    row_y = Inches(1.85)
+    row_h = Inches(2.4)
+    n_boxes = 5
+    margin = Inches(0.5)
+    available = prs.slide_width - 2 * margin
+    gap = Inches(0.18)
+    box_w = (available - (n_boxes - 1) * gap) // n_boxes
+
+    layers = [
+        ("1", "SEARCH", TEAL,
+         "Tavily exclude_domains · Brave −site: · post-filter drops "
+         "any blocked URL before it reaches an agent."),
+        ("2", "FETCH", TEAL_DARK,
+         "fetch_text and head_ok refuse blocked URLs with "
+         "failure_mode=\"blocked_data_leakage\". No network call."),
+        ("3", "VALIDATOR", NAVY,
+         "trust_score forced to 0.0 for blocked URLs. "
+         "data.europa.eu removed from the trusted domain seed list."),
+        ("4", "PROMPTS", WARNING,
+         "Researcher V2, all four Verifier V2 strategies, and "
+         "Adjudicator V2 carry an explicit forbidden_odmi_source rule."),
+        ("5", "AUDIT", DANGER,
+         "scripts/check_data_leakage.py scans every URL column in "
+         "the swarm tables. Exits non-zero on any hit. --purge "
+         "deletes tainted pair_runs."),
+    ]
+
+    for i, (number, name, accent, body_text) in enumerate(layers):
+        x = margin + i * (box_w + gap)
+        add_outlined_rect(slide, x, row_y, box_w, row_h)
+        # Numbered top stripe.
+        add_filled_rect(slide, x, row_y, box_w, Inches(0.35),
+                        fill=accent)
+        num_box = add_textbox(
+            slide, x + Inches(0.2), row_y + Inches(0.05),
+            box_w - Inches(0.4), Inches(0.27),
+        )
+        set_text(num_box.text_frame, f"{number}.  {name}",
+                 size=11, bold=True, colour=WHITE)
+        body = add_textbox(
+            slide, x + Inches(0.15), row_y + Inches(0.5),
+            box_w - Inches(0.3), row_h - Inches(0.6),
+        )
+        set_text(body.text_frame, body_text, size=9.5, colour=BODY)
+
+    # Bottom callout — why five layers.
+    callout_y = row_y + row_h + Inches(0.2)
+    add_outlined_rect(
+        slide, Inches(0.5), callout_y,
+        prs.slide_width - Inches(1.0), Inches(0.55),
+        fill=SURFACE, border=DANGER,
+    )
+    cap = add_textbox(
+        slide, Inches(0.7), callout_y + Inches(0.1),
+        prs.slide_width - Inches(1.4), Inches(0.4),
+    )
+    set_text(
+        cap.text_frame,
+        "Each layer fails in a different way. The audit catches whatever "
+        "the four runtime layers miss; 30 historical violations were "
+        "purged when D24 landed.",
+        size=10.5, colour=BODY,
+    )
+
+    page_footer(slide, prs, 4, 8)
 
 
 def slide_country_chart(prs: Presentation, stats: dict) -> None:
@@ -670,7 +760,7 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
             "phase2_final rows, this chart populates.",
             size=14, colour=BODY,
         )
-        page_footer(slide, prs, 4, 7)
+        page_footer(slide, prs, 5, 8)
         return
 
     max_total = max(s + f for _, s, f in outcomes) or 1
@@ -778,7 +868,7 @@ def slide_country_chart(prs: Presentation, stats: dict) -> None:
         size=10, colour=BODY,
     )
 
-    page_footer(slide, prs, 4, 7)
+    page_footer(slide, prs, 5, 8)
 
 
 def slide_swarm_in_action(prs: Presentation) -> None:
@@ -793,7 +883,7 @@ def slide_swarm_in_action(prs: Presentation) -> None:
         Inches(0.5), Inches(1.15),
         prs.slide_width - Inches(1.0), Inches(4.15),
     )
-    page_footer(slide, prs, 6, 7)
+    page_footer(slide, prs, 7, 8)
 
 
 def slide_next_steps(prs: Presentation) -> None:
@@ -865,7 +955,7 @@ def slide_next_steps(prs: Presentation) -> None:
     column(x_l, "NEXT TWO WEEKS", DARK, short_items)
     column(x_r, "JUNE AND JULY", NAVY, long_items)
 
-    page_footer(slide, prs, 7, 7)
+    page_footer(slide, prs, 8, 8)
 
 
 # ============================================================
@@ -880,6 +970,7 @@ def build_deck(stats: dict) -> Presentation:
     slide_title(prs)
     slide_what_is_built(prs, stats)
     slide_how_it_works(prs)
+    slide_data_leakage(prs)
     slide_country_chart(prs, stats)
     slide_dashboard_highlights(prs)
     slide_swarm_in_action(prs)
