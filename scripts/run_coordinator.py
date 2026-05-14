@@ -34,7 +34,7 @@ import sqlite3
 import sys
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
 
@@ -462,6 +462,112 @@ def _save_final_row(
 # The Coordinator's state machine
 # ============================================================
 
+def _find_resumable_researcher(
+    question_id: str, country_code: str,
+    *, max_age_minutes: int = 60,
+) -> Optional[dict]:
+    """Look for a Researcher row from a recent incomplete subtrio.
+
+    Returns the row dict (or None) for the most recent
+    `phase2_researcher_runs` entry whose subtrio:
+      - never wrote a `phase2_final` row, and
+      - is no longer in an active stage (orphaned, interrupted, or
+        merely stale by more than `max_age_minutes`).
+
+    The freshness window protects us from reusing an answer that was
+    correct yesterday but might have moved on.
+    """
+    cutoff = (
+        datetime.utcnow() - timedelta(minutes=max_age_minutes)
+    ).isoformat(timespec="seconds") + "Z"
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT r.id, r.pair_run_id, r.retry_count,
+                   r.answer, r.answer_explanation, r.evidence_quote,
+                   r.source_url, r.retrieval_confidence, r.answer_confidence,
+                   r.search_queries_used, r.fetched_urls,
+                   r.domain_trust_score, r.language_route_used, r.notes,
+                   r.created_at,
+                   s.subtrio_id AS subtrio_id, s.stage AS prior_stage
+            FROM phase2_researcher_runs r
+            JOIN subtrio_status s ON s.subtrio_id = r.pair_run_id
+            LEFT JOIN phase2_final f ON f.pair_run_id = r.pair_run_id
+            WHERE r.question_id = ? AND r.country_code = ?
+              AND r.retry_count = 0
+              AND r.answer IS NOT NULL
+              AND f.id IS NULL
+              AND (s.stage IN ('orphaned', 'interrupted_rate_limit', 'failed')
+                   OR (s.updated_at IS NOT NULL
+                       AND s.updated_at < ?))
+            ORDER BY r.id DESC
+            LIMIT 1
+            """,
+            (question_id, country_code, cutoff),
+        ).fetchone()
+    if row is None:
+        return None
+    return dict(row) if hasattr(row, "keys") else {
+        k: row[i] for i, k in enumerate([
+            "id", "pair_run_id", "retry_count",
+            "answer", "answer_explanation", "evidence_quote",
+            "source_url", "retrieval_confidence", "answer_confidence",
+            "search_queries_used", "fetched_urls",
+            "domain_trust_score", "language_route_used", "notes",
+            "created_at", "subtrio_id", "prior_stage",
+        ])
+    }
+
+
+def _mark_superseded(
+    *, prior_subtrio_id: str, by_subtrio_id: str,
+) -> None:
+    """Mark a prior subtrio_status row as `superseded` so the audit
+    trail records that a later subtrio reused its Researcher result."""
+    if _dry_run:
+        return
+    note = f"superseded by {by_subtrio_id[:8]} (resume)"
+    with connect() as conn:
+        conn.execute(
+            """UPDATE subtrio_status
+               SET stage = 'superseded',
+                   ended_at = COALESCE(ended_at, ?),
+                   updated_at = ?,
+                   last_message = ?
+               WHERE subtrio_id = ?""",
+            (_iso_now(), _iso_now(), note, prior_subtrio_id),
+        )
+        conn.commit()
+
+
+def _researcher_output_from_row(row: dict) -> ResearcherOutput:
+    """Rebuild a ResearcherOutput from a phase2_researcher_runs row.
+
+    Used when resuming a partially-completed subtrio: we never re-call
+    the Researcher; we feed the prior row's data directly to the
+    Verifier.
+    """
+    return ResearcherOutput(
+        answer=row["answer"],
+        answer_explanation=row["answer_explanation"] or "",
+        evidence_quote=row["evidence_quote"] or "",
+        source_url=row["source_url"],
+        retrieval_confidence=row["retrieval_confidence"] or 0.0,
+        answer_confidence=row["answer_confidence"] or 0.0,
+        search_queries_used=(
+            json.loads(row["search_queries_used"])
+            if row["search_queries_used"] else []
+        ),
+        fetched_urls=(
+            json.loads(row["fetched_urls"])
+            if row["fetched_urls"] else []
+        ),
+        domain_trust_score=row["domain_trust_score"],
+        language_route_used=row["language_route_used"] or "native",
+        notes=row["notes"],
+    )
+
+
 def coordinate(
     *,
     question_id: str,
@@ -523,77 +629,115 @@ def coordinate(
     last_researcher_output: Optional[ResearcherOutput] = None
     retry_count = 0
 
+    # Resume check: if a prior subtrio for this pair already wrote a
+    # Researcher row (retry_count=0) and then died before finalising,
+    # reuse that row instead of paying for a fresh Researcher call.
+    resumable = _find_resumable_researcher(question_id, country_code)
+    if resumable:
+        _mark_superseded(
+            prior_subtrio_id=resumable["subtrio_id"],
+            by_subtrio_id=subtrio_id,
+        )
+        last_researcher_db_id = int(resumable["id"])
+        last_researcher_output = _researcher_output_from_row(resumable)
+        researcher_outputs.append(last_researcher_output)
+        print(
+            f"  R1 (resumed from subtrio={resumable['subtrio_id'][:8]}): "
+            f"{last_researcher_output.answer} "
+            f"({last_researcher_output.answer_confidence:.2f}) — "
+            f"skipping Researcher call",
+            flush=True,
+        )
+
     for attempt in range(max_retries + 1):
         retry_count = attempt
 
         # --- Researcher stage ---
-        _upsert_subtrio_status(
-            subtrio_id=subtrio_id, batch_id=batch_id,
-            question_id=question_id, country_code=country_code,
-            stage="researching", substage="search",
-            retry_count=retry_count,
-            last_message=f"researcher attempt {attempt + 1}",
-        )
-        r_inp = _build_researcher_input(question_id, country_code, feedback)
-
-        def _r_step(e, p, _att=attempt):
-            _print_step(f"R{_att + 1}", e, p)
-            if e in ("query_gen_start", "search_start", "main_call_start", "validation_start"):
-                _upsert_subtrio_status(
-                    subtrio_id=subtrio_id, batch_id=batch_id,
-                    question_id=question_id, country_code=country_code,
-                    stage="researching", substage=e,
-                    last_message=f"R{_att + 1} · {e}",
-                )
-
-        r_result = run_researcher(r_inp, subtrio_id=subtrio_id, on_step=_r_step)
-        cumulative_tokens_in += r_result.cumulative_input_tokens
-        cumulative_tokens_out += r_result.cumulative_output_tokens
-        cumulative_wall += r_result.cumulative_wall_clock_ms
-        if r_result.cumulative_cost_usd:
-            cumulative_cost += r_result.cumulative_cost_usd
-
-        if r_result.output is None:
-            # Researcher failed unrecoverably; treat as Verifier fail and retry
-            print(f"  Researcher failed: {r_result.failure_mode}", flush=True)
-            if attempt == max_retries:
-                # Save what we can and bail.
-                final_status = "agent_failure"
-                _upsert_subtrio_status(
-                    subtrio_id=subtrio_id, batch_id=batch_id,
-                    question_id=question_id, country_code=country_code,
-                    stage="failed", final_verdict=final_status,
-                    cumulative_cost_usd=cumulative_cost,
-                    last_message=f"researcher failed: {r_result.failure_mode}",
-                    final_failure_reason=r_result.failure_mode,
-                    ended=True,
-                )
-                _save_final_row(
-                    run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
-                    final_output=None, terminal_status=final_status,
-                    retry_count=retry_count, adjudicator_involved=False,
-                    captcha_escalated=False,
-                    cumulative_input_tokens=cumulative_tokens_in,
-                    cumulative_output_tokens=cumulative_tokens_out,
-                    cumulative_wall_clock_ms=cumulative_wall,
-                    cumulative_cost_usd=cumulative_cost,
-                    final_failure_reason=r_result.failure_mode,
-                )
-                return final_status, None
-            feedback = VerifierFeedback(
-                rejection_reason=f"researcher failure: {r_result.failure_mode}",
+        if attempt == 0 and resumable is not None:
+            # Resume path: a prior incomplete subtrio for this pair
+            # already produced a Researcher row. `last_researcher_*`
+            # were populated just before the retry loop; we just need
+            # an `r_inp` for the Verifier-input construction below and
+            # a stage transition for visibility. No Researcher call.
+            r_inp = _build_researcher_input(question_id, country_code, feedback)
+            _upsert_subtrio_status(
+                subtrio_id=subtrio_id, batch_id=batch_id,
+                question_id=question_id, country_code=country_code,
+                stage="researching", substage="resumed",
+                retry_count=retry_count,
+                last_message=(
+                    f"resumed from subtrio "
+                    f"{resumable['subtrio_id'][:8]}"
+                ),
             )
-            continue
+        else:
+            _upsert_subtrio_status(
+                subtrio_id=subtrio_id, batch_id=batch_id,
+                question_id=question_id, country_code=country_code,
+                stage="researching", substage="search",
+                retry_count=retry_count,
+                last_message=f"researcher attempt {attempt + 1}",
+            )
+            r_inp = _build_researcher_input(question_id, country_code, feedback)
 
-        researcher_outputs.append(r_result.output)
-        last_researcher_output = r_result.output
-        last_researcher_db_id = _save_researcher_row(
-            result=r_result, inp=r_inp,
-            run_id=run_id, pair_run_id=pair_run_id, retry_count=retry_count,
-        )
-        print(f"  R{attempt+1}: {r_result.output.answer} "
-              f"({r_result.output.answer_confidence:.2f}) "
-              f"£{(r_result.cumulative_cost_usd or 0) * 0.79:.4f}", flush=True)
+            def _r_step(e, p, _att=attempt):
+                _print_step(f"R{_att + 1}", e, p)
+                if e in ("query_gen_start", "search_start", "main_call_start", "validation_start"):
+                    _upsert_subtrio_status(
+                        subtrio_id=subtrio_id, batch_id=batch_id,
+                        question_id=question_id, country_code=country_code,
+                        stage="researching", substage=e,
+                        last_message=f"R{_att + 1} · {e}",
+                    )
+
+            r_result = run_researcher(r_inp, subtrio_id=subtrio_id, on_step=_r_step)
+            cumulative_tokens_in += r_result.cumulative_input_tokens
+            cumulative_tokens_out += r_result.cumulative_output_tokens
+            cumulative_wall += r_result.cumulative_wall_clock_ms
+            if r_result.cumulative_cost_usd:
+                cumulative_cost += r_result.cumulative_cost_usd
+
+            if r_result.output is None:
+                # Researcher failed unrecoverably; treat as Verifier fail and retry
+                print(f"  Researcher failed: {r_result.failure_mode}", flush=True)
+                if attempt == max_retries:
+                    # Save what we can and bail.
+                    final_status = "agent_failure"
+                    _upsert_subtrio_status(
+                        subtrio_id=subtrio_id, batch_id=batch_id,
+                        question_id=question_id, country_code=country_code,
+                        stage="failed", final_verdict=final_status,
+                        cumulative_cost_usd=cumulative_cost,
+                        last_message=f"researcher failed: {r_result.failure_mode}",
+                        final_failure_reason=r_result.failure_mode,
+                        ended=True,
+                    )
+                    _save_final_row(
+                        run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
+                        final_output=None, terminal_status=final_status,
+                        retry_count=retry_count, adjudicator_involved=False,
+                        captcha_escalated=False,
+                        cumulative_input_tokens=cumulative_tokens_in,
+                        cumulative_output_tokens=cumulative_tokens_out,
+                        cumulative_wall_clock_ms=cumulative_wall,
+                        cumulative_cost_usd=cumulative_cost,
+                        final_failure_reason=r_result.failure_mode,
+                    )
+                    return final_status, None
+                feedback = VerifierFeedback(
+                    rejection_reason=f"researcher failure: {r_result.failure_mode}",
+                )
+                continue
+
+            researcher_outputs.append(r_result.output)
+            last_researcher_output = r_result.output
+            last_researcher_db_id = _save_researcher_row(
+                result=r_result, inp=r_inp,
+                run_id=run_id, pair_run_id=pair_run_id, retry_count=retry_count,
+            )
+            print(f"  R{attempt+1}: {r_result.output.answer} "
+                  f"({r_result.output.answer_confidence:.2f}) "
+                  f"£{(r_result.cumulative_cost_usd or 0) * 0.79:.4f}", flush=True)
 
         # --- Verifier stage ---
         _upsert_subtrio_status(
@@ -609,7 +753,7 @@ def coordinate(
             question_text=r_inp.question_text,
             country_code=country_code,
             country_name=r_inp.country_name,
-            researcher_output=r_result.output,
+            researcher_output=last_researcher_output,
             strategy=strategy,
         )
         def _v_step(e, p, _att=attempt):

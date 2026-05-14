@@ -8,6 +8,50 @@ Entries newest first.
 
 ---
 
+## 2026-05-14 — Session 10: resume from partial subtrios
+
+Follow-up to session 9. Since CLIProxyAPI strips Anthropic's
+rate-limit headers, we can't predict when the Claude Max 5-hour wall
+will hit. Batches dying mid-flight is therefore a fact of life, and
+the answer has to be "tolerate it gracefully" rather than "avoid it."
+
+**The contract.** Half-filled `phase2_researcher_runs` or
+`phase2_verifier_runs` rows are fine on their own — none of the
+dashboard surfaces treat them as completed. The only completion
+marker is a `phase2_final` row, which is written from a single point
+at the end of `coordinate()`. If the process dies before that point,
+the pair counts as not-done everywhere. That contract was already in
+place; today's change adds resume to it.
+
+**Resume logic.** At the top of `coordinate()`, before the retry
+loop, look for a prior subtrio_status row for the same pair that:
+- has a `phase2_researcher_runs` entry with retry_count=0,
+- never produced a `phase2_final` row, and
+- is either orphaned / interrupted_rate_limit / failed, or just
+  stale (no update in the last 60 minutes).
+
+If one is found, mark the prior subtrio_status row
+`stage='superseded'` with a reference to the new subtrio_id, then
+load the prior Researcher row back into a ResearcherOutput. The new
+subtrio's retry-loop first iteration sees `resumable is not None` and
+short-circuits the Researcher step entirely; the Verifier runs on the
+cached Researcher output. Retries 1+ run Researcher normally if the
+Verifier rejects.
+
+**Cost / audit.** The resumed Researcher's tokens stayed in
+`claude_usage_log` under the prior subtrio_id (never deleted). The
+new subtrio's only charges are Verifier + possibly Adjudicator. The
+`researcher_run_id` foreign key on the new Verifier row points back
+to the prior Researcher row, so the audit trail still works.
+
+**What's not handled (yet).** Verifier resume. If a subtrio dies
+mid-Adjudication, we still re-run the Verifier on the next attempt
+(the resume only short-circuits Researcher). That's fine: the
+Verifier is cheap relative to the Researcher and the Adjudicator
+rarely fires. Punt this until we see it actually bite.
+
+---
+
 ## 2026-05-14 — Session 9: search resilience, trusted domains, rate-limit probe
 
 Tavily May credits are running low. The session pivots to "still
