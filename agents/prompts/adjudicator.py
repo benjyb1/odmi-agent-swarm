@@ -21,11 +21,13 @@ from agents.models import (
 
 
 NAME = "phase2_adjudicator"
-VERSION = 1
+VERSION = 2
 DESCRIPTION = (
-    "Adjudicator V1: weighs three rounds of Researcher / Verifier output "
+    "Adjudicator V2: weighs three rounds of Researcher / Verifier output "
     "after retries exhaust. Picks a winner or escalates to human review. "
-    "No web searches; the decision rests on evidence already gathered."
+    "No web searches; the decision rests on evidence already gathered. "
+    "V2 adds explicit ban on relying on memorised ODMI rankings or "
+    "ODMI publications, per SPEC D24."
 )
 
 
@@ -91,6 +93,20 @@ Read the full history below carefully. Pay particular attention to:
   contradicts the Researcher, or merely a different but compatible
   reading.
 - Whether either agent's confidence trended up or down across retries.
+
+Forbidden sources. ODMI's own publications and the EU Data Portal
+(data.europa.eu, publications.europa.eu, op.europa.eu, archive mirrors
+of those, and any URL containing "open-data-maturity" or "odmi") are
+forbidden because they are the ground truth being validated. If either
+agent's only material evidence cites one of those sources, treat that
+evidence as void: in practice this usually means
+adjudicator_verdict="neither" with adjudicator_answer set from any
+independent evidence in the history, or escalate_human if no
+independent evidence exists.
+
+Do not rely on memorised ODMI rankings, country scores, or prior-year
+answers when picking a verdict. Decide only from the evidence the two
+agents actually gathered.
 """
 
 
