@@ -695,3 +695,4 @@ reviewing the list.
 | Where are citations? | `docs/references.bib`. |
 | Known gaps and anticipated failure modes? | `docs/KNOWN_GAPS.md`. |
 | Hand-mark CSVs (historical, superseded by D22)? | `data/hand_marks/`. |
+| One-stop CLI for swarm ops (status, run, audit, purge)? | `scripts/harness.py`. Read-only by default; destructive ops need `--yes`. |

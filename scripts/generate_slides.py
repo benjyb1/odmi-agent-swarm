@@ -517,27 +517,54 @@ def slide_how_it_works(prs: Presentation) -> None:
         arrow.line.fill.background()
 
     callout_y = row_y + row_h + Inches(0.35)
+    callout_w = (prs.slide_width - Inches(1.0) - Inches(0.3)) // 2
+    callout_h = Inches(0.95)
+
+    # Left callout: termination rule.
     add_outlined_rect(
-        slide, Inches(0.5), callout_y,
-        prs.slide_width - Inches(1.0), Inches(0.9),
+        slide, Inches(0.5), callout_y, callout_w, callout_h,
         fill=SURFACE, border=TEAL,
     )
-    cap = add_textbox(
+    cap_l = add_textbox(
         slide, Inches(0.7), callout_y + Inches(0.12),
-        prs.slide_width - Inches(1.4), Inches(0.35),
+        callout_w - Inches(0.4), Inches(0.32),
     )
-    set_text(cap.text_frame, "TERMINATION RULE",
+    set_text(cap_l.text_frame, "TERMINATION RULE",
              size=9, bold=True, colour=TEAL)
-    body = add_textbox(
+    body_l = add_textbox(
         slide, Inches(0.7), callout_y + Inches(0.42),
-        prs.slide_width - Inches(1.4), Inches(0.45),
+        callout_w - Inches(0.4), Inches(0.5),
     )
     set_text(
-        body.text_frame,
-        "Coordinator retries Researcher up to 3× when the Verifier "
-        "rejects. After that, Adjudicator decides. Confidence below 0.6 "
-        "escalates to a human queue.",
-        size=11, colour=BODY,
+        body_l.text_frame,
+        "Researcher retries up to 3× on Verifier rejection. After "
+        "that, Adjudicator decides. Confidence below 0.6 escalates "
+        "to a human queue.",
+        size=10, colour=BODY,
+    )
+
+    # Right callout: data-leakage guardrail (D24).
+    right_x = Inches(0.5) + callout_w + Inches(0.3)
+    add_outlined_rect(
+        slide, right_x, callout_y, callout_w, callout_h,
+        fill=SURFACE, border=DANGER,
+    )
+    cap_r = add_textbox(
+        slide, right_x + Inches(0.2), callout_y + Inches(0.12),
+        callout_w - Inches(0.4), Inches(0.32),
+    )
+    set_text(cap_r.text_frame, "DATA-LEAKAGE GUARDRAIL (D24)",
+             size=9, bold=True, colour=DANGER)
+    body_r = add_textbox(
+        slide, right_x + Inches(0.2), callout_y + Inches(0.42),
+        callout_w - Inches(0.4), Inches(0.5),
+    )
+    set_text(
+        body_r.text_frame,
+        "ODMI publications (data.europa.eu and mirrors) banned at "
+        "five layers: search, fetch, validator, prompts, audit. "
+        "An audit script catches anything that slips through.",
+        size=10, colour=BODY,
     )
 
     page_footer(slide, prs, 3, 7)

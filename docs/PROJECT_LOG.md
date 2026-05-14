@@ -67,6 +67,23 @@ and malformed input, deny-list immutability sentinels. All pass.
 - Verifier resume (only Researcher resume is implemented from
   session 10) is still the next architectural gap.
 
+**Harness CLI.** New `scripts/harness.py` is the one-stop entry
+point for the operations I'd otherwise have to compose by hand:
+`status` for DB summary (filterable by country), `pending` and
+`recent` for the queue, `audit` and `purge-leakage` for the
+data-leakage workflow, `run --country FR --budget-gbp X` for
+budget-gated dispatch (computes avg pair cost from
+`claude_usage_log` and selects the head of the pending list that
+fits), `run-pair QID CC` for a single named pair. Read-only by
+default. Destructive commands require `--yes`; without it they
+print the planned action and exit. Slide deck regenerated with a
+"DATA-LEAKAGE GUARDRAIL (D24)" callout next to the existing
+termination-rule callout on the "How it works" slide. Also
+fixed a latent bug in the audit script: `_PURGE_TARGETS` now
+uses `phase2_adjudications` (the actual table name) and
+`subtrio_status.subtrio_id` (the correct column there), not the
+imagined `pair_runs` parent table or `phase2_adjudicator_runs`.
+
 ---
 
 ## 2026-05-14 — Session 10: resume from partial subtrios

@@ -80,13 +80,14 @@ def _scan(conn: sqlite3.Connection) -> list[tuple[str, str, str, str, str]]:
     return violations
 
 
-_PURGE_TABLES = (
-    "phase2_researcher_runs",
-    "phase2_verifier_runs",
-    "phase2_adjudicator_runs",
-    "phase2_final",
-    "subtrio_status",
-    "pair_runs",
+# (table, id_column) — the swarm tables that key off pair_run_id, plus
+# subtrio_status which uses subtrio_id but holds the same UUID value.
+_PURGE_TARGETS: tuple[tuple[str, str], ...] = (
+    ("phase2_researcher_runs", "pair_run_id"),
+    ("phase2_verifier_runs", "pair_run_id"),
+    ("phase2_adjudications", "pair_run_id"),
+    ("phase2_final", "pair_run_id"),
+    ("subtrio_status", "subtrio_id"),
 )
 
 
@@ -101,10 +102,10 @@ def _purge_pairs(conn: sqlite3.Connection, pair_ids: set[str]) -> int:
     total = 0
     placeholders = ",".join("?" for _ in pair_ids)
     ids = list(pair_ids)
-    for table in _PURGE_TABLES:
+    for table, col in _PURGE_TARGETS:
         try:
             cur = conn.execute(
-                f"DELETE FROM {table} WHERE pair_run_id IN ({placeholders})", ids
+                f"DELETE FROM {table} WHERE {col} IN ({placeholders})", ids
             )
         except sqlite3.OperationalError:
             # Table may not exist on a fresh DB or older schema. Skip.
