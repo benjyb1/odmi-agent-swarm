@@ -1,6 +1,6 @@
 # ODMI Agent Swarm — Living Spec
 
-Last updated: 2026-05-13
+Last updated: 2026-05-14
 
 Single source of truth for project state. Updated every session. All numbered
 decisions go in here so they can be referenced as "per D7" elsewhere in the
@@ -462,6 +462,69 @@ takes 3–5 minutes for a full rebuild, ~30 s for an incremental
 one. Verification: open the URL after a push and confirm the new
 content is live before claiming the change is done.
 
+### D24: Hard ban on ODMI publications and the EU Data Portal as evidence
+
+**Date:** 2026-05-14.
+
+The swarm is validated against ODMI's published `merged_responses`
+(per D22). Any URL that quotes, hosts, mirrors, or summarises ODMI's
+own answers therefore leaks the very signal we are trying to
+predict. Eliminating this leakage is a hard requirement, not a
+heuristic.
+
+A single deny-list module (`agents/tools/blocked_domains.py`) is the
+source of truth. It is enforced at five layers, defence in depth:
+
+1. **Search.** `agents/tools/search.py` passes
+   `exclude_domains=list(BLOCKED_DOMAINS)` to Tavily and appends
+   `-site:<d>` clauses to every Brave query. A `_scrub_blocked()`
+   pass drops any result whose URL hits the deny-list before
+   returning, regardless of provider. `session_usage()` counts
+   scrubbed results so dashboard observability stays honest.
+2. **Fetch.** `agents/tools/fetch.py` short-circuits `fetch_text`,
+   `fetch_rendered_text`, and `head_ok` for blocked URLs with
+   `failure_mode="blocked_data_leakage:<reason>"`. No browser
+   launch, no network call.
+3. **Validator.** `agents/tools/validator.py` force-returns 0.0 for
+   any blocked URL. `data.europa.eu` is removed from the default
+   FR / EU trusted lists; `_looks_authoritative` no longer treats
+   `*.europa.eu` as trustworthy by pattern.
+4. **Prompts.** Researcher (v2) and all four Verifier strategies
+   (disprove / negation / steelman / blind, all bumped to v2) carry
+   an explicit hard rule: forbidden sources are `data.europa.eu`,
+   `publications.europa.eu`, `op.europa.eu`, `europeandataportal.eu`,
+   archive mirrors of those, and any URL containing
+   `open-data-maturity`, `odmi`, `merged_responses`, or
+   `odm-questionnaire`. The Researcher prompt also bans relying on
+   memorised ODMI rankings or prior-year answers. Verifiers reject
+   any Researcher claim citing a forbidden source with
+   `rejection_reason="forbidden_odmi_source"`.
+5. **Audit.** `scripts/check_data_leakage.py` scans `source_url`,
+   `counter_source_url`, and `final_source_url` columns across the
+   swarm tables. Exits 0 clean, 1 on any violation. Optional
+   `--purge` flag deletes every pair_run row that produced a
+   violation across all six swarm tables.
+
+The blocked-path-fragment list is narrow on purpose: catching
+`open-data-maturity-report` on a third-party domain is desirable;
+catching every "open data" page would be over-broad. Domain
+blocking is the primary defence; path fragments are a secondary
+guard.
+
+Update policy. New entries to `BLOCKED_DOMAINS` or
+`BLOCKED_PATH_FRAGMENTS` require a numbered SPEC.md decision. The
+list should grow as new mirrors surface; it should never shrink
+without a written rationale here.
+
+Historical contamination. The audit script flagged 30 violations on
+existing rows before this decision landed (8 Researcher source_urls,
+18 Verifier counter_source_urls, 4 phase2_final final_source_urls,
+all pointing at `data.europa.eu`). Those rows pre-date D24 and are
+not retro-active proof of a bug in the new code; they are evidence
+that the leakage problem was real. The user runs
+`uv run python scripts/check_data_leakage.py --purge` after
+reviewing the list.
+
 ---
 
 ## Current status
@@ -598,6 +661,7 @@ content is live before claiming the change is done.
 
 | Date | Change |
 |---|---|
+| 2026-05-14 (evening) | D24 added: hard ban on ODMI publications and the EU Data Portal as evidence. New `agents/tools/blocked_domains.py` deny-list (12 domains, 7 path fragments). Enforced at five layers: Tavily `exclude_domains` + Brave `-site:` + post-filter scrub in `search.py`; refusal in `fetch_text`/`fetch_rendered_text`/`head_ok`; 0.0 score in `validator.trust_score`; explicit forbidden-sources rule baked into Researcher v2 prompt and all four Verifier v2 prompts (disprove / negation / steelman / blind); audit script `scripts/check_data_leakage.py` with `--purge`. New `tests/test_blocked_domains.py` (30 cases, passing). `data.europa.eu` removed from `_DEFAULT_TRUSTED` and from the `_looks_authoritative` pattern. Audit on existing DB flagged 30 historical violations (8 Researcher source_urls, 18 Verifier counter_source_urls, 4 phase2_final), all pointing at `data.europa.eu`; user runs `--purge` after review. |
 | 2026-05-14 (afternoon) | Coordinator resume-on-partial. Since CLIProxyAPI strips Anthropic's rate-limit headers, batches dying mid-flight is unavoidable when the Claude Max wall hits. The Coordinator now: at start of each pair, looks for a prior subtrio_status row that has a `phase2_researcher_runs` entry (retry_count=0) but no `phase2_final`, and is either orphaned, interrupted_rate_limit, failed, or older than the resume freshness window (default 60 minutes). If one exists, marks the prior subtrio_status as `stage='superseded'`, loads the prior Researcher output back into a ResearcherOutput, and skips the Researcher call on the new attempt's first iteration — going straight to the Verifier. Retries 1+ run Researcher normally. New helper functions: `_find_resumable_researcher`, `_mark_superseded`, `_researcher_output_from_row`. Partial rows in the three phase2_* tables remain in place but are not visible as completed because the Results/Database/Home surfaces all key off `phase2_final` (only written on completion). Cost / audit semantics: the resumed Researcher's cost stays in claude_usage_log under the prior subtrio_id; the new subtrio only spends on Verifier and Adjudicator. |
 | 2026-05-14 (am) | Search-side resilience pass. `scripts/probe_ratelimit.py` confirms CLIProxyAPI strips `anthropic-ratelimit-*` headers, so Claude Max remaining-capacity is not readable through the proxy; the dashboard's £ soft limit stays as a guessed-equivalent figure for now (revisit if we bypass the proxy). `agents/tools/search.py` rewritten with a Tavily → Brave Search fallback that triggers on `UsageLimitExceededError` and sticks to Brave for the rest of the session; `session_usage()` exposes the per-provider counts. `agents/tools/trusted_domains.py` + JSON files for FR / DE / NL / RO / HU / EE list the per-country authoritative domains (national portal + key government sites, deliberately excluding data.europa.eu per D22's leakage mitigation). Researcher now searches narrowed to those domains first and widens automatically when the narrow search returns zero results. `.env.example` adds `BRAVE_SEARCH_API_KEY`. |
 | 2026-05-13 (late evening) | Follow-ups after D22. New `dashboard/pages/5_Database.py` shows all 5,148 ODMI ground-truth pairs joined with the latest swarm answer; filters by country / dimension / coverage state / free-text; deletes one pair's swarm rows from the UI. New `db.delete_pair` / `pair_row_counts` / `coverage_grid` helpers. Each Results card grew a `🗑 Delete all swarm rows for this pair` expander with confirmation. Run Console launcher now refuses duplicates by default (with a checkbox to opt-in), and the dispatcher gained a `--pairs QID:CC` CLI argument so sparse sets flow through. Run Console gained a top-of-page progress strip (5 metrics + an `st.progress` bar tracking the latest batch). Currency switched to GBP everywhere it's displayed (dashboard, slides, CLI prints): new `dashboard/lib/currency.py` with `USD_TO_GBP=0.79` and `format_gbp()`. Soft-limit slider accepts £ in; converts to USD for the dispatcher under the hood. `estimated_cost_usd` column name unchanged (the underlying unit is still USD). |

@@ -8,6 +8,67 @@ Entries newest first.
 
 ---
 
+## 2026-05-14 — Session 11: hard ban on ODMI sources
+
+Walked through the swarm with one question: where could an ODMI
+publication contaminate evidence? The audit turned up two
+smoking-gun problems and a thirty-row contamination history.
+
+**Smoking guns.** First, `agents/tools/validator.py` had
+`data.europa.eu` in `_DEFAULT_TRUSTED["FR"]` and `_DEFAULT_TRUSTED["EU"]`
+with a trust score of 1.0. Every ODMI URL was treated as the most
+authoritative source the swarm could possibly cite. Second, the
+Verifier disprove prompt (line 208) explicitly listed
+"the European Commission's own ODMI publication" as a top-tier
+authoritative source — a direct instruction to the model that the
+ground truth was a valid source.
+
+**The deny-list.** New module `agents/tools/blocked_domains.py` is
+the single source of truth. Twelve domains
+(`data.europa.eu`, `publications.europa.eu`, `op.europa.eu`,
+`europeandataportal.eu`, web archive caches, Google cache mirrors)
+plus seven path fragments (`/open-data-maturity`, `/odmi`,
+`merged_responses`, `2025_odm_questionnaire`, etc.). `is_blocked(url)`
+and `blocked_reason(url)` are the two public helpers.
+
+**Five-layer defence.** `agents/tools/search.py` passes
+`exclude_domains` to Tavily, adds `-site:` clauses to every Brave
+query, and post-filters results through `_scrub_blocked()` regardless
+of provider. `agents/tools/fetch.py` refuses `fetch_text`,
+`fetch_rendered_text`, and `head_ok` with
+`failure_mode="blocked_data_leakage:<reason>"`. `validator.py`
+force-returns 0.0 for any blocked URL and no longer treats
+`*.europa.eu` as authoritative by pattern. Researcher v2 prompt and
+all four Verifier v2 prompts spell out the forbidden-sources list
+and the `rejection_reason="forbidden_odmi_source"` tag. Last line:
+`scripts/check_data_leakage.py` scans the three URL columns across
+the swarm tables, exits non-zero on any hit, and offers `--purge`
+to delete tainted pair_runs.
+
+**Historical contamination.** The audit on the existing DB flagged
+30 violations (8 Researcher `source_url` rows, 18 Verifier
+`counter_source_url` rows, 4 phase2_final `final_source_url` rows)
+all on `data.europa.eu`. These pre-date D24 and demonstrate the
+problem was real. They'll be purged once Benjy reviews.
+
+**Tests.** New `tests/test_blocked_domains.py` (30 cases): known
+forbidden hosts, blocked path fragments, legitimate URLs, empty
+and malformed input, deny-list immutability sentinels. All pass.
+`pytest` added as a uv dev-dependency.
+
+**Followups.**
+- Run `--purge` on the audit script when ready, then re-run any
+  affected pair_runs through the new code path.
+- The "narrow domain → wide fallback" branch in
+  `agents/researcher.py` still widens to the open web when trusted
+  domains yield zero results. The new deny-list will refuse ODMI
+  URLs in the wide fallback too, so this is safe, but worth
+  watching once we run on harder questions.
+- Verifier resume (only Researcher resume is implemented from
+  session 10) is still the next architectural gap.
+
+---
+
 ## 2026-05-14 — Session 10: resume from partial subtrios
 
 Follow-up to session 9. Since CLIProxyAPI strips Anthropic's

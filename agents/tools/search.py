@@ -23,12 +23,15 @@ from pathlib import Path
 from pydantic import BaseModel
 from tavily import TavilyClient, UsageLimitExceededError
 
+from agents.tools.blocked_domains import BLOCKED_DOMAINS, is_blocked
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(_REPO_ROOT / ".env", override=True)
 
 
 _PROVIDER_USAGE_COUNTERS: dict[str, int] = {"tavily": 0, "brave": 0}
 _TAVILY_QUOTA_EXHAUSTED: bool = False
+_BLOCKED_RESULT_COUNTER: int = 0
 
 
 class SearchResult(BaseModel):
@@ -59,6 +62,7 @@ def _tavily_search(
         max_results=max_results,
         topic=topic,
         include_domains=include_domains or [],
+        exclude_domains=list(BLOCKED_DOMAINS),
     )
     out: List[SearchResult] = []
     for r in response.get("results", []):
@@ -95,12 +99,15 @@ def _brave_search(
         )
 
     # Brave doesn't take include_domains directly; we add `site:` clauses.
+    # We also append a `-site:` clause for every entry on the hard
+    # deny-list so leakage sources are excluded at the query level too.
     site_clause = ""
     if include_domains:
         site_clause = " (" + " OR ".join(
             f"site:{d}" for d in include_domains
         ) + ")"
-    q = f"{query}{site_clause}"
+    block_clause = " " + " ".join(f"-site:{d}" for d in BLOCKED_DOMAINS)
+    q = f"{query}{site_clause}{block_clause}"
 
     headers = {
         "Accept": "application/json",
@@ -132,6 +139,24 @@ def _brave_search(
 # Public interface
 # ============================================================
 
+def _scrub_blocked(results: List[SearchResult]) -> List[SearchResult]:
+    """Last-line defence: drop any result whose URL hits the deny-list.
+
+    Both Tavily and Brave receive deny-list hints at query time, but a
+    provider can ignore those hints, especially when a mirror domain
+    sneaks in via a redirect. This pass guarantees the deny-list is
+    honoured regardless.
+    """
+    global _BLOCKED_RESULT_COUNTER
+    keep: List[SearchResult] = []
+    for r in results:
+        if is_blocked(r.url):
+            _BLOCKED_RESULT_COUNTER += 1
+            continue
+        keep.append(r)
+    return keep
+
+
 def search(
     query: str,
     *,
@@ -146,6 +171,9 @@ def search(
 
     If Tavily reports its monthly credit ceiling as exhausted, the
     wrapper sticks to Brave for the rest of the session.
+
+    Blocked domains (see `agents.tools.blocked_domains`) are excluded
+    from both providers' results regardless of `include_domains`.
     """
     global _TAVILY_QUOTA_EXHAUSTED
 
@@ -158,7 +186,7 @@ def search(
                 include_domains=include_domains,
             )
             _PROVIDER_USAGE_COUNTERS["tavily"] += 1
-            return results
+            return _scrub_blocked(results)
         except UsageLimitExceededError:
             _TAVILY_QUOTA_EXHAUSTED = True
             # fall through to Brave
@@ -176,7 +204,7 @@ def search(
         query, max_results=max_results, include_domains=include_domains,
     )
     _PROVIDER_USAGE_COUNTERS["brave"] += 1
-    return results
+    return _scrub_blocked(results)
 
 
 def search_many(
@@ -224,4 +252,5 @@ def session_usage() -> dict:
     return {
         **_PROVIDER_USAGE_COUNTERS,
         "tavily_quota_exhausted": _TAVILY_QUOTA_EXHAUSTED,
+        "blocked_results_scrubbed": _BLOCKED_RESULT_COUNTER,
     }

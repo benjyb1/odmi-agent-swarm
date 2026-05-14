@@ -21,6 +21,8 @@ from typing import Literal, Optional
 import httpx
 from pydantic import BaseModel
 
+from agents.tools.blocked_domains import blocked_reason, is_blocked
+
 DEFAULT_USER_AGENT = (
     "ODMI-Swarm-Research/0.1 "
     "(MSc dissertation; King's College London; "
@@ -43,6 +45,18 @@ class FetchResult(BaseModel):
     failure_mode: Optional[str] = None    # null on success
 
 
+def _blocked_result(url: str, backend: FetchBackend) -> FetchResult:
+    reason = blocked_reason(url) or "blocked"
+    return FetchResult(
+        url=url,
+        backend=backend,
+        status_code=0,
+        content="",
+        truncated=False,
+        failure_mode=f"blocked_data_leakage:{reason}",
+    )
+
+
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 
@@ -61,7 +75,12 @@ def fetch_text(
     timeout_s: float = DEFAULT_TIMEOUT_S,
     max_chars: int = DEFAULT_MAX_CHARS,
 ) -> FetchResult:
-    """Plain httpx GET. Returns text content with HTML tags stripped."""
+    """Plain httpx GET. Returns text content with HTML tags stripped.
+
+    Refuses URLs on the data-leakage deny-list before any network call.
+    """
+    if is_blocked(url):
+        return _blocked_result(url, "httpx")
     try:
         with httpx.Client(
             timeout=timeout_s,
@@ -118,7 +137,12 @@ def fetch_rendered_text(
 
     Use only when `fetch_text` returns an empty body or a known
     CAPTCHA/blocking marker. Slower than httpx.
+
+    Refuses URLs on the data-leakage deny-list before launching a
+    browser.
     """
+    if is_blocked(url):
+        return _blocked_result(url, "playwright")
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
     except ImportError as exc:
@@ -169,7 +193,11 @@ def head_ok(url: str, *, timeout_s: float = 8.0) -> tuple[bool, int]:
 
     Returns (ok, status_code). Some servers reject HEAD; on 4xx/5xx we
     fall back to a small GET so we don't misclassify a working URL.
+
+    Refuses URLs on the data-leakage deny-list before any network call.
     """
+    if is_blocked(url):
+        return False, 0
     try:
         with httpx.Client(
             timeout=timeout_s,

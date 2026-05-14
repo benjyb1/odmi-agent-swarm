@@ -19,10 +19,12 @@ from agents.models import ResearcherInput
 from agents.tools.search import SearchResult, format_for_prompt
 
 NAME = "phase2_researcher"
-VERSION = 1
+VERSION = 2
 DESCRIPTION = (
-    "Researcher V1: Python-orchestrated search + single Claude call. "
-    "No native tool use yet. Quotes literally, cites one source URL "
+    "Researcher V2: Python-orchestrated search + single Claude call. "
+    "Adds hard rule against citing ODMI publications, the EU Data "
+    "Portal (data.europa.eu), or cached/archived versions of those "
+    "pages, per SPEC D24. Quotes literally, cites one source URL "
     "from the provided snippets."
 )
 
@@ -52,16 +54,30 @@ Hard rules.
 2. Cite one source URL that best supports your answer. The URL must
    be one that appears in the search snippets you were given; do not
    invent URLs.
-3. If the evidence is insufficient, ambiguous, or contradictory,
+3. Never cite ODMI's own publications or the EU Data Portal. The
+   following sources are forbidden:
+   - data.europa.eu (and any subdomain)
+   - publications.europa.eu, op.europa.eu
+   - europeandataportal.eu (legacy redirect)
+   - web.archive.org, archive.today and similar mirror caches
+   - any page whose URL contains "open-data-maturity", "odmi",
+     "merged_responses", or "odm-questionnaire"
+   These are the ground truth we are validating against. If the only
+   supporting evidence sits on one of those sources, return "other"
+   with low confidence and explain in answer_explanation.
+4. Do not rely on memorised knowledge of ODMI scores, country
+   rankings, or prior-year answers. Answer only from the search
+   snippets in front of you.
+5. If the evidence is insufficient, ambiguous, or contradictory,
    return "other" with low confidence and explain why in
    answer_explanation.
-4. Two confidence scores in [0.0, 1.0]:
+6. Two confidence scores in [0.0, 1.0]:
    - retrieval_confidence is how confident you are that the cited
      source is real, current, and authoritative.
    - answer_confidence is how confident you are that the quoted
      evidence supports the specific claim implied by your answer.
-5. answer_explanation is a single sentence in English.
-6. search_queries_used should echo the queries that Python ran (you
+7. answer_explanation is a single sentence in English.
+8. search_queries_used should echo the queries that Python ran (you
    will be told what they were).
 
 You will return JSON matching the ResearcherOutput schema. The schema

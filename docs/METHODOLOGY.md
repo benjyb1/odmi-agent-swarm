@@ -251,13 +251,60 @@ Compute, separately:
 
 ### Data-leakage mitigation
 
-ODMI publishes the `merged_responses` answers on data.europa.eu, so a
-Researcher's Tavily search could in principle surface ODMI's own answer
-page mid-run. The mitigation is a deny-list on the evaluation-cycle's
-data.europa.eu sub-domain enforced inside `agents/tools/search.py`, and
-any swarm pair whose chosen source URL points there gets flagged for
-manual review and excluded from accuracy aggregates. The flag column
-on `phase2_final` is the tracking surface for this.
+ODMI publishes the `merged_responses` answers on `data.europa.eu`, so
+without active mitigation a Researcher search could surface ODMI's own
+answer page mid-run, and the swarm would be trained-on-its-own-target
+in miniature. Per SPEC D24 the swarm is forbidden from using any ODMI
+publication or its mirrors as evidence. The mitigation is defence in
+depth across five layers, all enforced from a single deny-list module
+(`agents/tools/blocked_domains.py`):
+
+1. **Search-layer block.** `agents/tools/search.py` passes
+   `exclude_domains=list(BLOCKED_DOMAINS)` to Tavily, appends
+   `-site:<d>` clauses to every Brave query, and post-filters
+   results against `is_blocked()` regardless of provider. The
+   blocked count is exposed via `session_usage()` so the dashboard
+   keeps an honest observability surface.
+2. **Fetch-layer refusal.** `agents/tools/fetch.py` short-circuits
+   `fetch_text`, `fetch_rendered_text`, and `head_ok` for blocked
+   URLs with `failure_mode="blocked_data_leakage:<reason>"`. No
+   network call, no Playwright launch.
+3. **Validator-layer zero trust.** `agents/tools/validator.py`
+   force-returns 0.0 for any blocked URL. The default trusted lists
+   for FR / EU no longer contain `data.europa.eu`, and the
+   `_looks_authoritative()` pattern no longer treats `*.europa.eu`
+   as trustworthy.
+4. **Prompt-layer ban.** Researcher v2 and all four Verifier v2
+   strategies (disprove / negation / steelman / blind) carry an
+   explicit hard rule listing forbidden sources and the
+   `rejection_reason="forbidden_odmi_source"` tag. The Researcher
+   prompt also bans reliance on memorised ODMI rankings or
+   prior-year answers.
+5. **Audit-layer detection.** `scripts/check_data_leakage.py` scans
+   `phase2_researcher_runs.source_url`,
+   `phase2_verifier_runs.counter_source_url`, and
+   `phase2_final.final_source_url`. Exits 0 if clean, 1 if any
+   violation. A `--purge` flag deletes every pair_run row that
+   produced a violation across all six swarm tables. The audit is
+   intended to run before every accuracy aggregation; any
+   violation invalidates the run.
+
+The deny-list itself is twelve domains and seven path fragments;
+the full list is the authoritative content of
+`agents/tools/blocked_domains.py`. New entries require a numbered
+SPEC.md decision; the list grows as new mirrors surface and never
+shrinks without written rationale.
+
+Why five layers, not one. Each layer fails in a different way: a
+search provider can ignore `exclude_domains` for an undocumented
+reason; a fetch can be triggered by a quote-validation step the
+search layer never saw; the validator only fires on URLs the
+swarm has already chosen; prompts can be undermined by an
+edge-case the rule didn't anticipate. The audit catches whatever
+slipped through. Layered defences also let the contamination
+analysis distinguish "leaked via search" from "leaked via prompt
+memory", which matters when the dissertation reports per-layer
+catch rates.
 
 ### Stage 2: external-validity test (2024)
 

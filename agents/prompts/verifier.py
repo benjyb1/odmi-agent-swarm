@@ -182,7 +182,7 @@ def build_user_message(
 # ============================================================
 
 _DISPROVE_NAME = "phase2_verifier_disprove"
-_DISPROVE_VERSION = 1
+_DISPROVE_VERSION = 2
 
 _DISPROVE_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
@@ -204,8 +204,13 @@ Your reasoning process (follow in order):
    rejecting.
 
 2. Source authority. Is the cited URL authoritative for this claim? A blog
-   post or consultancy summary is weaker than a government portal, official
-   legislation, or the European Commission's own ODMI publication.
+   post or consultancy summary is weaker than a government portal or official
+   legislation. ODMI's own publications and the EU Data Portal
+   (data.europa.eu, publications.europa.eu, op.europa.eu, archive
+   mirrors of those, and any URL containing "open-data-maturity" or
+   "odmi") are forbidden as sources because they are the ground truth
+   we are validating against. If the Researcher cites one of those,
+   reject with rejection_reason="forbidden_odmi_source".
 
 3. Evidence fit. Does the quoted passage actually answer the question asked?
    A quote about open-data strategy in general does not confirm a specific
@@ -230,7 +235,7 @@ materially wrong, unverifiable, or insufficient for the specific question.
 # ============================================================
 
 _NEGATION_NAME = "phase2_verifier_negation"
-_NEGATION_VERSION = 1
+_NEGATION_VERSION = 2
 
 _NEGATION_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
@@ -243,6 +248,13 @@ If they answered "other", find evidence for a clear yes or no.
 
 The ODMI (EU Open Data Maturity Index) evaluates national open-data
 ecosystems. Every answer must be backed by a verifiable source.
+
+Forbidden sources. ODMI's own publications and the EU Data Portal
+(data.europa.eu, publications.europa.eu, op.europa.eu, archive mirrors
+of those, and any URL containing "open-data-maturity" or "odmi") are
+forbidden because they are the ground truth being validated. If the
+Researcher cites one of those, reject with
+rejection_reason="forbidden_odmi_source".
 
 Your reasoning process:
 
@@ -273,7 +285,7 @@ is a valid reason to fail.
 # ============================================================
 
 _STEELMAN_NAME = "phase2_verifier_steelman"
-_STEELMAN_VERSION = 1
+_STEELMAN_VERSION = 2
 
 _STEELMAN_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
@@ -302,6 +314,13 @@ ecosystems. Precision matters. A policy that is announced but not enacted,
 or a platform that supports an API in one scope but not the one the
 question asks about, should fail the steelman test.
 
+Forbidden sources. ODMI's own publications and the EU Data Portal
+(data.europa.eu, publications.europa.eu, op.europa.eu, archive mirrors
+of those, and any URL containing "open-data-maturity" or "odmi") are
+forbidden because they are the ground truth being validated. A
+steelman that rests on one of those sources collapses automatically;
+reject with rejection_reason="forbidden_odmi_source".
+
 Verdict.
 - If Step 2 reveals a material flaw in even the steelmanned case:
   verdict="fail", with rejection_reason explaining which part of the
@@ -318,7 +337,7 @@ dissertation analysis can read your full chain of reasoning.
 # ============================================================
 
 _BLIND_NAME = "phase2_verifier_blind"
-_BLIND_VERSION = 1
+_BLIND_VERSION = 2
 
 _BLIND_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
@@ -346,6 +365,15 @@ to know the Researcher's answer to complete your task.
 The ODMI (EU Open Data Maturity Index) evaluates national open-data
 ecosystems. Base your answer on the specific evidence provided, not on
 general knowledge of the country.
+
+Forbidden sources. ODMI's own publications and the EU Data Portal
+(data.europa.eu, publications.europa.eu, op.europa.eu, archive mirrors
+of those, and any URL containing "open-data-maturity" or "odmi") are
+forbidden because they are the ground truth being validated. If the
+only evidence sits on one of those, return verdict="fail" with
+rejection_reason="forbidden_odmi_source". Do not draw on prior-year
+ODMI rankings you may remember; answer only from the evidence in
+front of you.
 
 Verdict.
 - Set verdict="pass" if the evidence supports a clear answer with
