@@ -1,0 +1,17 @@
+{
+  "country_code": "NL",
+  "country_name": "Netherlands",
+  "portal_url": "https://data.overheid.nl/",
+  "trusted_domains": [
+    "data.overheid.nl",
+    "www.data.overheid.nl",
+    "rijksoverheid.nl",
+    "www.rijksoverheid.nl",
+    "wetten.overheid.nl",
+    "digitaleoverheid.nl",
+    "www.digitaleoverheid.nl",
+    "cbs.nl",
+    "www.cbs.nl"
+  ],
+  "notes": "data.europa.eu is deliberately excluded per D22."
+}

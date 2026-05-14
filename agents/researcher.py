@@ -30,6 +30,7 @@ from agents.tools import substring
 from agents.tools.fetch import head_ok
 from agents.tools.llm import StructuredOutputError, call_for_structured
 from agents.tools.search import SearchResult, search_many
+from agents.tools.trusted_domains import trusted_domains_for
 from agents.tools.validator import trust_score
 
 
@@ -214,11 +215,29 @@ def run_researcher(
     })
 
     # ----- Step 2: search -----
-    on_step("search_start", {"queries": queries})
-    search_results = search_many(queries, max_results_per_query=max_results_per_query)
+    # First pass: narrow to the country's trusted domains so authoritative
+    # sources rank above generic ones. If nothing comes back (the answer
+    # may live on a domain we haven't whitelisted), fall back to a wide
+    # search.
+    trusted = trusted_domains_for(input.country_code)
+    on_step("search_start", {"queries": queries, "trusted_domains": trusted})
+    search_results = search_many(
+        queries,
+        max_results_per_query=max_results_per_query,
+        include_domains=trusted or None,
+    )
+    wide_fallback_used = False
+    if not search_results and trusted:
+        on_step("search_widen", {"reason": "narrow search returned nothing"})
+        search_results = search_many(
+            queries,
+            max_results_per_query=max_results_per_query,
+        )
+        wide_fallback_used = True
     on_step("search_complete", {
         "n_results": len(search_results),
         "top_titles": [r.title[:80] for r in search_results[:5]],
+        "wide_fallback_used": wide_fallback_used,
     })
 
     if not search_results:
@@ -228,7 +247,7 @@ def run_researcher(
             query_gen_usage=query_usage,
             main_usage=None,
             search_queries_used=queries,
-            notes="No Tavily results across all queries.",
+            notes="No results across all queries (narrow and wide).",
         )
 
     # ----- Step 3: register prompt version and call the LLM -----

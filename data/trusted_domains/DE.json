@@ -1,0 +1,18 @@
+{
+  "country_code": "DE",
+  "country_name": "Germany",
+  "portal_url": "https://www.govdata.de/",
+  "trusted_domains": [
+    "govdata.de",
+    "www.govdata.de",
+    "bundesregierung.de",
+    "www.bundesregierung.de",
+    "gesetze-im-internet.de",
+    "www.gesetze-im-internet.de",
+    "bmi.bund.de",
+    "www.bmi.bund.de",
+    "destatis.de",
+    "www.destatis.de"
+  ],
+  "notes": "data.europa.eu is deliberately excluded per D22."
+}

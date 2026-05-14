@@ -1,0 +1,16 @@
+{
+  "country_code": "RO",
+  "country_name": "Romania",
+  "portal_url": "https://data.gov.ro/",
+  "trusted_domains": [
+    "data.gov.ro",
+    "gov.ro",
+    "www.gov.ro",
+    "guv.ro",
+    "www.guv.ro",
+    "legislatie.just.ro",
+    "insse.ro",
+    "www.insse.ro"
+  ],
+  "notes": "data.europa.eu is deliberately excluded per D22."
+}

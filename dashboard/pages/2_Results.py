@@ -91,7 +91,10 @@ def _render_card(row: pd.Series) -> None:
                     f"{row['dimension']} · {row['indicator']}"
                 )
         with c2:
-            answer = (row.get("final_answer") or "—").strip() or "—"
+            raw_answer = row.get("final_answer")
+            answer = str(raw_answer).strip() if pd.notna(raw_answer) else "—"
+            if not answer:
+                answer = "—"
             st.markdown(f"### Answer: `{answer}`")
             match_status = row.get("match_status") or "no_ground_truth"
             badge_text, badge_colour = _MATCH_BADGE.get(

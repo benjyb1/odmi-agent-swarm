@@ -1,0 +1,15 @@
+{
+  "country_code": "EE",
+  "country_name": "Estonia",
+  "portal_url": "https://avaandmed.eesti.ee/",
+  "trusted_domains": [
+    "avaandmed.eesti.ee",
+    "eesti.ee",
+    "www.eesti.ee",
+    "riigiteataja.ee",
+    "stat.ee",
+    "mkm.ee",
+    "www.mkm.ee"
+  ],
+  "notes": "data.europa.eu is deliberately excluded per D22."
+}

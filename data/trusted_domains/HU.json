@@ -1,0 +1,14 @@
+{
+  "country_code": "HU",
+  "country_name": "Hungary",
+  "portal_url": "https://data.gov.hu/",
+  "trusted_domains": [
+    "data.gov.hu",
+    "kormany.hu",
+    "www.kormany.hu",
+    "njt.hu",
+    "ksh.hu",
+    "www.ksh.hu"
+  ],
+  "notes": "data.europa.eu is deliberately excluded per D22. The HU portal location can drift; verify before each cycle."
+}

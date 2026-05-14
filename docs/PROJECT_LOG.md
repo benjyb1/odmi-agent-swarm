@@ -8,6 +8,52 @@ Entries newest first.
 
 ---
 
+## 2026-05-14 — Session 9: search resilience, trusted domains, rate-limit probe
+
+Tavily May credits are running low. The session pivots to "still
+serving searches after Tavily's quota wall."
+
+**Probe.** `scripts/probe_ratelimit.py` fires one Sonnet call via
+CLIProxyAPI on localhost:8317 and dumps every response header. The
+result: six headers, none of them `anthropic-ratelimit-*`. The proxy
+strips them, so we can't read Claude Max's remaining-capacity through
+this path. The £ soft limit on the sidebar stays as a guessed
+arithmetic-equivalent for now; bypassing the proxy with a direct
+Anthropic API key would be the only way to read the real signal.
+
+**Brave fallback.** `agents/tools/search.py` rewritten as a single
+`search(query, ...)` that tries Tavily, catches
+`UsageLimitExceededError`, flips a session-scoped flag, and falls back
+to Brave Search for the rest of the run. Brave's `include_domains`
+gets translated into a `site:` clause group. `session_usage()` returns
+per-provider counts plus the exhausted flag so the dashboard can show
+which provider served what.
+
+**Trusted domains.** New `agents/tools/trusted_domains.py` plus six
+JSON files in `data/trusted_domains/`. Each country lists its national
+open-data portal plus 4-8 authoritative government domains. The
+Researcher's search step now narrows on `include_domains` first; if
+the narrow search returns nothing, a wide retry runs automatically.
+The expected effect is a meaningful quality lift (less random
+re-publication noise in results) and a small Tavily-credit save where
+the narrow search returns enough. `data.europa.eu` is deliberately
+absent from every list because D22 deny-lists it (host of the ODMI
+ground-truth assessments).
+
+**Bug fix.** `dashboard/pages/2_Results.py` `_render_card` blew up
+with `'float' object has no attribute 'strip'` when pandas inferred
+some `final_answer` values as floats from SQLite. Hardened with
+`pd.notna(...)` + `str(...)`.
+
+**What's next.** If Tavily credits actually run out and we burn
+through Brave's free 2,000-query monthly cap too, the architectural
+fix is "skip search entirely for Portal-dimension questions; fetch the
+trusted portal URL directly via Playwright as the primary evidence
+source." That's bigger surgery to the Researcher and is left for
+session 10.
+
+---
+
 ## 2026-05-13 — Session 8: Database page, per-pair delete, dedup, £
 
 A second pass on top of Session 7's ground-truth pivot. The pieces

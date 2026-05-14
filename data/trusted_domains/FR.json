@@ -1,0 +1,19 @@
+{
+  "country_code": "FR",
+  "country_name": "France",
+  "portal_url": "https://www.data.gouv.fr/",
+  "trusted_domains": [
+    "data.gouv.fr",
+    "www.data.gouv.fr",
+    "service-public.fr",
+    "www.service-public.fr",
+    "legifrance.gouv.fr",
+    "www.legifrance.gouv.fr",
+    "gouvernement.fr",
+    "www.gouvernement.fr",
+    "economie.gouv.fr",
+    "www.economie.gouv.fr",
+    "etalab.gouv.fr"
+  ],
+  "notes": "data.europa.eu is deliberately excluded per D22 (host of the ODMI ground-truth assessments)."
+}
