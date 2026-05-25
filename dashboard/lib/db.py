@@ -137,6 +137,91 @@ _MATCH_STATUS_SQL = """
 MAIN_RUNS_FILTER = "f.experiment_id IS NULL"
 
 
+def analytics_frame() -> pd.DataFrame:
+    """One fat row per finalised main-run pair with every axis the
+    Analytics page can slice on.
+
+    Joins:
+    - questions             (dimension, indicator)
+    - subtrio_status        (R/V/A models, verifier_strategy)
+    - latest_verifier       (most recent verdict + confidence + strategy)
+    - any_rejection         (1 if any V verdict in the history was 'fail')
+    - provider_mix          (search_provider_calls JSON unrolled)
+    - ground_truth          (response → match_status)
+
+    Columns the page groups on: dimension, country_code, researcher_model,
+    verifier_model, adjudicator_model, verifier_strategy, search_provider.
+
+    Columns it summarises: match_status, terminal_status, retry_count,
+    adjudicator_involved, had_rejection, cumulative_cost_usd,
+    cumulative_wall_clock_ms.
+
+    Always filtered to main runs (D27 MAIN_RUNS_FILTER).
+    """
+    return read_sql(
+        f"""
+        WITH latest_verifier AS (
+            SELECT pair_run_id, verdict, verifier_confidence, strategy_label
+            FROM phase2_verifier_runs v
+            WHERE id = (
+                SELECT MAX(id) FROM phase2_verifier_runs
+                WHERE pair_run_id = v.pair_run_id
+            )
+        ),
+        any_rejection AS (
+            SELECT pair_run_id,
+                   MAX(CASE WHEN verdict = 'fail' THEN 1 ELSE 0 END) AS had_rejection
+            FROM phase2_verifier_runs
+            GROUP BY pair_run_id
+        ),
+        provider_mix AS (
+            SELECT r.pair_run_id,
+                   SUM(json_extract(value, '$.provider') = 'tavily'
+                       AND json_extract(value, '$.ok') = 1) AS n_tavily_ok,
+                   SUM(json_extract(value, '$.provider') = 'brave'
+                       AND json_extract(value, '$.ok') = 1) AS n_brave_ok
+            FROM phase2_researcher_runs r, json_each(r.search_provider_calls)
+            WHERE r.search_provider_calls IS NOT NULL
+            GROUP BY r.pair_run_id
+        )
+        SELECT
+            f.id, f.pair_run_id, f.question_id, f.country_code,
+            f.terminal_status, f.retry_count, f.adjudicator_involved,
+            f.final_answer,
+            f.cumulative_cost_usd, f.cumulative_wall_clock_ms,
+            f.created_at,
+            q.dimension, q.indicator,
+            v.verdict           AS latest_verifier_verdict,
+            v.verifier_confidence,
+            v.strategy_label    AS verifier_strategy,
+            COALESCE(ar.had_rejection, 0) AS had_rejection,
+            s.researcher_model, s.verifier_model, s.adjudicator_model,
+            pm.n_tavily_ok, pm.n_brave_ok,
+            CASE
+                WHEN pm.pair_run_id IS NULL THEN 'unknown'
+                WHEN COALESCE(pm.n_brave_ok, 0) = 0 AND COALESCE(pm.n_tavily_ok, 0) > 0
+                    THEN 'tavily'
+                WHEN COALESCE(pm.n_tavily_ok, 0) = 0 AND COALESCE(pm.n_brave_ok, 0) > 0
+                    THEN 'brave'
+                ELSE 'mixed'
+            END AS search_provider,
+            gt.response         AS odmi_response,
+            {_MATCH_STATUS_SQL} AS match_status
+        FROM phase2_final f
+        LEFT JOIN questions q    ON q.question_id = f.question_id
+        LEFT JOIN latest_verifier v ON v.pair_run_id = f.pair_run_id
+        LEFT JOIN any_rejection ar ON ar.pair_run_id = f.pair_run_id
+        LEFT JOIN subtrio_status s ON s.subtrio_id = f.pair_run_id
+        LEFT JOIN provider_mix pm  ON pm.pair_run_id = f.pair_run_id
+        LEFT JOIN ground_truth gt
+              ON gt.question_id = f.question_id
+             AND gt.country_code = f.country_code
+        WHERE {MAIN_RUNS_FILTER}
+        ORDER BY f.created_at DESC, f.id DESC
+        """
+    )
+
+
 def result_cards() -> pd.DataFrame:
     """One row per finalised pair, joined with questions, latest Verifier,
     and ODMI ground truth. Adds match_status, ground_truth_response, and
