@@ -147,6 +147,7 @@ CREATE TABLE phase2_researcher_runs (
     answer_confidence           REAL,
     search_queries_used         TEXT,                          -- JSON list
     fetched_urls                TEXT,                          -- JSON list
+    search_provider_calls       TEXT,                          -- JSON list: per-search {provider, ms, results, ok, error}
     domain_trust_score          REAL,
     language_route_used         TEXT,
     notes                       TEXT,

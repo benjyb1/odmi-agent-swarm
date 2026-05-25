@@ -15,7 +15,8 @@ domains JSONs in `data/trusted_domains/<cc>.json` — see
 from __future__ import annotations
 
 import os
-from typing import List, Optional
+import time
+from typing import Callable, List, Optional
 
 import httpx
 from dotenv import load_dotenv
@@ -99,15 +100,16 @@ def _brave_search(
         )
 
     # Brave doesn't take include_domains directly; we add `site:` clauses.
-    # We also append a `-site:` clause for every entry on the hard
-    # deny-list so leakage sources are excluded at the query level too.
+    # The deny-list is enforced by `_scrub_blocked` post-filter, not in the
+    # query: Brave rejects queries with too many operators (~35 ops in the
+    # ODMI case → 422 Unprocessable Entity).
     site_clause = ""
     if include_domains:
+        capped = list(include_domains)[:8]
         site_clause = " (" + " OR ".join(
-            f"site:{d}" for d in include_domains
+            f"site:{d}" for d in capped
         ) + ")"
-    block_clause = " " + " ".join(f"-site:{d}" for d in BLOCKED_DOMAINS)
-    q = f"{query}{site_clause}{block_clause}"
+    q = f"{query}{site_clause}"
 
     headers = {
         "Accept": "application/json",
@@ -157,12 +159,16 @@ def _scrub_blocked(results: List[SearchResult]) -> List[SearchResult]:
     return keep
 
 
+CallObserver = Callable[[dict], None]
+
+
 def search(
     query: str,
     *,
     max_results: int = 5,
     topic: str = "general",
     include_domains: Optional[List[str]] = None,
+    on_call: Optional[CallObserver] = None,
 ) -> List[SearchResult]:
     """Run one search with automatic Tavily → Brave fallback.
 
@@ -174,10 +180,29 @@ def search(
 
     Blocked domains (see `agents.tools.blocked_domains`) are excluded
     from both providers' results regardless of `include_domains`.
+
+    `on_call(payload)` fires once per outbound provider call (so a Tavily
+    failure followed by a Brave success emits two records). Payload is
+    `{"provider": str, "ms": int, "results": int, "ok": bool,
+    "error": str | None}`. Use this to log per-call telemetry without
+    relying on the module-level counters.
     """
     global _TAVILY_QUOTA_EXHAUSTED
 
+    def _emit(provider: str, started_at: float, results: List[SearchResult],
+              ok: bool, error: Optional[str]) -> None:
+        if on_call is None:
+            return
+        on_call({
+            "provider": provider,
+            "ms": int((time.perf_counter() - started_at) * 1000),
+            "results": len(results),
+            "ok": ok,
+            "error": error,
+        })
+
     if not _TAVILY_QUOTA_EXHAUSTED:
+        t0 = time.perf_counter()
         try:
             results = _tavily_search(
                 query,
@@ -186,25 +211,31 @@ def search(
                 include_domains=include_domains,
             )
             _PROVIDER_USAGE_COUNTERS["tavily"] += 1
+            _emit("tavily", t0, results, ok=True, error=None)
             return _scrub_blocked(results)
-        except UsageLimitExceededError:
+        except UsageLimitExceededError as exc:
             _TAVILY_QUOTA_EXHAUSTED = True
+            _emit("tavily", t0, [], ok=False, error=f"quota:{exc}"[:200])
             # fall through to Brave
         except Exception as exc:  # noqa: BLE001
-            # Network or other transient error. Try Brave once before
-            # giving up; this keeps the swarm rolling on flaky Tavily
-            # responses too.
             msg = str(exc).lower()
+            _emit("tavily", t0, [], ok=False, error=str(exc)[:200])
             if "rate" in msg or "quota" in msg or "limit" in msg or "credit" in msg:
                 _TAVILY_QUOTA_EXHAUSTED = True
             else:
                 raise
 
-    results = _brave_search(
-        query, max_results=max_results, include_domains=include_domains,
-    )
-    _PROVIDER_USAGE_COUNTERS["brave"] += 1
-    return _scrub_blocked(results)
+    t0 = time.perf_counter()
+    try:
+        results = _brave_search(
+            query, max_results=max_results, include_domains=include_domains,
+        )
+        _PROVIDER_USAGE_COUNTERS["brave"] += 1
+        _emit("brave", t0, results, ok=True, error=None)
+        return _scrub_blocked(results)
+    except Exception as exc:
+        _emit("brave", t0, [], ok=False, error=str(exc)[:200])
+        raise
 
 
 def search_many(
@@ -213,8 +244,13 @@ def search_many(
     max_results_per_query: int = 5,
     topic: str = "general",
     include_domains: Optional[List[str]] = None,
+    on_call: Optional[CallObserver] = None,
 ) -> List[SearchResult]:
-    """Run several queries, deduplicate by URL, preserve order of first occurrence."""
+    """Run several queries, deduplicate by URL, preserve order of first occurrence.
+
+    See `search()` for `on_call` semantics; it forwards to each per-query
+    call so the caller sees one record per provider invocation.
+    """
     seen: set[str] = set()
     out: List[SearchResult] = []
     for q in queries:
@@ -223,6 +259,7 @@ def search_many(
             max_results=max_results_per_query,
             topic=topic,
             include_domains=include_domains,
+            on_call=on_call,
         ):
             if r.url in seen:
                 continue

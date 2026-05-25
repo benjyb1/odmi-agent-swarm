@@ -126,6 +126,7 @@ class ResearcherRunResult:
     search_queries_used: List[str] = field(default_factory=list)
     fetched_urls: List[str] = field(default_factory=list)
     search_results: List[SearchResult] = field(default_factory=list)
+    search_provider_calls: List[dict] = field(default_factory=list)
 
     # The post-call validation outcomes, for diagnostics.
     head_ok: Optional[bool] = None
@@ -221,10 +222,12 @@ def run_researcher(
     # search.
     trusted = trusted_domains_for(input.country_code)
     on_step("search_start", {"queries": queries, "trusted_domains": trusted})
+    provider_calls: List[dict] = []
     search_results = search_many(
         queries,
         max_results_per_query=max_results_per_query,
         include_domains=trusted or None,
+        on_call=provider_calls.append,
     )
     wide_fallback_used = False
     if not search_results and trusted:
@@ -232,6 +235,7 @@ def run_researcher(
         search_results = search_many(
             queries,
             max_results_per_query=max_results_per_query,
+            on_call=provider_calls.append,
         )
         wide_fallback_used = True
     on_step("search_complete", {
@@ -247,6 +251,7 @@ def run_researcher(
             query_gen_usage=query_usage,
             main_usage=None,
             search_queries_used=queries,
+            search_provider_calls=provider_calls,
             notes="No results across all queries (narrow and wide).",
         )
 
@@ -287,6 +292,7 @@ def run_researcher(
             main_usage=None,
             search_queries_used=queries,
             search_results=search_results,
+            search_provider_calls=provider_calls,
             notes=str(exc)[:300],
         )
 
@@ -355,6 +361,7 @@ def run_researcher(
         search_queries_used=queries,
         fetched_urls=[str(r.url) for r in search_results],
         search_results=search_results,
+        search_provider_calls=provider_calls,
         head_ok=head_status_ok,
         head_status=head_status,
         domain_trust=domain,

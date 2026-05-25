@@ -343,13 +343,18 @@ def dispatch(
                     pass
                 _mark_interrupted(job.subtrio_id)
 
-    return DispatchResult(
+    result = DispatchResult(
         batch_id=batch_id,
         jobs=jobs,
         rate_limited=rate_limited,
         aborted_due_to_budget=abort_due_to_budget,
         messages=[],
     )
+
+    # Ship the new DB rows to the public dashboard. Per D25.
+    publish_to_main(result, log=log)
+
+    return result
 
 
 def _read_default(role: str) -> str:
@@ -379,6 +384,84 @@ def _mark_interrupted(subtrio_id: str) -> None:
             conn.commit()
     except Exception as exc:  # noqa: BLE001
         print(f"[dispatch] _mark_interrupted failed: {exc}", file=sys.stderr)
+
+
+# ============================================================
+# Auto-publish to the public dashboard (per D25)
+# ============================================================
+
+def publish_to_main(
+    result: DispatchResult,
+    *,
+    log: Callable[[str], None] = lambda m: print(f"[publish] {m}", flush=True),
+) -> None:
+    """Commit data/odmi.db and push to origin/main so Streamlit Cloud redeploys.
+
+    Skips silently if `ODMI_SKIP_AUTO_PUBLISH` is set, the working tree is
+    not on main, or odmi.db has not changed. Push failures are logged, not
+    raised; the next batch will sweep them up.
+    """
+    if os.environ.get("ODMI_SKIP_AUTO_PUBLISH"):
+        log("auto-publish disabled (ODMI_SKIP_AUTO_PUBLISH set)")
+        return
+
+    # Checkpoint the WAL so the .db file on disk contains every write.
+    try:
+        wal_con = sqlite3.connect(str(DB_PATH))
+        try:
+            wal_con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        finally:
+            wal_con.close()
+    except Exception as exc:  # noqa: BLE001
+        log(f"WAL checkpoint failed (continuing anyway): {exc}")
+
+    def _git(*args: str) -> tuple[int, str]:
+        proc = subprocess.run(
+            ["git", *args], cwd=str(REPO_ROOT),
+            capture_output=True, text=True,
+        )
+        return proc.returncode, (proc.stdout + proc.stderr).strip()
+
+    rc, branch = _git("rev-parse", "--abbrev-ref", "HEAD")
+    if rc != 0 or branch != "main":
+        log(f"skipped (current branch is '{branch}', deploy only fires from main)")
+        return
+
+    rc, _ = _git("diff", "HEAD", "--quiet", "--", str(DB_PATH))
+    if rc == 0:
+        log("nothing to publish (odmi.db unchanged vs HEAD)")
+        return
+
+    qids = sorted({j.question_id for j in result.jobs})
+    countries = sorted({j.country_code for j in result.jobs})
+    n_ok = sum(1 for j in result.jobs if j.exit_code == 0)
+    n_total = len(result.jobs)
+    q_label = ",".join(qids[:4]) + (f"+{len(qids) - 4}" if len(qids) > 4 else "")
+    c_label = ",".join(countries[:6]) + (f"+{len(countries) - 6}" if len(countries) > 6 else "")
+    flags = []
+    if result.rate_limited:
+        flags.append("rate-limited")
+    if result.aborted_due_to_budget:
+        flags.append("budget-aborted")
+    suffix = f" [{', '.join(flags)}]" if flags else ""
+    msg = f"Batch: {q_label} x {c_label} ({n_ok}/{n_total} ok){suffix}"
+
+    rc, out = _git("add", str(DB_PATH))
+    if rc != 0:
+        log(f"git add failed, skipping push: {out}")
+        return
+
+    rc, out = _git("commit", "-m", msg)
+    if rc != 0:
+        log(f"git commit failed, skipping push: {out}")
+        return
+    log(f"committed '{msg}'")
+
+    rc, out = _git("push", "origin", "main")
+    if rc != 0:
+        log(f"git push failed (commit is local; next batch will retry): {out}")
+        return
+    log("pushed to origin/main; Streamlit Cloud will rebuild in ~30 s")
 
 
 # ============================================================

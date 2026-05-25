@@ -1,6 +1,6 @@
 # ODMI Agent Swarm — Living Spec
 
-Last updated: 2026-05-14
+Last updated: 2026-05-25
 
 Single source of truth for project state. Updated every session. All numbered
 decisions go in here so they can be referenced as "per D7" elsewhere in the
@@ -524,6 +524,83 @@ not retro-active proof of a bug in the new code; they are evidence
 that the leakage problem was real. The user runs
 `uv run python scripts/check_data_leakage.py --purge` after
 reviewing the list.
+
+### D25: Every batch auto-publishes the DB to `origin/main`
+
+**Date:** 2026-05-15.
+
+Per D23 the Streamlit Cloud app rebuilds on every push to `main`, but
+the deploy still serves whatever copy of `data/odmi.db` was in the
+last push. To close that gap, `dispatch_subtrios.dispatch()` now calls
+`publish_to_main()` after the threads join. The helper checkpoints the
+SQLite WAL into the main `.db` file, stages it, commits with an
+auto-generated message (`Batch: P1,P2 x DE,FR,NL (4/5 ok)`), and runs
+`git push origin main`. The public dashboard then redeploys inside
+~30 s with the new rows.
+
+Safeguards:
+- Skips silently if `ODMI_SKIP_AUTO_PUBLISH=1` is set. Use this for
+  tests and for local-only exploration where a push would be noise.
+- Skips if the current branch is not `main`. Worktree branches are
+  developer scratch and do not deploy.
+- Skips if `data/odmi.db` has not changed vs `HEAD`. No empty commits.
+- Push failures are logged with `[publish]` prefix and do not raise.
+  The next successful batch sweeps the backlog.
+
+Trade-offs. Each commit re-ships ~8 MB of binary DB, so the repo will
+grow ~400 MB per 50 batches. Acceptable through the prelim; revisit
+with git LFS if push latency becomes a problem. The alternative
+(uncommitted DB on the deploy) would mean the public page silently
+falls behind every local run, which is what prompted this decision.
+
+The hook lives at the tail of `dispatch()` rather than the CLI entry
+point so that both `uv run python scripts/dispatch_subtrios.py` and
+the local dashboard's Run Console publish on the same code path.
+
+### D26: Per-call search-provider telemetry on `phase2_researcher_runs`
+
+**Date:** 2026-05-25.
+
+The Researcher's search wrapper (`agents/tools/search.py`) routes
+queries through Tavily first and falls back to Brave if Tavily errors
+or hits its quota. Until D26, the only signal we had was a
+module-level `session_usage()` counter that died with the subprocess.
+That made provider-conditioned analysis impossible after the fact: we
+could not say "Tavily reached 92% match on Policy questions; Brave
+reached 68%" because we did not know which provider served which pair.
+
+D26 adds an optional `on_call` observer to `search()` and
+`search_many()`. The Researcher passes a list-append callback so every
+provider invocation emits one record:
+
+```json
+{"provider": "tavily", "ms": 245, "results": 5, "ok": true, "error": null}
+```
+
+The Researcher collects the list across both the narrow-trusted and
+wide-fallback search passes, and `run_coordinator.py` serialises it
+into the new `phase2_researcher_runs.search_provider_calls` column
+(TEXT, JSON list, NULL on legacy rows). Old rows pre-2026-05-25 stay
+NULL and are excluded from provider-conditioned analyses.
+
+What this enables:
+- Provider match-rate / latency / cost cross-tabs in the dashboard.
+- A clean Tavily-vs-Brave comparison in the dissertation's
+  optimisation chapter, replacing what would otherwise be a hand-wave
+  about "the search backend was sometimes Brave".
+- A diagnostic for the 2026-05-25 incident where Brave returned 422
+  Unprocessable Entity on long-operator queries: the row's `ok=false`
+  + `error` payload would have surfaced the failure mode in the
+  dashboard the moment the first batch ran, instead of presenting as
+  silent `0/81 ok` in the commit message.
+
+Same-day side fix: the Brave query builder previously appended a
+`-site:` clause for every entry in `BLOCKED_DOMAINS`, which pushed
+queries past Brave's per-query operator limit and returned 422 for
+every Researcher call once Tavily was exhausted. The deny-list is now
+enforced solely by the `_scrub_blocked` post-filter and
+`include_domains` is capped at eight `site:` clauses. The leakage
+guard is unchanged.
 
 ---
 

@@ -268,13 +268,14 @@ def _save_researcher_row(
                 answer, answer_explanation, evidence_quote, source_url,
                 retrieval_confidence, answer_confidence,
                 search_queries_used, fetched_urls,
+                search_provider_calls,
                 domain_trust_score, language_route_used, notes,
                 failure_mode,
                 input_tokens, output_tokens, wall_clock_ms,
                 estimated_cost_usd, condition_label,
                 prompt_version_id, model_version, raw_response
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                      ?, ?, ?, ?, ?, ?, ?, ?)""",
+                      ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id, pair_run_id, inp.question_id, inp.country_code, retry_count,
                 o.answer if o else None,
@@ -285,6 +286,8 @@ def _save_researcher_row(
                 o.answer_confidence if o else None,
                 json.dumps(result.search_queries_used),
                 json.dumps(result.fetched_urls),
+                json.dumps(result.search_provider_calls)
+                    if result.search_provider_calls else None,
                 result.domain_trust,
                 o.language_route_used if o else None,
                 result.notes,
