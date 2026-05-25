@@ -165,6 +165,7 @@ CREATE TABLE phase2_researcher_runs (
     model_version               TEXT NOT NULL,
 
     raw_response                TEXT,
+    experiment_id               TEXT,                          -- D27: NULL = main run, otherwise tag from experiments table
     created_at                  TEXT DEFAULT (datetime('now'))
 );
 
@@ -215,6 +216,7 @@ CREATE TABLE phase2_verifier_runs (
     model_version               TEXT NOT NULL,
 
     raw_response                TEXT,
+    experiment_id               TEXT,                          -- D27
     created_at                  TEXT DEFAULT (datetime('now'))
 );
 
@@ -253,6 +255,7 @@ CREATE TABLE phase2_adjudications (
     model_version               TEXT NOT NULL,
 
     raw_response                TEXT,
+    experiment_id               TEXT,                          -- D27
     created_at                  TEXT DEFAULT (datetime('now'))
 );
 
@@ -293,6 +296,7 @@ CREATE TABLE phase2_final (
 
     final_failure_reason        TEXT,
 
+    experiment_id               TEXT,                          -- D27
     created_at                  TEXT DEFAULT (datetime('now'))
 );
 
@@ -321,6 +325,7 @@ CREATE TABLE subtrio_status (
     adjudicator_model       TEXT,
     verifier_strategy       TEXT,
     final_failure_reason    TEXT,
+    experiment_id           TEXT,                              -- D27
     created_at              TEXT DEFAULT (datetime('now'))
 );
 
@@ -366,6 +371,21 @@ CREATE TABLE language_confidence (
 );
 
 -- ============================================================
+-- Experiments registry (D27). Tags a set of run rows across
+-- subtrio_status, phase2_*, etc. so ablations and condition
+-- comparisons stay isolated from main dissertation results.
+-- The `conditions` column is a JSON list of per-condition specs
+-- (label + overrides for model, strategy, prompt_version_id).
+-- ============================================================
+CREATE TABLE experiments (
+    experiment_id       TEXT PRIMARY KEY,
+    name                TEXT NOT NULL,
+    description         TEXT,
+    conditions          TEXT NOT NULL,                         -- JSON list
+    created_at          TEXT DEFAULT (datetime('now'))
+);
+
+-- ============================================================
 -- Indices for the queries dashboards and analysis will run.
 -- ============================================================
 CREATE INDEX idx_handmarks_question_country     ON hand_marks(question_id, country_code);
@@ -392,6 +412,13 @@ CREATE INDEX idx_subtrio_status_question_country ON subtrio_status(question_id, 
 
 CREATE INDEX idx_claude_usage_ts                ON claude_usage_log(timestamp);
 CREATE INDEX idx_claude_usage_subtrio            ON claude_usage_log(subtrio_id);
+
+-- D27 experiment isolation
+CREATE INDEX idx_subtrio_status_experiment       ON subtrio_status(experiment_id);
+CREATE INDEX idx_p2final_experiment              ON phase2_final(experiment_id);
+CREATE INDEX idx_p2res_experiment                ON phase2_researcher_runs(experiment_id);
+CREATE INDEX idx_p2ver_experiment                ON phase2_verifier_runs(experiment_id);
+CREATE INDEX idx_p2adj_experiment                ON phase2_adjudications(experiment_id);
 """
 
 TABLES = (
@@ -407,6 +434,7 @@ TABLES = (
     "claude_usage_log",
     "model_defaults",
     "language_confidence",
+    "experiments",
 )
 
 

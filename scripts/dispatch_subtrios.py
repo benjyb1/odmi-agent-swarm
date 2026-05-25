@@ -192,6 +192,8 @@ def dispatch(
     parallel_limit: int = 4,
     max_retries: int = 3,
     batch_id: Optional[str] = None,
+    experiment_id: Optional[str] = None,
+    condition_label: Optional[str] = None,
     soft_limit_usd: float = DEFAULT_SOFT_LIMIT_USD,
     force: bool = False,
     on_message: Optional[Callable[[str], None]] = None,
@@ -305,6 +307,10 @@ def dispatch(
                 cmd += ["--verifier-model", verifier_model]
             if adjudicator_model:
                 cmd += ["--adjudicator-model", adjudicator_model]
+            if experiment_id:
+                cmd += ["--experiment-id", experiment_id]
+            if condition_label:
+                cmd += ["--condition-label", condition_label]
 
             log(f"spawn {job.question_id}/{job.country_code} subtrio={job.subtrio_id[:8]}")
             job.process = subprocess.Popen(
@@ -493,6 +499,12 @@ def main() -> int:
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--batch-id", default=None)
+    parser.add_argument("--experiment-id", default=None,
+                        help="Tag every child row with this experiment_id (D27). "
+                             "NULL means a main-results run.")
+    parser.add_argument("--condition-label", default=None,
+                        help="Per-condition label inside an experiment (e.g. "
+                             "'disprove' vs 'approve').")
     parser.add_argument("--soft-limit-usd", type=float, default=DEFAULT_SOFT_LIMIT_USD)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
@@ -522,6 +534,8 @@ def main() -> int:
         parallel_limit=args.parallel,
         max_retries=args.max_retries,
         batch_id=args.batch_id,
+        experiment_id=args.experiment_id,
+        condition_label=args.condition_label,
         soft_limit_usd=args.soft_limit_usd,
         force=args.force,
     )

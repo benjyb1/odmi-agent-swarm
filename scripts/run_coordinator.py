@@ -93,6 +93,8 @@ COUNTRIES = {
 
 _dry_run: bool = False
 _walkthrough: bool = False
+_current_experiment_id: Optional[str] = None
+_current_condition_label: str = "baseline"
 
 
 def _print_step(prefix: str, event: str, payload: dict) -> None:
@@ -136,6 +138,7 @@ def _upsert_subtrio_status(
     adjudicator_model: Optional[str] = None,
     verifier_strategy: Optional[str] = None,
     final_failure_reason: Optional[str] = None,
+    experiment_id: Optional[str] = None,
     ended: bool = False,
 ) -> None:
     """Insert or update one subtrio_status row.
@@ -162,14 +165,14 @@ def _upsert_subtrio_status(
                         stage, substage, retry_count, started_at, updated_at,
                         cumulative_cost_usd, last_message, process_pid,
                         researcher_model, verifier_model, adjudicator_model,
-                        verifier_strategy
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        verifier_strategy, experiment_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         subtrio_id, batch_id, question_id, country_code,
                         stage, substage, retry_count or 0, now, now,
                         cumulative_cost_usd, last_message, os.getpid(),
                         researcher_model, verifier_model, adjudicator_model,
-                        verifier_strategy,
+                        verifier_strategy, experiment_id,
                     ),
                 )
             else:
@@ -253,8 +256,11 @@ def _build_researcher_input(
 def _save_researcher_row(
     *, result: ResearcherRunResult, inp: ResearcherInput,
     run_id: str, pair_run_id: str, retry_count: int,
-    condition_label: str = "baseline",
+    condition_label: Optional[str] = None,
+    experiment_id: Optional[str] = None,
 ) -> int:
+    condition_label = condition_label or _current_condition_label
+    experiment_id = experiment_id if experiment_id is not None else _current_experiment_id
     if _dry_run:
         _print_step("phase2_researcher_runs (dry-run skip)", "insert",
                     {"answer": result.output.answer if result.output else None})
@@ -273,9 +279,10 @@ def _save_researcher_row(
                 failure_mode,
                 input_tokens, output_tokens, wall_clock_ms,
                 estimated_cost_usd, condition_label,
-                prompt_version_id, model_version, raw_response
+                prompt_version_id, model_version, raw_response,
+                experiment_id
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                      ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id, pair_run_id, inp.question_id, inp.country_code, retry_count,
                 o.answer if o else None,
@@ -302,6 +309,7 @@ def _save_researcher_row(
                     result.query_gen_usage.model_version if result.query_gen_usage else "unknown"
                 ),
                 main.raw_response if main else None,
+                experiment_id,
             ),
         )
         conn.commit()
@@ -312,8 +320,11 @@ def _save_verifier_row(
     *, result: VerifierRunResult, inp: VerifierInput,
     researcher_db_id: int,
     run_id: str, pair_run_id: str, retry_count: int,
-    condition_label: str = "baseline",
+    condition_label: Optional[str] = None,
+    experiment_id: Optional[str] = None,
 ) -> int:
+    condition_label = condition_label or _current_condition_label
+    experiment_id = experiment_id if experiment_id is not None else _current_experiment_id
     if _dry_run:
         _print_step("phase2_verifier_runs (dry-run skip)", "insert",
                     {"verdict": result.output.verdict if result.output else None})
@@ -333,9 +344,10 @@ def _save_verifier_row(
                 failure_mode,
                 input_tokens, output_tokens, wall_clock_ms,
                 estimated_cost_usd, condition_label,
-                prompt_version_id, model_version, raw_response
+                prompt_version_id, model_version, raw_response,
+                experiment_id
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                      ?, ?, ?, ?, ?, ?, ?, ?)""",
+                      ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id, pair_run_id, inp.question_id, inp.country_code, retry_count,
                 result.strategy, researcher_db_id,
@@ -361,6 +373,7 @@ def _save_verifier_row(
                     result.query_gen_usage.model_version if result.query_gen_usage else "unknown"
                 ),
                 main.raw_response if main else None,
+                experiment_id,
             ),
         )
         conn.commit()
@@ -370,7 +383,9 @@ def _save_verifier_row(
 def _save_adjudication_row(
     *, result, inp: AdjudicatorInput,
     run_id: str, pair_run_id: str,
+    experiment_id: Optional[str] = None,
 ) -> int:
+    experiment_id = experiment_id if experiment_id is not None else _current_experiment_id
     if _dry_run:
         _print_step("phase2_adjudications (dry-run skip)", "insert",
                     {"verdict": result.output.adjudicator_verdict if result.output else None})
@@ -385,8 +400,9 @@ def _save_adjudication_row(
                 failure_mode,
                 input_tokens, output_tokens, wall_clock_ms,
                 estimated_cost_usd,
-                prompt_version_id, model_version, raw_response
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                prompt_version_id, model_version, raw_response,
+                experiment_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id, pair_run_id, inp.question_id, inp.country_code,
                 o.adjudicator_verdict if o else None,
@@ -403,6 +419,7 @@ def _save_adjudication_row(
                 result.usage.prompt_version_id if result.usage else None,
                 result.usage.model_version if result.usage else "unknown",
                 result.usage.raw_response if result.usage else None,
+                experiment_id,
             ),
         )
         conn.commit()
@@ -422,7 +439,9 @@ def _save_final_row(
     cumulative_wall_clock_ms: int,
     cumulative_cost_usd: Optional[float],
     final_failure_reason: Optional[str],
+    experiment_id: Optional[str] = None,
 ) -> int:
+    experiment_id = experiment_id if experiment_id is not None else _current_experiment_id
     if _dry_run:
         _print_step("phase2_final (dry-run skip)", "insert",
                     {"status": terminal_status,
@@ -439,8 +458,9 @@ def _save_final_row(
                 retry_count, adjudicator_involved, captcha_escalated,
                 cumulative_input_tokens, cumulative_output_tokens,
                 cumulative_wall_clock_ms, cumulative_cost_usd,
-                final_failure_reason
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                final_failure_reason,
+                experiment_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id, pair_run_id, inp.question_id, inp.country_code,
                 terminal_status,
@@ -455,6 +475,7 @@ def _save_final_row(
                 cumulative_input_tokens, cumulative_output_tokens,
                 cumulative_wall_clock_ms, cumulative_cost_usd,
                 final_failure_reason,
+                experiment_id,
             ),
         )
         conn.commit()
@@ -582,6 +603,8 @@ def coordinate(
     max_retries: int = 3,
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
+    experiment_id: Optional[str] = None,
+    condition_label: str = "baseline",
     dry_run: bool = False,
     walkthrough: bool = False,
 ) -> tuple[str, Optional[ResearcherOutput]]:
@@ -593,9 +616,11 @@ def coordinate(
     (main()) catches it, marks the subtrio as interrupted_rate_limit,
     and exits with code 42.
     """
-    global _dry_run, _walkthrough
+    global _dry_run, _walkthrough, _current_experiment_id, _current_condition_label
     _dry_run = dry_run
     _walkthrough = walkthrough
+    _current_experiment_id = experiment_id
+    _current_condition_label = condition_label
 
     subtrio_id = subtrio_id or str(uuid.uuid4())
     batch_id = batch_id or str(uuid.uuid4())
@@ -618,6 +643,7 @@ def coordinate(
         verifier_model=verifier_model,
         adjudicator_model=adjudicator_model,
         verifier_strategy=strategy,
+        experiment_id=experiment_id,
         last_message="coordinator started",
     )
 
@@ -990,6 +1016,13 @@ def main() -> int:
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--subtrio-id", default=None)
     parser.add_argument("--batch-id", default=None)
+    parser.add_argument("--experiment-id", default=None,
+                        help="Tag every row produced by this run with the given "
+                             "experiment_id (D27). NULL means a main-results run.")
+    parser.add_argument("--condition-label", default="baseline",
+                        help="Per-condition label inside an experiment (e.g. "
+                             "'disprove' vs 'approve'). Written to "
+                             "phase2_researcher_runs and phase2_verifier_runs.")
     parser.add_argument(
         "--dry-run", action="store_true",
         help=(
@@ -1018,6 +1051,8 @@ def main() -> int:
             max_retries=args.max_retries,
             subtrio_id=subtrio_id,
             batch_id=batch_id,
+            experiment_id=args.experiment_id,
+            condition_label=args.condition_label,
             dry_run=args.dry_run,
             walkthrough=args.walkthrough,
         )

@@ -130,6 +130,13 @@ _MATCH_STATUS_SQL = """
 """
 
 
+# D27: dissertation headline numbers exclude experiment rows.
+# Apply to phase2_final references as `WHERE f.experiment_id IS NULL`
+# (or alias appropriately). The Experimentation page intentionally
+# does the opposite, filtering to a single experiment_id.
+MAIN_RUNS_FILTER = "f.experiment_id IS NULL"
+
+
 def result_cards() -> pd.DataFrame:
     """One row per finalised pair, joined with questions, latest Verifier,
     and ODMI ground truth. Adds match_status, ground_truth_response, and
@@ -178,6 +185,7 @@ def result_cards() -> pd.DataFrame:
         LEFT JOIN ground_truth gt
               ON gt.question_id = f.question_id
              AND gt.country_code = f.country_code
+        WHERE {MAIN_RUNS_FILTER}
         ORDER BY f.created_at DESC, f.id DESC
         """
     )
@@ -202,6 +210,7 @@ def country_outcome_counts() -> pd.DataFrame:
               ON gt.question_id = f.question_id
              AND gt.country_code = f.country_code
             WHERE f.country_code IS NOT NULL
+              AND {MAIN_RUNS_FILTER}
         )
         SELECT country_code,
                CASE match_status
@@ -238,7 +247,8 @@ def accuracy_summary() -> dict:
                 FROM phase2_final f
                 LEFT JOIN ground_truth gt
                   ON gt.question_id = f.question_id
-                 AND gt.country_code = f.country_code""",
+                 AND gt.country_code = f.country_code
+                WHERE {MAIN_RUNS_FILTER}""",
         ).fetchone()
     n_finalised = int(row["n_finalised"] or 0)
     n_match = int(row["n_match"] or 0)
@@ -332,6 +342,7 @@ def coverage_grid() -> pd.DataFrame:
                      PARTITION BY f.question_id, f.country_code
                    ) AS n_runs
             FROM phase2_final f
+            WHERE {MAIN_RUNS_FILTER}
         )
         SELECT
           gt.question_id, gt.country_code, gt.country_name,
@@ -390,6 +401,7 @@ def already_finalised(
              AND gt.country_code = f.country_code
             WHERE f.question_id IN ({q_marks})
               AND f.country_code IN ({c_marks})
+              AND {MAIN_RUNS_FILTER}
         )
         SELECT question_id, country_code, n_runs,
                terminal_status AS last_terminal_status,

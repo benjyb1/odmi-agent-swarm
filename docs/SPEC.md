@@ -602,6 +602,50 @@ enforced solely by the `_scrub_blocked` post-filter and
 `include_domains` is capped at eight `site:` clauses. The leakage
 guard is unchanged.
 
+### D27: Experiment isolation via `experiment_id` tag and the `experiments` registry
+
+**Date:** 2026-05-25.
+
+Ablation runs and condition comparisons must not pollute the
+dissertation's headline numbers. D27 introduces a tag-based isolation
+scheme rather than a parallel set of tables, on the principle that
+schema duplication drifts over time and is harder to audit.
+
+Changes:
+
+- New table `experiments(experiment_id, name, description,
+  conditions, created_at)`. One row per planned experiment. The
+  `conditions` column holds a JSON list describing each condition's
+  overrides (label, models, strategy, prompt_version_id).
+- New nullable column `experiment_id` on `subtrio_status`,
+  `phase2_final`, `phase2_researcher_runs`, `phase2_verifier_runs`,
+  and `phase2_adjudications`. NULL identifies a main-results run.
+- `dispatch_subtrios.dispatch()` and `run_coordinator.py` accept
+  `--experiment-id` and `--condition-label`. Children stamp every
+  inserted row with the tag via a module-level context variable
+  (mirrors the existing `_dry_run` pattern; no change to the eight
+  internal call sites).
+- `dashboard/lib/db.py` adds a `MAIN_RUNS_FILTER` constant and
+  applies it to the headline queries (`result_cards`,
+  `country_outcome_counts`, `accuracy_summary`, `all_pair_status`,
+  `already_finalised`). The Experimentation page (Phase 2, not yet
+  built) will do the opposite, filtering to a single `experiment_id`.
+
+`claude_usage_log.experiment_id` was deliberately omitted to keep the
+hot LLM-call path untouched. Cost rollups by experiment can JOIN
+through `subtrio_id` → `subtrio_status.experiment_id` when needed.
+
+Phase 1 (this commit) covers schema + dispatcher/coordinator plumbing
++ defensive headline filters. Phase 2 builds the Streamlit
+Experimentation page. Phase 3 adds cross-experiment comparison views.
+
+Smoke test on 2026-05-25 confirmed end-to-end tagging:
+`smoketest-001` propagated correctly from CLI through to the
+`subtrio_status.experiment_id` column. The subprocess could not
+finalise because both Tavily and Brave quotas were exhausted, but
+the search-provider telemetry captured both failures cleanly,
+demonstrating D26 + D27 working together.
+
 ---
 
 ## Current status
