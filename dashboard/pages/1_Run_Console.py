@@ -108,6 +108,7 @@ def render_launcher() -> None:
                 f"""SELECT question_id, COUNT(DISTINCT country_code) AS n
                     FROM phase2_final
                     WHERE country_code IN ({placeholders})
+                      AND experiment_id IS NULL
                     GROUP BY question_id""",
                 tuple(countries),
             ).fetchall()
