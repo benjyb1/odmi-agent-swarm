@@ -183,3 +183,36 @@ def test_search_many_plumbs_provider_tavily(monkeypatch):
     )
     out = search_many(["q1", "q2"], provider="tavily")
     assert all(r.provider == "tavily" for r in out)
+
+
+# ---------------------------------------------------------------------------
+# provider="diy"
+# ---------------------------------------------------------------------------
+
+def test_provider_diy_dispatches_to_diy_search(monkeypatch):
+    """provider='diy' must call diy_search and return its results."""
+    monkeypatch.setattr(
+        "agents.tools.search_diy.diy_search",
+        lambda q, **k: [SearchResult(
+            title="t", url="https://x.example", snippet="s",
+            score=0.9, provider="diy")],
+    )
+    out = search("test", provider="diy")
+    assert len(out) == 1
+    assert out[0].provider == "diy"
+
+
+# ---------------------------------------------------------------------------
+# provider="serper_raw"
+# ---------------------------------------------------------------------------
+
+def test_provider_serper_raw_dispatches(monkeypatch):
+    monkeypatch.setattr(
+        "agents.tools.search_serper.serper_search",
+        lambda q, **k: [SearchResult(
+            title="t", url="https://y.example", snippet="s",
+            score=1.0, provider="serper")],
+    )
+    out = search("test", provider="serper_raw")
+    assert len(out) == 1
+    assert out[0].provider == "serper"

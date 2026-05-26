@@ -23,7 +23,7 @@ from typing import Callable, List, Literal, Optional
 # "tavily" — Tavily only; errors propagate, no Brave fallback.
 # "brave"  — Brave only; Tavily is never called.
 # Future values ("diy", "serper_raw", …) will extend this union.
-Provider = Literal["auto", "tavily", "brave"]
+Provider = Literal["auto", "tavily", "brave", "diy", "serper_raw"]
 
 import httpx
 from dotenv import load_dotenv
@@ -248,6 +248,32 @@ def search(
             return _scrub_blocked(results)
         except Exception as exc:
             _emit("brave", t0, [], ok=False, error=str(exc)[:200])
+            raise
+
+    if provider == "diy":
+        from agents.tools.search_diy import diy_search  # local import
+        t0 = time.perf_counter()
+        try:
+            results = diy_search(
+                query, max_results=max_results, include_domains=include_domains,
+            )
+            _emit("diy", t0, results, ok=True, error=None)
+            return _scrub_blocked(results)
+        except Exception as exc:
+            _emit("diy", t0, [], ok=False, error=str(exc)[:200])
+            raise
+
+    if provider == "serper_raw":
+        from agents.tools.search_serper import serper_search  # local import
+        t0 = time.perf_counter()
+        try:
+            results = serper_search(
+                query, max_results=max_results, include_domains=include_domains,
+            )
+            _emit("serper_raw", t0, results, ok=True, error=None)
+            return _scrub_blocked(results)
+        except Exception as exc:
+            _emit("serper_raw", t0, [], ok=False, error=str(exc)[:200])
             raise
 
     # ------------------------------------------------------------------
