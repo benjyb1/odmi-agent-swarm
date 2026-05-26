@@ -125,6 +125,25 @@ _MATCH_STATUS_SQL = """
       WHEN LOWER(TRIM(f.final_answer)) = 'no'
            AND LOWER(TRIM(gt.response)) = 'no'
         THEN 'match'
+      -- D28: adjacent-band miss on an ordered shape counts as
+      -- near_match, not differ. The questions table carries the
+      -- ordered list of labels per question; we look up the indices
+      -- of the swarm and ODMI answers and check that they are one
+      -- step apart.
+      WHEN EXISTS (
+        SELECT 1
+        FROM questions q,
+             json_each(q.allowed_answers) ja_swarm,
+             json_each(q.allowed_answers) ja_gt
+        WHERE q.question_id = f.question_id
+          AND q.answer_shape IN ('percentage_band',
+                                  'ordinal_magnitude',
+                                  'count_band')
+          AND ABS(ja_swarm.key - ja_gt.key) = 1
+          AND LOWER(TRIM(ja_swarm.value)) = LOWER(TRIM(f.final_answer))
+          AND LOWER(TRIM(ja_gt.value)) = LOWER(TRIM(gt.response))
+      )
+        THEN 'near_match'
       ELSE 'differ'
     END
 """
@@ -300,6 +319,7 @@ def country_outcome_counts() -> pd.DataFrame:
         SELECT country_code,
                CASE match_status
                  WHEN 'match' THEN 'Matches ODMI'
+                 WHEN 'near_match' THEN 'Near match (adjacent band)'
                  WHEN 'differ' THEN 'Differs from ODMI'
                  ELSE 'No ground truth'
                END AS outcome,
@@ -314,9 +334,13 @@ def country_outcome_counts() -> pd.DataFrame:
 def accuracy_summary() -> dict:
     """Overall accuracy of the swarm against ODMI ground truth.
 
-    Returns {n_finalised, n_match, n_differ, n_no_truth, accuracy}.
-    `accuracy` is matches / (matches + differs), excluding pairs
-    without a ground-truth row.
+    Returns {n_finalised, n_match, n_near_match, n_differ, n_no_truth,
+    accuracy, accuracy_within_one_band}.
+
+    `accuracy` is exact matches / (matches + near_matches + differs).
+    `accuracy_within_one_band` counts a near_match as correct,
+    representing how often the swarm's band is at most one step off
+    ODMI's answer. Both exclude pairs without a ground-truth row.
     """
     with _conn() as conn:
         row = conn.execute(
@@ -324,6 +348,8 @@ def accuracy_summary() -> dict:
                   COUNT(*) AS n_finalised,
                   SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'match'
                            THEN 1 ELSE 0 END) AS n_match,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'near_match'
+                           THEN 1 ELSE 0 END) AS n_near_match,
                   SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'differ'
                            THEN 1 ELSE 0 END) AS n_differ,
                   SUM(CASE WHEN ({_MATCH_STATUS_SQL}) IN
@@ -337,16 +363,22 @@ def accuracy_summary() -> dict:
         ).fetchone()
     n_finalised = int(row["n_finalised"] or 0)
     n_match = int(row["n_match"] or 0)
+    n_near_match = int(row["n_near_match"] or 0)
     n_differ = int(row["n_differ"] or 0)
     n_no_truth = int(row["n_no_truth"] or 0)
-    denom = n_match + n_differ
+    denom = n_match + n_near_match + n_differ
     accuracy = (n_match / denom) if denom > 0 else None
+    accuracy_within_one_band = (
+        (n_match + n_near_match) / denom if denom > 0 else None
+    )
     return {
         "n_finalised": n_finalised,
         "n_match": n_match,
+        "n_near_match": n_near_match,
         "n_differ": n_differ,
         "n_no_truth": n_no_truth,
         "accuracy": accuracy,
+        "accuracy_within_one_band": accuracy_within_one_band,
     }
 
 
