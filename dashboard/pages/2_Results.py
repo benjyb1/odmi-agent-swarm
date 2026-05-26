@@ -71,6 +71,7 @@ def _path_summary(row: pd.Series) -> str:
 
 _MATCH_BADGE = {
     "match": ("🟢 Matches ODMI", "#38A169"),
+    "near_match": ("🟡 Adjacent band (D28)", "#D69E2E"),
     "differ": ("🔴 Differs from ODMI", "#C53030"),
     "no_ground_truth": ("⚪ No ODMI record", "#718096"),
     "no_swarm_answer": ("⚪ Swarm had no answer", "#718096"),
@@ -267,25 +268,35 @@ def render_cards_tab() -> None:
     # Headline accuracy strip against ODMI ground truth.
     n_total = len(cards)
     n_match = int((cards["match_status"] == "match").sum())
+    n_near = int((cards["match_status"] == "near_match").sum())
     n_differ = int((cards["match_status"] == "differ").sum())
     n_no_gt = int(cards["match_status"].isin(
         ["no_ground_truth", "no_swarm_answer"]
     ).sum())
-    denom = n_match + n_differ
+    denom = n_match + n_near + n_differ
     accuracy = (n_match / denom) if denom > 0 else 0.0
-    k1, k2, k3, k4 = st.columns(4)
+    within_one_band = ((n_match + n_near) / denom) if denom > 0 else 0.0
+    k1, k2, k3, k4, k5 = st.columns(5)
     k1.metric("Pairs finalised", n_total)
     k2.metric("Match ODMI", n_match)
-    k3.metric("Differ from ODMI", n_differ)
-    k4.metric(
-        "Accuracy vs ODMI",
-        f"{accuracy:.0%}" if denom > 0 else "—",
+    k3.metric("Near (D28)", n_near, help=(
+        "Swarm answer one band off ODMI's, on the three ordered "
+        "shapes (percentage / ordinal / count)."
+    ))
+    k4.metric("Differ", n_differ)
+    k5.metric(
+        "Within one band",
+        f"{within_one_band:.0%}" if denom > 0 else "—",
+        help=(
+            "(matches + near matches) / (matches + near + differs). "
+            f"Exact accuracy alone: {accuracy:.0%}."
+        ) if denom > 0 else "—",
     )
     st.caption(
         "Comparison is against ODMI's 2025 `merged_responses` answers "
         "per (question, country). Pairs without a ground-truth row are "
         "excluded from accuracy. ODMI's data may be one cycle behind "
-        f"reality, so genuine swarm-vs-ODMI disagreements are not "
+        f"reality, so swarm-vs-ODMI disagreements are not "
         f"automatically swarm errors. ({n_no_gt} unmatched joins.)"
     )
 
@@ -309,7 +320,9 @@ def render_cards_tab() -> None:
         m_filter = st.multiselect(
             "vs ODMI", match_opts, default=match_opts,
             format_func=lambda s: {
-                "match": "Matches", "differ": "Differs",
+                "match": "Matches",
+                "near_match": "Near (adjacent band)",
+                "differ": "Differs",
                 "no_ground_truth": "No ground truth",
                 "no_swarm_answer": "No swarm answer",
             }.get(s, s),

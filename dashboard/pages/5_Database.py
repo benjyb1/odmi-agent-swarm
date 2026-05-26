@@ -51,11 +51,13 @@ if len(grid) == 0:
 n_total = len(grid)
 n_covered = int((grid["swarm_runs"] > 0).sum())
 n_match = int((grid["match_status"] == "match").sum())
+n_near = int((grid["match_status"] == "near_match").sum())
 n_differ = int((grid["match_status"] == "differ").sum())
-denom = n_match + n_differ
+denom = n_match + n_near + n_differ
 accuracy = (n_match / denom) if denom > 0 else None
+within_one = ((n_match + n_near) / denom) if denom > 0 else None
 
-k1, k2, k3, k4 = st.columns(4)
+k1, k2, k3, k4, k5 = st.columns(5)
 k1.metric("Pairs in ODMI", f"{n_total:,}")
 k2.metric(
     "Covered by swarm",
@@ -63,10 +65,15 @@ k2.metric(
     delta=f"{n_covered / n_total:.1%} of total",
     delta_color="off",
 )
-k3.metric("Match / Differ", f"{n_match} / {n_differ}")
+k3.metric("Match / Near / Differ", f"{n_match} / {n_near} / {n_differ}")
 k4.metric(
-    "Accuracy vs ODMI",
+    "Exact accuracy",
     f"{accuracy:.0%}" if accuracy is not None else "—",
+)
+k5.metric(
+    "Within one band",
+    f"{within_one:.0%}" if within_one is not None else "—",
+    help="Matches + near matches (adjacent band on ordered shapes).",
 )
 
 
@@ -97,8 +104,14 @@ with f2:
 with f3:
     coverage_filter = st.selectbox(
         "Coverage",
-        options=["All", "Covered (has swarm run)",
-                 "Not yet covered", "Matches ODMI", "Differs from ODMI"],
+        options=[
+            "All",
+            "Covered (has swarm run)",
+            "Not yet covered",
+            "Matches ODMI",
+            "Near match (adjacent band)",
+            "Differs from ODMI",
+        ],
         key="db_coverage",
     )
 with f4:
@@ -119,6 +132,8 @@ elif coverage_filter == "Not yet covered":
     filtered = filtered[filtered["swarm_runs"] == 0]
 elif coverage_filter == "Matches ODMI":
     filtered = filtered[filtered["match_status"] == "match"]
+elif coverage_filter == "Near match (adjacent band)":
+    filtered = filtered[filtered["match_status"] == "near_match"]
 elif coverage_filter == "Differs from ODMI":
     filtered = filtered[filtered["match_status"] == "differ"]
 

@@ -308,10 +308,19 @@ def kpi_tiles() -> None:
 
     if accuracy["accuracy"] is not None:
         acc_value = f"{accuracy['accuracy']:.0%}"
-        acc_caption = (
-            f"{accuracy['n_match']} match / "
-            f"{accuracy['n_differ']} differ vs ODMI 2025."
-        )
+        n_near = accuracy.get("n_near_match", 0)
+        within = accuracy.get("accuracy_within_one_band")
+        if n_near > 0 and within is not None:
+            acc_caption = (
+                f"{accuracy['n_match']} match · {n_near} near · "
+                f"{accuracy['n_differ']} differ. "
+                f"Within one band: {within:.0%}."
+            )
+        else:
+            acc_caption = (
+                f"{accuracy['n_match']} match / "
+                f"{accuracy['n_differ']} differ vs ODMI 2025."
+            )
     else:
         acc_value = "—"
         acc_caption = "No comparable pairs yet."
@@ -423,9 +432,12 @@ def country_outcomes_chart() -> None:
                 title="vs ODMI ground truth",
                 scale=alt.Scale(
                     domain=[
-                        "Matches ODMI", "Differs from ODMI", "No ground truth",
+                        "Matches ODMI",
+                        "Near match (adjacent band)",
+                        "Differs from ODMI",
+                        "No ground truth",
                     ],
-                    range=["#10B981", "#EF4444", "#475569"],
+                    range=["#10B981", "#D69E2E", "#EF4444", "#475569"],
                 ),
                 legend=alt.Legend(
                     orient="bottom", labelFontSize=12, titleFontSize=11,
@@ -444,18 +456,25 @@ def country_outcomes_chart() -> None:
     st.altair_chart(chart, use_container_width=True)
 
     n_match = int(df[df["outcome"] == "Matches ODMI"]["n"].sum())
+    n_near = int(df[df["outcome"] == "Near match (adjacent band)"]["n"].sum())
     n_differ = int(df[df["outcome"] == "Differs from ODMI"]["n"].sum())
-    denom = n_match + n_differ
+    denom = n_match + n_near + n_differ
     pct_match = (n_match / denom) if denom > 0 else 0
+    within = ((n_match + n_near) / denom) if denom > 0 else 0
+    near_text = f", {n_near} near" if n_near > 0 else ""
+    band_text = (
+        f' Within one band: <strong style="color:#5EEAD4;">{within:.0%}</strong>.'
+        if n_near > 0 else ""
+    )
     st.markdown(
         f'<div style="color:#94A3B8; font-size:12px; margin-top:10px;">'
         f'<strong style="color:#E2E8F0;">{int(totals.sum())}</strong> '
         f'finalised pairs across {len(country_order)} '
-        f'country/countries. Accuracy vs ODMI 2025: '
+        f'country/countries. Exact accuracy vs ODMI 2025: '
         f'<strong style="color:#5EEAD4;">{pct_match:.0%}</strong> '
-        f'({n_match} match, {n_differ} differ). ODMI assessments are '
-        f'one cycle old, so a real-world change since 2025 looks like '
-        f'a swarm error here.'
+        f'({n_match} match{near_text}, {n_differ} differ).{band_text} '
+        f'ODMI assessments are one cycle old, so a real-world change '
+        f'since 2025 looks like a swarm error here.'
         f'</div>'
         '</div>',
         unsafe_allow_html=True,

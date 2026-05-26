@@ -73,7 +73,7 @@ filtered["runs"] = filtered["question_id"].map(
 # Streamlit versions and is testable with normal locators.
 
 display_cols = ["question_id", "dimension", "indicator",
-                "question_text", "runs"]
+                "answer_shape", "question_text", "runs"]
 display_cols = [c for c in display_cols if c in filtered.columns]
 
 st.dataframe(
@@ -84,6 +84,13 @@ st.dataframe(
         "question_id": st.column_config.TextColumn("Q ID", width="small"),
         "dimension": st.column_config.TextColumn("Dim", width="small"),
         "indicator": st.column_config.TextColumn("Indicator", width="medium"),
+        "answer_shape": st.column_config.TextColumn(
+            "Shape", width="small",
+            help=(
+                "D28: per-question answer shape. binary / percentage_band "
+                "/ ordinal_magnitude / count_band / categorical."
+            ),
+        ),
         "question_text": st.column_config.TextColumn("Question", width="large"),
         "runs": st.column_config.NumberColumn(
             "Swarm runs", help="Finalised pairs across all countries.",

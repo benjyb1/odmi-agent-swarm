@@ -148,16 +148,23 @@ def _metrics(g: pd.DataFrame) -> pd.Series:
     n = len(g)
     n_with_truth = (g["odmi_response"].notna() & (g["odmi_response"] != "")).sum()
     n_match = (g["match_status"] == "match").sum()
+    n_near = (g["match_status"] == "near_match").sum()
     n_differ = (g["match_status"] == "differ").sum()
     n_agent_failure = (g["terminal_status"] == "agent_failure").sum()
     n_adj = int(g["adjudicator_involved"].sum())
     n_rejected = int(g["had_rejection"].sum())
 
-    informative = n_match + n_differ  # excludes no_ground_truth / no_swarm_answer
+    # D28: informative now includes near_match. `match %` is exact;
+    # `within-band %` counts near-misses as success.
+    informative = n_match + n_near + n_differ
 
     return pd.Series({
         "n": n,
         "match %": (100.0 * n_match / informative) if informative else float("nan"),
+        "within-band %": (
+            100.0 * (n_match + n_near) / informative
+            if informative else float("nan")
+        ),
         "complete %": 100.0 * (n - n_agent_failure) / n,
         "rejection %": 100.0 * n_rejected / n,
         "escalation %": 100.0 * n_adj / n,
@@ -175,6 +182,7 @@ st.dataframe(
     grouped.style.format({
         "n": "{:.0f}",
         "match %": "{:.1f}",
+        "within-band %": "{:.1f}",
         "complete %": "{:.1f}",
         "rejection %": "{:.1f}",
         "escalation %": "{:.1f}",
