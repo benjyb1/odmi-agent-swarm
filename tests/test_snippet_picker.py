@@ -157,3 +157,24 @@ def test_aggregate_score_is_top():
 
 def test_aggregate_score_empty():
     assert aggregate_score([]) is None
+
+
+# ---------------------------------------------------------------------------
+# PickedChunk: truncation validator
+# ---------------------------------------------------------------------------
+
+
+def test_picked_chunk_text_truncated_at_500():
+    """Over-long chunks are silently truncated to MAX_CHUNK_CHARS chars."""
+    from agents.tools.snippet_picker import MAX_CHUNK_CHARS
+
+    long_text = "x" * 600
+    chunk = PickedChunk(text=long_text, score=0.5)
+    assert len(chunk.text) == MAX_CHUNK_CHARS
+
+
+def test_picked_chunk_text_within_limit_unchanged():
+    """Chunks within the limit are returned verbatim."""
+    text = "Short passage about open data policy."
+    chunk = PickedChunk(text=text, score=0.8)
+    assert chunk.text == text

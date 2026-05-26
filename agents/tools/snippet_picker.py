@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Annotated, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from agents.models import LLMUsage
 from agents.prompts import snippet_picker as picker_prompt
@@ -28,13 +28,27 @@ from agents.tools.llm import call_for_structured
 
 TOP_CHUNK_THRESHOLD = 0.7
 MULTI_CHUNK_SEPARATOR = " ... "
+MAX_CHUNK_CHARS = 500
 
 
 class PickedChunk(BaseModel):
     """One passage selected from a webpage by the snippet-picker prompt."""
 
-    text: str = Field(..., max_length=500)
+    text: str
     score: float = Field(..., ge=0.0, le=1.0)
+
+    @field_validator("text", mode="before")
+    @classmethod
+    def truncate_text(cls, v: object) -> str:
+        """Silently truncate over-long chunks.
+
+        The prompt instructs Claude to stay within MAX_CHUNK_CHARS characters,
+        but Claude occasionally overshoots by a few characters. A hard
+        validation error here would crash the entire picker call; truncation
+        is the safer, production-appropriate behaviour.
+        """
+        s = str(v)
+        return s[:MAX_CHUNK_CHARS] if len(s) > MAX_CHUNK_CHARS else s
 
 
 class _ChunksOut(BaseModel):
