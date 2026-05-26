@@ -47,3 +47,6 @@ data/odmi.db.bak-*
 
 # Snippet-quality fixture (regenerated from the DB on demand; not committed).
 tests/fixtures/snippet_quality.jsonl
+
+# Eyeball harness output (generated HTML; not committed).
+evaluation/snippets_eyeball.html
