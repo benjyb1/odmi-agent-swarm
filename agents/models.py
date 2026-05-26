@@ -27,7 +27,7 @@ from pydantic import (
 
 # Type aliases the agents share.
 
-AnswerLiteral = Literal["yes", "no", "other", "not_applicable"]
+AnswerLiteral = Literal["yes", "no", "other", "not_applicable", "inconclusive"]
 RubricTier = Literal["Highly Likely", "Likely", "Unlikely", "Very Unlikely"]
 LanguageRoute = Literal["native", "deepl", "human_required"]
 VerifierStrategy = Literal[

@@ -54,8 +54,11 @@ CREATE TABLE questions (
     question_text   TEXT NOT NULL,
     response_scoring TEXT,
     in_subset       INTEGER NOT NULL DEFAULT 0,
+    answer_shape    TEXT,
+    allowed_answers TEXT,
     created_at      TEXT DEFAULT (datetime('now'))
 );
+CREATE INDEX idx_questions_answer_shape ON questions(answer_shape);
 
 -- ============================================================
 -- Hand-marks (D8, D9, D10): the audit-trail evidence behind the
