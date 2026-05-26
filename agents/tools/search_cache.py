@@ -119,14 +119,7 @@ def _normalise_url(url: str) -> str:
     normalised = parsed._replace(
         scheme=parsed.scheme.lower(),
         netloc=parsed.netloc.lower(),
-        path=parsed.path.rstrip("/") or "/",
-    )
-    # Drop trailing slash unless path is root
-    path = parsed.path.rstrip("/")
-    normalised = parsed._replace(
-        scheme=parsed.scheme.lower(),
-        netloc=parsed.netloc.lower(),
-        path=path,
+        path=parsed.path.rstrip("/"),
     )
     return urlunparse(normalised)
 
