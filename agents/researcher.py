@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 
 from agents.models import LLMUsage, ResearcherInput, ResearcherOutput
 from agents.prompts import researcher as researcher_prompt
+from agents.tools import answer_shapes
 from agents.tools import db as db_helpers
 from agents.tools import substring
 from agents.tools.fetch import head_ok
@@ -324,13 +325,39 @@ def run_researcher(
     # called out in AGENT_DESIGN.md.
 
     # Confidence-quality check from Section 3.5 success criteria.
+    # `inconclusive` is the per-D28 honest "couldn't tell" label; a low
+    # answer_confidence on any other label is suspicious and the
+    # Verifier should know.
     if (
         output.answer_confidence < 0.5
-        and output.answer != "other"
+        and output.answer != "inconclusive"
     ):
-        # Not a fatal failure, but flag so the Verifier knows.
         notes_parts.append(
-            f"low answer_confidence ({output.answer_confidence}) for non-other answer"
+            f"low answer_confidence ({output.answer_confidence}) for "
+            f"non-inconclusive answer {output.answer!r}"
+        )
+
+    # D28: validate emitted answer against the per-question allowed
+    # set + inconclusive / not_applicable. If the model emitted
+    # something off-script (e.g. paraphrased a band label), normalise
+    # case-insensitively; if even that fails, mark the run as
+    # invalid_answer_shape so the Coordinator can retry.
+    shape = answer_shapes.QuestionShape(
+        question_id=input.question_id,
+        shape=input.answer_shape,
+        allowed_answers=tuple(input.allowed_answers),
+    )
+    normalised = answer_shapes.normalise_answer(output.answer, shape)
+    if normalised != output.answer:
+        notes_parts.append(
+            f"answer normalised from {output.answer!r} to {normalised!r}"
+        )
+        output = output.model_copy(update={"answer": normalised})
+    if not answer_shapes.is_valid_answer(output.answer, shape):
+        failure_mode = failure_mode or "invalid_answer_shape"
+        notes_parts.append(
+            f"answer {output.answer!r} not in allowed set "
+            f"{list(shape.all_valid)[:8]}..."
         )
 
     # Was the cited source_url in our search results? Catches the

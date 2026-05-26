@@ -19,13 +19,16 @@ from agents.models import ResearcherInput
 from agents.tools.search import SearchResult, format_for_prompt
 
 NAME = "phase2_researcher"
-VERSION = 2
+VERSION = 3
 DESCRIPTION = (
-    "Researcher V2: Python-orchestrated search + single Claude call. "
-    "Adds hard rule against citing ODMI publications, the EU Data "
-    "Portal (data.europa.eu), or cached/archived versions of those "
-    "pages, per SPEC D24. Quotes literally, cites one source URL "
-    "from the provided snippets."
+    "Researcher V3: shape-aware answer space (D28). The `answer` "
+    "field is no longer a fixed yes/no/other/NA literal; each question "
+    "carries its own allowed-answer list (percentage bands, ordinal "
+    "magnitudes, count bands, named categoricals, or plain binary). "
+    "The Researcher emits one label from that list, or `inconclusive` "
+    "if it cannot reach a confident answer, or `not_applicable` if "
+    "the question does not apply. Forbidden-source rules from V2 "
+    "carry forward unchanged."
 )
 
 
@@ -35,26 +38,54 @@ The EU Open Data Maturity Index (ODMI) is an annual public benchmark
 of national open-data ecosystems across 36 European countries. The
 questionnaire is normally completed by country experts contracted to
 Capgemini for the European Commission. Your job is to produce the
-same kind of answer: a yes/no/other determination grounded in a
-specific, verifiable source.
+same kind of answer: a determination grounded in a specific,
+verifiable source.
 
 You will be given:
 - one ODMI question and its official scoring rule
+- the question's answer shape and the canonical list of labels you
+  may emit (e.g. yes / no for a binary question; >90% / 71-90% /
+  51-70% / 31-50% / 10-30% / <10% for a percentage-band question)
 - a target country and its language
 - a set of web search snippets returned by a separate search tool
 
-Your task is to read the snippets, decide on the answer, and report it
-with the specific source URL and a literal quote from that source.
+Your task is to read the snippets, pick one label from the allowed
+list (or `inconclusive` / `not_applicable` per the rules below), and
+report it with the specific source URL and a literal quote from that
+source.
 
 Hard rules.
 
-1. Quote literally. Do not paraphrase as if you were quoting. If you
-   cannot find a literal passage that supports your claim, return
-   "other" with low confidence.
-2. Cite one source URL that best supports your answer. The URL must
+1. The `answer` field MUST be exactly one of the strings in the
+   allowed-answer list the user message gives you, OR `inconclusive`,
+   OR `not_applicable`. Do not paraphrase the band labels and do not
+   invent your own. For a percentage-band question, if the evidence
+   says "82% of datasets carry licensing information", the right
+   answer is `71-90%`, not "around 80%".
+
+2. Use `inconclusive` (NOT a band label, NOT yes/no) when:
+   - the evidence is insufficient, ambiguous, or contradictory
+   - the only supporting source is on the forbidden-sources list
+   - you cannot find a verbatim quote that grounds the claim
+   - your answer_confidence would otherwise be below 0.5
+   `inconclusive` is distinct from any literal label in the allowed
+   list. It means "we could not determine the answer". Do not collapse
+   to `other` for uncertainty; `other` is only valid when it appears
+   in the allowed list (some ODMI questions list `other` explicitly).
+
+3. Use `not_applicable` only when the question does not apply to
+   this country (e.g. an EFTA country asked about an EU directive
+   transposition). Explain in answer_explanation.
+
+4. Quote literally. Do not paraphrase as if you were quoting. The
+   evidence_quote must be a passage you could find verbatim on the
+   cited page.
+
+5. Cite one source URL that best supports your answer. The URL must
    be one that appears in the search snippets you were given; do not
    invent URLs.
-3. Never cite ODMI's own publications or the EU Data Portal. The
+
+6. Never cite ODMI's own publications or the EU Data Portal. The
    following sources are forbidden:
    - data.europa.eu (and any subdomain)
    - publications.europa.eu, op.europa.eu
@@ -63,22 +94,23 @@ Hard rules.
    - any page whose URL contains "open-data-maturity", "odmi",
      "merged_responses", or "odm-questionnaire"
    These are the ground truth we are validating against. If the only
-   supporting evidence sits on one of those sources, return "other"
-   with low confidence and explain in answer_explanation.
-4. Do not rely on memorised knowledge of ODMI scores, country
+   supporting evidence sits on one of those sources, return
+   `inconclusive` and explain in answer_explanation.
+
+7. Do not rely on memorised knowledge of ODMI scores, country
    rankings, or prior-year answers. Answer only from the search
    snippets in front of you.
-5. If the evidence is insufficient, ambiguous, or contradictory,
-   return "other" with low confidence and explain why in
-   answer_explanation.
-6. Two confidence scores in [0.0, 1.0]:
+
+8. Two confidence scores in [0.0, 1.0]:
    - retrieval_confidence is how confident you are that the cited
      source is real, current, and authoritative.
    - answer_confidence is how confident you are that the quoted
-     evidence supports the specific claim implied by your answer.
-7. answer_explanation is a single sentence in English.
-8. search_queries_used should echo the queries that Python ran (you
-   will be told what they were).
+     evidence supports the specific label you picked.
+
+9. answer_explanation is a single sentence in English.
+
+10. search_queries_used should echo the queries that Python ran (you
+    will be told what they were).
 
 You will return JSON matching the ResearcherOutput schema. The schema
 is appended below.
@@ -110,6 +142,18 @@ def _verifier_feedback_block(input: ResearcherInput) -> str:
     return "\n".join(parts)
 
 
+def _answer_space_block(input: ResearcherInput) -> str:
+    """The per-question allowed-answer block, D28 phase 2B."""
+    allowed_bullets = "\n".join(f"  - {a!r}" for a in input.allowed_answers)
+    return (
+        f"Answer shape: {input.answer_shape}\n"
+        f"The `answer` field MUST be one of:\n{allowed_bullets}\n"
+        f"  - 'inconclusive'    (could not reach a confident answer)\n"
+        f"  - 'not_applicable'  (the question does not apply to this country)\n"
+        f"Do not invent labels and do not paraphrase the ones above.\n"
+    )
+
+
 def build_user_message(
     input: ResearcherInput,
     *,
@@ -136,6 +180,7 @@ Question:
 Official ODMI scoring rule:
 {input.response_scoring}
 
+{_answer_space_block(input)}
 Country: {input.country_name} ({input.country_code}, language: {input.country_language})
 {_portal_block(input.portal_url)}
 Search queries Python ran on your behalf:

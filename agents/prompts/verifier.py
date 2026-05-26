@@ -57,7 +57,10 @@ You will return a JSON object matching the VerifierOutput schema:
 
 {
   "verdict": "pass" | "fail",
-  "verifier_answer": "yes" | "no" | "other" | "not_applicable",
+  "verifier_answer": string from the allowed-answer list in the user
+                     message (or 'inconclusive' if no confident answer
+                     can be reached, or 'not_applicable' if the question
+                     does not apply to this country),
   "verifier_confidence": 0.0-1.0,
   "substring_check_result": "pass" | "fail" | "not_attempted",
   "substring_check_notes": string | null,
@@ -70,6 +73,11 @@ You will return a JSON object matching the VerifierOutput schema:
 }
 
 Rules:
+- `verifier_answer` MUST be one of the strings listed in the
+  "Answer space" block of the user message, or 'inconclusive', or
+  'not_applicable'. Do not paraphrase. For an ordered band shape
+  (percentage / ordinal / count), the Researcher being one band off
+  is still a `fail`.
 - If verdict="fail", rejection_reason and at least one of
   counter_evidence_quote or counter_source_url must be non-null.
 - If verdict="pass", verifier_answer must match the Researcher's answer.
@@ -139,6 +147,33 @@ def _search_results_block(queries: List[str], snippets: List[str]) -> str:
     )
 
 
+def _answer_space_block(answer_shape: str, allowed_answers: List[str]) -> str:
+    """D28: tell the Verifier what verifier_answer values are valid."""
+    bullets = "\n".join(f"  - {a!r}" for a in allowed_answers)
+    note = ""
+    if answer_shape in ("percentage_band", "ordinal_magnitude", "count_band"):
+        note = (
+            "\nThis question has an ORDERED answer space: the labels above "
+            "are listed from highest to lowest. The Researcher being one "
+            "band off is still a fail. Look for evidence that the correct "
+            "label is adjacent to (or further from) the Researcher's pick."
+        )
+    elif answer_shape == "categorical":
+        note = (
+            "\nThis question has a small categorical answer space (no "
+            "inherent order between labels). Look for evidence that a "
+            "different category is the right one."
+        )
+    return (
+        "--- Answer space ---\n"
+        f"Answer shape: {answer_shape}\n"
+        f"`verifier_answer` MUST be one of:\n{bullets}\n"
+        f"  - 'inconclusive'    (cannot reach a confident answer)\n"
+        f"  - 'not_applicable'  (question does not apply to this country)"
+        + note
+    )
+
+
 def build_user_message(
     *,
     question_text: str,
@@ -150,6 +185,8 @@ def build_user_message(
     independent_queries: List[str],
     independent_snippets: List[str],
     strategy: VerifierStrategy,
+    answer_shape: str = "binary",
+    allowed_answers: Optional[List[str]] = None,
 ) -> str:
     """Render the user message for the given strategy.
 
@@ -159,10 +196,14 @@ def build_user_message(
     speculation about what the page might say.
     """
     include_answer = (strategy != "verifier-blind")
+    if allowed_answers is None:
+        allowed_answers = ["yes", "no"]
 
     sections = [
         f"Question:\n{question_text}",
         f"Country: {country_name} ({country_code})",
+        "",
+        _answer_space_block(answer_shape, allowed_answers),
         "",
         "--- Researcher's claim ---",
         _researcher_evidence_block(researcher_output, include_answer=include_answer),
@@ -182,7 +223,7 @@ def build_user_message(
 # ============================================================
 
 _DISPROVE_NAME = "phase2_verifier_disprove"
-_DISPROVE_VERSION = 2
+_DISPROVE_VERSION = 3
 
 _DISPROVE_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
@@ -219,6 +260,10 @@ Your reasoning process (follow in order):
 
 4. Counter-evidence. Do the independent search snippets contradict the
    Researcher's answer, or reveal a more current or precise source?
+   For ordered-band questions (percentage, ordinal magnitude, count
+   band), an adjacent-band miss counts as counter-evidence: the
+   Researcher saying ">90%" when the data is actually 82% is a real
+   error, not a paraphrase.
 
 5. Verdict. If all four checks pass, return verdict="pass". If any check
    reveals a material flaw in the Researcher's claim, return verdict="fail"
@@ -235,16 +280,26 @@ materially wrong, unverifiable, or insufficient for the specific question.
 # ============================================================
 
 _NEGATION_NAME = "phase2_verifier_negation"
-_NEGATION_VERSION = 2
+_NEGATION_VERSION = 3
 
 _NEGATION_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
 Your task is a logical inversion: find evidence that the Researcher's
-answer is wrong.
+answer is wrong. The exact form of the inversion depends on the
+question's answer shape (read the "Answer space" block in the user
+message).
 
-If the Researcher answered "yes", your job is to find evidence that the
-answer should be "no". If they answered "no", find evidence for "yes".
-If they answered "other", find evidence for a clear yes or no.
+- Binary questions (yes / no, possibly with `other` or
+  `not_applicable` in the allowed list): if the Researcher said
+  "yes", find evidence for "no", and vice versa. If they said
+  `inconclusive`, find a concrete yes or no source.
+- Percentage-band / ordinal-magnitude / count-band questions: find
+  evidence the right band is one step off (or further). The
+  Researcher saying ">90%" when the data is actually 82% is a real
+  error, and the Verifier should pick "71-90%" as `verifier_answer`.
+  Adjacent-band hits are still fails.
+- Categorical questions (e.g. P14's top-down / bottom-up / hybrid):
+  find evidence a different category is the correct one.
 
 The ODMI (EU Open Data Maturity Index) evaluates national open-data
 ecosystems. Every answer must be backed by a verifiable source.
@@ -262,17 +317,19 @@ Your reasoning process:
    evidence quote against the cited page. A failed check means the quote
    may be fabricated — treat it as evidence the answer is wrong.
 
-2. Search for the opposite. Look through the independent search results for
-   any snippet that supports the logical negation of the Researcher's answer.
-   You are not trying to agree with the Researcher; you are trying to prove
-   them wrong.
+2. Search for an inverted answer. Look through the independent search
+   results for any snippet that supports a label DIFFERENT from the
+   Researcher's. Different in the shape-appropriate sense above. You
+   are not trying to agree with the Researcher; you are trying to
+   prove them wrong.
 
 3. Verdict.
-   - If you find credible evidence for the opposite answer: verdict="fail".
-     Set verifier_answer to the answer the evidence supports, and fill in
-     counter_evidence_quote or counter_source_url.
-   - If you cannot find evidence for the opposite: verdict="pass".
-     Set verifier_answer to match the Researcher's answer.
+   - If you find credible evidence for a different label: verdict="fail".
+     Set `verifier_answer` to the label the evidence supports (must be
+     in the allowed list), and fill counter_evidence_quote or
+     counter_source_url.
+   - If you cannot find inverted evidence: verdict="pass". Set
+     `verifier_answer` to match the Researcher's answer.
 
 Be specific. "I searched for contrary evidence and found none" is a valid
 reason to pass. "The Researcher cited X but the evidence actually says Y"
@@ -285,7 +342,7 @@ is a valid reason to fail.
 # ============================================================
 
 _STEELMAN_NAME = "phase2_verifier_steelman"
-_STEELMAN_VERSION = 2
+_STEELMAN_VERSION = 3
 
 _STEELMAN_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
@@ -337,7 +394,7 @@ dissertation analysis can read your full chain of reasoning.
 # ============================================================
 
 _BLIND_NAME = "phase2_verifier_blind"
-_BLIND_VERSION = 2
+_BLIND_VERSION = 3
 
 _BLIND_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
@@ -346,6 +403,8 @@ not been told what the Researcher concluded.
 
 You will be given:
 - The question and the country.
+- The question's answer shape and the canonical list of labels you
+  may emit (see the "Answer space" block in the user message).
 - An evidence quote and a source URL from a prior search (you do not know
   whose answer these came from).
 - The result of a verbatim substring check of the quote against the page.
@@ -354,8 +413,9 @@ You will be given:
 Your task:
 
 1. Read the evidence and snippets.
-2. Decide for yourself what the correct answer is: "yes", "no", "other",
-   or "not_applicable".
+2. Decide for yourself what the correct answer is. It must be one of
+   the labels in the allowed list, or 'inconclusive', or
+   'not_applicable'. Do not paraphrase a band label.
 3. Set verifier_answer to your own determination.
 
 Python will compare your answer to the Researcher's answer after you return.

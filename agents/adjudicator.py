@@ -18,6 +18,7 @@ from agents.models import (
     LLMUsage,
 )
 from agents.prompts import adjudicator as adjudicator_prompt
+from agents.tools import answer_shapes
 from agents.tools import db as db_helpers
 from agents.tools.llm import StructuredOutputError, call_for_structured
 
@@ -120,6 +121,35 @@ def run_adjudicator(
             notes=str(exc)[:300],
         )
 
+    # D28: normalise / validate adjudicator_answer against the
+    # question's allowed list. Only relevant when a winner verdict was
+    # picked (escalate_human can carry a null answer).
+    note_parts: list[str] = []
+    if output.adjudicator_answer is not None:
+        shape = answer_shapes.QuestionShape(
+            question_id=inp.question_id,
+            shape=inp.answer_shape,
+            allowed_answers=tuple(inp.allowed_answers),
+        )
+        normalised = answer_shapes.normalise_answer(
+            output.adjudicator_answer, shape
+        )
+        if normalised != output.adjudicator_answer:
+            note_parts.append(
+                f"adjudicator_answer normalised from "
+                f"{output.adjudicator_answer!r} to {normalised!r}"
+            )
+            output = output.model_copy(
+                update={"adjudicator_answer": normalised}
+            )
+        if not answer_shapes.is_valid_answer(
+            output.adjudicator_answer, shape
+        ):
+            note_parts.append(
+                f"adjudicator_answer {output.adjudicator_answer!r} "
+                f"not in allowed set"
+            )
+
     # Auto-promote low-confidence verdicts to escalate_human (§5.11.5).
     promoted = False
     if (
@@ -140,13 +170,20 @@ def run_adjudicator(
         "cost_usd": usage.estimated_cost_usd,
     })
 
+    base_note = (
+        "auto-promoted: confidence below 0.6 threshold"
+        if promoted else None
+    )
+    if note_parts:
+        combined = "; ".join(note_parts)
+        notes = f"{base_note}; {combined}" if base_note else combined
+    else:
+        notes = base_note
+
     return AdjudicatorRunResult(
         output=output,
         failure_mode=None,
         usage=usage,
         promoted_to_human=promoted,
-        notes=(
-            "auto-promoted: confidence below 0.6 threshold"
-            if promoted else None
-        ),
+        notes=notes,
     )

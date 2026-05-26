@@ -36,6 +36,7 @@ from agents.models import (
     VerifierStrategy,
 )
 from agents.prompts import verifier as verifier_prompt
+from agents.tools import answer_shapes
 from agents.tools import db as db_helpers
 from agents.tools import substring
 from agents.tools.fetch import FetchResult, fetch_rendered_text, fetch_text
@@ -52,10 +53,13 @@ class _Queries(BaseModel):
 
 
 _QUERY_GEN_NAME = "phase2_verifier_query_gen"
-_QUERY_GEN_VERSION = 1
+_QUERY_GEN_VERSION = 2
 _QUERY_GEN_DESCRIPTION = (
     "Generate 2-3 adversarial web search queries for a Verifier run. "
-    "Queries are framed to surface counter-evidence, not corroboration."
+    "Queries are framed to surface counter-evidence, not corroboration. "
+    "V2 makes the inversion shape-aware: for ordered-band questions, "
+    "queries target a different band; for categoricals, a different "
+    "category; for binary, the opposite label."
 )
 
 _QUERY_GEN_SYSTEM = """You are a search query generator for an adversarial verification step.
@@ -66,10 +70,15 @@ find evidence AGAINST the Researcher's answer.
 
 Guidance:
 - Prefer 5-10 word queries.
-- If the Researcher answered "yes", search for evidence that the answer
-  should be "no" (and vice versa).
-- If the Researcher answered "other", search for a more definitive source
-  that gives a clear yes or no.
+- Adversarial direction depends on the question's answer shape:
+  * binary: search for the opposite label (yes -> no, no -> yes).
+  * percentage_band / ordinal_magnitude / count_band: search for
+    evidence the right band is one step off, or for a precise
+    underlying figure that contradicts the Researcher's bucket.
+  * categorical: search for evidence a different named category is
+    the right one.
+  If the Researcher answered 'inconclusive', search for a more
+  definitive source that yields a confident label.
 - Include at least one query in the country's national language.
 - Do not repeat the Researcher's own queries verbatim; approach the
   question from a different angle.
@@ -87,11 +96,14 @@ class _QueryGenInput(BaseModel):
 
 def _build_query_gen_message(inp: VerifierInput) -> str:
     ro = inp.researcher_output
+    allowed_block = ", ".join(repr(a) for a in inp.allowed_answers)
     return (
         f"Country: {inp.country_name} ({inp.country_code}, "
-        f"language: unknown — assume national language)\n"
+        f"language: unknown - assume national language)\n"
         f"Researcher's answer: {ro.answer}\n"
         f"Researcher's explanation: {ro.answer_explanation}\n"
+        f"\nAnswer shape: {inp.answer_shape}\n"
+        f"Allowed labels: [{allowed_block}]\n"
         f"\nODMI question:\n{inp.question_text}"
     )
 
@@ -328,6 +340,8 @@ def run_verifier(
         independent_queries=queries,
         independent_snippets=independent_snippets,
         strategy=strategy,
+        answer_shape=inp.answer_shape,
+        allowed_answers=list(inp.allowed_answers),
     )
 
     on_step("main_call_start", {
@@ -374,10 +388,28 @@ def run_verifier(
         "cost_usd": main_usage.estimated_cost_usd,
     })
 
+    # ----- D28: validate verifier_answer against the question's shape -----
+    notes_parts: List[str] = []
+    shape = answer_shapes.QuestionShape(
+        question_id=inp.question_id,
+        shape=inp.answer_shape,
+        allowed_answers=tuple(inp.allowed_answers),
+    )
+    normalised = answer_shapes.normalise_answer(output.verifier_answer, shape)
+    if normalised != output.verifier_answer:
+        notes_parts.append(
+            f"verifier_answer normalised from {output.verifier_answer!r} "
+            f"to {normalised!r}"
+        )
+        output = output.model_copy(update={"verifier_answer": normalised})
+    if not answer_shapes.is_valid_answer(output.verifier_answer, shape):
+        notes_parts.append(
+            f"verifier_answer {output.verifier_answer!r} not in allowed set"
+        )
+
     # ----- Strategy D post-processing: compare answers -----
     # For blind strategy, the model returned its own answer without
     # seeing the Researcher's. If they differ, override verdict to fail.
-    notes_parts: List[str] = []
     if strategy == "verifier-blind":
         if output.verifier_answer != inp.researcher_output.answer:
             # Answers diverge — flag as fail if the model didn't already.

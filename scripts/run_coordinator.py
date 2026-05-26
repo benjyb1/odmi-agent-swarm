@@ -43,6 +43,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from agents.adjudicator import run_adjudicator
 from agents.errors import EXIT_CODE_RATE_LIMITED, RateLimitedShutdown
+from agents.tools import answer_shapes
 from agents.models import (
     AdjudicatorInput,
     AdjudicatorOutput,
@@ -235,6 +236,12 @@ def _build_researcher_input(
     meta = COUNTRIES.get(country_code.upper())
     if meta is None:
         sys.exit(f"Country {country_code!r} not configured. Add to COUNTRIES.")
+
+    # D28: pull the per-question answer shape and allowed labels from
+    # the DB. The classification was done once by
+    # scripts/migrate_d28_shapes.py and is reused on every call.
+    shape = answer_shapes.load_question_shape(q["question_id"])
+
     return ResearcherInput(
         question_id=q["question_id"],
         question_text=q["question_text"],
@@ -246,6 +253,8 @@ def _build_researcher_input(
         country_language=meta["country_language"],
         portal_url=meta.get("portal_url"),
         verifier_feedback=feedback,
+        answer_shape=shape.shape,
+        allowed_answers=list(shape.allowed_answers),
     )
 
 
@@ -784,6 +793,8 @@ def coordinate(
             country_name=r_inp.country_name,
             researcher_output=last_researcher_output,
             strategy=strategy,
+            answer_shape=r_inp.answer_shape,
+            allowed_answers=list(r_inp.allowed_answers),
         )
         def _v_step(e, p, _att=attempt):
             _print_step(f"V{_att + 1}", e, p)
@@ -927,6 +938,8 @@ def coordinate(
         country_name=r_inp.country_name,
         researcher_outputs=researcher_outputs,
         verifier_outputs=real_verifier_outputs,
+        answer_shape=r_inp.answer_shape,
+        allowed_answers=list(r_inp.allowed_answers),
     )
     adj_result = run_adjudicator(
         adj_inp,

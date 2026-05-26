@@ -62,6 +62,8 @@ def _load_question(question_id: str) -> dict:
 
 
 def _build_input(question_id: str, country_code: str) -> ResearcherInput:
+    from agents.tools import answer_shapes
+
     q = _load_question(question_id)
     meta = COUNTRIES.get(country_code.upper())
     if meta is None:
@@ -69,6 +71,7 @@ def _build_input(question_id: str, country_code: str) -> ResearcherInput:
             f"Country {country_code!r} not configured. "
             f"Add it to scripts/run_researcher.py COUNTRIES."
         )
+    shape = answer_shapes.load_question_shape(q["question_id"])
     return ResearcherInput(
         question_id=q["question_id"],
         question_text=q["question_text"],
@@ -79,6 +82,8 @@ def _build_input(question_id: str, country_code: str) -> ResearcherInput:
         country_name=meta["country_name"],
         country_language=meta["country_language"],
         portal_url=meta.get("portal_url"),
+        answer_shape=shape.shape,
+        allowed_answers=list(shape.allowed_answers),
     )
 
 

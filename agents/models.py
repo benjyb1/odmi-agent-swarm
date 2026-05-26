@@ -27,7 +27,19 @@ from pydantic import (
 
 # Type aliases the agents share.
 
-AnswerLiteral = Literal["yes", "no", "other", "not_applicable", "inconclusive"]
+# Per D28, the answer field is no longer a fixed Literal because each
+# question has its own answer shape (binary / percentage_band /
+# ordinal_magnitude / count_band / categorical) and the band-shape
+# rubrics carry per-question allowed values. Pydantic validation on
+# `answer` is therefore just a length sanity check; semantic
+# validation against the question's `allowed_answers` happens in
+# `agents.tools.answer_shapes.is_valid_answer` after the call returns.
+#
+# `LegacyAnswerLiteral` is retained for documentation / search
+# (so old SPEC references resolve) but is no longer enforced.
+LegacyAnswerLiteral = Literal[
+    "yes", "no", "other", "not_applicable", "inconclusive"
+]
 RubricTier = Literal["Highly Likely", "Likely", "Unlikely", "Very Unlikely"]
 LanguageRoute = Literal["native", "deepl", "human_required"]
 VerifierStrategy = Literal[
@@ -114,11 +126,18 @@ class ResearcherInput(BaseModel):
     portal_url: Optional[AnyHttpUrl] = None
     verifier_feedback: Optional[VerifierFeedback] = None
 
+    # D28: per-question answer shape and the list of canonical labels
+    # the agent may emit. `inconclusive` and `not_applicable` are
+    # always permitted on top of this list (see
+    # `agents.tools.answer_shapes`).
+    answer_shape: str = "binary"
+    allowed_answers: List[str] = Field(default_factory=lambda: ["yes", "no"])
+
 
 class ResearcherOutput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    answer: AnswerLiteral
+    answer: str = Field(..., min_length=1, max_length=200)
     answer_explanation: str = Field(..., min_length=1)
     evidence_quote: str = Field(..., min_length=10)
     source_url: AnyHttpUrl
@@ -146,6 +165,11 @@ class VerifierInput(BaseModel):
     researcher_output: ResearcherOutput
     strategy: VerifierStrategy = "verifier-disprove"
 
+    # D28: shape + allowed labels copied from the question row so the
+    # Verifier knows which counter-answers are admissible.
+    answer_shape: str = "binary"
+    allowed_answers: List[str] = Field(default_factory=lambda: ["yes", "no"])
+
 
 class VerifierOutput(BaseModel):
     """Verifier returns one of two top-level shapes determined by
@@ -156,7 +180,7 @@ class VerifierOutput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     verdict: VerifierVerdict
-    verifier_answer: AnswerLiteral
+    verifier_answer: str = Field(..., min_length=1, max_length=200)
     verifier_confidence: float = Field(..., ge=0.0, le=1.0)
 
     substring_check_result: SubstringCheckResult
@@ -200,12 +224,16 @@ class AdjudicatorInput(BaseModel):
     researcher_outputs: List[ResearcherOutput]
     verifier_outputs: List[VerifierOutput]
 
+    # D28: shape + allowed labels copied from the question row.
+    answer_shape: str = "binary"
+    allowed_answers: List[str] = Field(default_factory=lambda: ["yes", "no"])
+
 
 class AdjudicatorOutput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     adjudicator_verdict: AdjudicatorVerdict
-    adjudicator_answer: Optional[AnswerLiteral] = None
+    adjudicator_answer: Optional[str] = Field(default=None, max_length=200)
     adjudicator_confidence: float = Field(..., ge=0.0, le=1.0)
     adjudicator_reasoning: str = Field(..., min_length=50)
     chosen_source_url: Optional[AnyHttpUrl] = None

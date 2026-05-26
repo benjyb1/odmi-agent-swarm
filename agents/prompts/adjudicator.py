@@ -21,13 +21,15 @@ from agents.models import (
 
 
 NAME = "phase2_adjudicator"
-VERSION = 2
+VERSION = 3
 DESCRIPTION = (
-    "Adjudicator V2: weighs three rounds of Researcher / Verifier output "
+    "Adjudicator V3: weighs three rounds of Researcher / Verifier output "
     "after retries exhaust. Picks a winner or escalates to human review. "
     "No web searches; the decision rests on evidence already gathered. "
-    "V2 adds explicit ban on relying on memorised ODMI rankings or "
-    "ODMI publications, per SPEC D24."
+    "V3 (D28) makes the answer space per-question: adjudicator_answer "
+    "must be a label from the question's allowed list (or "
+    "'inconclusive' / 'not_applicable'), not a fixed yes/no/other/NA "
+    "literal."
 )
 
 
@@ -52,7 +54,8 @@ The four verdicts:
 
 - neither
     Both are wrong. The correct answer is something else, and you must
-    state what it is in adjudicator_answer.
+    state what it is in adjudicator_answer (chosen from the allowed
+    list in the user message).
 
 - escalate_human
     The case is too uncertain to settle without human judgement. Use
@@ -69,7 +72,10 @@ Required output structure:
 
 {
   "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "escalate_human",
-  "adjudicator_answer":  "yes" | "no" | "other" | "not_applicable" | null,
+  "adjudicator_answer":  string from the allowed list shown in the
+                         user message, OR 'inconclusive', OR
+                         'not_applicable', OR null (only when verdict
+                         is "escalate_human"),
   "adjudicator_confidence": 0.0-1.0,
   "adjudicator_reasoning": string (at least 50 chars, explaining your
                                    verdict and which evidence weighed
@@ -82,6 +88,12 @@ Rules:
 - If verdict is researcher_correct, verifier_correct, or neither, you
   must set adjudicator_answer, chosen_source_url, and
   chosen_evidence_quote.
+- adjudicator_answer must be exactly one of the labels in the
+  "Answer space" block of the user message, or 'inconclusive', or
+  'not_applicable'. Do not paraphrase band labels.
+- For ordered band shapes (percentage / ordinal / count), a single
+  adjacent-band miss is still a real disagreement; do not split the
+  difference.
 - For escalate_human, adjudicator_answer may be null.
 - chosen_source_url and chosen_evidence_quote must come from the
   evidence already gathered by the Researcher or Verifier; do not
@@ -138,6 +150,18 @@ def _format_verifier_attempt(idx: int, v: VerifierOutput) -> str:
     )
 
 
+def _answer_space_block(inp: AdjudicatorInput) -> str:
+    bullets = "\n".join(f"  - {a!r}" for a in inp.allowed_answers)
+    return (
+        "--- Answer space ---\n"
+        f"Answer shape: {inp.answer_shape}\n"
+        f"`adjudicator_answer` MUST be one of:\n{bullets}\n"
+        f"  - 'inconclusive'    (no confident answer can be reached)\n"
+        f"  - 'not_applicable'  (question does not apply to this country)\n"
+        f"  - null              (only when verdict='escalate_human')"
+    )
+
+
 def build_user_message(inp: AdjudicatorInput) -> str:
     """Render the full history block for the Adjudicator."""
     researcher_blocks = "\n".join(
@@ -154,6 +178,8 @@ Country: {inp.country_name} ({inp.country_code})
 
 Question:
 {inp.question_text}
+
+{_answer_space_block(inp)}
 
 --- Researcher history ({len(inp.researcher_outputs)} attempts) ---
 

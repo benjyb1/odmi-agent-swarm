@@ -368,6 +368,8 @@ def main() -> None:
     researcher_output = _row_to_researcher_output(row)
     question_text = _load_question_text(args.question_id)
 
+    from agents.tools import answer_shapes
+    shape = answer_shapes.load_question_shape(args.question_id)
     inp = VerifierInput(
         question_id=args.question_id,
         question_text=question_text,
@@ -375,6 +377,8 @@ def main() -> None:
         country_name=meta["country_name"],
         researcher_output=researcher_output,
         strategy=args.strategy,
+        answer_shape=shape.shape,
+        allowed_answers=list(shape.allowed_answers),
     )
 
     run_id = args.run_id or str(uuid.uuid4())
