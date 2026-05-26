@@ -145,9 +145,15 @@ uv run pytest
 
 See `docs/SPEC.md` for the current status block. As of 2026-05-26: full
 three-agent swarm running end-to-end, nine-page Streamlit dashboard live
-(local and on Streamlit Cloud), 143 questions catalogued, 5,148 ODMI
-ground-truth rows loaded, 129 finalised swarm pairs across FR/DE/NL/RO
-covering all four ODMI dimensions (Policy, Portal, Quality, Impact). D28
-in flight: per-shape answer schema replacing the flat yes/no/other/NA
-literal; 19 forced-collapse rows on non-binary questions hard-deleted as
-Phase 1, schema migration + re-dispatch still to build.
+(local and on Streamlit Cloud), 143 questions catalogued and tagged by
+answer shape (124 binary / 12 percentage_band / 3 ordinal_magnitude /
+2 count_band / 2 categorical), 5,148 ODMI ground-truth rows loaded, 129
+finalised swarm pairs across FR/DE/NL/RO covering all four ODMI
+dimensions. D28 Phase 2 complete: per-shape answer space across
+Researcher / Verifier / Adjudicator, `inconclusive` literal replacing
+honest-uncertainty collapses to `other`, `near_match` state on
+`_MATCH_STATUS_SQL` for adjacent-band misses, dashboard renders the new
+state. Phase 3 (re-dispatch of the 19 forced-collapse pairs plus
+broadening to the other 22 non-binary questions) deferred to after D29
+(DIY-Tavily, planned June) — current Tavily / Brave quotas are
+exhausted.

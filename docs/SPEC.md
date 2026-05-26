@@ -708,15 +708,59 @@ pairs at the moment of this decision. 41 of them sat on
   confidence, or honest uncertainty). These are real evaluation
   signal and stay in place.
 
-Phase 1 of D28 (this commit) is the cleanup. Phase 2 (still to
-build) is the schema migration: `answer_shape` and
-`allowed_answers` columns on `questions`, classifying every
-question once, updating `agents/models.py` to a discriminated
-union, branching the Researcher / Verifier / Adjudicator prompts on
-shape, and extending `_MATCH_STATUS_SQL` with a `near_match` state
-for adjacent bands. Phase 3 is the re-dispatch of the 19
-forced-collapse pairs under the new shape, plus broadening to the
-other 21 non-binary questions across the country sweep.
+Implementation rolled out across two commits (Phase 1: cleanup) and
+five staged commits (Phase 2A through 2E), all landed 2026-05-26.
+
+Phase 2A — schema and classification (commit `d631c30`). Adds
+`answer_shape` and `allowed_answers` columns on `questions`. The
+classifier in `scripts/migrate_d28_shapes.py` parses
+`response_scoring` and tags every row: 124 binary, 12
+percentage_band, 3 ordinal_magnitude, 2 count_band, 2 categorical.
+Adds the `inconclusive` literal to `AnswerLiteral`. Migrates the
+22 `phase2_final.other` rows on yes/no-only rubrics (and their 38
+researcher / 46 verifier upstream rows) to `inconclusive`. Tests
+in `tests/test_d28_classifier.py` lock in the classification rules.
+
+Phase 2B — Pydantic loosening and shape-aware prompts (commit
+`21255bb`). `answer` / `verifier_answer` / `adjudicator_answer`
+become free-text strings (validated at runtime, not at the
+Pydantic boundary). `ResearcherInput` / `VerifierInput` /
+`AdjudicatorInput` carry `answer_shape` and `allowed_answers`.
+New module `agents/tools/answer_shapes.py` (`load_question_shape`,
+`is_valid_answer`, `normalise_answer`, `is_band_shape`,
+`band_distance`). Researcher prompt bumped to V3; all four
+Verifier strategies plus the adversarial query-gen bumped to V3
+/ V2; Adjudicator V3. Each runner now post-validates the LLM's
+emitted label against the question's allowed set and records a
+note when normalised. `tests/test_answer_shapes.py` (13 cases).
+
+Phase 2C — `near_match` SQL (commit `0d1a6c2`). `_MATCH_STATUS_SQL`
+gains an EXISTS subquery over `questions` and `json_each` that
+flags adjacent-band misses on the three ordered shapes as
+`near_match` rather than `differ`. `accuracy_summary()` returns
+both `accuracy` (exact) and `accuracy_within_one_band`.
+`country_outcome_counts()` adds the new outcome label. Nine
+integration tests in `tests/test_match_status_near_match.py`.
+
+Phase 2D — dashboard render (commit `5aae4f0`). Match badge
+palette gains a yellow "Adjacent band (D28)" tile. Results,
+Database, Analytics, and Home now surface the new state and the
+within-one-band figure. Questions page shows the per-question
+`Shape` column.
+
+Phase 2E — tests + smoke-test (this commit). Thirteen integration
+tests in `tests/test_shape_aware_prompts.py` confirm the
+allowed-answer list propagates from the DB through the input
+models into the user messages seen by all three agents. Smoke
+dispatch of Q12:FR (a percentage_band pair) booted cleanly: the
+subtrio_status row was written, the Coordinator reached the
+search stage. Phase 3 (the full re-dispatch of the 19
+forced-collapse pairs plus broadening to all 22 non-binary
+questions across FR / DE / NL / RO) is deferred: both Tavily and
+Brave search quotas are currently exhausted (per the May 25
+incident logged on D26 / D27). The shape-aware pipeline is ready;
+it re-runs against the new schema once D29 (DIY-Tavily) lands in
+June.
 
 ---
 
@@ -856,6 +900,7 @@ other 21 non-binary questions across the country sweep.
 
 | Date | Change |
 |---|---|
+| 2026-05-26 (later) | D28 Phase 2 landed across five staged commits (A–E). New `answer_shape` and `allowed_answers` columns on `questions`, with 124 / 12 / 3 / 2 / 2 split across binary / percentage_band / ordinal_magnitude / count_band / categorical (commit `d631c30`). Pydantic `answer` fields loosened from a fixed Literal to free-text strings validated at runtime via the new `agents/tools/answer_shapes.py` module; Researcher / Verifier / Adjudicator prompts bumped (V3 / V3 / V3) and each agent now post-validates the emitted label against the per-question allowed list (commit `21255bb`). `_MATCH_STATUS_SQL` gains an `EXISTS` over `json_each(q.allowed_answers)` that flags adjacent-band misses as `near_match`; `accuracy_summary` returns both `accuracy` and `accuracy_within_one_band` (commit `0d1a6c2`). Dashboard renders the new state across Home, Results, Database, Analytics, and Questions (commit `5aae4f0`). Stage E (this commit) adds 13 integration tests on shape-aware prompt assembly and smoke-tests one band-shape pair (Q12:FR) end-to-end; the Coordinator booted cleanly but both Tavily and Brave quotas are exhausted, so the full re-dispatch of the 19 forced-collapse pairs is deferred to after D29 (DIY-Tavily, planned June). Test count: 122 passing. |
 | 2026-05-26 | D28 added: per-shape answer schema (`binary`, `percentage_band`, `ordinal_magnitude`, `count_band`, `categorical`) to replace the flat `Literal["yes","no","other","not_applicable"]` that mis-fitted ~22 of 143 ODMI questions. Phase 1 (this commit) is the cleanup: 19 forced-collapse `final_answer = 'other'` rows on non-binary questions hard-deleted from `phase2_final` + 39 Researcher + 39 Verifier + 3 Adjudicator + 19 `subtrio_status`. Pre-deletion DB backed up at `data/odmi.db.bak-pre-D28-20260526T100409Z`. The 22 honest "couldn't tell" rows on binary-rubric questions are kept as real evaluation signal. Stale finalised-pair count in Current status updated (148 → 129). Phase 2 (`answer_shape` column, prompt branching, `near_match` SQL) and Phase 3 (re-dispatch) still to build. |
 | 2026-05-14 (evening) | D24 added: hard ban on ODMI publications and the EU Data Portal as evidence. New `agents/tools/blocked_domains.py` deny-list (12 domains, 7 path fragments). Enforced at five layers: Tavily `exclude_domains` + Brave `-site:` + post-filter scrub in `search.py`; refusal in `fetch_text`/`fetch_rendered_text`/`head_ok`; 0.0 score in `validator.trust_score`; explicit forbidden-sources rule baked into Researcher v2 prompt and all four Verifier v2 prompts (disprove / negation / steelman / blind); audit script `scripts/check_data_leakage.py` with `--purge`. New `tests/test_blocked_domains.py` (30 cases, passing). `data.europa.eu` removed from `_DEFAULT_TRUSTED` and from the `_looks_authoritative` pattern. Audit on existing DB flagged 30 historical violations (8 Researcher source_urls, 18 Verifier counter_source_urls, 4 phase2_final), all pointing at `data.europa.eu`; user runs `--purge` after review. |
 | 2026-05-14 (afternoon) | Coordinator resume-on-partial. Since CLIProxyAPI strips Anthropic's rate-limit headers, batches dying mid-flight is unavoidable when the Claude Max wall hits. The Coordinator now: at start of each pair, looks for a prior subtrio_status row that has a `phase2_researcher_runs` entry (retry_count=0) but no `phase2_final`, and is either orphaned, interrupted_rate_limit, failed, or older than the resume freshness window (default 60 minutes). If one exists, marks the prior subtrio_status as `stage='superseded'`, loads the prior Researcher output back into a ResearcherOutput, and skips the Researcher call on the new attempt's first iteration — going straight to the Verifier. Retries 1+ run Researcher normally. New helper functions: `_find_resumable_researcher`, `_mark_superseded`, `_researcher_output_from_row`. Partial rows in the three phase2_* tables remain in place but are not visible as completed because the Results/Database/Home surfaces all key off `phase2_final` (only written on completion). Cost / audit semantics: the resumed Researcher's cost stays in claude_usage_log under the prior subtrio_id; the new subtrio only spends on Verifier and Adjudicator. |

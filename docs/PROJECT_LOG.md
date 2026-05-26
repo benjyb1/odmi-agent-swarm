@@ -8,6 +8,94 @@ Entries newest first.
 
 ---
 
+## 2026-05-26 — Session 13: D28 Phase 2 end-to-end
+
+Five staged commits in one session. The five answer shapes (binary,
+percentage_band, ordinal_magnitude, count_band, categorical) now flow
+from the DB into the agents and back out through the dashboard.
+
+**Stage A** — `scripts/migrate_d28_shapes.py`. Adds `answer_shape`
+and `allowed_answers` JSON columns to `questions`. Classifier maps
+`response_scoring` strings to one of the five shapes. Output: 124
+binary, 12 percentage_band, 3 ordinal_magnitude, 2 count_band, 2
+categorical. Adds the `inconclusive` literal to `AnswerLiteral`.
+Migrates the 22 honest-other rows in `phase2_final` (plus their 38
+researcher / 46 verifier upstream rows) from `other` to
+`inconclusive`. Tests in `tests/test_d28_classifier.py` (15 cases)
+lock in the classification rules. Q2's duplicate `1` / `'1'` keys
+in the ODMI rubric are deduped at classification time.
+
+**Stage B** — shape-aware agents. `AnswerLiteral` becomes
+`LegacyAnswerLiteral` (documentation only); `answer` /
+`verifier_answer` / `adjudicator_answer` are now `str` with a
+length sanity check, validated at runtime via the new
+`agents/tools/answer_shapes.py` module. `ResearcherInput`,
+`VerifierInput`, `AdjudicatorInput` carry `answer_shape` and
+`allowed_answers`. Researcher prompt V3: includes an "Answer space"
+block listing the allowed labels; collapses honest uncertainty to
+`inconclusive` rather than `other`; `other` is only emitted when
+it appears in the ODMI rubric. Verifier prompts all bumped to V3
+with shape-aware counter-evidence rules; the negation strategy now
+branches the inversion direction per shape rather than hard-coding
+yes / no. The adversarial query-gen prompt bumped to V2. Adjudicator
+V3 receives the same answer space. Each runner post-validates the
+emitted label and normalises case differences. 13 new tests in
+`tests/test_answer_shapes.py`.
+
+**Stage C** — `near_match` SQL. `_MATCH_STATUS_SQL` adds an EXISTS
+subquery over `questions` and `json_each(allowed_answers)` that
+finds adjacent-band misses on the three ordered shapes and tags
+them `near_match`. `accuracy_summary()` now returns both `accuracy`
+(exact) and `accuracy_within_one_band` (counting near matches as
+hits). `country_outcome_counts()` adds the new outcome label. Nine
+integration tests in `tests/test_match_status_near_match.py`.
+
+**Stage D** — dashboard. Match badge palette gains a yellow
+"Adjacent band (D28)" tile. Results KPI strip is five tiles
+(Pairs, Match, Near, Differ, Within one band). Database page KPI
+strip splits Match / Near / Differ and shows both exact and
+within-band accuracy. Coverage filter dropdown adds "Near match
+(adjacent band)". Analytics per-group table adds a `within-band %`
+column next to `match %`. Home page country chart adds a yellow
+band for the near-match outcome; the KPI accuracy caption mentions
+near matches when present. Questions page now shows the `Shape`
+column so it's obvious at a glance which questions use band /
+ordinal / categorical answer spaces.
+
+**Stage E** — tests + smoke-test. 13 new tests in
+`tests/test_shape_aware_prompts.py` confirm the allowed-answer
+list propagates from the DB through the input models into the
+user messages seen by Researcher, Verifier (all four strategies),
+and Adjudicator. Smoke dispatch of Q12:FR (a percentage_band pair)
+booted cleanly: subtrio_status row written, Coordinator reached
+the search stage. **Phase 3 — the actual re-dispatch of the 19
+forced-collapse pairs plus broadening to the other 22 non-binary
+questions across FR / DE / NL / RO — is deferred**: both Tavily
+and Brave search quotas are currently exhausted (per the May 25
+incident logged on D26 / D27). The shape-aware pipeline is ready
+and tested; it re-runs against the new schema as soon as D29
+(DIY-Tavily) lands in June.
+
+Test count: 122 passing (39 baseline + 15 classifier + 13
+answer_shapes + 9 match_status + 13 shape-aware prompts + 33
+that were already there from prior work). All in `pytest -q`.
+
+**Open issues / followups.**
+- The smoke-test subtrio for Q12:FR (`c19828cb`) was reaped to
+  `orphaned` after the search step failed. Once D29 lands the
+  same pair can be re-dispatched cleanly.
+- `agents/tools/band_check.py` was considered but not built. The
+  idea: extract percentages from the Researcher's evidence quote
+  and check whether they fall in the claimed band. Useful but not
+  load-bearing for the dissertation. Worth adding in Phase 3 once
+  we have real band-shape pairs flowing through.
+- The Verifier negation strategy's shape-aware language should be
+  empirically compared against the V2 yes/no version once both
+  produce real data. Q12 in particular is where the new prompt
+  earns its keep.
+
+---
+
 ## 2026-05-26 — Session 12: per-shape answer schema, forced-collapse cleanup (D28)
 
 Working through what the swarm can actually answer turned up a
