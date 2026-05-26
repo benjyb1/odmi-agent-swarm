@@ -16,7 +16,14 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Callable, List, Optional
+from typing import Callable, List, Literal, Optional
+
+# Explicit provider selection for search() and search_many().
+# "auto"   — existing Tavily-first-then-Brave fallback chain (default).
+# "tavily" — Tavily only; errors propagate, no Brave fallback.
+# "brave"  — Brave only; Tavily is never called.
+# Future values ("diy", "serper_raw", …) will extend this union.
+Provider = Literal["auto", "tavily", "brave"]
 
 import httpx
 from dotenv import load_dotenv
@@ -169,37 +176,83 @@ def search(
     topic: str = "general",
     include_domains: Optional[List[str]] = None,
     on_call: Optional[CallObserver] = None,
+    provider: Provider = "auto",
 ) -> List[SearchResult]:
-    """Run one search with automatic Tavily → Brave fallback.
+    """Run one search, dispatching to the requested provider(s).
+
+    `provider` controls which search backend is used:
+
+    - ``"auto"`` (default) — Tavily first; if Tavily's quota is
+      exhausted or raises a rate/quota/credit error, falls back to
+      Brave. This is unchanged from the original behaviour.
+    - ``"tavily"`` — Tavily only. If Tavily raises for any reason the
+      error propagates immediately; Brave is never called. Use this
+      when you need deterministic provider selection (e.g. A/B
+      experiments where Brave must not silently substitute).
+    - ``"brave"`` — Brave only. Tavily is never called.
 
     `topic` is Tavily-specific; Brave ignores it. `include_domains`
     works on both (Brave gets it via `site:` clauses).
 
-    If Tavily reports its monthly credit ceiling as exhausted, the
-    wrapper sticks to Brave for the rest of the session.
-
     Blocked domains (see `agents.tools.blocked_domains`) are excluded
-    from both providers' results regardless of `include_domains`.
+    from all providers' results regardless of `include_domains`.
 
-    `on_call(payload)` fires once per outbound provider call (so a Tavily
-    failure followed by a Brave success emits two records). Payload is
-    `{"provider": str, "ms": int, "results": int, "ok": bool,
-    "error": str | None}`. Use this to log per-call telemetry without
-    relying on the module-level counters.
+    `on_call(payload)` fires once per outbound provider call. In
+    ``"auto"`` mode a Tavily failure followed by a Brave success emits
+    two records. Payload keys: ``provider``, ``ms``, ``results``,
+    ``ok``, ``error``. Use this for per-call telemetry without relying
+    on the module-level counters.
     """
     global _TAVILY_QUOTA_EXHAUSTED
 
-    def _emit(provider: str, started_at: float, results: List[SearchResult],
+    def _emit(prov: str, started_at: float, results: List[SearchResult],
               ok: bool, error: Optional[str]) -> None:
         if on_call is None:
             return
         on_call({
-            "provider": provider,
+            "provider": prov,
             "ms": int((time.perf_counter() - started_at) * 1000),
             "results": len(results),
             "ok": ok,
             "error": error,
         })
+
+    # ------------------------------------------------------------------
+    # Explicit single-provider paths (no fallback in either direction)
+    # ------------------------------------------------------------------
+
+    if provider == "tavily":
+        t0 = time.perf_counter()
+        try:
+            results = _tavily_search(
+                query,
+                max_results=max_results,
+                topic=topic,
+                include_domains=include_domains,
+            )
+            _PROVIDER_USAGE_COUNTERS["tavily"] += 1
+            _emit("tavily", t0, results, ok=True, error=None)
+            return _scrub_blocked(results)
+        except Exception as exc:
+            _emit("tavily", t0, [], ok=False, error=str(exc)[:200])
+            raise
+
+    if provider == "brave":
+        t0 = time.perf_counter()
+        try:
+            results = _brave_search(
+                query, max_results=max_results, include_domains=include_domains,
+            )
+            _PROVIDER_USAGE_COUNTERS["brave"] += 1
+            _emit("brave", t0, results, ok=True, error=None)
+            return _scrub_blocked(results)
+        except Exception as exc:
+            _emit("brave", t0, [], ok=False, error=str(exc)[:200])
+            raise
+
+    # ------------------------------------------------------------------
+    # provider == "auto" — original Tavily-first-then-Brave chain
+    # ------------------------------------------------------------------
 
     if not _TAVILY_QUOTA_EXHAUSTED:
         t0 = time.perf_counter()
@@ -245,11 +298,12 @@ def search_many(
     topic: str = "general",
     include_domains: Optional[List[str]] = None,
     on_call: Optional[CallObserver] = None,
+    provider: Provider = "auto",
 ) -> List[SearchResult]:
     """Run several queries, deduplicate by URL, preserve order of first occurrence.
 
-    See `search()` for `on_call` semantics; it forwards to each per-query
-    call so the caller sees one record per provider invocation.
+    ``provider`` is forwarded to each per-query ``search()`` call.
+    See ``search()`` for full provider semantics and ``on_call`` behaviour.
     """
     seen: set[str] = set()
     out: List[SearchResult] = []
@@ -260,6 +314,7 @@ def search_many(
             topic=topic,
             include_domains=include_domains,
             on_call=on_call,
+            provider=provider,
         ):
             if r.url in seen:
                 continue
