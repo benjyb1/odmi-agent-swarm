@@ -58,12 +58,11 @@ def test_build_user_message_includes_page_text():
 
 
 def test_build_user_message_truncates_to_cap():
-    long_text = "x" * 10_000
+    sentinel = "ɸ"  # phi -- vanishingly unlikely to appear in the template
+    long_text = sentinel * 10_000
     msg = sp.build_user_message("query", "https://example.com", long_text)
-    # The truncated page text in the message should be at most PAGE_TEXT_CAP chars long.
-    # The message itself will be longer (it includes the query and URL), so we
-    # check that the page text portion is truncated.
-    assert "x" * (sp.PAGE_TEXT_CAP + 1) not in msg
+    assert msg.count(sentinel) == sp.PAGE_TEXT_CAP
+    assert msg.count(sentinel) < 10_000  # confirms truncation actually happened
 
 
 def test_build_user_message_does_not_truncate_short_text():

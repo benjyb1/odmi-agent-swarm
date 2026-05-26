@@ -22,13 +22,7 @@ from typing import Annotated, List, Optional
 from pydantic import BaseModel, Field
 
 from agents.models import LLMUsage
-from agents.prompts.snippet_picker import (
-    DESCRIPTION,
-    NAME,
-    SYSTEM,
-    VERSION,
-    build_user_message,
-)
+from agents.prompts import snippet_picker as picker_prompt
 from agents.tools.db import ensure_prompt_version
 from agents.tools.llm import call_for_structured
 
@@ -71,12 +65,15 @@ def pick_snippet(
     that single chunk. Otherwise return up to three (the model may have
     returned fewer). An empty list from the model is passed back unchanged.
     """
-    prompt_version_id = ensure_prompt_version(NAME, VERSION, SYSTEM, DESCRIPTION)
+    prompt_version_id = ensure_prompt_version(
+        picker_prompt.NAME, picker_prompt.VERSION,
+        picker_prompt.SYSTEM, picker_prompt.DESCRIPTION,
+    )
 
-    user_message = build_user_message(query, url, page_text)
+    user_message = picker_prompt.build_user_message(query, url, page_text)
 
     parsed, usage = call_for_structured(
-        system=SYSTEM,
+        system=picker_prompt.SYSTEM,
         user_message=user_message,
         output_schema=_ChunksOut,
         max_tokens=1500,
