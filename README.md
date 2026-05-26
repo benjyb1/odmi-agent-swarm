@@ -53,6 +53,24 @@ uv run python scripts/generate_slides.py
 uv run pytest
 ```
 
+## Development
+
+DIY-Tavily test gate (run before any DIY-Tavily commit):
+
+```bash
+make verify-diy         # 93 non-live tests across the eight DIY-Tavily modules
+make verify-diy-live    # live tests against real Serper + Claude (costs ~30 API calls)
+make help               # list all targets
+```
+
+The full pipeline lives in `agents/tools/search_diy.py`. The
+methodologically central Layer-2 quality test reads
+`tests/fixtures/snippet_quality.jsonl` (regenerated on demand from the
+DB with `make snippet-fixtures`) and asserts the new Claude
+snippet-picker overlaps with passages the swarm's Verifier
+historically accepted. See `docs/superpowers/plans/2026-05-26-diy-tavily.md`
+for the full plan and Layer 1-9 test strategy.
+
 ## Status
 
 Phase A. Swarm running end-to-end on the first four countries
