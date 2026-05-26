@@ -43,6 +43,7 @@ def serper_search(
 
     q = _build_query(query, include_domains)
     headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
+    # Serper's `num` parameter is capped at 20 per request by the upstream API.
     body = {"q": q, "num": min(max_results, 20)}
 
     with httpx.Client(timeout=20.0) as client:

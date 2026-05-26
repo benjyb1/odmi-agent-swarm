@@ -15,6 +15,7 @@ import json
 from typing import Any
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pytest
 
 from agents.tools.search_serper import serper_search
@@ -229,3 +230,41 @@ def test_num_body_capped_at_20(monkeypatch):
     call_kwargs = client_mock.post.call_args
     body: dict = call_kwargs.kwargs.get("json") or call_kwargs[1].get("json") or call_kwargs[0][1]
     assert body["num"] <= 20
+
+
+# ---------------------------------------------------------------------------
+# HTTP error propagation
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize("status", [429, 500, 502])
+def test_non_2xx_raises_httpstatuserror(monkeypatch, status):
+    """Serper non-2xx must propagate, not silently return []."""
+    monkeypatch.setenv("SERPER_API_KEY", "fake")
+    fake_resp = MagicMock()
+    fake_resp.status_code = status
+    fake_resp.raise_for_status = MagicMock(
+        side_effect=httpx.HTTPStatusError(
+            f"HTTP {status}",
+            request=MagicMock(),
+            response=fake_resp,
+        )
+    )
+    client_mock = _make_client_mock({})
+    client_mock.post = MagicMock(return_value=fake_resp)
+
+    with patch("agents.tools.search_serper.httpx.Client", return_value=client_mock):
+        with pytest.raises(httpx.HTTPStatusError):
+            serper_search("test query")
+
+
+def test_timeout_propagates(monkeypatch):
+    """httpx.ReadTimeout from Serper must propagate."""
+    monkeypatch.setenv("SERPER_API_KEY", "fake")
+    client_mock = MagicMock()
+    client_mock.__enter__ = MagicMock(return_value=client_mock)
+    client_mock.__exit__ = MagicMock(return_value=False)
+    client_mock.post = MagicMock(side_effect=httpx.ReadTimeout("timeout"))
+
+    with patch("agents.tools.search_serper.httpx.Client", return_value=client_mock):
+        with pytest.raises(httpx.ReadTimeout):
+            serper_search("test query")
