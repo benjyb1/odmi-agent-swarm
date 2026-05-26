@@ -8,6 +8,70 @@ Entries newest first.
 
 ---
 
+## 2026-05-26 — Session 12: per-shape answer schema, forced-collapse cleanup (D28)
+
+Working through what the swarm can actually answer turned up a
+structural mismatch. The Researcher / Verifier / Adjudicator output
+is constrained to `Literal["yes", "no", "other", "not_applicable"]`
+([agents/models.py:30](agents/models.py:30)), but only 121 of the 143
+ODMI 2025 questions have a yes/no rubric. The other 22 want a
+percentage band (`>90%` to `<10%`), an ordinal magnitude
+(`all` to `none`), a count band (P29's `yes, >9` etc., Q13's
+`1-4` / `5-10` / `>10`), a small categorical (P14's `top-down` /
+`bottom-up` / `hybrid`), or a fixed timing bucket (Q3). On those, the
+swarm had no choice but to collapse to `other`, which throws away the
+discrimination ODMI scores on. A `71-90%` answer scores 20, `10-30%`
+scores 2; both would have been `other` today.
+
+**Decision.** D28: per-shape discriminated union with five shapes
+(`binary`, `percentage_band`, `ordinal_magnitude`, `count_band`,
+`categorical`). Each question carries its shape via a new
+`answer_shape` column on `questions`, plus an `allowed_answers` JSON
+column where band labels vary per question. Considered the flat
+`answer: str` validated against `allowed_answers` alternative; the
+shape is worth the extra design work because (a) Verifier prompts
+need to branch on shape anyway to express "find evidence the right
+band is one step lower", (b) substring-check verification needs
+different code paths for yes/no versus numeric bands, and (c)
+near-miss scoring in evaluation (a useful dissertation result)
+requires ordered bands rather than opaque strings.
+
+**Cleanup, this session.** The DB held 148 finalised pairs, 41 with
+`final_answer = 'other'`. Split:
+
+- 19 forced collapses on non-binary questions. The swarm had no way
+  to express the right answer. Hard-deleted along with their
+  upstream Researcher (39), Verifier (39), Adjudication (3), and
+  `subtrio_status` (19) rows. Backup at
+  `data/odmi.db.bak-pre-D28-20260526T100409Z`. Cascade SQL ran in
+  one transaction.
+- 22 honest "couldn't tell" outcomes on binary-rubric questions.
+  Kept. These are real evaluation signal: the swarm had `yes` and
+  `no` on offer and picked `other` for a reason (D24 forbidden-
+  source refusals, low confidence, or honest uncertainty).
+
+DB now at 129 finalised pairs, $13.28 (~£10.49) cumulative spend.
+
+**Still to build.** Phase 2 of D28: schema migration on `questions`,
+classifier pass to tag every question with its shape, discriminated
+union in `agents/models.py`, branched prompts for Researcher /
+Verifier / Adjudicator, `near_match` state in `_MATCH_STATUS_SQL`.
+Phase 3: re-dispatch the 19 deleted pairs under the new shape, plus
+broaden to the other 21 non-binary questions across FR / DE / NL /
+RO.
+
+**Followups.**
+- Verifier prompt rewrite for each non-binary shape. The current
+  "if Researcher said X, find evidence for not-X" rule doesn't
+  translate cleanly to bands.
+- Substring-check logic needs a number-extraction path for
+  percentage bands. Yes/no can keep its literal substring match.
+- Dashboard will eventually need a shape-stratified accuracy
+  breakdown (binary-question match rate vs. band-question match
+  rate vs. ordinal match rate). Worth a dissertation chapter.
+
+---
+
 ## 2026-05-14 — Session 11: hard ban on ODMI sources
 
 Walked through the swarm with one question: where could an ODMI

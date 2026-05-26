@@ -646,6 +646,78 @@ finalise because both Tavily and Brave quotas were exhausted, but
 the search-provider telemetry captured both failures cleanly,
 demonstrating D26 + D27 working together.
 
+### D28: Per-shape answer schema; forced-collapse rows hard-deleted
+
+**Date:** 2026-05-26.
+
+Until D28 every agent in the trio returned `answer: Literal["yes",
+"no", "other", "not_applicable"]`. That fits the 121 binary
+questions in the ODMI 2025 questionnaire but fails on the other 22,
+whose actual answer space is a percentage band (`>90%` … `<10%`),
+an ordinal magnitude (`all` / `majority` / `half` / `few` / `none`),
+a count band (`yes, 6-9` / `1-4`), a small categorical
+(`top-down` / `bottom-up` / `hybrid`), or a fixed timing bucket
+(`within one day` / `within one week` …). On those questions the
+swarm was forced to collapse to `other`, which discards the
+discrimination ODMI actually scores on: a `71-90%` answer scores 20,
+`10-30%` scores 2, and both would land in the same bucket today.
+
+Decision: replace the flat literal with a discriminated union over
+five answer shapes. Each row in `questions` gains a new
+`answer_shape` column (and an `allowed_answers` JSON column where
+the shape's allowed values vary per question). Researcher, Verifier
+and Adjudicator outputs are validated against the shape stored on
+the question.
+
+The five shapes:
+
+1. `binary`: `yes` / `no` / `other` / `not_applicable`. The current
+   literal, kept verbatim.
+2. `percentage_band`: parameterised, each question carries its own
+   list of band labels (Q12 has six, Q2 has eight).
+3. `ordinal_magnitude`: `all` / `the majority` / `approximately
+   half` / `few` / `none` (plus optional `not_applicable`). PT32,
+   PT37, P16, Q2 family.
+4. `count_band`: parameterised list per question (P29's
+   `yes, >9` / `6-9` / `3-5` / `1-2` / `no`, Q13's `1-4` / `5-10` /
+   `>10`).
+5. `categorical`: small fixed enum per question (P14's three-way
+   model classifier, Q3's four-way timing bucket).
+
+The new field also lets the Verifier prompt branch: for ordinal or
+band shapes the "find counter-evidence" rule becomes "find evidence
+the right band is one step lower" rather than "find evidence for
+the opposite literal", which is a sharper instruction on these
+questions than the current prompt can express.
+
+Cleanup of in-flight evaluation rows. The DB held 148 finalised
+pairs at the moment of this decision. 41 of them sat on
+`final_answer = 'other'`, split into two groups:
+
+- **19 forced collapses**, all on questions whose new shape is not
+  `binary`. The swarm had no means to express the right answer on
+  these. They are not honest evaluation signal and were
+  hard-deleted (along with their 39 Researcher rows, 39 Verifier
+  rows, 3 Adjudication rows, and 19 `subtrio_status` rows). A
+  timestamped backup of the pre-deletion DB sits at
+  `data/odmi.db.bak-pre-D28-20260526T100409Z`. Once the per-shape
+  refactor lands these pairs can be re-dispatched cleanly.
+- **22 honest "couldn't tell" outcomes**, on questions where ODMI's
+  rubric is yes/no only. The swarm had `yes` and `no` on offer and
+  picked `other` anyway (D24 forbidden-source refusals, low
+  confidence, or honest uncertainty). These are real evaluation
+  signal and stay in place.
+
+Phase 1 of D28 (this commit) is the cleanup. Phase 2 (still to
+build) is the schema migration: `answer_shape` and
+`allowed_answers` columns on `questions`, classifying every
+question once, updating `agents/models.py` to a discriminated
+union, branching the Researcher / Verifier / Adjudicator prompts on
+shape, and extending `_MATCH_STATUS_SQL` with a `near_match` state
+for adjacent bands. Phase 3 is the re-dispatch of the 19
+forced-collapse pairs under the new shape, plus broadening to the
+other 21 non-binary questions across the country sweep.
+
 ---
 
 ## Current status
@@ -687,8 +759,10 @@ demonstrating D26 + D27 working together.
 - `ground_truth` table loaded: 5,148 ODMI 2025 answers across all 36
   countries × 143 questions. Joined to every finalised pair via
   `_MATCH_STATUS_SQL` in `dashboard/lib/db.py`.
-- 11 finalised swarm pairs across FR / DE / NL / RO, all matching
-  ODMI 2025. Total spend ~$1.02.
+- 129 finalised swarm pairs across FR / DE / NL / RO, covering all
+  four ODMI dimensions (Policy, Portal, Quality, Impact). Total
+  spend $13.28 (~£10.49). Down from 148 after D28's hard-delete of
+  19 forced-collapse rows on non-binary questions.
 - Streamlit Cloud public deploy at
   `https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/`
   (set to public viewer access, `ODMI_READ_ONLY=1` in secrets).
@@ -782,6 +856,7 @@ demonstrating D26 + D27 working together.
 
 | Date | Change |
 |---|---|
+| 2026-05-26 | D28 added: per-shape answer schema (`binary`, `percentage_band`, `ordinal_magnitude`, `count_band`, `categorical`) to replace the flat `Literal["yes","no","other","not_applicable"]` that mis-fitted ~22 of 143 ODMI questions. Phase 1 (this commit) is the cleanup: 19 forced-collapse `final_answer = 'other'` rows on non-binary questions hard-deleted from `phase2_final` + 39 Researcher + 39 Verifier + 3 Adjudicator + 19 `subtrio_status`. Pre-deletion DB backed up at `data/odmi.db.bak-pre-D28-20260526T100409Z`. The 22 honest "couldn't tell" rows on binary-rubric questions are kept as real evaluation signal. Stale finalised-pair count in Current status updated (148 → 129). Phase 2 (`answer_shape` column, prompt branching, `near_match` SQL) and Phase 3 (re-dispatch) still to build. |
 | 2026-05-14 (evening) | D24 added: hard ban on ODMI publications and the EU Data Portal as evidence. New `agents/tools/blocked_domains.py` deny-list (12 domains, 7 path fragments). Enforced at five layers: Tavily `exclude_domains` + Brave `-site:` + post-filter scrub in `search.py`; refusal in `fetch_text`/`fetch_rendered_text`/`head_ok`; 0.0 score in `validator.trust_score`; explicit forbidden-sources rule baked into Researcher v2 prompt and all four Verifier v2 prompts (disprove / negation / steelman / blind); audit script `scripts/check_data_leakage.py` with `--purge`. New `tests/test_blocked_domains.py` (30 cases, passing). `data.europa.eu` removed from `_DEFAULT_TRUSTED` and from the `_looks_authoritative` pattern. Audit on existing DB flagged 30 historical violations (8 Researcher source_urls, 18 Verifier counter_source_urls, 4 phase2_final), all pointing at `data.europa.eu`; user runs `--purge` after review. |
 | 2026-05-14 (afternoon) | Coordinator resume-on-partial. Since CLIProxyAPI strips Anthropic's rate-limit headers, batches dying mid-flight is unavoidable when the Claude Max wall hits. The Coordinator now: at start of each pair, looks for a prior subtrio_status row that has a `phase2_researcher_runs` entry (retry_count=0) but no `phase2_final`, and is either orphaned, interrupted_rate_limit, failed, or older than the resume freshness window (default 60 minutes). If one exists, marks the prior subtrio_status as `stage='superseded'`, loads the prior Researcher output back into a ResearcherOutput, and skips the Researcher call on the new attempt's first iteration — going straight to the Verifier. Retries 1+ run Researcher normally. New helper functions: `_find_resumable_researcher`, `_mark_superseded`, `_researcher_output_from_row`. Partial rows in the three phase2_* tables remain in place but are not visible as completed because the Results/Database/Home surfaces all key off `phase2_final` (only written on completion). Cost / audit semantics: the resumed Researcher's cost stays in claude_usage_log under the prior subtrio_id; the new subtrio only spends on Verifier and Adjudicator. |
 | 2026-05-14 (am) | Search-side resilience pass. `scripts/probe_ratelimit.py` confirms CLIProxyAPI strips `anthropic-ratelimit-*` headers, so Claude Max remaining-capacity is not readable through the proxy; the dashboard's £ soft limit stays as a guessed-equivalent figure for now (revisit if we bypass the proxy). `agents/tools/search.py` rewritten with a Tavily → Brave Search fallback that triggers on `UsageLimitExceededError` and sticks to Brave for the rest of the session; `session_usage()` exposes the per-provider counts. `agents/tools/trusted_domains.py` + JSON files for FR / DE / NL / RO / HU / EE list the per-country authoritative domains (national portal + key government sites, deliberately excluding data.europa.eu per D22's leakage mitigation). Researcher now searches narrowed to those domains first and widens automatically when the narrow search returns zero results. `.env.example` adds `BRAVE_SEARCH_API_KEY`. |

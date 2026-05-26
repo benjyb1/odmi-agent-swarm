@@ -143,8 +143,11 @@ uv run pytest
 
 ## What's actually built
 
-See `docs/SPEC.md` for the current status block. As of 2026-05-13: full
+See `docs/SPEC.md` for the current status block. As of 2026-05-26: full
 three-agent swarm running end-to-end, nine-page Streamlit dashboard live
 (local and on Streamlit Cloud), 143 questions catalogued, 5,148 ODMI
-ground-truth rows loaded, 11 finalised swarm pairs across FR/DE/NL/RO with
-100% match against ODMI on the current Policy-dimension sample.
+ground-truth rows loaded, 129 finalised swarm pairs across FR/DE/NL/RO
+covering all four ODMI dimensions (Policy, Portal, Quality, Impact). D28
+in flight: per-shape answer schema replacing the flat yes/no/other/NA
+literal; 19 forced-collapse rows on non-binary questions hard-deleted as
+Phase 1, schema migration + re-dispatch still to build.

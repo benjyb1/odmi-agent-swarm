@@ -41,3 +41,6 @@ notes/
 dashboard/logs/
 dashboard/tests/screenshots/
 dashboard/tests/test_user_paths_report.json
+
+# Pre-decision DB snapshots. Local audit trail; SPEC.md records where they sit.
+data/odmi.db.bak-*
