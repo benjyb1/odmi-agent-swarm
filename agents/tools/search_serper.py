@@ -16,7 +16,6 @@ from typing import List, Optional
 import httpx
 
 from agents.tools.search import SearchResult
-from agents.tools.blocked_domains import BLOCKED_DOMAINS
 
 _ENDPOINT = "https://google.serper.dev/search"
 _INCLUDE_DOMAIN_CAP = 8
