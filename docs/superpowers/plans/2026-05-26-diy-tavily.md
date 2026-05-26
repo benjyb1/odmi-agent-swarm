@@ -88,6 +88,26 @@ Three new tables in `data/odmi.db`. 30-day TTL across the board.
 
 ---
 
+## Test Coverage Strategy
+
+Nine layers of testing. Layers 1-6 run on every commit (pre-commit gate). Layer 7 runs nightly in a separate flow. Layer 8 generates an artefact for human eyeball. Layer 9 is the orchestration glue.
+
+| # | Layer | What it catches | Where it lives |
+|---|---|---|---|
+| 1 | **Unit tests** | Plumbing — wrong shapes, missing args, parse errors | One test file per module under `tests/` |
+| 2 | **Snippet-quality fixture from finalised runs** | Picker fails to find passages the Verifier previously accepted | `evaluation/build_snippet_fixtures.py` generates `tests/fixtures/snippet_quality.jsonl` from `phase2_researcher_runs` rows where `terminal_status='accepted_by_verifier'`. `tests/test_snippet_quality.py` asserts ≥70% of fixtures' `evidence_quote` substring appears in DIY-picked snippet |
+| 3 | **Boilerplate-rejection fixtures** | Picker quotes cookie banners, navs, footers | `tests/fixtures/boilerplate/` — 8 synthetic pages with relevant-looking boilerplate. `tests/test_snippet_picker_boilerplate.py` asserts empty chunks |
+| 4 | **Multi-language fixtures** | Picker translates instead of quoting in source language | `tests/fixtures/multilang/` — synthetic FR/DE/PL pages. Test asserts the returned chunk text is in the source language (length-overlap heuristic against page) |
+| 5 | **Data-leakage tests** | Pipeline returns blocked domains (`data.europa.eu`, etc.) | `tests/test_search_diy_blocked.py` — mocks Serper to return blocked URLs, asserts they're scrubbed |
+| 6 | **Failure-mode tests** | Pipeline crashes on Serper 429, fetch timeout, malformed Claude JSON | Parametrised in each module's test file. Each failure path → graceful empty + telemetry recorded |
+| 7 | **Live integration drift test** | Upstream APIs silently changed shape | `tests/test_drift_live.py` — marked `@pytest.mark.live`, skipped by default. CI env var enables. One fixed query per upstream; assert non-empty plausible output |
+| 8 | **Side-by-side eyeball harness** | Subjective quality regressions | `evaluation/snippet_eyeball.py` — generates `evaluation/snippets_eyeball.html` showing DIY vs Tavily vs Serper-raw vs Brave for 20 fixed queries. Not pass/fail; eyeball during shakedown |
+| 9 | **Pre-commit gate** | Any of 1-6 slipping through silently | New `Makefile` target `verify-diy`: runs layers 1-6 as a single pytest invocation. Documented in the README so future work doesn't skip it |
+
+**Layer 2 is the methodological centrepiece.** The Researcher's 143+ finalised pairs already contain `(question_id, country_code, source_url, evidence_quote)` tuples that the Verifier validated. That's a free, dissertation-defensible test fixture: "on pages the swarm previously accepted, does the new picker find the same kind of evidence?" Tests methodology, not just plumbing.
+
+---
+
 ## File Structure
 
 **New files:**
@@ -95,15 +115,26 @@ Three new tables in `data/odmi.db`. 30-day TTL across the board.
 - `agents/tools/search_serper.py` — Serper API wrapper, raw provider behaviour
 - `agents/tools/snippet_picker.py` — Claude snippet-pick wrapper
 - `agents/prompts/snippet_picker.py` — Versioned prompt module
-- `agents/tools/search_cache.py` — SQLite-backed three-layer cache
-- `agents/tools/extract.py` — Thin trafilatura wrapper with PDF passthrough
-- `evaluation/search_ab.py` — A/B runner script
-- `evaluation/search_ab_report.py` — Aggregator: per-provider match rate, coverage, latency, £
+- `agents/tools/search_cache.py` — SQLite-backed three-layer cache (lazy `ensure_tables`)
+- `agents/tools/extract.py` — Thin trafilatura wrapper
+- `evaluation/search_ab.py` — A/B runner script (deferred to June)
+- `evaluation/search_ab_report.py` — Aggregator (deferred to June)
+- `evaluation/build_snippet_fixtures.py` — Generates Layer-2 fixture from DB
+- `evaluation/snippet_eyeball.py` — Layer-8 HTML harness
 - `tests/test_search_serper.py`
 - `tests/test_snippet_picker.py`
 - `tests/test_search_diy.py`
 - `tests/test_search_cache.py`
 - `tests/test_extract.py`
+- `tests/test_snippet_quality.py` — Layer 2
+- `tests/test_snippet_picker_boilerplate.py` — Layer 3
+- `tests/test_snippet_picker_multilang.py` — Layer 4
+- `tests/test_search_diy_blocked.py` — Layer 5
+- `tests/test_drift_live.py` — Layer 7 (skipped by default)
+- `tests/fixtures/snippet_quality.jsonl` — generated, gitignored
+- `tests/fixtures/boilerplate/*.html` — 8 synthetic pages
+- `tests/fixtures/multilang/*.html` — 3 synthetic pages
+- `Makefile` — `verify-diy` target
 
 **Modified files:**
 - `agents/tools/search.py` — add `provider` parameter, dispatch chain (preserve existing tavily→brave fallback as `provider="auto"`)
@@ -881,6 +912,97 @@ if provider == "serper_raw":
 
 ---
 
+### Task T-A: Build snippet-quality fixture from finalised runs (Layer 2)
+
+**Files:**
+- Create: `evaluation/build_snippet_fixtures.py`
+- Output: `tests/fixtures/snippet_quality.jsonl` (gitignored, generated on demand)
+
+- [ ] **Step 1: Write the generator.** Query `phase2_researcher_runs` joined to `phase2_final` where `terminal_status='accepted_by_verifier'` and `evidence_quote IS NOT NULL`. For each row, store `{question_id, country_code, query, source_url, evidence_quote, retrieval_confidence}` to JSONL. Cap at 50 fixtures (use latest by date), to keep test runtime reasonable.
+- [ ] **Step 2: Run it.** Verify it produces ≥ 30 fixture lines.
+- [ ] **Step 3: Add `tests/fixtures/snippet_quality.jsonl` to `.gitignore`.**
+- [ ] **Step 4: Commit the generator script only.**
+
+---
+
+### Task T-B: Snippet-quality test (Layer 2)
+
+**Files:**
+- Create: `tests/test_snippet_quality.py`
+- Marked `@pytest.mark.live` so it can be skipped in fast CI runs.
+
+- [ ] **Step 1: Write the test.** For each fixture, fetch the source_url, run the DIY pipeline's snippet-picker on the cleaned text with the original query, assert: the returned chunk(s) contain a substring of the `evidence_quote` at length ≥ 30 chars OR the picker correctly returned empty (the quote was on a non-fetchable page).
+- [ ] **Step 2: Assert aggregate.** Across all fixtures, at least 70% must pass the substring check. Single fixture failures are noted but don't fail the suite (network flake tolerance).
+- [ ] **Step 3: Run and verify.**
+- [ ] **Step 4: Commit.**
+
+---
+
+### Task T-C: Boilerplate-rejection fixtures + test (Layer 3)
+
+**Files:**
+- Create: `tests/fixtures/boilerplate/*.html` (8 synthetic pages: cookie banner, navigation-only, footer-heavy, etc.)
+- Create: `tests/test_snippet_picker_boilerplate.py`
+
+- [ ] **Step 1: Write 8 fixtures.** Each page contains keyword matches but only inside boilerplate (cookie banners with the query word, nav text with the country name, etc.). No genuinely-answering passages.
+- [ ] **Step 2: Test runs the picker on each.** Assert: returned chunks list is empty OR all chunks have score < 0.3.
+- [ ] **Step 3: Run, verify, commit.**
+
+---
+
+### Task T-D: Multi-language fixtures + test (Layer 4)
+
+**Files:**
+- Create: `tests/fixtures/multilang/fr.html`, `de.html`, `pl.html`
+- Create: `tests/test_snippet_picker_multilang.py`
+
+- [ ] **Step 1: Write 3 fixtures** — one in French, one in German, one in Polish. Each has a clearly-answering passage in its native language to a country-appropriate ODMI-style query.
+- [ ] **Step 2: Test asserts** the returned chunk text contains characters from the source language's typical orthography (é/è/à for FR, ä/ö/ü/ß for DE, ą/ć/ł for PL) — confirming the picker did not translate.
+- [ ] **Step 3: Run, verify, commit.**
+
+---
+
+### Task T-E: Live drift test (Layer 7)
+
+**Files:**
+- Create: `tests/test_drift_live.py`
+
+- [ ] **Step 1: Write three tests** marked `@pytest.mark.live`:
+  - Serper returns ≥ 3 results for `"France open data portal"`.
+  - Claude snippet-picker returns a non-empty chunk for a fixed query + 500-char page.
+  - DIY pipeline end-to-end returns ≥ 1 SearchResult for `"Germany dataset publication policy"`.
+- [ ] **Step 2: Configure `pytest.ini`** so the `live` marker is registered and skipped by default. Document the opt-in: `uv run pytest -m live`.
+- [ ] **Step 3: Run it once locally to verify it passes, then commit.**
+
+---
+
+### Task T-F: Side-by-side eyeball harness (Layer 8)
+
+**Files:**
+- Create: `evaluation/snippet_eyeball.py`
+
+- [ ] **Step 1: Script reads** a list of 20 hand-picked queries from `evaluation/eyeball_queries.json` (also new).
+- [ ] **Step 2: For each query**, runs all four providers (`tavily`, `brave`, `serper_raw`, `diy`) and captures the top-3 results.
+- [ ] **Step 3: Generates** `evaluation/snippets_eyeball.html` — a 4-column table per query, snippets visible, links clickable. CSS keeps it scannable.
+- [ ] **Step 4: Commit the script** and `eyeball_queries.json`. The generated HTML is gitignored.
+
+This is the only one that requires Tavily and Brave being available. **Defer running it to June**, but the script itself can be written now and tested against `serper_raw` + `diy` alone.
+
+---
+
+### Task T-G: Pre-commit gate (Layer 9)
+
+**Files:**
+- Create: `Makefile`
+- Modify: `README.md`
+
+- [ ] **Step 1: Add a `verify-diy` target** that runs `uv run pytest tests/test_search_serper.py tests/test_snippet_picker.py tests/test_search_diy.py tests/test_search_cache.py tests/test_extract.py tests/test_snippet_picker_boilerplate.py tests/test_snippet_picker_multilang.py tests/test_search_diy_blocked.py -v` (all layers 1-6 in one go).
+- [ ] **Step 2: Document in README** under a new "Development" section.
+- [ ] **Step 3: Run it. Verify it passes.**
+- [ ] **Step 4: Commit.**
+
+---
+
 ### Task 10: Smoke-test end-to-end on one (q, c) pair
 
 Manual integration test before the shakedown. Pick one known-good pair (e.g. `P1 / FR`) and call each provider.
@@ -981,6 +1103,20 @@ uv run python evaluation/search_ab.py \
   - DIY drops too many URLs (lower TOP_CHUNK_THRESHOLD or relax)
 
 - [ ] **Step 5: When shakedown is clean, commit any prompt/code adjustments** and bump `snippet_picker.VERSION` to 2 if the prompt changed.
+
+---
+
+### June-Deferred Tasks (Tasks 11-18)
+
+**Tasks 11 onwards are deferred to June 2026 when Tavily and Brave free-tier quotas reset.** The plan above (Tasks 0-10) builds and verifies the DIY pipeline end-to-end with its full test suite. The deferred section covers the actual cross-provider A/B run, which needs the other three providers active.
+
+**June checklist (paste into a new session in June 2026):**
+- Confirm Tavily and Brave have quota available (dashboards).
+- Confirm the parallel-Claude answer-shape D28 work has merged.
+- Confirm the post-D28 finalised-row rebuild has produced ≥ 200 pairs on the new schema (so the A/B has a comparable baseline).
+- Execute Tasks 11-15 below, in order, in this same plan.
+- Write the D29 SPEC entry (Task 17) with actual results.
+- Run the sweep ritual (Task 18).
 
 ---
 
