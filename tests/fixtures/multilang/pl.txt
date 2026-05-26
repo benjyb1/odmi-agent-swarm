@@ -1,0 +1,7 @@
+Polska udostępnia otwarte dane przez portal dane.gov.pl, który działa od 2014 roku.
+Administracja publiczna publikuje zbiory danych na licencji otwartej, umożliwiając ich swobodne wykorzystanie.
+Ustawa o ponownym wykorzystywaniu informacji sektora publicznego z 2021 roku znacznie rozszerza zakres obowiązkowej publikacji.
+Dostępne są dane dotyczące zdrowia, edukacji, transportu publicznego oraz finansów samorządowych.
+Polityka otwartości danych jest koordynowana przez Ministerstwo Cyfryzacji we współpracy z innymi resortami.
+Każda instytucja publiczna może samodzielnie zamieszczać zbiory danych, korzystając z platformy dane.gov.pl.
+Opublikowane zasoby są opisywane zgodnie ze standardem DCAT, co ułatwia ich wyszukiwanie i integrację z innymi katalogami europejskimi.

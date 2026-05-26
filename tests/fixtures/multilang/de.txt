@@ -1,0 +1,7 @@
+Deutschland stellt offene Daten über das nationale Portal GovData.de zur Verfügung.
+Die Bundesregierung veröffentlicht seit 2013 Datensätze unter freien Lizenzen, um die Transparenz zu fördern.
+Das E-Government-Gesetz fördert die Bereitstellung öffentlicher Daten durch Behörden auf allen Ebenen.
+Verfügbar sind Statistiken aus den Bereichen Gesundheit, Bildung, Verkehr und Umwelt.
+Die Plattform GovData.de wird vom Bundesministerium des Innern in Zusammenarbeit mit den Bundesländern betrieben.
+Um offene Daten in Deutschland zu veröffentlichen, müssen Behörden ihre Datensätze im Metadatenstandard DCAT-AP.de beschreiben.
+Sowohl kommunale als auch staatliche Stellen können Daten über das Harvesting-Verfahren einmelden.

@@ -1,0 +1,7 @@
+La France met à disposition des données ouvertes via la plateforme data.gouv.fr.
+Les administrations publiques sont tenues de publier leurs données sous licence ouverte depuis 2011.
+La loi pour une République numérique de 2016 impose la publication par défaut des données publiques.
+Cette politique d'ouverture est pilotée par la mission Etalab, rattachée à la Direction interministérielle du numérique.
+Les jeux de données couvrent des domaines variés tels que la santé, l'éducation, les transports et l'économie.
+Pour publier des données ouvertes en France, une organisation doit déposer ses fichiers sur data.gouv.fr avec une licence compatible.
+Les formats recommandés incluent le CSV, le JSON et le XML pour faciliter la réutilisation par les citoyens et les entreprises.
