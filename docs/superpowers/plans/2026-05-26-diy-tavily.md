@@ -111,7 +111,7 @@ Three new tables in `data/odmi.db`. 30-day TTL across the board.
 - `scripts/setup_sqlite.py` — three new cache tables
 - `pyproject.toml` — add `trafilatura>=1.6`
 - `.env.example` — add `SERPER_API_KEY` placeholder
-- `docs/SPEC.md` — D28 entry
+- `docs/SPEC.md` — D29 entry (D28 taken by answer-shape decision landed 2026-05-26)
 
 ---
 
@@ -1049,14 +1049,16 @@ These three inherit DIY's seeded query cache (per Task 11) so they see identical
 
 ---
 
-### Task 17: SPEC D28 entry
+### Task 17: SPEC D29 entry
+
+D28 is already taken (answer-shape schemas, landed 2026-05-26). Re-check the next free number when executing — if more decisions land between now and June, bump accordingly.
 
 **Files:**
 - Modify: `docs/SPEC.md`
 
-- [ ] **Step 1: Draft D28 in `docs/SPEC.md`** under the existing decision log. Title: "D28: DIY-Tavily as primary search provider, validated by paired A/B". Cover: motivation (May 2026 quota incident, untested CLAUDE.md claim about Tavily), architecture, A/B design, results table (filled in after the 400 run), and the trade-off accepted (snippet quality is now under our control rather than a vendor's).
+- [ ] **Step 1: Draft D29 (or next free Dn) in `docs/SPEC.md`** under the existing decision log. Title: "D29: DIY-Tavily as primary search provider, validated by paired A/B". Cover: motivation (May 2026 quota incident, untested CLAUDE.md claim about Tavily), architecture, A/B design, results table (filled in after the 400 run), and the trade-off accepted (snippet quality is now under our control rather than a vendor's).
 
-- [ ] **Step 2: Add D28 to the SPEC table of contents.**
+- [ ] **Step 2: Add to the SPEC table of contents.**
 
 - [ ] **Step 3: Commit**
 
@@ -1092,6 +1094,7 @@ The implementation is done when:
 - "What's the marginal contribution of the Claude snippet picker over Serper's raw description?" — Compare DIY vs `serper_raw` rows.
 - "Why didn't you also test Exa/CSE?" — Honest answer: their addition would not change the headline finding, and the dissertation budget for engineering time was finite.
 - "Could trusted-domains routing be confounding the search-provider comparison?" — No: it's held constant across all conditions, so any inter-provider delta is the provider, not the routing layer.
+- "Does the new answer-shape work (D28) affect this A/B?" — D28 changes how the swarm expresses its answer (binary vs band vs ordinal). The A/B still measures match-against-ODMI, which is shape-aware, so the comparison is valid. But: the 400-pair sample must be drawn AFTER the answer-shape rebuild has produced enough finalised rows on the new schema, otherwise the pre-D28 wipe leaves no comparable baseline.
 
 ## Risks
 
