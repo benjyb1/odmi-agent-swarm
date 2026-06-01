@@ -50,3 +50,8 @@ tests/fixtures/snippet_quality.jsonl
 
 # Eyeball harness output (generated HTML; not committed).
 evaluation/snippets_eyeball.html
+
+# DIY-vs-Tavily eval evidence cache (transient; the durable per-pair records
+# with embedded evidence + verdicts live in evaluation/results/, committed).
+# Lets a re-run skip Serper / Tavily / fetch calls.
+evaluation/.cache_diy_vs_tavily.json

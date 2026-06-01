@@ -143,7 +143,7 @@ uv run pytest
 
 ## What's actually built
 
-See `docs/SPEC.md` for the current status block. As of 2026-05-26: full
+See `docs/SPEC.md` for the current status block. As of 2026-06-01: full
 three-agent swarm running end-to-end, nine-page Streamlit dashboard live
 (local and on Streamlit Cloud), 143 questions catalogued and tagged by
 answer shape (124 binary / 12 percentage_band / 3 ordinal_magnitude /
@@ -153,7 +153,12 @@ dimensions. D28 Phase 2 complete: per-shape answer space across
 Researcher / Verifier / Adjudicator, `inconclusive` literal replacing
 honest-uncertainty collapses to `other`, `near_match` state on
 `_MATCH_STATUS_SQL` for adjacent-band misses, dashboard renders the new
-state. Phase 3 (re-dispatch of the 19 forced-collapse pairs plus
-broadening to the other 22 non-binary questions) deferred to after D29
-(DIY-Tavily, planned June) — current Tavily / Brave quotas are
-exhausted.
+state. D29 done: DIY search pipeline fixed (extraction now runs
+trafilatura on raw HTML before truncating; snippet quality 31% → 58%)
+and benchmarked against Tavily by a blind, position-swapped Opus
+adjudicator (`evaluation/diy_vs_tavily.py`). On web-answerable FR pairs
+DIY is not worse than Tavily 78% of the time and out-wins it 3:1; the
+dominant limit is that ~half the questions (all Quality) are
+unanswerable from the open web because the gold answer lives on
+deny-listed data.europa.eu or is a self-report. D28 Phase 3 re-dispatch
+still pending search quota.

@@ -8,6 +8,67 @@ Entries newest first.
 
 ---
 
+## 2026-06-01 — Session 14: DIY-Tavily fixed and benchmarked (D29)
+
+Came back to the DIY search pipeline now that the June search quotas had
+reset. Started by critically assessing why the layer-2 snippet-quality
+fixture was stuck at 31%, and researched how Tavily and Brave actually work
+(two cited research briefs; the load-bearing finding is that both extract
+main content, chunk it into ~500-char windows, and rerank the chunks against
+the query rather than truncating a page and handing it to one model call).
+
+**Root cause (not the picker, the input).** A throwaway no-Claude diagnostic
+(`evaluation/diagnose_extraction_ceiling.py`) measured where the accepted
+evidence quote survives at each pipeline boundary. With the old path the
+quote was present in the picker's input only 38% of the time; with
+trafilatura run on the raw HTML, 78%. The bug was ordering: `fetch_text`
+stripped tags and truncated to 4000 chars before trafilatura, so the picker
+ate script/nav/cookie soup and trafilatura was a dead `is_html=False` no-op.
+The picker was performing at its 38% ceiling. Classic fix-the-input, not the
+symptom.
+
+**Fix (TDD).** New `fetch_html` / `fetch_rendered_html` return raw HTML;
+`search_diy._fetch_and_clean` runs trafilatura on the raw HTML then caps;
+picker `PAGE_TEXT_CAP` 8000 → 16000 (prompt v2). The layer-2 test was also
+wrong: it scored overlap with a raw byte match instead of the project's own
+`substring.normalise` (what the Verifier actually accepts on). Corrected both;
+snippet quality 31% → 58% live.
+
+**Adjudicated DIY-vs-Tavily (the real metric).** Per Benjy's steer, the right
+question is not "did DIY reproduce Tavily's exact quote" but "given the
+question, whose evidence answers it better". Built a blind, position-swapped
+Opus adjudicator (`search_adjudicator` prompt/tool; `evaluation/diy_vs_tavily.py`)
+that sees the ODMI gold answer and both systems' evidence as System A / System
+B. The smoke test caught a real harness bug (queries were joined to questions
+on `run_id`, a batch id, so Q12's query bled onto PT33/Q18; fixed to
+`pair_run_id`, and fixed the same latent bug in `build_snippet_fixtures.py`
+that had mislabelled every fixture Q6/FR). A first run came back over-strict
+(it treated ODMI's justification as a checklist); re-anchored the judge on the
+answer label (per D22) and re-ran.
+
+**Result (36 FR pairs, vs Tavily basic):** DIY 12 wins, 2 ties, 4 losses, 18
+both_fail. On the 18 decisive pairs DIY is not worse 78% of the time and
+out-wins Tavily 3:1, leading on every answerable dimension. That meets the
+≥80%-as-good target within the noise (n=18, 67% judge position-consistency).
+
+**The bigger finding.** Half the questions, and all nine Quality questions,
+both-failed: their gold answer is an MQA metric on the deny-listed
+data.europa.eu (D24) or a questionnaire self-report, so no open-web search can
+reach them. That caps the swarm's ceiling on those questions independent of
+provider, and is worth a methodology note in its own right.
+
+**Robustness, surfaced by the eval and fixed:** `_extract_json` now recovers
+JSON wrapped in fences with trailing prose (the Opus judge did this), and
+`pick_snippet` degrades to an empty result instead of crashing when the model
+emits unescaped inner quotes inside the JSON. Both also harden the live swarm.
+
+**Next.** Chunk + rerank on the picker input (research Tier-1) is the lever to
+clear 80% unambiguously, but it is diminishing-return against the sample noise
+and the deny-list ceiling, so it is deferred. The agreed 5-provider A/B is the
+better next use of effort. 213 non-live tests passing.
+
+---
+
 ## 2026-05-26 — Session 13: D28 Phase 2 end-to-end
 
 Five staged commits in one session. The five answer shapes (binary,
