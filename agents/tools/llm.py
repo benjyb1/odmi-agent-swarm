@@ -139,6 +139,15 @@ def _extract_json(text: str) -> str:
         s = re.sub(r"^```[a-zA-Z]*\n?", "", s)
         # Drop the closing fence.
         s = re.sub(r"\n?```\s*$", "", s)
+    s = s.strip()
+    # Defensive fallback: if the model added prose before/after the JSON (or
+    # a trailing fence the anchored strip missed), slice to the outermost
+    # braces. A clean object already starts "{" and ends "}", so this is a
+    # no-op for well-formed output.
+    if not (s.startswith("{") and s.endswith("}")):
+        start, end = s.find("{"), s.rfind("}")
+        if start != -1 and end > start:
+            s = s[start : end + 1]
     return s.strip()
 
 

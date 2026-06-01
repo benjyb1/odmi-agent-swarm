@@ -24,7 +24,7 @@ from pydantic import BaseModel, Field, field_validator
 from agents.models import LLMUsage
 from agents.prompts import snippet_picker as picker_prompt
 from agents.tools.db import ensure_prompt_version
-from agents.tools.llm import call_for_structured
+from agents.tools.llm import call_for_structured, StructuredOutputError
 
 TOP_CHUNK_THRESHOLD = 0.7
 MULTI_CHUNK_SEPARATOR = " ... "
@@ -86,16 +86,30 @@ def pick_snippet(
 
     user_message = picker_prompt.build_user_message(query, url, page_text)
 
-    parsed, usage = call_for_structured(
-        system=picker_prompt.SYSTEM,
-        user_message=user_message,
-        output_schema=_ChunksOut,
-        max_tokens=1500,
-        condition_label="snippet_pick",
-        prompt_version_id=prompt_version_id,
-        usage_context=f"snippet_pick:{url[:80]}",
-        subtrio_id=subtrio_id,
-    )
+    try:
+        parsed, usage = call_for_structured(
+            system=picker_prompt.SYSTEM,
+            user_message=user_message,
+            output_schema=_ChunksOut,
+            max_tokens=1500,
+            condition_label="snippet_pick",
+            prompt_version_id=prompt_version_id,
+            usage_context=f"snippet_pick:{url[:80]}",
+            subtrio_id=subtrio_id,
+        )
+    except StructuredOutputError as exc:
+        # The model occasionally emits invalid JSON (e.g. unescaped inner
+        # quotes inside a quoted passage). Treat that page as yielding no
+        # usable passage and drop it, rather than crashing the whole search.
+        # The per-call token usage was already logged inside call_for_structured.
+        usage = LLMUsage(
+            input_tokens=0, output_tokens=0, wall_clock_ms=0,
+            estimated_cost_usd=0.0, model_version="unparsed",
+            prompt_version_id=prompt_version_id,
+            condition_label="snippet_pick_parse_failed",
+            raw_response=str(exc)[:500],
+        )
+        return [], usage
 
     chunks = parsed.chunks
     if not chunks:
