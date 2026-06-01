@@ -36,18 +36,18 @@ def mock_layers(monkeypatch, tmp_path):
 
     monkeypatch.setattr("agents.tools.search_diy.serper_search", fake_serper)
 
-    # Mock fetch_text
+    # Mock fetch_html (the DIY pipeline fetches raw HTML)
     from agents.tools.fetch import FetchResult
 
-    def fake_fetch_text(url, **kw):
+    def fake_fetch_html(url, **kw):
         return FetchResult(
             url=url, backend="httpx", status_code=200,
             content=f"FETCHED:{url}", truncated=False, failure_mode=None,
         )
 
-    monkeypatch.setattr("agents.tools.search_diy.fetch_text", fake_fetch_text)
+    monkeypatch.setattr("agents.tools.search_diy.fetch_html", fake_fetch_html)
 
-    # Mock extract -- passthrough
+    # Mock extract -- passthrough (real trafilatura is exercised separately)
     monkeypatch.setattr(
         "agents.tools.search_diy.extract_text",
         lambda content, url, is_html=True: content,
@@ -117,7 +117,7 @@ def test_diy_serp_cache_hit_skips_serper(mock_layers):
 
 
 def test_diy_uses_fetch_rendered_when_httpx_empty(mock_layers, monkeypatch):
-    """If fetch_text returns empty, fetch_rendered_text must be tried."""
+    """If fetch_html returns empty, fetch_rendered_html must be tried."""
     from agents.tools.fetch import FetchResult
 
     def empty_httpx(url, **kw):
@@ -133,8 +133,8 @@ def test_diy_uses_fetch_rendered_when_httpx_empty(mock_layers, monkeypatch):
                            content=f"PW:{url}", truncated=False,
                            failure_mode=None)
 
-    monkeypatch.setattr("agents.tools.search_diy.fetch_text", empty_httpx)
-    monkeypatch.setattr("agents.tools.search_diy.fetch_rendered_text", fake_rendered)
+    monkeypatch.setattr("agents.tools.search_diy.fetch_html", empty_httpx)
+    monkeypatch.setattr("agents.tools.search_diy.fetch_rendered_html", fake_rendered)
 
     from agents.tools.search_diy import diy_search
     out = diy_search("test query")
@@ -153,8 +153,8 @@ def test_diy_drops_url_when_all_fetches_fail(mock_layers, monkeypatch):
         return FetchResult(url=url, backend="playwright", status_code=0,
                            content="", truncated=False, failure_mode="timeout")
 
-    monkeypatch.setattr("agents.tools.search_diy.fetch_text", fail_httpx)
-    monkeypatch.setattr("agents.tools.search_diy.fetch_rendered_text", fail_rendered)
+    monkeypatch.setattr("agents.tools.search_diy.fetch_html", fail_httpx)
+    monkeypatch.setattr("agents.tools.search_diy.fetch_rendered_html", fail_rendered)
 
     from agents.tools.search_diy import diy_search
     out = diy_search("test query")
@@ -192,25 +192,104 @@ def test_diy_score_comes_from_aggregate_score(mock_layers, monkeypatch):
         assert r.score == pytest.approx(0.77)
 
 
-def test_diy_fetch_cache_hit_skips_fetch_text(mock_layers, monkeypatch):
+# ---------------------------------------------------------------------------
+# Root-cause fix: extraction must run on RAW HTML before any truncation.
+# These exercise the real trafilatura extract (not the passthrough mock).
+# ---------------------------------------------------------------------------
+
+_RAW_ARTICLE = """
+<!DOCTYPE html><html lang="en"><head><title>Portal</title>
+<style>.nav{color:#333}</style><script>var t=1;function f(){return 2;}</script></head>
+<body>
+  <nav><ul><li><a href="/">Home</a></li><li><a href="/data">Datasets</a></li></ul></nav>
+  <article>
+    <h1>Open Data Maturity 2024</h1>
+    <p>France published a national RSS feed so users are notified of every new dataset.</p>
+    <p>The Impact dimension improved markedly over the previous cycle.</p>
+  </article>
+  <footer><p>Cookie policy | Privacy notice | Contact</p></footer>
+</body></html>
+"""
+
+
+def _raw_fetch_result(url, html):
+    from agents.tools.fetch import FetchResult
+    return FetchResult(url=url, backend="httpx", status_code=200,
+                       content=html, truncated=False, failure_mode=None)
+
+
+def test_fetch_and_clean_runs_trafilatura_on_raw_html(monkeypatch):
+    """_fetch_and_clean must return trafilatura-extracted main content:
+    article body present, nav/footer boilerplate stripped, HTML tags gone."""
+    monkeypatch.setattr(
+        "agents.tools.search_diy.fetch_html",
+        lambda url, **kw: _raw_fetch_result(url, _RAW_ARTICLE),
+    )
+    from agents.tools.search_diy import _fetch_and_clean
+    text = _fetch_and_clean("https://x.example/report")
+
+    assert "national RSS feed" in text          # article body survives
+    assert "Cookie policy" not in text           # footer boilerplate stripped
+    assert "<article>" not in text and "<nav>" not in text  # tags gone
+    assert "function f()" not in text            # inline script content gone
+
+
+def test_fetch_and_clean_keeps_content_past_4000_chars(monkeypatch):
+    """The old 4000-char fetch cap dropped answers deep in long pages.
+    Extraction on raw HTML must keep a target sentence past char 4000."""
+    padding = "<p>Filler sentence about open data policy context.</p>" * 200
+    big = (f"<html><body><article><h1>Long Report</h1>{padding}"
+           f"<p>The decisive figure is that the portal hosts 87 percent of datasets.</p>"
+           f"</article></body></html>")
+    assert len(big) > 4000
+    monkeypatch.setattr(
+        "agents.tools.search_diy.fetch_html",
+        lambda url, **kw: _raw_fetch_result(url, big),
+    )
+    from agents.tools.search_diy import _fetch_and_clean
+    text = _fetch_and_clean("https://x.example/long")
+    assert "87 percent of datasets" in text
+
+
+def test_fetch_and_clean_falls_back_to_rendered_html(monkeypatch):
+    """When httpx raw fetch yields nothing, the Playwright raw-HTML fallback
+    is used and its content is extracted."""
+    from agents.tools.fetch import FetchResult
+
+    def empty_html(url, **kw):
+        return FetchResult(url=url, backend="httpx", status_code=200,
+                           content="", truncated=False,
+                           failure_mode="empty_after_strip")
+
+    monkeypatch.setattr("agents.tools.search_diy.fetch_html", empty_html)
+    monkeypatch.setattr(
+        "agents.tools.search_diy.fetch_rendered_html",
+        lambda url, **kw: _raw_fetch_result(url, _RAW_ARTICLE),
+    )
+    from agents.tools.search_diy import _fetch_and_clean
+    text = _fetch_and_clean("https://x.example/spa")
+    assert "national RSS feed" in text
+
+
+def test_diy_fetch_cache_hit_skips_fetch_html(mock_layers, monkeypatch):
     """After a URL is fetched once, a second call for the same URL must NOT
-    re-invoke fetch_text (the fetch cache should serve it)."""
-    fetch_text_calls = []
+    re-invoke fetch_html (the fetch cache should serve it)."""
+    fetch_html_calls = []
     from agents.tools.fetch import FetchResult
 
     def counting_fetch(url, **kw):
-        fetch_text_calls.append(url)
+        fetch_html_calls.append(url)
         return FetchResult(
             url=url, backend="httpx", status_code=200,
             content=f"FETCHED:{url}", truncated=False, failure_mode=None,
         )
 
-    monkeypatch.setattr("agents.tools.search_diy.fetch_text", counting_fetch)
+    monkeypatch.setattr("agents.tools.search_diy.fetch_html", counting_fetch)
 
     from agents.tools.search_diy import diy_search
     diy_search("test query")
-    first_count = len(fetch_text_calls)
+    first_count = len(fetch_html_calls)
     diy_search("test query")  # SERP cached; fetch cache should also be warm
-    second_count = len(fetch_text_calls)
-    # No new fetch_text calls on the second run
+    second_count = len(fetch_html_calls)
+    # No new fetch_html calls on the second run
     assert second_count == first_count

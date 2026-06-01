@@ -31,7 +31,11 @@ SELECT
     prr.evidence_quote,
     prr.retrieval_confidence
 FROM phase2_final pf
-JOIN phase2_researcher_runs prr ON pf.run_id = prr.run_id
+-- Join on pair_run_id (per-pair attempt key), NOT run_id: run_id is a BATCH
+-- id shared across many questions, so joining on it attaches an arbitrary
+-- question's researcher row (this is why earlier fixtures mislabelled every
+-- row as Q6/FR). Regenerate the fixture after this fix for correct labels.
+JOIN phase2_researcher_runs prr ON pf.pair_run_id = prr.pair_run_id
 WHERE pf.terminal_status IN ('accepted_by_verifier', 'accepted_by_adjudicator')
   AND prr.evidence_quote IS NOT NULL
   AND prr.source_url IS NOT NULL

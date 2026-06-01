@@ -13,16 +13,23 @@ use.
 from __future__ import annotations
 
 NAME = "snippet_picker"
-VERSION = 1
+VERSION = 2
 DESCRIPTION = (
-    "Snippet-picker v1: given a search query and a cleaned webpage, "
+    "Snippet-picker v2: given a search query and a cleaned webpage, "
     "extract up to three contiguous passages (each <=500 chars) that "
     "best answer the query, with relevance scores in [0.0, 1.0]. "
     "Used by the DIY-Tavily pipeline (search_diy.py). Replicates "
-    "Tavily's snippet-selection layer using Claude via CLIProxyAPI."
+    "Tavily's snippet-selection layer using Claude via CLIProxyAPI. "
+    "v2 raises PAGE_TEXT_CAP to 16000 now that extraction runs on raw "
+    "HTML (trafilatura main-content output is compact, so the larger cap "
+    "captures whole pages without re-truncating the answer span)."
 )
 
-PAGE_TEXT_CAP = 8000
+# Cap on the cleaned main-content text shown to the picker. Extraction now
+# runs trafilatura on raw HTML upstream (search_diy._fetch_and_clean), so this
+# text is already boilerplate-free and compact; 16000 chars (~4k tokens)
+# covers the full length of observed extracted pages without truncation.
+PAGE_TEXT_CAP = 16000
 
 SYSTEM = """You are a passage selector for a search pipeline.
 

@@ -10,7 +10,7 @@ def test_metadata_name():
 
 
 def test_metadata_version():
-    assert sp.VERSION == 1
+    assert sp.VERSION == 2
 
 
 def test_system_contains_quote_literally_rule():
@@ -39,7 +39,7 @@ def test_system_contains_language_rule():
 
 
 def test_page_text_cap_value():
-    assert sp.PAGE_TEXT_CAP == 8000
+    assert sp.PAGE_TEXT_CAP == 16000
 
 
 def test_build_user_message_includes_query():
@@ -59,10 +59,10 @@ def test_build_user_message_includes_page_text():
 
 def test_build_user_message_truncates_to_cap():
     sentinel = "ɸ"  # phi -- vanishingly unlikely to appear in the template
-    long_text = sentinel * 10_000
+    long_text = sentinel * 25_000
     msg = sp.build_user_message("query", "https://example.com", long_text)
     assert msg.count(sentinel) == sp.PAGE_TEXT_CAP
-    assert msg.count(sentinel) < 10_000  # confirms truncation actually happened
+    assert msg.count(sentinel) < 25_000  # confirms truncation actually happened
 
 
 def test_build_user_message_does_not_truncate_short_text():
