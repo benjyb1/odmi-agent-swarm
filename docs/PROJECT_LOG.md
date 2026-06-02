@@ -8,6 +8,36 @@ Entries newest first.
 
 ---
 
+## 2026-06-01 — Session 15: search knobs as experiment conditions (D30)
+
+Follow-on from the DIY work. The DIY pipeline costs five to eight times the
+Claude calls of Tavily per pair, because it runs the extraction on our own
+model (up to five snippet-picks per search). The obvious lever is to drop the
+search knobs: fewer queries, fewer results per query. But the knobs were
+hard-coded, so there was no way to test that trade-off.
+
+Threaded the three knobs end to end: provider, max-results-per-query, and a
+query cap, from `dispatch_subtrios` through `run_coordinator` and `coordinate`
+into `run_researcher` / `run_verifier`, where they reach `search_many` (which
+already accepted provider and the result cap, it just was never passed one).
+Defaults are untouched, so existing main runs are byte-for-byte the same;
+`tests/test_search_knobs.py` pins both the threading and the no-change default.
+The Run Console grew an optional experiment block (provider, results, query
+cap, experiment_id, condition_label) that forwards the knobs to the dispatcher.
+
+The experiment itself (D30): hold provider=diy, the models, and the pairs
+fixed, vary only the knobs, and compare `diy_full` (3x5) against `diy_lean`
+(2x3), with `diy_q3r3` (3x3) to see which knob carries the cost. Quality is
+accuracy against ODMI ground truth; cost is calls/tokens/£/retries per pair
+from `claude_usage_log`. The one to watch is retries: a leaner search that
+fails more often triggers another full round, so a cheaper per-search config
+can be dearer per pair. Defined and runnable, not yet run.
+
+Also flagged a pre-existing broken test (stale page path in
+`test_apptest_handoff`) for a separate fix. 215 non-live tests passing.
+
+---
+
 ## 2026-06-01 — Session 14: DIY-Tavily fixed and benchmarked (D29)
 
 Came back to the DIY search pipeline now that the June search quotas had

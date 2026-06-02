@@ -183,6 +183,36 @@ def render_launcher() -> None:
         soft_limit = st.session_state.get("soft_limit_usd", DEFAULT_SOFT_LIMIT_USD)
         st.metric("Window soft limit", format_gbp(soft_limit))
 
+    with st.expander("Experiment settings (optional)", expanded=False):
+        st.caption(
+            "Leave the experiment ID blank for a normal main-results run. Set it "
+            "to tag every row (D27) and vary the search knobs as a condition, for "
+            "example the DIY cost/quality experiment: provider=diy, results=3, "
+            "query cap=2 against provider=diy, results=5, no cap."
+        )
+        ce_a, ce_b, ce_c = st.columns(3)
+        with ce_a:
+            provider = st.selectbox(
+                "Search provider", ["auto", "tavily", "brave", "diy", "serper_raw"],
+                index=0,
+                help="auto = Tavily then Brave (default). diy = self-hosted pipeline.",
+            )
+        with ce_b:
+            max_results_per_query = int(st.number_input(
+                "Results per query", min_value=1, max_value=10, value=5, step=1,
+            ))
+        with ce_c:
+            num_queries = int(st.number_input(
+                "Query cap (0 = no cap)", min_value=0, max_value=3, value=0, step=1,
+            ))
+        ce_d, ce_e = st.columns(2)
+        with ce_d:
+            experiment_id = st.text_input(
+                "Experiment ID (blank = main run)", value="",
+            ).strip()
+        with ce_e:
+            condition_label = st.text_input("Condition label", value="baseline").strip()
+
     n_pairs = len(questions) * len(countries)
 
     if n_pairs == 0:
@@ -322,6 +352,9 @@ def render_launcher() -> None:
             adjudicator_model=adjudicator_model,
             parallel=parallel, max_retries=max_retries,
             soft_limit=soft_limit, force=force,
+            provider=provider, max_results_per_query=max_results_per_query,
+            num_queries=num_queries, experiment_id=experiment_id,
+            condition_label=condition_label,
         )
 
 
@@ -329,6 +362,8 @@ def _trigger_release(
     *, questions, countries, pair_filter, strategy,
     researcher_model, verifier_model, adjudicator_model,
     parallel, max_retries, soft_limit, force,
+    provider="auto", max_results_per_query=5, num_queries=0,
+    experiment_id="", condition_label="baseline",
 ) -> None:
     """Spawn dispatch_subtrios.py as a fire-and-forget subprocess.
 
@@ -352,6 +387,14 @@ def _trigger_release(
     ]
     if force:
         cmd.append("--force")
+    if provider and provider != "auto":
+        cmd += ["--provider", provider]
+    cmd += ["--max-results-per-query", str(max_results_per_query)]
+    if num_queries and num_queries > 0:
+        cmd += ["--num-queries", str(num_queries)]
+    if experiment_id:
+        cmd += ["--experiment-id", experiment_id,
+                "--condition-label", condition_label or "baseline"]
 
     # Fire-and-forget; capture stdout to a log file.
     logs_dir = REPO_ROOT / "dashboard" / "logs"
