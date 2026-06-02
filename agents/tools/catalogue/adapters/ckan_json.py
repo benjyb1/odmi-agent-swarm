@@ -68,6 +68,21 @@ def normalise_ckan_package(pkg: dict, *, route: str = "ckan_json") -> HarvestedD
     )
 
 
+def normalise_page(payload: dict, *, route: str = "ckan_json") -> list[HarvestedDataset]:
+    """Normalise every dataset in one cached `package_search` page.
+
+    Used on the replay path: harvest.py reads the gzipped raw pages back
+    from disk and re-normalises them, so a computation is reproducible
+    from the cache alone.
+    """
+    result = payload.get("result") or {}
+    out: list[HarvestedDataset] = []
+    for pkg in result.get("results") or []:
+        if isinstance(pkg, dict):
+            out.append(normalise_ckan_package(pkg, route=route))
+    return out
+
+
 def harvest(
     config: PortalConfig,
     *,

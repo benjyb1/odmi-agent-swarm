@@ -389,6 +389,41 @@ CREATE TABLE experiments (
 );
 
 -- ============================================================
+-- Catalogue-metrics receipts (D30). The deterministic catalogue tool
+-- computes band/count answers from a national portal's harvested
+-- metadata. The raw harvest is cached on disk (gitignored, too big for
+-- git); these two tables are the committed reproducibility receipt.
+-- ============================================================
+CREATE TABLE catalogue_snapshots (
+    snapshot_id         TEXT PRIMARY KEY,
+    country_code        TEXT NOT NULL,
+    harvest_route       TEXT NOT NULL,            -- dcat_rdf | ckan_json | udata_json | estonia_json
+    source_endpoint     TEXT NOT NULL,
+    fetched_at          TEXT NOT NULL,
+    dataset_count       INTEGER,
+    page_count          INTEGER,
+    content_sha256      TEXT,                     -- over the raw pages, in order
+    cache_path          TEXT,                     -- disk dir holding the gzipped pages
+    partial             INTEGER DEFAULT 0,        -- 1 if the harvest did not complete
+    notes               TEXT,
+    created_at          TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE catalogue_metrics (
+    id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+    snapshot_id         TEXT,
+    question_id         TEXT NOT NULL,
+    country_code        TEXT NOT NULL,
+    metric_function     TEXT NOT NULL,
+    raw_value           REAL,                     -- percentage in [0,100], or a count
+    numerator           INTEGER,
+    denominator         INTEGER,
+    band_label          TEXT,
+    breakdown           TEXT,                     -- human-readable evidence quote
+    computed_at         TEXT DEFAULT (datetime('now'))
+);
+
+-- ============================================================
 -- Indices for the queries dashboards and analysis will run.
 -- ============================================================
 CREATE INDEX idx_handmarks_question_country     ON hand_marks(question_id, country_code);
@@ -422,6 +457,11 @@ CREATE INDEX idx_p2final_experiment              ON phase2_final(experiment_id);
 CREATE INDEX idx_p2res_experiment                ON phase2_researcher_runs(experiment_id);
 CREATE INDEX idx_p2ver_experiment                ON phase2_verifier_runs(experiment_id);
 CREATE INDEX idx_p2adj_experiment                ON phase2_adjudications(experiment_id);
+
+-- D30 catalogue metrics
+CREATE INDEX idx_cat_snapshots_country           ON catalogue_snapshots(country_code);
+CREATE INDEX idx_cat_metrics_question_country     ON catalogue_metrics(question_id, country_code);
+CREATE INDEX idx_cat_metrics_snapshot            ON catalogue_metrics(snapshot_id);
 """
 
 TABLES = (
@@ -438,6 +478,8 @@ TABLES = (
     "model_defaults",
     "language_confidence",
     "experiments",
+    "catalogue_snapshots",
+    "catalogue_metrics",
 )
 
 
