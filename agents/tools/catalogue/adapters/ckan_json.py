@@ -59,12 +59,28 @@ def normalise_ckan_package(pkg: dict, *, route: str = "ckan_json") -> HarvestedD
             )
         )
 
+    tags = pkg.get("tags") or []
+    keywords = [
+        _clean(t.get("name")) for t in tags
+        if isinstance(t, dict) and _clean(t.get("name"))
+    ]
+    org = pkg.get("organization") or {}
+    extras = {
+        "title": _clean(pkg.get("title")),
+        "description": _clean(pkg.get("notes")),
+        "keywords": keywords,
+        "publisher": _clean(org.get("title")) if isinstance(org, dict) else None,
+        "issued": _clean(pkg.get("metadata_created")),
+        "modified": _clean(pkg.get("metadata_modified")),
+    }
+
     return HarvestedDataset(
         identifier=identifier,
         dataset_licences=dataset_licences,
         distributions=distributions,
         source_route=route,
         identifier_uri=_clean(pkg.get("uri")),
+        extras={k: v for k, v in extras.items() if v},
     )
 
 

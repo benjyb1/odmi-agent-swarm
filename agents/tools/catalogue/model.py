@@ -56,6 +56,11 @@ class HarvestedDataset:
     # Optional reference to a dataset-level identifier URI, for the flagged
     # Q28 metric. Kept even though Q28 is not built in v1.
     identifier_uri: Optional[str] = None
+    # Spare DCAT-relevant fields captured by the JSON adapters (title,
+    # description, publisher, keywords, themes, ...). The RDF route leaves
+    # this empty because it carries a real `graph`. `synthesise.py` reads
+    # `extras` to build a DCAT-AP graph for NL/EE conformance.
+    extras: dict = field(default_factory=dict)
 
     def all_licences(self) -> set[str]:
         """Every non-empty raw licence string seen, dataset or distribution.
