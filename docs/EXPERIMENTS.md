@@ -38,7 +38,7 @@ consistency 67%. Read the 78% with those attached.
 
 ## EXP-2: Search-knob cost vs quality
 
-SPEC: D30. DIY costs five to eight times the Claude calls of Tavily per pair,
+SPEC: D31. DIY costs five to eight times the Claude calls of Tavily per pair,
 because it runs extraction on our own model (up to five snippet-picks per
 search). This tests whether cutting the knobs keeps the quality.
 

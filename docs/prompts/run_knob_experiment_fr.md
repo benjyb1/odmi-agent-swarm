@@ -5,7 +5,7 @@ record the results, and commit. Work from logs and the DB; do not guess.
 
 ## Read first
 - `docs/EXPERIMENTS.md` -> EXP-2 (the experiment definition and the conditions).
-- `docs/SPEC.md` -> D29 (DIY pipeline + adjudicated evaluation) and D30 (the
+- `docs/SPEC.md` -> D29 (DIY pipeline + adjudicated evaluation) and D31 (the
   search knobs and how they thread through the dispatcher).
 - Background: the DIY search pipeline costs roughly five to eight times the
   Claude calls of Tavily per pair, because it runs extraction on our own model

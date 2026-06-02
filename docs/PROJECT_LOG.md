@@ -8,7 +8,7 @@ Entries newest first.
 
 ---
 
-## 2026-06-01 — Session 15: search knobs as experiment conditions (D30)
+## 2026-06-01 — Session 15: search knobs as experiment conditions (D31)
 
 Follow-on from the DIY work. The DIY pipeline costs five to eight times the
 Claude calls of Tavily per pair, because it runs the extraction on our own
@@ -25,7 +25,7 @@ Defaults are untouched, so existing main runs are byte-for-byte the same;
 The Run Console grew an optional experiment block (provider, results, query
 cap, experiment_id, condition_label) that forwards the knobs to the dispatcher.
 
-The experiment itself (D30): hold provider=diy, the models, and the pairs
+The experiment itself (D31): hold provider=diy, the models, and the pairs
 fixed, vary only the knobs, and compare `diy_full` (3x5) against `diy_lean`
 (2x3), with `diy_q3r3` (3x3) to see which knob carries the cost. Quality is
 accuracy against ODMI ground truth; cost is calls/tokens/£/retries per pair

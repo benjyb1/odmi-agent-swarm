@@ -161,7 +161,7 @@ DIY is not worse than Tavily 78% of the time and out-wins it 3:1; the
 dominant limit is that ~half the questions (all Quality) are
 unanswerable from the open web because the gold answer lives on
 deny-listed data.europa.eu or is a self-report. D28 Phase 3 re-dispatch
-still pending search quota. D30 done: search knobs (provider,
+still pending search quota. D31 done: search knobs (provider,
 results-per-query, query count) are threaded end-to-end and exposed in
 the Run Console, so the DIY cost/quality trade-off is runnable as a
 tagged experiment (defined, not yet run).
