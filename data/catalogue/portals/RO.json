@@ -4,15 +4,15 @@
   "portal_base": "https://data.gov.ro",
   "stack": "ckan",
   "stack_version": "2.8.3",
-  "harvest_route": "dcat_rdf",
+  "harvest_route": "ckan_json",
   "dcat_catalog_url": "https://data.gov.ro/catalog.xml?page={page}",
   "native_api_url": "https://data.gov.ro/api/3/action/package_search?rows={page_size}&start={start}",
-  "pagination": "hydra",
-  "page_size": 100,
-  "request_delay_s": 10.0,
-  "total_datasets_hint": 4788,
+  "pagination": "ckan_offset",
+  "page_size": 500,
+  "request_delay_s": 2.0,
+  "total_datasets_hint": 5143,
   "licence_field": "dataset",
-  "robots_note": "robots.txt Disallow: /api/ with Crawl-Delay: 10. /catalog.xml is not under a Disallow rule; prefer it. Throttle to 10s, descriptive UA.",
+  "robots_note": "robots.txt Disallow: /api/ with Crawl-Delay: 10. Throttle, descriptive UA.",
   "verified_at": "2026-06-02",
-  "notes": "CKAN + ckanext-dcat. Catalogue RDF at /catalog.xml?page=N, 100/page, Hydra. AVAILABILITY RISK: host filters foreign datacentre IPs and has downtime (unreachable during discovery; facts confirmed from Wayback captures of the national portal itself, not europa.eu). Harvester must be resumable with backoff and surface a partial harvest rather than truncate silently. Licence is dataset-level license_id (e.g. CC-BY-4.0, OGL-ROU-1.0) + license_url. data.europa.eu not needed."
+  "notes": "CKAN 2.8.3 + ckanext-dcat. ROUTE CHOICE: like HU, the DCAT-AP RDF feed at /catalog.xml carries NO dct:license (verified 2026-06-02, 0 distinct licences via RDF), so licence metrics need the CKAN JSON, which exposes license_id (CC-BY-4.0, OGL-ROU-1.0, notspecified). Harvest via ckan_json; synthesise graphs for conformance. AVAILABILITY RISK: host filters foreign datacentre IPs and has downtime; harvester surfaces a partial harvest rather than truncating silently. data.europa.eu not used."
 }

@@ -8,6 +8,61 @@ Entries newest first.
 
 ---
 
+## 2026-06-02 — Session 17: catalogue-metrics tool for the computed Quality questions (D30)
+
+The Quality questions that ask for a share of the national catalogue ("what
+percentage of metadata carries a licence", "what percentage is DCAT-AP
+compliant") were unanswerable by web search: the answer is a computed statistic,
+not a fact on a page, and the one source that publishes it (the MQA) is the
+deny-listed data.europa.eu (D24). The swarm abstained and scored ~47% on
+Quality. This session built a deterministic tool that computes the metric
+ourselves from each country's live catalogue.
+
+Started with a discovery pass over the six Phase B portals (live, national only,
+no europa.eu): FR udata, DE/RO/HU CKAN, NL CKAN-DONL, EE custom NestJS. FR, DE,
+RO and HU expose a national DCAT-AP RDF feed; NL and EE do not. That shaped the
+design: a per-country adapter layer with the DCAT-AP RDF route as the common
+path (rdflib gives a per-dataset graph that drives both the field-counting and
+the SHACL conformance), and JSON adapters where there is no national RDF, with a
+DCAT-AP graph synthesised from the JSON for conformance.
+
+Scope is nine metrics (Q12, Q13, Q16, Q17, Q18, Q21, Q22, Q25, Q27). Q26/Q28/Q29
+are flagged ambiguous in `docs/CATALOGUE_METRICS.md` with proposed definitions
+awaiting sign-off; P29 (events) and Q2 (a harvesting self-report) are out of
+scope. Conformance (Q16) runs the official SEMIC DCAT-AP 2.1.1 mandatory SHACL
+shapes through pyshacl; the band comes from the question's own `allowed_answers`,
+never from ground truth. Raw harvests cache gzipped on disk (gitignored, FR/DE
+are 74k/151k datasets); the committed receipt is two new tables. The tool routes
+in through `run_researcher` (before web search) and a recompute Verifier that
+re-derives the band from the cache and passes iff it matches.
+
+Validation was the interesting part. The tool never reads ground truth to
+compute; it is read only afterwards to score. Results (exact/near/differ over
+nine): HU 8/1/0, NL 5/0/4, DE 4/2/3, FR 4/1/4, RO 3/3/3; EE could not be
+harvested (403, IP block). Three findings fell out, none of them tool errors.
+(1) The self-report ceiling: France was awarded full marks self-reporting `>90%`
+everywhere, but our recompute reads 37.8% licence coverage and 31.9% mandatory
+conformance. The first sample read higher (66.9%) because the udata feed is
+order-biased; the 5,000-dataset figure is the better estimate. (2) Strict SHACL
+catches real non-conformance: DE reads 4.2% because its checksums omit the
+mandatory `spdx:algorithm`, which the `>90%` self-report hides. Our Q16 is a
+stricter lens than the MQA's per-property scoring, by design. (3) The tool
+surfaces questionable ground truth: ODMI's recorded RO answers for several
+questions are contradicted by a live catalogue that clearly exercises them, so
+here the recompute looks more accurate than the gold.
+
+Two route findings worth keeping: HU and RO publish a DCAT-AP RDF feed that
+carries no `dct:license` at all, so they harvest via CKAN JSON instead;
+validating HU also exposed two synthesis bugs (untyped dates failing the
+mandatory shapes, and CKAN download-URL fidelity) that were fixed. 33 new
+offline tests; 246 non-live passing.
+
+Next: a fuller FR/DE harvest for population figures (the samples are
+order-biased), the three flagged ambiguous metrics once their definitions are
+signed off, and an EE retry from a non-blocked IP.
+
+---
+
 ## 2026-06-02 — Session 16: cancel button on active subtrio cards
 
 Small Run Console affordance with a careful destructive path behind it. Each

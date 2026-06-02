@@ -788,6 +788,130 @@ config can end up more expensive end to end. Analysis groups finalised pairs by
 condition_label (the existing Analytics grouping). The experiment is defined and
 runnable but not yet run.
 
+### D30: Deterministic catalogue-metrics tool for the computed Quality questions
+
+**Date:** 2026-06-02.
+
+A subset of ODMI Quality questions cannot be answered by web search. They ask
+for a proportion of the national catalogue, for example "what percentage of
+metadata uses DCAT-AP recommended classes" (Q17) or "what share of datasets
+carry licensing information" (Q12). These are computed statistics, not facts
+stated on any page. The one public source that publishes them is the EU
+Metadata Quality Assessment (MQA) on data.europa.eu, which is deny-listed under
+D24 because it is also where ODMI derives its own answers. So the swarm
+abstained (`inconclusive`) and scored about 47% on Quality.
+
+The fix is a deterministic Python tool (`agents/tools/catalogue/`) that harvests
+each country's live catalogue metadata and computes the metric ourselves,
+independently of the MQA. The model does not run the computation; it only picks
+the metric and reads the result, so token cost is near zero.
+
+**Scope.** The shape filter `answer_shape IN ('percentage_band','count_band')`
+returns 14 questions. Nine are computed in v1: Q12, Q13, Q16, Q17, Q18, Q21,
+Q22, Q25, Q27. Q26, Q28 and Q29 are flagged ambiguous in
+`docs/CATALOGUE_METRICS.md` with proposed interpretations, awaiting sign-off.
+P29 (annual events) and Q2 (a harvesting-workflow self-report) are excluded as
+not catalogue-derivable. The full question to metric mapping is in
+`docs/CATALOGUE_METRICS.md`.
+
+**Per-country stacks (discovery, verified live 2026-06-02, national portals
+only, no data.europa.eu).**
+
+| CC | Portal | Stack | National DCAT-AP RDF | Route chosen | ~Datasets |
+|----|--------|-------|----------------------|--------------|-----------|
+| FR | data.gouv.fr | udata 16.5 | yes (`/api/1/site/catalog.ttl`) | dcat_rdf | 73,734 |
+| DE | ckan.govdata.de | CKAN 2.10 + dcatde | yes (`/catalog.ttl?page=N`) | dcat_rdf | 151,289 |
+| RO | data.gov.ro | CKAN 2.8.3 | yes (`/catalog.xml?page=N`) | dcat_rdf | ~4,800 |
+| HU | kozadatportal.hu | CKAN 2.9.7 | yes, but no dct:license in it | ckan_json | 2,282 |
+| NL | data.overheid.nl | CKAN 2.8 DONL | no (404 on all RDF paths) | ckan_json | ~20,800 |
+| EE | andmed.eesti.ee | custom NestJS | no (SPA only) | estonia_json | 5,708 |
+
+The common path is the national DCAT-AP RDF feed (rdflib), which gives a
+per-dataset graph for both the presence metrics and the SHACL conformance
+metrics. Two portals expose no national RDF (NL, EE), so a DCAT-AP graph is
+synthesised from their JSON for the conformance metrics, with the mapping
+recorded as a caveat. One portal (HU) exposes RDF that omits dct:license
+entirely, so HU harvests via its CKAN JSON (which carries license_id) and
+synthesises graphs for conformance. The route is recorded per country in
+`data/catalogue/portals/<CC>.json`.
+
+**Independent recompute, not a reproduction of the MQA.** Conformance (Q16) runs
+the official SEMIC DCAT-AP 2.1.1 mandatory SHACL shapes (vendored, see
+`agents/tools/catalogue/shapes/PROVENANCE.md`) over each dataset's bounded
+description via pyshacl, sampled with a disclosed sample size for the large
+portals. Recommended (Q17) and optional (Q18) class usage are field counting
+against the recommended-shape predicate set and the spec's optional-property
+list. The presence metrics (Q12/Q21/Q22/Q25/Q27) and the distinct-licence count
+(Q13) are field counting over the harvested records. The band is assigned from
+the question's own `allowed_answers`; the tool never reads `ground_truth` and
+ODMI's answer never feeds the computation.
+
+**Storage.** The raw harvest is cached gzipped on disk under
+`data/catalogue_snapshots/<CC>/<timestamp>/` (gitignored: FR is ~74k datasets,
+DE ~151k, far too large for git). Two committed tables hold the receipt:
+`catalogue_snapshots` (endpoint, timestamp, dataset_count, sha256, route,
+partial flag) and `catalogue_metrics` (per-question raw value, numerator,
+denominator, band, breakdown). A computation replays from the disk cache with
+no network call; an examiner re-harvests from the manifest endpoint to
+reproduce. RO filters foreign datacentre IPs and has downtime, so the harvester
+is resumable and surfaces a partial harvest rather than truncating silently.
+
+**Integration (minimal, existing code path).** `run_researcher` routes the nine
+computable band/count questions to `catalogue.compute` before query generation
+and emits a normal `ResearcherOutput` (source_url = the catalogue endpoint,
+evidence_quote = the computed breakdown, answer = the band). `run_verifier`
+short-circuits these to a deterministic recompute from the cached snapshot:
+pass iff the band matches, else fail with the recomputed band as
+counter-evidence. The Coordinator, the CLI runners and the dashboard pick this
+up unchanged. A harvest failure returns None and the pair falls back to the
+web-search path.
+
+**Finding (validation against ODMI ground truth, 2026-06-02).** Computed band
+vs ODMI's recorded answer across the Phase B set (exact / near_match / differ
+over the nine metrics):
+
+| CC | Datasets harvested | exact | near | differ |
+|----|--------------------|-------|------|--------|
+| HU | 2,282 (full) | 8 | 1 | 0 |
+| NL | 20,772 (full) | 5 | 0 | 4 |
+| DE | 3,000 (sample) | 4 | 2 | 3 |
+| FR | 5,000 (sample) | 4 | 1 | 4 |
+| RO | 5,143 (full) | 3 | 3 | 3 |
+| EE | unavailable (HTTP 403, IP block) | - | - | - |
+
+Three patterns, all defensible findings rather than tool errors:
+
+1. **Self-report ceiling (the headline, D29).** France was awarded full marks
+   having self-reported the top band on nearly every Quality question. The
+   independent recompute contradicts this: licence coverage 37.8% (Q12), open
+   licence 37.7% (Q25), and strict DCAT-AP mandatory conformance 31.9% (Q16),
+   all far below `>90%`. The first-10-pages sample read higher (66.9%), so the
+   udata feed is order-biased and the 5,000-dataset figure is the better
+   estimate. The structural metrics that hold everywhere (Q17, Q18, Q21, Q22
+   recommended/optional usage and the URLs) reproduce `>90%` exactly.
+
+2. **Strict SHACL catches real non-conformance.** Q16 is whole-dataset pass/fail
+   against the official SEMIC mandatory shapes (a single violation fails the
+   dataset), which is stricter than the MQA's per-property compliance scoring.
+   DE reads 4.2% because its distributions carry an `spdx:Checksum` with a value
+   but omit the mandatory `spdx:algorithm` triple: a genuine DCAT-AP.de
+   incompleteness that the self-reported `>90%` hides. Treat our Q16 as a
+   conservative lower bound and a stricter lens than the MQA, not a reproduction
+   of it.
+
+3. **The tool surfaces questionable ground truth.** RO and NL agree closely on
+   licence and structure, but ODMI's recorded RO answers for several questions
+   (access-URL presence `<10%`, recommended usage `10-30%`) are contradicted by
+   a live catalogue that exercises them at ~100%. Here the independent recompute
+   looks more accurate than ODMI's stale self-report.
+
+HU agrees with ODMI on 8 of 9. EE could not be harvested: its API returned 403
+to this environment's IP, so the swarm falls back, an honest "portal blocks bulk
+harvest" outcome. Per-route reliability caveats (HU/RO use CKAN JSON because
+their RDF omits `dct:license`; NL/EE synthesise graphs from JSON; Q16 on
+synthesised routes tends high; Q21 is authoritative only on RDF routes) are in
+`docs/CATALOGUE_METRICS.md`.
+
 ---
 
 ## Current status
@@ -926,6 +1050,7 @@ runnable but not yet run.
 
 | Date | Change |
 |---|---|
+| 2026-06-02 (later) | D30 added: deterministic catalogue-metrics tool (`agents/tools/catalogue/`). Harvests national-portal metadata and computes the nine catalogue-derivable Quality band/count questions (Q12, Q13, Q16, Q17, Q18, Q21, Q22, Q25, Q27) without the deny-listed MQA. Per-country adapter layer over three stacks (udata, CKAN, custom) and four routes (dcat_rdf preferred; ckan_json / udata_json / estonia_json fallbacks); registry in `data/catalogue/portals/<CC>.json`. Conformance (Q16) via the official SEMIC DCAT-AP 2.1.1 mandatory SHACL shapes through pyshacl, sampled with disclosed size; recommended/optional usage (Q17/Q18) and the presence/count metrics by field counting; bands assigned from each question's own `allowed_answers`. Raw harvest cached gzipped on disk (gitignored); committed receipts in new `catalogue_snapshots` / `catalogue_metrics` tables (+ `scripts/migrate_catalogue_tables.py`). Wired into `run_researcher` (route before web search) and `run_verifier` (deterministic recompute-from-cache, pass iff the band matches). Mapping doc `docs/CATALOGUE_METRICS.md`. Validated against ODMI GT (leakage-guarded): HU 8/1/0, NL 5/0/4, DE 4/2/3, FR 4/1/4, RO 3/3/3; EE blocked (403). Headline: FR self-reported `>90%` on licence/conformance but the independent recompute reads ~38% licence coverage and ~32% mandatory conformance (the D29 self-report ceiling). Per-country route findings: HU and RO RDF feeds omit `dct:license` so they harvest via CKAN JSON; DE Q16 4.2% is a real DCAT-AP.de incompleteness (checksums missing `spdx:algorithm`) under strict whole-dataset SHACL. 33 new offline tests; 246 non-live passing. |
 | 2026-06-02 | Run Console: each active subtrio card gained a ✕ cancel button. Clicking it calls the new `db.cancel_subtrio(subtrio_id)`, which kills the coordinator process recorded in `subtrio_status.process_pid` (SIGTERM, escalating to SIGKILL, after a `ps`-based PID-reuse guard so a recycled PID is never signalled) and then deletes every row that run wrote, scoped by `pair_run_id`/`subtrio_id` across `phase2_final`, `phase2_adjudications`, `phase2_verifier_runs`, `phase2_researcher_runs`, and `subtrio_status`. Deletion is by subtrio, not by (question, country), so earlier finalised runs of the same pair survive; `claude_usage_log` is left intact so the cost receipt stays (same policy as `delete_pair`). The coordinator installs no SIGTERM handler, so it dies without rewriting a status row after deletion. Read-only deploys short-circuit via `mode.block_if_read_only()`. New `tests/test_cancel_subtrio.py` (2 cases: scoped deletion, unknown-id no-op). |
 | 2026-06-01 (later) | D31 added: search knobs (provider, results-per-query, query count) threaded end to end and exposed in the Run Console, so the DIY cost/quality trade-off is runnable as a tagged experiment (`diy_full` 3x5 vs `diy_lean` 2x3, plus `diy_q3r3` 3x3 to isolate the knob). Defaults unchanged (provider auto, 5 results, no query cap), so main runs are unaffected. New `tests/test_search_knobs.py`; 215 non-live passing. Flagged (not fixed here) a stale AppTest path: `test_apptest_handoff` opens `4_Strategy_Lab.py`, since renamed to `4_Verifier_Strategies.py`. |
 | 2026-06-01 | D29 added: DIY search pipeline corrected and benchmarked against Tavily. Root-caused the 31% snippet quality to a fetch/extract ordering bug (tag-strip + 4000-char truncation ran before trafilatura, so the picker saw script/nav soup and trafilatura was a dead `is_html=False` no-op); the accepted quote was in the picker input only 38% of the time vs 78% with trafilatura on raw HTML (`evaluation/diagnose_extraction_ceiling.py`). Fix: new `fetch_html` / `fetch_rendered_html` (raw HTML), `search_diy._fetch_and_clean` runs trafilatura on raw HTML then caps, picker `PAGE_TEXT_CAP` 8000→16000 (prompt v2). Snippet quality 31% → 58%; layer-2 test switched to normalised matching. New adjudicated DIY-vs-Tavily harness (`evaluation/diy_vs_tavily.py`) with a blind, position-swapped Opus judge (`search_adjudicator` prompt/tool v2): 36 FR pairs → DIY 12 wins / 2 ties / 4 losses / 18 both_fail; 78% not-worse on decisive pairs, out-wins Tavily 3:1, leads every answerable dimension. Finding: half the questions (all 9 Quality) are unanswerable from the open web (answer on deny-listed data.europa.eu or self-report). Robustness: `_extract_json` handles fenced+trailing-prose JSON; `pick_snippet` degrades gracefully on invalid JSON; fixed the `run_id`→`pair_run_id` join bug in `build_snippet_fixtures.py`. 213 non-live tests passing. |

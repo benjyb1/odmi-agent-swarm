@@ -57,8 +57,13 @@ DCT_MODIFIED = URIRef(_DCT + "modified")
 
 
 def _node(value: str):
-    """A URIRef if the value looks like a URL, else a Literal."""
-    return URIRef(value) if value.startswith("http") else Literal(value)
+    """A URIRef if the value looks like a usable URL, else a Literal.
+
+    A URL with whitespace (some portals emit these) is not a valid IRI and
+    makes rdflib warn on serialisation, so it is kept as a Literal."""
+    if value.startswith("http") and not any(c.isspace() for c in value):
+        return URIRef(value)
+    return Literal(value)
 
 
 def build_graph(dataset: HarvestedDataset) -> Graph:

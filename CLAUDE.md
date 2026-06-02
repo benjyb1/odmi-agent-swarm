@@ -164,4 +164,14 @@ deny-listed data.europa.eu or is a self-report. D28 Phase 3 re-dispatch
 still pending search quota. D31 done: search knobs (provider,
 results-per-query, query count) are threaded end-to-end and exposed in
 the Run Console, so the DIY cost/quality trade-off is runnable as a
-tagged experiment (defined, not yet run).
+tagged experiment (defined, not yet run). D30 done: deterministic
+catalogue-metrics tool (`agents/tools/catalogue/`) computes the nine
+catalogue-derivable Quality questions from national-portal metadata
+(DCAT-AP RDF preferred, CKAN/udata/custom JSON fallbacks; SHACL via
+pyshacl for conformance), independently of the deny-listed MQA. Wired
+into the Researcher (routes before web search) and a recompute Verifier.
+Validated against ODMI GT across the Phase B set (HU 8/1/0, NL 5/0/4,
+DE 4/2/3, FR 4/1/4, RO 3/3/3; EE blocked by a 403). Headline finding:
+France self-reported `>90%` on licence coverage and conformance but the
+independent recompute reads ~38% and ~32%, the D29 self-report ceiling
+made measurable.

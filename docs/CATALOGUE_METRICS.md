@@ -109,11 +109,31 @@ See `data/catalogue/portals/<CC>.json` for verified endpoints. Summary:
 | FR | DCAT-AP RDF (udata `catalog.ttl`) | native RDF |
 | DE | DCAT-AP RDF (CKAN `catalog.ttl`) | native RDF |
 | RO | DCAT-AP RDF (CKAN `catalog.xml`) | native RDF (host availability permitting) |
-| HU | DCAT-AP RDF (CKAN `catalog.xml`) | native RDF |
+| HU | CKAN JSON (RDF feed omits dct:license) | DCAT-AP RDF synthesised from JSON |
 | NL | CKAN JSON (no national RDF) | DCAT-AP RDF synthesised from JSON |
 | EE | custom JSON (no national RDF) | DCAT-AP RDF synthesised from JSON |
 
-For NL and EE the conformance check runs the same SEMIC shapes over triples we
-build from the JSON. This can only test fields the JSON exposes, so a low NL/EE
-conformance figure may reflect our mapping rather than the portal. This caveat is
-recorded with every NL/EE conformance result.
+## Per-route reliability and caveats
+
+Not every metric is equally reliable on every route. The route is chosen per
+country to maximise fidelity, and the following caveats are recorded with the
+results.
+
+- **RDF routes (FR, DE, RO)** are authoritative for all nine metrics: the feed
+  carries typed licences, the access/download-URL distinction, and EU file-type
+  IRIs, so the SHACL conformance runs against the portal's own triples.
+- **HU** publishes a DCAT-AP RDF feed that carries no `dct:license` at all
+  (verified 2026-06-02), so licence metrics (Q12/Q13/Q25) would read ~0% via
+  RDF. HU therefore harvests via CKAN JSON, which exposes `license_id`.
+- **Synthesised routes (HU, NL, EE)** build the conformance graph from JSON.
+  Two mapping rules matter: dates are emitted as `xsd:date`/`xsd:dateTime`
+  (an untyped literal is a mandatory violation), and a CKAN resource URL is
+  mapped to both `dcat:accessURL` and `dcat:downloadURL`, mirroring
+  ckanext-dcat. Because the synthesised graph contains only the fields we map,
+  Q16 conformance on these routes tends to read high (the shapes' only hard
+  mandatory constraints, a typed date and a distribution access URL, are
+  satisfied by construction). Treat synthesised-route Q16 as an upper bound,
+  not a like-for-like with the RDF routes.
+- **Q21 (download-URL)** is authoritative only on the RDF routes, where the
+  portal distinguishes download from access. On CKAN JSON it follows the
+  ckanext-dcat convention (resource URL = both), so it tracks Q22.
