@@ -1,0 +1,165 @@
+"""Tests for the _finalise_after_adjudication helper (Change 1).
+
+The helper must:
+- Return ("accepted_by_adjudicator", ResearcherOutput with answer from the
+  Adjudicator) for any resolved verdict (researcher_correct / verifier_correct
+  / neither), ignoring the last researcher output.
+- Return ("escalated_adjudicator", last researcher output) when verdict is
+  escalate_human or the output is None.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from agents.models import AdjudicatorOutput, ResearcherOutput
+
+
+def _make_researcher_output(answer: str = "inconclusive") -> ResearcherOutput:
+    return ResearcherOutput(
+        answer=answer,
+        answer_explanation="some explanation",
+        evidence_quote="some quote from the web page",
+        source_url="https://example.com/page",
+        retrieval_confidence=0.5,
+        answer_confidence=0.5,
+    )
+
+
+def _make_adj_output(
+    verdict: str,
+    adj_answer: str = "yes",
+    reasoning: str = "A" * 55,
+    source_url: str = "https://gov.example.com/source",
+    evidence_quote: str = "quote text from adjudicator",
+) -> AdjudicatorOutput:
+    return AdjudicatorOutput(
+        adjudicator_verdict=verdict,  # type: ignore[arg-type]
+        adjudicator_answer=adj_answer if verdict != "escalate_human" else None,
+        adjudicator_confidence=0.8,
+        adjudicator_reasoning=reasoning,
+        chosen_source_url=source_url,
+        chosen_evidence_quote=evidence_quote,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Import the helper under test (does NOT exist yet — test should fail until
+# the implementation is added to scripts/run_coordinator.py).
+# ---------------------------------------------------------------------------
+
+def _import_helper():
+    # Lazy import so a missing symbol surfaces as a test failure, not an
+    # import-time error that aborts the whole session.
+    from scripts.run_coordinator import _finalise_after_adjudication  # type: ignore[attr-defined]
+    return _finalise_after_adjudication
+
+
+# ---------------------------------------------------------------------------
+# Case 1: researcher_correct — must use adjudicator_answer, not the stale
+# last researcher output.
+# ---------------------------------------------------------------------------
+
+def test_researcher_correct_uses_adjudicator_answer():
+    helper = _import_helper()
+    adj = _make_adj_output(verdict="researcher_correct", adj_answer="yes")
+    last_r = _make_researcher_output(answer="inconclusive")
+
+    status, chosen = helper(adj, [last_r])
+
+    assert status == "accepted_by_adjudicator"
+    assert chosen.answer == "yes", (
+        "helper must take the adjudicator's authoritative answer, not the "
+        "stale last researcher output ('inconclusive')"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Case 2: verifier_correct — must also use adjudicator_answer.
+# ---------------------------------------------------------------------------
+
+def test_verifier_correct_uses_adjudicator_answer():
+    helper = _import_helper()
+    adj = _make_adj_output(verdict="verifier_correct", adj_answer="no")
+    last_r = _make_researcher_output(answer="yes")
+
+    status, chosen = helper(adj, [last_r])
+
+    assert status == "accepted_by_adjudicator"
+    assert chosen.answer == "no"
+
+
+# ---------------------------------------------------------------------------
+# Case 3: neither — must use adjudicator_answer.
+# ---------------------------------------------------------------------------
+
+def test_neither_uses_adjudicator_answer():
+    helper = _import_helper()
+    adj = _make_adj_output(verdict="neither", adj_answer="not_applicable")
+    last_r = _make_researcher_output(answer="yes")
+
+    status, chosen = helper(adj, [last_r])
+
+    assert status == "accepted_by_adjudicator"
+    assert chosen.answer == "not_applicable"
+
+
+# ---------------------------------------------------------------------------
+# Case 4: escalate_human — must return the last researcher output unchanged.
+# ---------------------------------------------------------------------------
+
+def test_escalate_human_returns_last_researcher_output():
+    helper = _import_helper()
+    # AdjudicatorOutput.escalate_human does not set adjudicator_answer.
+    adj = AdjudicatorOutput(
+        adjudicator_verdict="escalate_human",
+        adjudicator_answer=None,
+        adjudicator_confidence=0.0,
+        adjudicator_reasoning="B" * 55,
+    )
+    last_r = _make_researcher_output(answer="inconclusive")
+
+    status, chosen = helper(adj, [last_r])
+
+    assert status == "escalated_adjudicator"
+    assert chosen is last_r
+
+
+# ---------------------------------------------------------------------------
+# Case 5: adj_output is None — must return the last researcher output.
+# ---------------------------------------------------------------------------
+
+def test_none_output_returns_last_researcher_output():
+    helper = _import_helper()
+    last_r = _make_researcher_output(answer="yes")
+
+    status, chosen = helper(None, [last_r])
+
+    assert status == "escalated_adjudicator"
+    assert chosen is last_r
+
+
+# ---------------------------------------------------------------------------
+# Case 6: evidence_quote and source_url come from the adjudicator.
+# ---------------------------------------------------------------------------
+
+def test_resolved_verdict_copies_adjudicator_urls():
+    helper = _import_helper()
+    adj = _make_adj_output(
+        verdict="neither",
+        adj_answer="not_applicable",
+        source_url="https://data.gouv.fr/adj-source",
+        evidence_quote="adjudicator selected this passage",
+    )
+    last_r = _make_researcher_output(answer="yes")
+
+    _, chosen = helper(adj, [last_r])
+
+    assert "data.gouv.fr" in str(chosen.source_url)
+    assert chosen.evidence_quote == "adjudicator selected this passage"

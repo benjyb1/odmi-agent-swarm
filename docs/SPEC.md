@@ -759,6 +759,58 @@ text into ~500-char windows and rerank against the query, as Tavily advanced
 does) is the lever to push past 80% unambiguously; deferred as diminishing-return
 against the sample noise and the dominant deny-list ceiling.
 
+### D32: Finalisation uses the Adjudicator's own answer, not the last Researcher output
+
+**Date:** 2026-06-02.
+
+A failure-mode analysis of the 43 finalised pairs that disagree with ODMI ground
+truth found that finalisation was discarding correct answers. When the
+Adjudicator resolved a deadlock, `coordinate` rebuilt the final answer from the
+verdict label rather than reading the answer the Adjudicator had already
+committed to. On `researcher_correct` it took `researcher_outputs[-1]`, the last
+attempt, which after a decay to `inconclusive` was inconclusive; on
+`verifier_correct` it synthesised an answer from the Verifier's counter-evidence.
+The populated `adjudicator_answer` field was used only on the `neither` branch.
+
+The Adjudicator records its authoritative answer in `adjudicator_answer`, with
+`chosen_source_url` and `chosen_evidence_quote`, for every resolved verdict (its
+prompt requires them). The verdict label is attribution; the answer field is the
+answer. Finalisation now trusts it. The three resolved verdicts
+(`researcher_correct` / `verifier_correct` / `neither`) share one path that
+builds the final output from the Adjudicator's fields; only `escalate_human` (or
+an Adjudicator failure) keeps the last Researcher output. The logic is extracted
+into a pure helper, `_finalise_after_adjudication`, and unit-tested in isolation.
+
+Receipt: replayed against the stored rows, four pairs flip from `differ` to
+`match` with no re-run (P26-b FR, PT14 FR, I16 EE, I17 EE), each an Adjudicator
+`yes` that finalisation had overwritten with `inconclusive`. The remaining
+found-then-lost losses need the verification-gate fix, which is separate and not
+done here. New `tests/test_finalise_after_adjudication.py`.
+
+### D33: Retry queries are forced to diverge
+
+**Date:** 2026-06-02.
+
+The Researcher's query generator received the same input on every retry (country,
+portal, question), so it reissued near-identical or byte-identical queries and the
+loop re-read the same pages. Of 68 retried pairs, 41 never changed their answer
+across rounds. The Verifier already produces a `suggested_search_query` on
+rejection, but nothing consumed it at the query-generation step.
+
+The query generator now sees, on a retry, the Verifier's rejection reason, its
+suggested query, and the list of queries already tried, with an instruction to
+generate different ones (`_QUERY_GEN_VERSION` 1 to 2). `ResearcherInput` carries a
+new `previous_search_queries` list; the coordinator accumulates every query run
+across attempts and passes it on the next build. The first-attempt message is
+unchanged, so non-retried runs behave exactly as before.
+
+This is a deliberately small lever. The same failure-mode analysis showed that
+divergent retries address only about six pairs; the dominant losses were the
+finalisation bug (D32) and the verification gate, not search repetition. It is
+kept because the searches did repeat and the Verifier's suggestion was going
+unused, closer to a latent defect than a design choice. New
+`tests/test_query_gen_divergence.py`.
+
 ### D31: Search knobs are experiment conditions
 
 **Date:** 2026-06-01.
@@ -1050,6 +1102,7 @@ synthesised routes tends high; Q21 is authoritative only on RDF routes) are in
 
 | Date | Change |
 |---|---|
+| 2026-06-02 (retry/finalisation) | D32 + D33 added, both prompted by a failure-mode analysis of the 43 ground-truth disagreements. D32: finalisation now trusts `adjudicator_answer` for every resolved verdict instead of re-deriving from the verdict label; the logic moved into a pure helper `_finalise_after_adjudication`. Four pairs flip `differ` to `match` on a stored-row replay (P26-b FR, PT14 FR, I16 EE, I17 EE), each an Adjudicator `yes` previously overwritten with `inconclusive`. D33: retry queries forced to diverge; the query generator now receives the Verifier's rejection reason, suggested query, and prior queries with an instruction to vary (`_QUERY_GEN_VERSION` 1 to 2), `ResearcherInput.previous_search_queries` added, coordinator accumulates queries across attempts; first-attempt path unchanged. Defaults and non-retried runs behave as before. New `tests/test_finalise_after_adjudication.py` and `tests/test_query_gen_divergence.py`; 297 non-live passing. The dominant remaining loss (the 67% substring-gate failure that decays answers to `inconclusive`) is diagnosed but not fixed here; it needs snippet persistence first. |
 | 2026-06-02 (later) | D30 added: deterministic catalogue-metrics tool (`agents/tools/catalogue/`). Harvests national-portal metadata and computes the nine catalogue-derivable Quality band/count questions (Q12, Q13, Q16, Q17, Q18, Q21, Q22, Q25, Q27) without the deny-listed MQA. Per-country adapter layer over three stacks (udata, CKAN, custom) and four routes (dcat_rdf preferred; ckan_json / udata_json / estonia_json fallbacks); registry in `data/catalogue/portals/<CC>.json`. Conformance (Q16) via the official SEMIC DCAT-AP 2.1.1 mandatory SHACL shapes through pyshacl, sampled with disclosed size; recommended/optional usage (Q17/Q18) and the presence/count metrics by field counting; bands assigned from each question's own `allowed_answers`. Raw harvest cached gzipped on disk (gitignored); committed receipts in new `catalogue_snapshots` / `catalogue_metrics` tables (+ `scripts/migrate_catalogue_tables.py`). Wired into `run_researcher` (route before web search) and `run_verifier` (deterministic recompute-from-cache, pass iff the band matches). Mapping doc `docs/CATALOGUE_METRICS.md`. Validated against ODMI GT (leakage-guarded): HU 8/1/0, NL 5/0/4, DE 4/2/3, FR 4/1/4, RO 3/3/3; EE blocked (403). Headline: FR self-reported `>90%` on licence/conformance but the independent recompute reads ~38% licence coverage and ~32% mandatory conformance (the D29 self-report ceiling). Per-country route findings: HU and RO RDF feeds omit `dct:license` so they harvest via CKAN JSON; DE Q16 4.2% is a real DCAT-AP.de incompleteness (checksums missing `spdx:algorithm`) under strict whole-dataset SHACL. 33 new offline tests; 246 non-live passing. |
 | 2026-06-02 | Run Console: each active subtrio card gained a ✕ cancel button. Clicking it calls the new `db.cancel_subtrio(subtrio_id)`, which kills the coordinator process recorded in `subtrio_status.process_pid` (SIGTERM, escalating to SIGKILL, after a `ps`-based PID-reuse guard so a recycled PID is never signalled) and then deletes every row that run wrote, scoped by `pair_run_id`/`subtrio_id` across `phase2_final`, `phase2_adjudications`, `phase2_verifier_runs`, `phase2_researcher_runs`, and `subtrio_status`. Deletion is by subtrio, not by (question, country), so earlier finalised runs of the same pair survive; `claude_usage_log` is left intact so the cost receipt stays (same policy as `delete_pair`). The coordinator installs no SIGTERM handler, so it dies without rewriting a status row after deletion. Read-only deploys short-circuit via `mode.block_if_read_only()`. New `tests/test_cancel_subtrio.py` (2 cases: scoped deletion, unknown-id no-op). |
 | 2026-06-01 (later) | D31 added: search knobs (provider, results-per-query, query count) threaded end to end and exposed in the Run Console, so the DIY cost/quality trade-off is runnable as a tagged experiment (`diy_full` 3x5 vs `diy_lean` 2x3, plus `diy_q3r3` 3x3 to isolate the knob). Defaults unchanged (provider auto, 5 results, no query cap), so main runs are unaffected. New `tests/test_search_knobs.py`; 215 non-live passing. Flagged (not fixed here) a stale AppTest path: `test_apptest_handoff` opens `4_Strategy_Lab.py`, since renamed to `4_Verifier_Strategies.py`. |

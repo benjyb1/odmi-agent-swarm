@@ -231,6 +231,7 @@ def _build_researcher_input(
     question_id: str,
     country_code: str,
     feedback: Optional[VerifierFeedback] = None,
+    previous_search_queries: Optional[List[str]] = None,
 ) -> ResearcherInput:
     q = _load_question(question_id)
     meta = COUNTRIES.get(country_code.upper())
@@ -255,7 +256,56 @@ def _build_researcher_input(
         verifier_feedback=feedback,
         answer_shape=shape.shape,
         allowed_answers=list(shape.allowed_answers),
+        previous_search_queries=list(previous_search_queries or []),
     )
+
+
+# ============================================================
+# Adjudicator finalisation helper (Change 1)
+# ============================================================
+
+def _finalise_after_adjudication(
+    adj_output: Optional["AdjudicatorOutput"],
+    researcher_outputs: List[ResearcherOutput],
+) -> tuple[str, ResearcherOutput]:
+    """Return (final_status, chosen_output) after the Adjudicator has run.
+
+    For all resolved verdicts (researcher_correct / verifier_correct /
+    neither) the Adjudicator's own authoritative fields are used — its
+    answer, reasoning, source URL, and evidence quote. The last
+    researcher output is only kept on an escalation.
+
+    Args:
+        adj_output: The AdjudicatorOutput, or None if the agent failed.
+        researcher_outputs: Every ResearcherOutput from all attempts.
+            The last element is used as the fallback for escalations.
+
+    Returns:
+        A (status, ResearcherOutput) tuple the caller can pass straight
+        to _save_final_row.
+    """
+    last_researcher_output = researcher_outputs[-1]
+
+    if adj_output is None or adj_output.adjudicator_verdict == "escalate_human":
+        return ("escalated_adjudicator", last_researcher_output)
+
+    # All three resolved verdicts share the same finalisation logic: use
+    # the Adjudicator's authoritative answer and evidence, not the raw
+    # researcher or verifier fields.
+    chosen = ResearcherOutput(
+        answer=adj_output.adjudicator_answer or "inconclusive",
+        answer_explanation=adj_output.adjudicator_reasoning[:300],
+        evidence_quote=(
+            adj_output.chosen_evidence_quote
+            or "(adjudicator did not provide quote)"
+        ),
+        source_url=str(
+            adj_output.chosen_source_url or last_researcher_output.source_url
+        ),
+        retrieval_confidence=0.7,
+        answer_confidence=adj_output.adjudicator_confidence,
+    )
+    return ("accepted_by_adjudicator", chosen)
 
 
 # ============================================================
@@ -662,6 +712,9 @@ def coordinate(
     researcher_outputs: List[ResearcherOutput] = []
     verifier_outputs: List[VerifierOutput] = []
     feedback: Optional[VerifierFeedback] = None
+    # Accumulates every query the Researcher has tried across all
+    # attempts so subsequent retries can diverge (Change 2).
+    accumulated_search_queries: List[str] = []
     cumulative_tokens_in = 0
     cumulative_tokens_out = 0
     cumulative_wall = 0
@@ -700,7 +753,10 @@ def coordinate(
             # were populated just before the retry loop; we just need
             # an `r_inp` for the Verifier-input construction below and
             # a stage transition for visibility. No Researcher call.
-            r_inp = _build_researcher_input(question_id, country_code, feedback)
+            r_inp = _build_researcher_input(
+                question_id, country_code, feedback,
+                previous_search_queries=accumulated_search_queries,
+            )
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,
                 question_id=question_id, country_code=country_code,
@@ -719,7 +775,10 @@ def coordinate(
                 retry_count=retry_count,
                 last_message=f"researcher attempt {attempt + 1}",
             )
-            r_inp = _build_researcher_input(question_id, country_code, feedback)
+            r_inp = _build_researcher_input(
+                question_id, country_code, feedback,
+                previous_search_queries=accumulated_search_queries,
+            )
 
             def _r_step(e, p, _att=attempt):
                 _print_step(f"R{_att + 1}", e, p)
@@ -736,6 +795,8 @@ def coordinate(
                 provider=provider, max_results_per_query=max_results_per_query,
                 num_queries=num_queries,
             )
+            # Accumulate the queries used so the next attempt can diverge.
+            accumulated_search_queries.extend(r_result.search_queries_used)
             cumulative_tokens_in += r_result.cumulative_input_tokens
             cumulative_tokens_out += r_result.cumulative_output_tokens
             cumulative_wall += r_result.cumulative_wall_clock_ms
@@ -970,36 +1031,9 @@ def coordinate(
         run_id=run_id, pair_run_id=pair_run_id,
     )
 
-    if adj_result.output is None or adj_result.output.adjudicator_verdict == "escalate_human":
-        final_status = "escalated_adjudicator"
-        chosen_output = last_researcher_output
-    elif adj_result.output.adjudicator_verdict == "researcher_correct":
-        final_status = "accepted_by_adjudicator"
-        chosen_output = researcher_outputs[-1]
-    elif adj_result.output.adjudicator_verdict == "verifier_correct":
-        final_status = "accepted_by_adjudicator"
-        # Build a synthetic ResearcherOutput from the Verifier's counter-evidence
-        v_last = real_verifier_outputs[-1]
-        chosen_output = ResearcherOutput(
-            answer=v_last.verifier_answer,
-            answer_explanation=v_last.rejection_reason or "verifier counter-position",
-            evidence_quote=v_last.counter_evidence_quote or "(no counter-evidence quote)",
-            source_url=str(v_last.counter_source_url or researcher_outputs[-1].source_url),
-            retrieval_confidence=0.7,
-            answer_confidence=v_last.verifier_confidence,
-        )
-    else:  # neither
-        final_status = "accepted_by_adjudicator"
-        chosen_output = ResearcherOutput(
-            answer=adj_result.output.adjudicator_answer or "other",
-            answer_explanation=adj_result.output.adjudicator_reasoning[:300],
-            evidence_quote=adj_result.output.chosen_evidence_quote
-                            or "(adjudicator did not provide quote)",
-            source_url=str(adj_result.output.chosen_source_url
-                           or researcher_outputs[-1].source_url),
-            retrieval_confidence=0.7,
-            answer_confidence=adj_result.output.adjudicator_confidence,
-        )
+    final_status, chosen_output = _finalise_after_adjudication(
+        adj_result.output, researcher_outputs
+    )
 
     _upsert_subtrio_status(
         subtrio_id=subtrio_id, batch_id=batch_id,

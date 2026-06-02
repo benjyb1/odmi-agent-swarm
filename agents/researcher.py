@@ -45,10 +45,11 @@ class _Queries(BaseModel):
 
 
 _QUERY_GEN_NAME = "phase2_researcher_query_gen"
-_QUERY_GEN_VERSION = 1
+_QUERY_GEN_VERSION = 2
 _QUERY_GEN_DESCRIPTION = (
     "Generate 2-3 web search queries for an ODMI question against a "
-    "specific country. English query, native-language query if useful."
+    "specific country. English query, native-language query if useful. "
+    "On retries, diverges from prior queries using verifier feedback."
 )
 
 _QUERY_GEN_SYSTEM = """You are a search query generator for an ODMI evaluation pipeline.
@@ -64,16 +65,55 @@ Guidance:
 - Do not invent organisations. Use the country's actual government
   bodies and known portal names.
 
+Retry guidance (applies when a previous rejection reason, a suggested
+query, or a list of already-tried queries is provided below):
+- Generate queries that are DIFFERENT from the ones already tried.
+  Do not repeat or paraphrase the prior queries.
+- Pursue the rejection reason and any suggested query by targeting
+  different sources, phrasings, or angles (e.g. official government
+  announcements, academic references, news articles, archived pages).
+- If a specific suggested query is given, treat it as a starting point
+  but vary the phrasing or add qualifiers so it diverges from any
+  already-tried variant.
+
 Return JSON matching the schema."""
 
 
 def _build_query_gen_message(input: ResearcherInput) -> str:
-    return (
+    """Build the user-turn message for the query-generation LLM call.
+
+    On the first attempt (no feedback, no prior queries) the message is
+    just the country/question context. On retries the message appends
+    the verifier's rejection reason, the suggested query, and the list
+    of queries already tried so the model can diverge.
+    """
+    base = (
         f"Country: {input.country_name} ({input.country_code}, "
         f"language={input.country_language})\n"
         f"Known portal URL: {input.portal_url or '(not provided)'}\n"
         f"\nODMI question:\n{input.question_text}"
     )
+
+    parts: List[str] = [base]
+
+    if input.verifier_feedback is not None:
+        fb = input.verifier_feedback
+        parts.append(
+            f"\nRejection reason from previous attempt:\n{fb.rejection_reason}"
+        )
+        if fb.suggested_search_query:
+            parts.append(
+                f"\nSuggested search query (use as a starting point, "
+                f"vary the phrasing):\n{fb.suggested_search_query}"
+            )
+
+    if input.previous_search_queries:
+        listed = "\n".join(f"  - {q}" for q in input.previous_search_queries)
+        parts.append(
+            f"\nQueries already tried (generate different ones):\n{listed}"
+        )
+
+    return "\n".join(parts)
 
 
 def generate_queries(

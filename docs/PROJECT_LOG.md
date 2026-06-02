@@ -8,6 +8,44 @@ Entries newest first.
 
 ---
 
+## 2026-06-02 — Session 18: why retries do not move, and two fixes (D32, D33)
+
+Started from a complaint that subtrio retries keep returning the same answer.
+The read-only diagnosis confirmed it: on contested pairs the Researcher repeats
+its first answer most of the time, and the query generator was the cause. It
+gets the same input every round (country, portal, question), so it reissues
+near-identical queries. PT8 FR ran byte-identical queries on two attempts; P11
+and P12 EE varied by one token across four. Of 68 retried pairs, 41 never
+changed their answer.
+
+The plan was to diversify retries (feed the rejection reason into the query
+generator, and exploit the bounded answer space to eliminate failed labels).
+Before building, a failure-mode analysis of all 43 ground-truth disagreements
+was run. It overturned the premise. The swarm is not mislabelling: 38 of the 43
+are the swarm saying `inconclusive` where ODMI committed to `yes`. It finds
+answers and then loses them. Two engines: a verification gate that rejects on a
+rematch artefact (the cited page is never re-fetched or returns 403, so a Tavily
+snippet is not a verbatim substring of the live page; 179 of 266 main-run
+substring checks fail), and a finalisation step that discards the Adjudicator's
+answer. The latter was a plain bug: `coordinate` rebuilt the final answer from
+the verdict label, taking the last Researcher output on `researcher_correct`
+even when the Adjudicator had committed to `yes` in `adjudicator_answer`.
+
+Fixed the two that are cheap and provable now. D32: finalisation reads
+`adjudicator_answer` for every resolved verdict, via a new pure helper. A
+stored-row replay flips four pairs to match (P26-b FR, PT14 FR, I16 EE, I17 EE)
+with no re-run. D33: kept the divergent-retry change, scoped down: the query
+generator now sees the rejection reason, the suggested query, and the queries
+already tried, and is told to vary them. Honest about its size, the analysis
+says this is worth about six pairs, not the headline fix.
+
+Left for next: the verification gate. It should check the quote against the
+text the Researcher actually read, not a re-fetch, and stay strict rather than
+loosen to a semantic match (the gate enforces the no-hallucination guarantee).
+That fix needs retrieved snippets to be persisted first; the fetch cache
+currently holds about 3% of what main runs read, which is also a reproducibility
+hole worth closing in the same change. 297 non-live tests passing.
+
 ## 2026-06-02 — Session 17: catalogue-metrics tool for the computed Quality questions (D30)
 
 The Quality questions that ask for a share of the national catalogue ("what

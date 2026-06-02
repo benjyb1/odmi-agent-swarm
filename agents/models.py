@@ -133,6 +133,11 @@ class ResearcherInput(BaseModel):
     answer_shape: str = "binary"
     allowed_answers: List[str] = Field(default_factory=lambda: ["yes", "no"])
 
+    # Queries the Researcher ran on previous attempts for this pair.
+    # Carried through on retries so the query generator can diverge
+    # from already-tried phrasings (Change 2).
+    previous_search_queries: List[str] = Field(default_factory=list)
+
 
 class ResearcherOutput(BaseModel):
     model_config = ConfigDict(extra="forbid")
