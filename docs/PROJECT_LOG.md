@@ -8,6 +8,37 @@ Entries newest first.
 
 ---
 
+## 2026-06-02 — Session 16: cancel button on active subtrio cards
+
+Small Run Console affordance with a careful destructive path behind it. Each
+active card now carries a ✕ in the top-right. Clicking it aborts that one
+subtrio and removes everything it has written, so a mis-fired or stuck run can
+be cleared without hand-editing the database.
+
+The implementation hangs off two facts already in place. The coordinator
+records its own `os.getpid()` in `subtrio_status.process_pid` when it opens the
+status row, so each in-flight run is individually addressable. And every
+phase2_* table carries `pair_run_id`, which is the subtrio_id, so a run's rows
+can be deleted in isolation from any earlier finalised run of the same
+(question, country) pair.
+
+`db.cancel_subtrio` reads the pid, confirms it still belongs to this
+coordinator with a `ps -ww` command-line check (guarding against PID reuse on a
+shared machine), sends SIGTERM and escalates to SIGKILL if it lingers, then
+deletes the run's rows across the four phase2_* tables and `subtrio_status`.
+The coordinator has no SIGTERM handler, so it dies without running any teardown
+and cannot rewrite a status row after the delete. `claude_usage_log` is left
+alone, same as `delete_pair`, so the cost receipt survives. Read-only deploys
+short-circuit before any kill or delete.
+
+The dispatcher copes with the kill on its own: the coordinator's exit code is
+not the rate-limit sentinel, so the dispatch thread just releases its semaphore
+and lets the next pair start. New `tests/test_cancel_subtrio.py` pins the
+scoping (only the target run goes, siblings and the usage log stay) and the
+unknown-id no-op.
+
+---
+
 ## 2026-06-01 — Session 15: search knobs as experiment conditions (D31)
 
 Follow-on from the DIY work. The DIY pipeline costs five to eight times the

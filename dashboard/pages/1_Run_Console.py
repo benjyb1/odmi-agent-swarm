@@ -463,7 +463,11 @@ def _render_card(row: pd.Series, *, is_active: bool) -> None:
     }.get(stage, "#9ca3af")
 
     with st.container(border=True):
-        col_h1, col_h2 = st.columns([3, 2])
+        if is_active:
+            col_h1, col_h2, col_x = st.columns([3, 2, 0.5])
+        else:
+            col_h1, col_h2 = st.columns([3, 2])
+            col_x = None
         with col_h1:
             st.markdown(
                 f"**{row['question_id']}** · {row['country_code']}  "
@@ -476,6 +480,29 @@ def _render_card(row: pd.Series, *, is_active: bool) -> None:
             cost_str = format_gbp(cost, places=3) if pd.notna(cost) else "—"
             retry = int(row.get("retry_count") or 0)
             st.caption(f"retry {retry}  ·  {cost_str}")
+        if col_x is not None:
+            with col_x:
+                subtrio_id = row.get("subtrio_id")
+                if subtrio_id and st.button(
+                    "✕",
+                    key=f"cancel_{subtrio_id}",
+                    help="Cancel this subtrio: kill the running process and "
+                         "delete every row it has written so far.",
+                ):
+                    if mode.block_if_read_only():
+                        return
+                    result = db.cancel_subtrio(str(subtrio_id))
+                    n_deleted = sum(result["deleted"].values())
+                    kill_note = (
+                        "process stopped" if result["killed"]
+                        else "no live process found"
+                    )
+                    st.toast(
+                        f"Cancelled {row['question_id']}/{row['country_code']} "
+                        f"({kill_note}, {n_deleted} row(s) deleted).",
+                        icon="🗑",
+                    )
+                    st.rerun(scope="fragment")
 
         # Three-stage pipeline strip.
         r_state, v_state, f_state = _stage_states(stage, row.get("final_verdict"))

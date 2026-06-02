@@ -12,8 +12,12 @@ render them without further massaging.
 from __future__ import annotations
 
 import json
+import os
+import signal
 import sqlite3
+import subprocess
 import sys
+import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -436,6 +440,114 @@ def delete_pair(question_id: str, country_code: str) -> dict[str, int]:
             deleted[table] = cur.rowcount
         conn.commit()
     return deleted
+
+
+# Tables a single in-flight run writes to, keyed by pair_run_id
+# (== subtrio_id). Ordered children-first so foreign references go
+# before the parent status row. claude_usage_log is omitted on purpose:
+# it is the cost-audit receipt and stays put, same as delete_pair.
+_RUN_TABLES_TO_CLEAR = [
+    "phase2_final",
+    "phase2_adjudications",
+    "phase2_verifier_runs",
+    "phase2_researcher_runs",
+]
+
+
+def _pid_is_coordinator(pid: int, subtrio_id: str) -> bool:
+    """Confirm `pid` is the coordinator process for this subtrio.
+
+    Guards against PID reuse: between the status row being written and
+    the user clicking cancel, the recorded PID could have been recycled
+    by an unrelated process. We only signal a process whose command line
+    is the coordinator running this exact subtrio. `-ww` stops `ps`
+    truncating the command, so the subtrio UUID is always visible.
+    """
+    try:
+        out = subprocess.run(
+            ["ps", "-ww", "-p", str(pid), "-o", "command="],
+            capture_output=True, text=True, timeout=3,
+        ).stdout
+    except Exception:  # noqa: BLE001
+        return False
+    return "run_coordinator" in out and subtrio_id in out
+
+
+def _terminate_pid(pid: int, *, grace_seconds: float = 3.0) -> bool:
+    """Best-effort stop: SIGTERM, escalate to SIGKILL if it lingers.
+
+    Returns True once the process is gone (or was never running). The
+    coordinator installs no signal handler, so SIGTERM kills it outright
+    without running any teardown, meaning it cannot rewrite a status row
+    after we delete one.
+    """
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except ProcessLookupError:
+        return True
+    except OSError:
+        return False
+    deadline = time.monotonic() + grace_seconds
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        time.sleep(0.1)
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except ProcessLookupError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
+def cancel_subtrio(subtrio_id: str) -> dict:
+    """Cancel one in-flight subtrio and wipe what it has written so far.
+
+    Kills the coordinator process recorded in
+    `subtrio_status.process_pid` (after verifying the PID still belongs
+    to that coordinator), waits for it to exit, then deletes every row
+    keyed to this run's `pair_run_id` across the phase2_* tables and the
+    `subtrio_status` row itself. Historical runs of the same
+    (question, country) pair are left alone because deletion is scoped
+    by subtrio_id, not by question/country. `claude_usage_log` is
+    preserved so the cost receipt survives.
+
+    Returns {"killed": bool, "pid": int | None, "deleted": {table: n}}.
+    """
+    with _conn() as conn:
+        row = conn.execute(
+            "SELECT process_pid FROM subtrio_status WHERE subtrio_id = ?",
+            (subtrio_id,),
+        ).fetchone()
+    pid = (
+        int(row["process_pid"])
+        if row is not None and row["process_pid"] is not None
+        else None
+    )
+
+    killed = False
+    if pid is not None and _pid_is_coordinator(pid, subtrio_id):
+        killed = _terminate_pid(pid)
+
+    deleted: dict[str, int] = {}
+    with _conn() as conn:
+        for table in _RUN_TABLES_TO_CLEAR:
+            cur = conn.execute(
+                f"DELETE FROM {table} WHERE pair_run_id = ?",
+                (subtrio_id,),
+            )
+            deleted[table] = cur.rowcount
+        cur = conn.execute(
+            "DELETE FROM subtrio_status WHERE subtrio_id = ?",
+            (subtrio_id,),
+        )
+        deleted["subtrio_status"] = cur.rowcount
+        conn.commit()
+
+    return {"killed": killed, "pid": pid, "deleted": deleted}
 
 
 def coverage_grid() -> pd.DataFrame:
