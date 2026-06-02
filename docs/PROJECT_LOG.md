@@ -46,6 +46,21 @@ That fix needs retrieved snippets to be persisted first; the fetch cache
 currently holds about 3% of what main runs read, which is also a reproducibility
 hole worth closing in the same change. 297 non-live tests passing.
 
+Then did the gate fix the same day (D34). Persisted the Researcher's snippets and
+pointed the substring check at them instead of a live re-fetch. The mechanism
+works: the gate's pass rate went from 33% to 88% on a 15-pair forward re-run
+(`gatefix_v1`), so the false rejections are gone. But it recovered no pairs on its
+own. With the false rejection removed, the Researcher answers `inconclusive` at R1
+and the Verifier accepts the abstention, so the loop terminates before retrying.
+The broken gate had been forcing retries by failing; removing it removed the
+exploration that sometimes reached `yes`. The next constraint is clear and was
+not obvious before this run: the Verifier should treat `inconclusive` as
+keep-trying, not a pass, and a retry floor should stop the rt0 give-ups. Two pairs
+reached `yes` (I16 EE, P26-b FR) on Researcher luck, not via the Adjudicator,
+which was never exercised. A concurrent session was building the search-experiment
+apparatus in the same tree at the same time; the gate work is committed separately
+to keep the two clean. 335 non-live tests passing.
+
 ## 2026-06-02 — Session 17: catalogue-metrics tool for the computed Quality questions (D30)
 
 The Quality questions that ask for a share of the national catalogue ("what

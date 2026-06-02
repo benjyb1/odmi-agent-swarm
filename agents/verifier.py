@@ -137,12 +137,41 @@ def generate_adversarial_queries(
 def _run_substring_check(
     source_url: str,
     evidence_quote: str,
+    researcher_snippets: Optional[List[str]] = None,
 ) -> tuple[str, Optional[str], Optional[FetchResult]]:
-    """Fetch the Researcher's cited URL and run the normalised substring check.
+    """Check whether the Researcher's evidence_quote is present in the
+    text the Researcher actually read.
+
+    When researcher_snippets is non-empty the check is performed against
+    the concatenated snippets from the Researcher's search results. This
+    is the faithful anti-hallucination gate: the Researcher only ever
+    reads search snippets (~300 chars each), never full pages, so the
+    relevant corpus is those snippets, not the live URL.
+
+    When researcher_snippets is empty or None the original live-fetch
+    behaviour is preserved for back-compat (catalogue-computed answers
+    and any path that does not supply snippets).
 
     Returns (result, notes, fetch_result) where result is one of
-    "pass", "fail", "not_attempted".
+    "pass", "fail", "not_attempted". fetch_result is None for the
+    snippet path.
     """
+    # --- Snippet path (preferred when snippets are available) ---
+    if researcher_snippets:
+        corpus = "\n\n".join(s for s in researcher_snippets if s)
+        if substring.contains(corpus, evidence_quote):
+            return (
+                "pass",
+                "matched against the snippets the Researcher read",
+                None,
+            )
+        return (
+            "fail",
+            "quote not present in the snippets the Researcher read",
+            None,
+        )
+
+    # --- Live-fetch path (back-compat: empty/None snippets) ---
     fetch = fetch_text(source_url, max_chars=8000)
 
     if fetch.failure_mode is not None:
@@ -379,6 +408,7 @@ def run_verifier(
     sub_result, sub_notes, fetch = _run_substring_check(
         str(inp.researcher_output.source_url),
         inp.researcher_output.evidence_quote,
+        researcher_snippets=inp.researcher_snippets if inp.researcher_snippets else None,
     )
 
     on_step("substring_check_complete", {

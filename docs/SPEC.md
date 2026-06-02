@@ -759,6 +759,49 @@ text into ~500-char windows and rerank against the query, as Tavily advanced
 does) is the lever to push past 80% unambiguously; deferred as diminishing-return
 against the sample noise and the dominant deny-list ceiling.
 
+### D34: Verification gate checks the quote against retrieved snippets, not a live re-fetch
+
+**Date:** 2026-06-02.
+
+The Verifier's substring gate re-fetched the cited URL at verify time and checked
+the Researcher's evidence_quote against the live page. It failed 67% of the time
+(179 of 266 main-run checks). Two artefacts compounded: the cited page often 403s
+or has drifted, and the Researcher never read the full page anyway. It reads
+search snippets (about 300 chars each), so a snippet-derived quote is rarely a
+verbatim substring of the live HTML. The gate was rejecting on a rematch
+artefact, not on whether the quote was faithful to the evidence.
+
+The gate now checks the quote against the snippets the Researcher actually read.
+The Researcher's `search_results` snippets are persisted on
+`phase2_researcher_runs` (new `search_snippets` column, `migrate_search_snippets.py`)
+and passed to the Verifier via `VerifierInput.researcher_snippets`;
+`_run_substring_check` matches the quote against that corpus and does no live
+fetch. The live-fetch path is kept only as a fallback when no snippets are
+supplied (catalogue-computed answers). This preserves the anti-hallucination
+property exactly: a quote absent from what the Researcher read still fails. It
+changes the claim the gate makes from "this quote is on the live web right now"
+(which the re-fetch could not reliably establish) to "this quote is faithful to
+the evidence the Researcher retrieved", which is the gate's actual job. Live
+reachability is recorded separately by the Researcher's head_ok check.
+
+Snippet persistence also closes a reproducibility hole: the fetch cache held
+about 3% of what main runs read, so gate decisions could not be replayed from
+logs. Snippets are now stored per run.
+
+Receipt (forward validation, experiment_id `gatefix_v1`, 15 gate-collapse and
+found-then-lost pairs re-run): the substring gate's pass rate rose from 33% to
+88% (15 pass / 2 fail), so the false rejections are gone. But only 2 of 15 pairs
+finalised as match, and both reached `yes` because the Researcher happened to
+answer `yes` at R1, not via the Adjudicator (no pair went to adjudication). The
+fix is necessary, not sufficient. With the false rejection removed, the
+Researcher answers `inconclusive` at R1 (confidence 0.10 to 0.35) and the
+Verifier accepts the abstention as a pass, terminating before any retry. The
+binding constraint has moved from the gate to the Verifier accepting
+`inconclusive` with no retry floor. The broken gate had been forcing retries by
+failing, and some of those retries reached `yes`; removing it removed the forced
+exploration. The next fix is to treat `inconclusive` as keep-trying rather than a
+terminal pass, plus a minimum-retry floor. 335 non-live tests passing.
+
 ### D32: Finalisation uses the Adjudicator's own answer, not the last Researcher output
 
 **Date:** 2026-06-02.

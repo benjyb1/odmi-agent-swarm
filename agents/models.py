@@ -175,6 +175,12 @@ class VerifierInput(BaseModel):
     answer_shape: str = "binary"
     allowed_answers: List[str] = Field(default_factory=lambda: ["yes", "no"])
 
+    # The search-result snippets the Researcher actually read. Persisted
+    # for reproducibility and threaded to the Verifier so the substring
+    # check can verify the evidence_quote against what the Researcher saw
+    # rather than re-fetching the live page (which 403s ~67% of the time).
+    researcher_snippets: List[str] = Field(default_factory=list)
+
 
 class VerifierOutput(BaseModel):
     """Verifier returns one of two top-level shapes determined by

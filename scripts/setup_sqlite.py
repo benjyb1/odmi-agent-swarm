@@ -151,6 +151,7 @@ CREATE TABLE phase2_researcher_runs (
     search_queries_used         TEXT,                          -- JSON list
     fetched_urls                TEXT,                          -- JSON list
     search_provider_calls       TEXT,                          -- JSON list: per-search {provider, ms, results, ok, error}
+    search_snippets             TEXT,                          -- JSON list: [{url, snippet, title, provider}] from the Researcher's search results
     domain_trust_score          REAL,
     language_route_used         TEXT,
     notes                       TEXT,
