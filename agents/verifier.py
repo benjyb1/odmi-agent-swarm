@@ -251,6 +251,8 @@ def run_verifier(
     *,
     condition_label: str = "baseline",
     max_results_per_query: int = 5,
+    provider: str = "auto",
+    num_queries: Optional[int] = None,
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> VerifierRunResult:
@@ -302,6 +304,9 @@ def run_verifier(
             notes=str(exc)[:300],
         )
 
+    # Cap the query count when an experiment requests it (a cost knob).
+    if num_queries is not None:
+        queries = queries[:num_queries]
     on_step("query_gen_complete", {
         "queries": queries,
         "input_tokens": query_usage.input_tokens,
@@ -312,7 +317,9 @@ def run_verifier(
 
     # ----- Stage 3: independent search -----
     on_step("search_start", {"queries": queries})
-    search_results = search_many(queries, max_results_per_query=max_results_per_query)
+    search_results = search_many(
+        queries, max_results_per_query=max_results_per_query, provider=provider,
+    )
     on_step("search_complete", {
         "n_results": len(search_results),
         "top_titles": [r.title[:80] for r in search_results[:5]],

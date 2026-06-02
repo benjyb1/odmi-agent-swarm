@@ -191,6 +191,9 @@ def dispatch(
     adjudicator_model: Optional[str] = None,
     parallel_limit: int = 4,
     max_retries: int = 3,
+    provider: str = "auto",
+    max_results_per_query: int = 5,
+    num_queries: Optional[int] = None,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: Optional[str] = None,
@@ -307,6 +310,11 @@ def dispatch(
                 cmd += ["--verifier-model", verifier_model]
             if adjudicator_model:
                 cmd += ["--adjudicator-model", adjudicator_model]
+            if provider and provider != "auto":
+                cmd += ["--provider", provider]
+            cmd += ["--max-results-per-query", str(max_results_per_query)]
+            if num_queries is not None:
+                cmd += ["--num-queries", str(num_queries)]
             if experiment_id:
                 cmd += ["--experiment-id", experiment_id]
             if condition_label:
@@ -498,6 +506,13 @@ def main() -> int:
     parser.add_argument("--adjudicator-model", default=None)
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--max-retries", type=int, default=3)
+    parser.add_argument("--provider", default="auto",
+                        choices=["auto", "tavily", "brave", "diy", "serper_raw"],
+                        help="Search provider for the swarm (D27 experiment knob).")
+    parser.add_argument("--max-results-per-query", type=int, default=5,
+                        help="Results per search query (cost/recall knob).")
+    parser.add_argument("--num-queries", type=int, default=None,
+                        help="Cap generated search queries to this many (cost knob).")
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
                         help="Tag every child row with this experiment_id (D27). "
@@ -533,6 +548,9 @@ def main() -> int:
         adjudicator_model=args.adjudicator_model,
         parallel_limit=args.parallel,
         max_retries=args.max_retries,
+        provider=args.provider,
+        max_results_per_query=args.max_results_per_query,
+        num_queries=args.num_queries,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
         condition_label=args.condition_label,

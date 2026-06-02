@@ -610,6 +610,9 @@ def coordinate(
     verifier_model: Optional[str] = None,
     adjudicator_model: Optional[str] = None,
     max_retries: int = 3,
+    provider: str = "auto",
+    max_results_per_query: int = 5,
+    num_queries: Optional[int] = None,
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -728,7 +731,11 @@ def coordinate(
                         last_message=f"R{_att + 1} · {e}",
                     )
 
-            r_result = run_researcher(r_inp, subtrio_id=subtrio_id, on_step=_r_step)
+            r_result = run_researcher(
+                r_inp, subtrio_id=subtrio_id, on_step=_r_step,
+                provider=provider, max_results_per_query=max_results_per_query,
+                num_queries=num_queries,
+            )
             cumulative_tokens_in += r_result.cumulative_input_tokens
             cumulative_tokens_out += r_result.cumulative_output_tokens
             cumulative_wall += r_result.cumulative_wall_clock_ms
@@ -807,7 +814,11 @@ def coordinate(
                     last_message=f"V{_att + 1} · {e}",
                 )
 
-        v_result = run_verifier(v_inp, subtrio_id=subtrio_id, on_step=_v_step)
+        v_result = run_verifier(
+            v_inp, subtrio_id=subtrio_id, on_step=_v_step,
+            provider=provider, max_results_per_query=max_results_per_query,
+            num_queries=num_queries,
+        )
         cumulative_tokens_in += v_result.cumulative_input_tokens
         cumulative_tokens_out += v_result.cumulative_output_tokens
         cumulative_wall += v_result.cumulative_wall_clock_ms
@@ -1027,6 +1038,15 @@ def main() -> int:
     parser.add_argument("--verifier-model", default=None)
     parser.add_argument("--adjudicator-model", default=None)
     parser.add_argument("--max-retries", type=int, default=3)
+    parser.add_argument("--provider", default="auto",
+                        choices=["auto", "tavily", "brave", "diy", "serper_raw"],
+                        help="Search provider the Researcher and Verifier use "
+                             "(D27 experiment knob). Default 'auto' = Tavily then Brave.")
+    parser.add_argument("--max-results-per-query", type=int, default=5,
+                        help="Results fetched per search query (cost/recall knob).")
+    parser.add_argument("--num-queries", type=int, default=None,
+                        help="Cap the generated search queries to this many "
+                             "(cost knob). Default: no cap (up to 3).")
     parser.add_argument("--subtrio-id", default=None)
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
@@ -1062,6 +1082,9 @@ def main() -> int:
             verifier_model=args.verifier_model,
             adjudicator_model=args.adjudicator_model,
             max_retries=args.max_retries,
+            provider=args.provider,
+            max_results_per_query=args.max_results_per_query,
+            num_queries=args.num_queries,
             subtrio_id=subtrio_id,
             batch_id=batch_id,
             experiment_id=args.experiment_id,

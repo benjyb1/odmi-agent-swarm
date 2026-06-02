@@ -181,6 +181,8 @@ def run_researcher(
     *,
     condition_label: str = "baseline",
     max_results_per_query: int = 5,
+    provider: str = "auto",
+    num_queries: Optional[int] = None,
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> ResearcherRunResult:
@@ -208,6 +210,9 @@ def run_researcher(
             main_usage=None,
             notes=str(exc)[:300],
         )
+    # Cap the query count when an experiment requests it (a cost knob).
+    if num_queries is not None:
+        queries = queries[:num_queries]
     on_step("query_gen_complete", {
         "queries": queries,
         "input_tokens": query_usage.input_tokens,
@@ -229,6 +234,7 @@ def run_researcher(
         max_results_per_query=max_results_per_query,
         include_domains=trusted or None,
         on_call=provider_calls.append,
+        provider=provider,
     )
     wide_fallback_used = False
     if not search_results and trusted:
@@ -237,6 +243,7 @@ def run_researcher(
             queries,
             max_results_per_query=max_results_per_query,
             on_call=provider_calls.append,
+            provider=provider,
         )
         wide_fallback_used = True
     on_step("search_complete", {
