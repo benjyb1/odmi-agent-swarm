@@ -37,10 +37,11 @@ def test_normalise_maps_licence_and_distributions():
     assert csv.access_url == "https://example.nl/bag.csv"
     assert csv.download_url == "https://example.nl/bag.csv"
 
-    # Second resource has no explicit download_url; access falls back to url.
+    # Second resource has no explicit download_url; ckanext-dcat maps the
+    # resource url to both access and download, so both fall back to url.
     js = ds.distributions[1]
     assert js.access_url == "https://example.nl/bag.json"
-    assert js.download_url is None
+    assert js.download_url == "https://example.nl/bag.json"
 
 
 def test_normalise_empty_resources_is_safe():

@@ -49,13 +49,17 @@ def normalise_ckan_package(pkg: dict, *, route: str = "ckan_json") -> HarvestedD
     for res in pkg.get("resources") or []:
         if not isinstance(res, dict):
             continue
+        url = _clean(res.get("url"))
         distributions.append(
             Distribution(
                 licence=_clean(res.get("license") or res.get("license_id")),
                 fmt=_clean(res.get("format")),
                 media_type=_clean(res.get("mimetype")),
-                access_url=_clean(res.get("access_url") or res.get("url")),
-                download_url=_clean(res.get("download_url")),
+                access_url=_clean(res.get("access_url")) or url,
+                # ckanext-dcat maps a CKAN resource URL to BOTH dcat:accessURL
+                # and dcat:downloadURL; mirror that so Q21 is meaningful on the
+                # JSON route. The RDF route keeps the portal's own distinction.
+                download_url=_clean(res.get("download_url")) or url,
             )
         )
 

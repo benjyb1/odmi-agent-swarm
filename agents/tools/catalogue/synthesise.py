@@ -10,10 +10,30 @@ conformance result (see docs/CATALOGUE_METRICS.md).
 
 from __future__ import annotations
 
+import re
+
 from rdflib import BNode, Graph, Literal, URIRef
-from rdflib.namespace import RDF
+from rdflib.namespace import RDF, XSD
 
 from agents.tools.catalogue.model import HarvestedDataset
+
+_DATETIME_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T")
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _date_literal(value: str) -> Literal:
+    """Type an ISO date/datetime string so it satisfies the DCAT-AP shapes.
+
+    The official shapes require dct:issued / dct:modified to be xsd:date or
+    xsd:dateTime; an untyped string literal is a mandatory violation. A
+    value we cannot recognise is emitted as a plain literal (it will fail,
+    honestly, rather than be silently dropped)."""
+    s = value.strip()
+    if _DATETIME_RE.match(s):
+        return Literal(s, datatype=XSD.dateTime)
+    if _DATE_RE.match(s):
+        return Literal(s, datatype=XSD.date)
+    return Literal(s)
 
 _DCAT = "http://www.w3.org/ns/dcat#"
 _DCT = "http://purl.org/dc/terms/"
@@ -57,9 +77,9 @@ def build_graph(dataset: HarvestedDataset) -> Graph:
     if ex.get("publisher"):
         g.add((ds, DCT_PUBLISHER, _node(str(ex["publisher"]))))
     if ex.get("issued"):
-        g.add((ds, DCT_ISSUED, Literal(ex["issued"])))
+        g.add((ds, DCT_ISSUED, _date_literal(str(ex["issued"]))))
     if ex.get("modified"):
-        g.add((ds, DCT_MODIFIED, Literal(ex["modified"])))
+        g.add((ds, DCT_MODIFIED, _date_literal(str(ex["modified"]))))
     for kw in ex.get("keywords") or []:
         g.add((ds, DCAT_KEYWORD, Literal(kw)))
     for theme in ex.get("themes") or []:
