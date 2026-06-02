@@ -220,9 +220,17 @@ verdicts and the evidence, so an examiner can replay it.
 
 ### EXP-3, DIY vs Tavily, multilingual / low-resource (descriptive)
 
-- **Primary question.** Does DIY's FR parity with Tavily hold in lower-resource
-  languages? Reported as a **descriptive, observational** comparison, not a
-  causal test, for the reasons below.
+- **Primary question and pre-registered hypothesis.** Does DIY's parity with
+  Tavily degrade as language resource falls? **H1 (directional, pre-registered):**
+  DIY's decided not-worse rate is non-increasing across EE, LT, IS as
+  first-language speaker population decreases. Lithuania is the **discriminating
+  control**: it holds ODMI maturity high while its language resource is lower, so
+  underperformance there cannot be put down to a thin national data estate and
+  points to a language channel. This is a quasi-experimental identification, not a
+  bare description. It stops short of proof: at n=3, maturity and language remain
+  partly confounded, so a positive result is reported as evidence **consistent
+  with** a causal language effect and a basis for a larger country panel, not as a
+  settled cause.
 - **Country selection.** Chosen so maturity and language-resource are not
   perfectly collinear, since they are otherwise tangled. Maturity is the
   published ODMI 2024 ranking. The language-resource proxy is **first-language
@@ -236,14 +244,14 @@ verdicts and the evidence, so an examiner can replay it.
   | Lithuania (LT) | 2nd most mature | Lithuanian | ~2.8 m | dispatch ~12-15 |
   | Iceland (IS) | lower | Icelandic | ~0.3 m | dispatch ~12-15 |
 
-  Lithuania is the case of interest: high maturity with a small-speaker-base
-  language, so a DIY shortfall there is harder to attribute to a thin national
-  data estate. But with **n=3 countries** and maturity confounded with language,
-  no causal claim is made. The "isolate language at fixed maturity" reading is
-  explicitly downgraded to an exploratory observation, and the confound is named
-  as a limitation rather than claimed away. If the descriptive contrast looks
-  real, the writeup says it motivates a larger, properly powered country sample,
-  not that it proves a language effect.
+  The maturity/language confound is addressed **by design** rather than ignored:
+  Lithuania's high maturity is what lets a shortfall there discriminate a language
+  channel from data-estate thinness. With n=3 the identification is partial, so
+  the confound is still reported as the headline limitation, and the strength of
+  any claim is tied to the size of the observed effect: a large, consistent LT/IS
+  shortfall against EE supports H1 far more than a marginal one. The framing is
+  quasi-experimental and hypothesis-testing, not merely descriptive, but it does
+  not assert proven causation at this sample size.
 - **Endpoints.** Both. E1 from the finalised pairs vs ground truth (all three
   countries carry full 143-row ODMI coverage, verified). E2 from the adjudicated
   harness, extended to filter by country, single-pass snapshot per pair.
@@ -354,9 +362,12 @@ dispatch next; EXP-4 and EXP-5 last, as they reuse EXP-1's pair set and harness.
   measured.
 - ODMI ground truth can be one cycle old, so a swarm-vs-ODMI disagreement is not
   automatically a swarm error (D22).
-- **EXP-3 confounds maturity with language** at n=3 countries; EXP-3 is
-  descriptive only, the language tier is not the independent variable, and no
-  causal claim is drawn.
+- **EXP-3 confounds maturity with language** at n=3 countries. EXP-3 tests a
+  pre-registered directional hypothesis (H1) using Lithuania as a discriminating
+  control, with speaker population as the objective resource proxy; the
+  identification is partial, so a positive result is reported as consistent with a
+  language effect, not as settled causation. This confound is the headline EXP-3
+  limitation.
 - **EXP-2a reuses EXP-1's answerable set**, which conditions on an earlier
   outcome.
 - **Shared-sample dependency:** EXP-1, 4, 5 reuse one FR pair set; only EXP-1 is
@@ -387,3 +398,8 @@ dispatch next; EXP-4 and EXP-5 last, as they reuse EXP-1's pair set and harness.
   pairs; added eval-set country/Quality filtering and harness cleanup (drop the
   discredited diy_not_worse_decisive line, fix the stratify_pairs docstring) to
   section 9.
+- 2026-06-02: EXP-3 strengthened at Benjy's instruction from descriptive to a
+  quasi-experimental, pre-registered directional hypothesis (H1) with Lithuania
+  as a discriminating control. Kept the speaker-population proxy and the
+  partial-identification caveat (no proven causation at n=3); the maturity/language
+  confound remains the headline EXP-3 limitation.
