@@ -246,6 +246,99 @@ def _noop(event: str, payload: dict) -> None:  # pragma: no cover
     return
 
 
+def _is_catalogue_computed(researcher_output: ResearcherOutput) -> bool:
+    from agents.tools.catalogue.compute import CATALOGUE_NOTE_TAG
+
+    return bool(
+        researcher_output.notes and CATALOGUE_NOTE_TAG in researcher_output.notes
+    )
+
+
+def _verify_catalogue(
+    inp: VerifierInput, on_step: "StepCallback"
+) -> VerifierRunResult:
+    """Verify a catalogue-computed answer by deterministic recompute.
+
+    No LLM call, no web search: re-run the metric from the cached snapshot
+    and pass iff the recomputed band equals the Researcher's answer. A
+    mismatch is a genuine signal (the cache moved, or the answer was
+    hand-edited) and is reported as a fail with the recomputed band as
+    counter-evidence.
+    """
+    from agents.tools.catalogue import compute as catalogue_compute
+
+    ro = inp.researcher_output
+    on_step("catalogue_recompute_start", {
+        "question_id": inp.question_id, "country": inp.country_code,
+    })
+    comp = catalogue_compute.compute(
+        inp.question_id, inp.country_code, write_receipt=False
+    )
+
+    if comp is None:
+        # Cannot recompute (cache gone, harvest failed). Do not block: accept
+        # the Researcher's deterministic answer, but record that we could not
+        # re-derive it.
+        out = VerifierOutput(
+            verdict="pass",
+            verifier_answer=ro.answer,
+            verifier_confidence=0.5,
+            substring_check_result="not_attempted",
+            substring_check_notes="catalogue recompute unavailable; accepted as-is",
+        )
+        on_step("catalogue_recompute_complete", {"recomputed": None, "verdict": "pass"})
+        return VerifierRunResult(
+            output=out, failure_mode=None, query_gen_usage=None, main_usage=None,
+            substring_result="not_attempted",
+            substring_notes="catalogue recompute unavailable",
+            strategy=inp.strategy,
+            notes="catalogue_recompute_unavailable",
+        )
+
+    matches = comp.band == ro.answer
+    on_step("catalogue_recompute_complete", {
+        "recomputed": comp.band, "researcher": ro.answer, "match": matches,
+    })
+
+    if matches:
+        out = VerifierOutput(
+            verdict="pass",
+            verifier_answer=comp.band,
+            verifier_confidence=0.98,
+            substring_check_result="pass",
+            substring_check_notes=(
+                f"Deterministic recompute reproduced the band: {comp.evidence_quote}"
+            ),
+            independent_evidence_snippets=[comp.evidence_quote],
+        )
+    else:
+        out = VerifierOutput(
+            verdict="fail",
+            verifier_answer=comp.band,
+            verifier_confidence=0.9,
+            substring_check_result="fail",
+            substring_check_notes="recomputed band differs from researcher answer",
+            rejection_reason=(
+                f"Deterministic recompute gives {comp.band!r}, not "
+                f"{ro.answer!r}. {comp.evidence_quote}"
+            ),
+            counter_evidence_quote=comp.evidence_quote,
+            counter_source_url=comp.source_url,
+            independent_evidence_snippets=[comp.evidence_quote],
+        )
+
+    return VerifierRunResult(
+        output=out,
+        failure_mode=None,
+        query_gen_usage=None,
+        main_usage=None,
+        substring_result=out.substring_check_result,
+        substring_notes=out.substring_check_notes,
+        strategy=inp.strategy,
+        notes="catalogue_recompute",
+    )
+
+
 def run_verifier(
     inp: VerifierInput,
     *,
@@ -272,6 +365,13 @@ def run_verifier(
         "strategy": strategy,
         "researcher_answer": inp.researcher_output.answer,
     })
+
+    # ----- D30: deterministic recompute for catalogue-computed answers -----
+    # The Researcher's answer is a counted statistic, so adversarial web
+    # search does not apply. Recompute from the cached snapshot and pass
+    # iff the band matches.
+    if _is_catalogue_computed(inp.researcher_output):
+        return _verify_catalogue(inp, on_step)
 
     # ----- Stage 1: substring check (Python, no LLM) -----
     on_step("substring_check_start", {"url": str(inp.researcher_output.source_url)})

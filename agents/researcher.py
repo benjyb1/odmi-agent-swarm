@@ -176,6 +176,77 @@ def _noop(event: str, payload: dict) -> None:  # pragma: no cover
     return
 
 
+# Stamped on a catalogue-computed Researcher output so the Verifier
+# recomputes deterministically instead of searching the web (D30).
+CATALOGUE_NOTE_TAG = "catalogue_computed"
+
+
+def _try_catalogue(
+    input: ResearcherInput, on_step: "StepCallback"
+) -> Optional["ResearcherRunResult"]:
+    """Deterministic catalogue route (D30).
+
+    Returns a finished ResearcherRunResult when the (question, country)
+    can be computed from the national catalogue, else None so the caller
+    runs the normal web-search path. Imported lazily to keep the
+    catalogue dependency off the hot path for web-answered questions.
+    """
+    from agents.tools.catalogue import compute as catalogue_compute
+
+    if not catalogue_compute.is_computable(input.question_id, input.country_code):
+        return None
+
+    on_step("catalogue_start", {
+        "question_id": input.question_id,
+        "country": input.country_code,
+    })
+    try:
+        comp = catalogue_compute.compute(input.question_id, input.country_code)
+    except Exception as exc:  # noqa: BLE001 - fall back to web on any failure
+        on_step("catalogue_failed", {"error": str(exc)[:200]})
+        return None
+    if comp is None:
+        on_step("catalogue_failed", {"error": "not computable / empty harvest"})
+        return None
+
+    note = CATALOGUE_NOTE_TAG
+    if comp.partial:
+        note += "; partial_harvest"
+    output = ResearcherOutput(
+        answer=comp.band,
+        answer_explanation=(
+            f"Computed deterministically from {input.country_name}'s national "
+            f"open data catalogue, independently of the MQA (D30). "
+            f"{comp.evidence_quote}"
+        ),
+        evidence_quote=comp.evidence_quote,
+        source_url=comp.source_url,
+        retrieval_confidence=1.0,
+        answer_confidence=0.95,
+        search_queries_used=[],
+        fetched_urls=[comp.source_url],
+        domain_trust_score=1.0,
+        language_route_used="native",
+        notes=note,
+    )
+    on_step("catalogue_complete", {
+        "answer": comp.band,
+        "breakdown": comp.evidence_quote,
+        "source_url": comp.source_url,
+        "snapshot_id": comp.snapshot_id,
+    })
+    return ResearcherRunResult(
+        output=output,
+        failure_mode=None,
+        query_gen_usage=None,
+        main_usage=None,
+        search_queries_used=[],
+        fetched_urls=[comp.source_url],
+        domain_trust=1.0,
+        notes=note,
+    )
+
+
 def run_researcher(
     input: ResearcherInput,
     *,
@@ -196,6 +267,14 @@ def run_researcher(
     something printing in the runner script when --walkthrough is on.
     """
     on_step("start", {"question_id": input.question_id, "country": input.country_code})
+
+    # ----- Step 0: deterministic catalogue route (D30) -----
+    # Percentage/count Quality questions that ask for a proportion of the
+    # national catalogue are computed from harvested metadata, not the web.
+    # Near-zero tokens. On any failure we fall through to the web path.
+    catalogue_result = _try_catalogue(input, on_step)
+    if catalogue_result is not None:
+        return catalogue_result
 
     # ----- Step 1: generate search queries -----
     on_step("query_gen_start", {})
