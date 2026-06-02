@@ -114,6 +114,7 @@ def harvest_country(
     *,
     max_pages: Optional[int] = None,
     write_db: bool = True,
+    delay_s: Optional[float] = None,
 ) -> Snapshot:
     """Harvest a country's catalogue to disk and return the snapshot.
 
@@ -121,8 +122,15 @@ def harvest_country(
     `write_db=False`) a `catalogue_snapshots` row. A network failure
     mid-harvest is caught: the snapshot is marked `partial` and whatever
     was collected is kept, rather than silently truncating to nothing.
+
+    `delay_s` overrides the registry's per-request delay for this run (used
+    by the FR validation, where the portal has no hard rate limit).
     """
+    import dataclasses
+
     config = load_portal(country_code)
+    if delay_s is not None:
+        config = dataclasses.replace(config, request_delay_s=delay_s)
     adapter = _build_adapter_registry().get(config.harvest_route)
     if adapter is None:
         raise NotImplementedError(
