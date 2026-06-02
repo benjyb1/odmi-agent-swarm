@@ -127,7 +127,7 @@ def test_costs_page_load() -> bool:
 def test_strategy_lab_page_load() -> bool:
     """Strategy Lab; should not crash even with limited Researcher rows."""
     print("\n[apptest_strategy] opening Strategy Lab...")
-    at = AppTest.from_file("dashboard/pages/4_Strategy_Lab.py", default_timeout=30)
+    at = AppTest.from_file("dashboard/pages/4_Verifier_Strategies.py", default_timeout=30)
     at.run()
     if at.exception:
         print(f"  ✗ Strategy Lab raised: {at.exception}")
