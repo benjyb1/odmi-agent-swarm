@@ -1,0 +1,42 @@
+{
+  "success": true,
+  "result": {
+    "count": 2,
+    "results": [
+      {
+        "id": "11111111-1111-1111-1111-111111111111",
+        "name": "kadaster-bag",
+        "license_id": "http://creativecommons.org/publicdomain/zero/1.0/deed.nl",
+        "license_title": "CC0 1.0",
+        "uri": "https://data.overheid.nl/dataset/kadaster-bag",
+        "resources": [
+          {
+            "format": "http://publications.europa.eu/resource/authority/file-type/CSV",
+            "mimetype": "text/csv",
+            "url": "https://example.nl/bag.csv",
+            "download_url": "https://example.nl/bag.csv"
+          },
+          {
+            "format": "http://publications.europa.eu/resource/authority/file-type/JSON",
+            "mimetype": "application/json",
+            "url": "https://example.nl/bag.json"
+          }
+        ]
+      },
+      {
+        "id": "22222222-2222-2222-2222-222222222222",
+        "name": "gemeente-zonder-licentie",
+        "license_id": "http://standaarden.overheid.nl/owms/terms/licentieonbekend",
+        "license_title": "Licentie onbekend",
+        "uri": "https://data.overheid.nl/dataset/gemeente-zonder-licentie",
+        "resources": [
+          {
+            "format": "PDF",
+            "mimetype": "application/pdf",
+            "url": "https://example.nl/rapport.pdf"
+          }
+        ]
+      }
+    ]
+  }
+}
