@@ -955,6 +955,7 @@ runnable but not yet run.
 | How is "match vs ODMI" defined? | `_MATCH_STATUS_SQL` in `dashboard/lib/db.py`. |
 | Why did we make decision X? | This file (`docs/SPEC.md`), search for "Dx". |
 | What did I do last session? | `docs/PROJECT_LOG.md`. |
+| Which experiments are done / left to run, and their results? | `docs/EXPERIMENTS.md` (status board). Ready-to-run agent prompts in `docs/prompts/`. |
 | What did the supervisor say? | Notion supervision log. |
 | Where are the parsed questions? | `data/questions/odmi_2025_questions.json`. |
 | Where is the live dashboard? | `https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/` (public, read-only). |
