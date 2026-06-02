@@ -1,0 +1,18 @@
+{
+  "country_code": "FR",
+  "country_name": "France",
+  "portal_base": "https://www.data.gouv.fr",
+  "stack": "udata",
+  "stack_version": "16.5.0",
+  "harvest_route": "dcat_rdf",
+  "dcat_catalog_url": "https://www.data.gouv.fr/api/1/site/catalog.ttl?page={page}&page_size={page_size}",
+  "native_api_url": "https://www.data.gouv.fr/api/1/datasets/?page_size={page_size}&page={page}",
+  "pagination": "hydra",
+  "page_size": 100,
+  "request_delay_s": 1.0,
+  "total_datasets_hint": 73734,
+  "licence_field": "dataset",
+  "robots_note": "robots.txt allows /api/ and /api/1/site/catalog.* for User-agent *; bulk .csv and HTML /catalog disallowed. Throttle, descriptive UA.",
+  "verified_at": "2026-06-02",
+  "notes": "First-party DCAT-AP feed at /api/1/site/catalog.{xml,ttl,jsonld}, Hydra-paged (hydra:next). page_size>=2000 returns 502; 100 is the safe size. Licence is a code (lov2, fr-lo, cc-by, ...) in JSON and a URI (dcterms:license) in RDF; notspecified/other-* count as unlicensed. data.europa.eu not needed."
+}

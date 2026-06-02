@@ -1,0 +1,18 @@
+{
+  "country_code": "HU",
+  "country_name": "Hungary",
+  "portal_base": "https://kozadatportal.hu",
+  "stack": "ckan",
+  "stack_version": "2.9.7",
+  "harvest_route": "dcat_rdf",
+  "dcat_catalog_url": "https://kozadatportal.hu/catalog.xml?page={page}",
+  "native_api_url": "https://kozadatportal.hu/api/3/action/package_search?rows={page_size}&start={start}",
+  "pagination": "hydra",
+  "page_size": 100,
+  "request_delay_s": 10.0,
+  "total_datasets_hint": 2282,
+  "licence_field": "dataset",
+  "robots_note": "robots.txt Disallow: /api/ with Crawl-Delay: 10. RDF exports not auth-gated; prefer /catalog.xml (23 pages). Throttle to 10s, descriptive UA.",
+  "verified_at": "2026-06-02",
+  "notes": "National portal is kozadatportal.hu (Nemzeti Kozadat Portal). data.gov.hu is DEAD; opendata.hu is an unrelated NGO CKAN 2.0, do NOT use. CKAN 2.9.7 + ckanext-dcat. Catalogue RDF at /catalog.{xml,ttl,jsonld}?page=1..23, 100/page, Hydra. Licence dataset-level license_id + license_url. data.europa.eu not needed."
+}

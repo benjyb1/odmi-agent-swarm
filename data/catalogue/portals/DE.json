@@ -1,0 +1,18 @@
+{
+  "country_code": "DE",
+  "country_name": "Germany",
+  "portal_base": "https://ckan.govdata.de",
+  "stack": "ckan",
+  "stack_version": "2.10.10",
+  "harvest_route": "dcat_rdf",
+  "dcat_catalog_url": "https://ckan.govdata.de/catalog.ttl?page={page}",
+  "native_api_url": "https://ckan.govdata.de/api/3/action/package_search?rows={page_size}&start={start}",
+  "pagination": "hydra",
+  "page_size": 100,
+  "request_delay_s": 10.0,
+  "total_datasets_hint": 151289,
+  "licence_field": "distribution",
+  "robots_note": "ckan.govdata.de robots.txt is a blanket Disallow: / for User-agent *. Public reuse API; honour 10s crawl-delay spirit, descriptive UA, low rate. Note in methodology.",
+  "verified_at": "2026-06-02",
+  "notes": "CKAN + ckanext-dcat + DCAT-AP.de (dcatde). Catalogue RDF at /catalog.{rdf,ttl,jsonld}?page=N, 100/page, Hydra PagedCollection. Loop until a page has no dcat:Dataset. Licence is a URI at the DISTRIBUTION level (resources[].license / dct:license on dcat:Distribution), e.g. http://dcat-ap.de/def/licenses/...; dataset-level license_id is almost always empty, do NOT use it. Some German free-text licence values appear. data.europa.eu not needed."
+}

@@ -1,0 +1,18 @@
+{
+  "country_code": "NL",
+  "country_name": "Netherlands",
+  "portal_base": "https://data.overheid.nl",
+  "stack": "ckan_donl",
+  "stack_version": "2.8.12",
+  "harvest_route": "ckan_json",
+  "dcat_catalog_url": null,
+  "native_api_url": "https://data.overheid.nl/data/api/3/action/package_search?rows={page_size}&start={start}",
+  "pagination": "ckan_offset",
+  "page_size": 500,
+  "request_delay_s": 1.0,
+  "total_datasets_hint": 20800,
+  "licence_field": "dataset",
+  "robots_note": "Drupal robots.txt does not disallow /data/api/. API responses carry x-robots-tag noindex (search indexing only, not access). No auth.",
+  "verified_at": "2026-06-02",
+  "notes": "NO national DCAT-AP RDF feed: all /catalog.* and dataset .rdf/.ttl paths 404; package_show_rdf returns 400. The donl-rdf extension exposes no public serialisation. Harvest is CKAN JSON only via the non-standard /data/api/3/action/ prefix. license_id is a URI from the DCAT-AP-DONL value list (waardelijsten.dcat-ap-donl.nl); count http://standaarden.overheid.nl/owms/terms/licentieonbekend and empty as unlicensed. Conformance metrics (Q16/Q17/Q18) require synthesising DCAT-AP RDF from this JSON. data.europa.eu not used."
+}

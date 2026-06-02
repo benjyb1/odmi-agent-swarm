@@ -1,0 +1,19 @@
+{
+  "country_code": "EE",
+  "country_name": "Estonia",
+  "portal_base": "https://andmed.eesti.ee",
+  "stack": "custom_nestjs",
+  "stack_version": null,
+  "harvest_route": "estonia_json",
+  "dcat_catalog_url": null,
+  "native_api_url": "https://andmed.eesti.ee/api/datasets?page={page}&limit={page_size}",
+  "dataset_detail_url": "https://andmed.eesti.ee/api/datasets/{id}",
+  "pagination": "estonia_limit",
+  "page_size": 75,
+  "request_delay_s": 1.0,
+  "total_datasets_hint": 5708,
+  "licence_field": "distribution",
+  "robots_note": "No robots.txt (404). No auth for public catalogue reads. Documented per-minute cap returns HTTP 429; pace ~1 req/s with backoff. limit hard-capped at 75.",
+  "verified_at": "2026-06-02",
+  "notes": "avaandmed.eesti.ee 301-redirects to andmed.eesti.ee (Teabevarav). NOT CKAN: custom NestJS API. NO national DCAT-AP RDF feed (all /catalog.* return the Angular SPA HTML shell). List at /api/datasets?page&limit=75 (metadata.total=5708; the v2/v3 search endpoints report 8168 because they also count data services/series, use the dataset-level 5708). Detail at /api/datasets/{id} carries distributions[] with license (code e.g. CC_BY_4.0, CC_BY_SA_4.0), format, accessUrls. Empty-string license counts as unlicensed. Conformance metrics require synthesising DCAT-AP RDF from this JSON. data.europa.eu not used."
+}

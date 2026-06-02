@@ -21,6 +21,8 @@ dependencies = [
     "altair>=5.4",         # dashboard charts
     "plotly>=5.24",        # cost chart on 7_Costs.py
     "python-pptx>=1.0",    # slide deck generation
+    "rdflib>=7",
+    "pyshacl>=0.26",
 ]
 
 [project.optional-dependencies]
