@@ -33,8 +33,10 @@ These are the rules every agent obeys.
 6. **Named fallbacks for every failure mode.** Each agent enumerates the
    ways it can fail, with a deterministic handler for each. Failures
    produce a row, not an exception.
-7. **LangGraph idioms for orchestration.** StateGraph with typed state,
-   conditional edges, the Command API for dynamic routing (per D3).
+7. **Explicit state-machine orchestration.** Typed state, conditional
+   transitions, and dynamic routing between agents (per D3). Implemented as a
+   plain Python state machine in `scripts/run_coordinator.py`, not a graph
+   framework. See the §5 note.
 
 ---
 
@@ -577,6 +579,13 @@ in the swarm.
 
 ## 5. The Coordinator
 
+> **Implementation note (2026-06-02).** This section was written as the
+> original design and describes a graph-based orchestration. The shipped
+> Coordinator is a plain Python state machine in `scripts/run_coordinator.py`
+> (per the amended D3). The state, transitions, and edges below still hold as a
+> description of the control flow; only the runtime differs. Read "graph",
+> "node", and "edge" below as the equivalent plain-Python constructs.
+
 ### 5.1 Remit
 
 Orchestrate the Researcher → Verifier loop for each (question, country)
@@ -636,7 +645,8 @@ researcher → human_queue        if captcha_or_block detected
 human_queue → END               (always terminal for this pair)
 ```
 
-Conditional edges are expressed in LangGraph with the Command API.
+These conditional transitions are expressed as plain Python branches in
+`run_coordinator.py`.
 
 The adjudicator (Section 5.10) replaces the previous "fail at retry 3 →
 END" terminal. The Coordinator now has a tiebreaker step when the
@@ -661,9 +671,9 @@ For each pair, the Coordinator writes:
 
 ### 5.6 Tools and capabilities
 
-- **LangGraph StateGraph.** Typed state, conditional edges, Command
-  API.
-- **Researcher, Verifier, Adjudicator** as LangGraph nodes.
+- **Plain Python state machine.** Typed state, conditional transitions,
+  dynamic routing between agents.
+- **Researcher, Verifier, Adjudicator** as state-machine steps.
 - **SQLite logger.** Implements the four write paths above.
 - **Human queue writer.** Appends to a `data/human_queue/<run_id>.csv`
   for any pair that hits a CAPTCHA, access block, or
@@ -893,7 +903,7 @@ written up only if the primary swarm work is on schedule.
 ## 8. Build order
 
 Researcher first. Then Verifier (with the substring check). Then
-Coordinator (the LangGraph wrapper). Within each, the order is:
+Coordinator (the plain Python state machine). Within each, the order is:
 
 1. Schema migration for the agent's database table.
 2. Pydantic models for input and output.

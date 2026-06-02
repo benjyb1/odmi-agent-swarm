@@ -5,9 +5,7 @@ description = "LLM-powered agent swarm for EU Open Data Maturity Index assessmen
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    "langgraph>=0.2",
-    "langchain-anthropic>=0.3",
-    "langchain-community>=0.3",
+    "anthropic>=0.87",     # LLM interface (agents/tools/llm.py), via CLIProxyAPI
     "supabase>=2.0",
     "openpyxl>=3.1",       # ODMI question bank parsing
     "tavily-python>=0.5",  # web search (current primary)

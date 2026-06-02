@@ -8,6 +8,39 @@ Entries newest first.
 
 ---
 
+## 2026-06-02 — Session 19: scrub the stale LangGraph claims
+
+The report draft described the swarm as "LangGraph-based". It is not, and never
+has been in the shipped code. D3 originally specified a graph framework, but the
+Coordinator landed as a plain Python state machine (`run_coordinator.py`), and
+the deviation has sat in the file header and PROJECT_LOG since Session 12
+without ever propagating back to the design and report docs. Anyone reading
+METHODOLOGY or REPORT_PRELIM would have come away with the wrong stack.
+
+Fixed the claims rather than the history. D3 is amended in SPEC, not deleted, so
+the original reasoning and the reason it was dropped both survive. METHODOLOGY
+§5/§8, AGENT_DESIGN §1/§5/§8, REPORT_PRELIM, and the slide source now say "plain
+Python state machine". AGENT_DESIGN §5 keeps its graph vocabulary (state, edges,
+nodes) under a banner that says to read it as the plain-Python equivalent, since
+the control flow it describes is still accurate.
+
+While checking the dependency list I found that no Python file imports langgraph
+or langchain at all. All three (`langgraph`, `langchain-anthropic`,
+`langchain-community`) were dead weight. Removed them. The catch: the LLM
+interface imports `anthropic` directly, and `anthropic` was only in the
+environment as a transitive dependency of `langchain-anthropic`. Removing the
+langchain packages would have silently broken `agents/tools/llm.py` on the next
+clean install. Promoted `anthropic>=0.87` to a direct dependency and re-locked.
+335 tests pass (the one collection error, `test_provider_ab.py`, is the parked
+provider-A/B work and predates this).
+
+Kept on purpose: the "we considered and rejected LangGraph" record in CLAUDE.md,
+this log, and the `run_coordinator.py` header, plus the related-work citations
+in REPORT_PRELIM §2.2 and references.bib. Those are not false claims, they are
+the audit trail.
+
+---
+
 ## 2026-06-02 — Session 18: why retries do not move, and two fixes (D32, D33)
 
 Started from a complaint that subtrio retries keep returning the same answer.
