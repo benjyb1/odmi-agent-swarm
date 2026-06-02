@@ -327,6 +327,15 @@ def _save_researcher_row(
     o = result.output
     main = result.main_usage
     with connect() as conn:
+        search_snippets_json = json.dumps([
+            {
+                "url": r.url,
+                "snippet": r.snippet,
+                "title": r.title,
+                "provider": r.provider,
+            }
+            for r in result.search_results
+        ]) if result.search_results else None
         cur = conn.execute(
             """INSERT INTO phase2_researcher_runs (
                 run_id, pair_run_id, question_id, country_code, retry_count,
@@ -334,13 +343,14 @@ def _save_researcher_row(
                 retrieval_confidence, answer_confidence,
                 search_queries_used, fetched_urls,
                 search_provider_calls,
+                search_snippets,
                 domain_trust_score, language_route_used, notes,
                 failure_mode,
                 input_tokens, output_tokens, wall_clock_ms,
                 estimated_cost_usd, condition_label,
                 prompt_version_id, model_version, raw_response,
                 experiment_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id, pair_run_id, inp.question_id, inp.country_code, retry_count,
@@ -354,6 +364,7 @@ def _save_researcher_row(
                 json.dumps(result.fetched_urls),
                 json.dumps(result.search_provider_calls)
                     if result.search_provider_calls else None,
+                search_snippets_json,
                 result.domain_trust,
                 o.language_route_used if o else None,
                 result.notes,
@@ -663,6 +674,7 @@ def coordinate(
     provider: str = "auto",
     max_results_per_query: int = 5,
     num_queries: Optional[int] = None,
+    no_cache: bool = False,
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -683,6 +695,14 @@ def coordinate(
     _walkthrough = walkthrough
     _current_experiment_id = experiment_id
     _current_condition_label = condition_label
+
+    # Cold-cache mode (EXP-2). Disable cache reads for the whole run so the
+    # DIY pipeline recomputes every SERP, fetch, and snippet-pick live. This
+    # keeps search cost comparable across conditions dispatched back to back:
+    # a later condition never reads a hit a previous one wrote. Set once here,
+    # before any agent call, because each pair runs in its own subprocess.
+    from agents.tools import search_cache
+    search_cache.set_read_disabled(no_cache)
 
     subtrio_id = subtrio_id or str(uuid.uuid4())
     batch_id = batch_id or str(uuid.uuid4())
@@ -863,6 +883,7 @@ def coordinate(
             strategy=strategy,
             answer_shape=r_inp.answer_shape,
             allowed_answers=list(r_inp.allowed_answers),
+            researcher_snippets=[r.snippet for r in r_result.search_results],
         )
         def _v_step(e, p, _att=attempt):
             _print_step(f"V{_att + 1}", e, p)
@@ -1081,6 +1102,12 @@ def main() -> int:
     parser.add_argument("--num-queries", type=int, default=None,
                         help="Cap the generated search queries to this many "
                              "(cost knob). Default: no cap (up to 3).")
+    parser.add_argument("--no-cache", action="store_true",
+                        help="Cold-cache mode (EXP-2): disable DIY cache reads "
+                             "for this run so every SERP/fetch/snippet is "
+                             "computed live. Writes still happen. Use when "
+                             "comparing search cost across conditions so a later "
+                             "condition cannot read a prior one's cached hits.")
     parser.add_argument("--subtrio-id", default=None)
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
@@ -1119,6 +1146,7 @@ def main() -> int:
             provider=args.provider,
             max_results_per_query=args.max_results_per_query,
             num_queries=args.num_queries,
+            no_cache=args.no_cache,
             subtrio_id=subtrio_id,
             batch_id=batch_id,
             experiment_id=args.experiment_id,

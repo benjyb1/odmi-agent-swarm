@@ -38,6 +38,17 @@ TTL_DAYS: int = 30
 
 _TABLES_ENSURED: bool = False
 
+# Cold-cache toggle (EXP-2). When True, every read function (serp_get,
+# fetch_get, snippet_get) short-circuits to a miss, so the DIY pipeline
+# recomputes each SERP, fetch, and snippet-pick live. Writes are unaffected,
+# so the cache still fills as an audit record; only reads are bypassed.
+# This makes search cost comparable across experiment conditions that run
+# one after another: a later condition cannot read a hit a previous one
+# wrote, so it pays its own full cold cost. Process-scoped (dispatch spawns
+# one subprocess per pair), set via set_read_disabled() from the
+# --no-cache flag. Default False keeps normal behaviour unchanged.
+_READ_DISABLED: bool = False
+
 # ---------------------------------------------------------------------------
 # Schema
 # ---------------------------------------------------------------------------
@@ -129,6 +140,16 @@ def _normalise_url(url: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+def set_read_disabled(value: bool) -> None:
+    """Enable or disable cache reads process-wide (cold-cache mode, EXP-2).
+
+    When disabled, serp_get / fetch_get / snippet_get always return a miss
+    so the DIY pipeline recomputes everything live. Writes keep working.
+    """
+    global _READ_DISABLED
+    _READ_DISABLED = bool(value)
+
+
 def ensure_tables() -> None:
     """Idempotently create the three cache tables if they don't exist.
 
@@ -156,6 +177,8 @@ def serp_get(
     include_domains: Optional[List[str]],
 ) -> Optional[List[SearchResult]]:
     """Return cached SERP results if present and within TTL, else None."""
+    if _READ_DISABLED:
+        return None
     ensure_tables()
     key = _serp_key(query, max_results, include_domains)
     conn = _connect()
@@ -208,6 +231,8 @@ def serp_put(
 
 def fetch_get(url: str) -> Optional[str]:
     """Return cached cleaned text for URL if present and within TTL, else None."""
+    if _READ_DISABLED:
+        return None
     ensure_tables()
     norm = _normalise_url(url)
     conn = _connect()
@@ -262,6 +287,8 @@ def fetch_put(
 
 def snippet_get(query: str, page_text: str) -> Optional[List[PickedChunk]]:
     """Return cached PickedChunks if present and within TTL, else None."""
+    if _READ_DISABLED:
+        return None
     ensure_tables()
     key = _snippet_key(query, page_text)
     conn = _connect()

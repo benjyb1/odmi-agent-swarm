@@ -59,6 +59,7 @@ def adjudicate(
     evidence_a: List[dict],
     evidence_b: List[dict],
     model: str = ADJUDICATOR_MODEL,
+    answer_blind: bool = False,
     subtrio_id: Optional[str] = None,
 ) -> tuple[AdjudicationResult, LLMUsage]:
     """Judge which blind evidence set better supports the correct answer.
@@ -66,6 +67,12 @@ def adjudicate(
     evidence_a / evidence_b are lists of {url, snippet, ...} dicts. The
     caller controls which provider occupies A vs B (and should swap them
     across two calls to control position bias).
+
+    With answer_blind=True the gold answer is withheld from both the system
+    prompt and the user message, and the judge ranks which evidence set better
+    ESTABLISHES an answer (pre-registration section 4, judge answer-leakage
+    control). answer_blind is keyword-only and defaults to the prior
+    answer-given behaviour, so existing callers are unaffected.
     """
     prompt_version_id = ensure_prompt_version(
         prompt.NAME, prompt.VERSION, prompt.SYSTEM, prompt.DESCRIPTION,
@@ -79,14 +86,18 @@ def adjudicate(
         ground_truth=ground_truth,
         evidence_a=evidence_a,
         evidence_b=evidence_b,
+        answer_blind=answer_blind,
     )
     return call_for_structured(
-        system=prompt.SYSTEM,
+        system=prompt.system_for(answer_blind),
         user_message=user_message,
         output_schema=AdjudicationResult,
         model=model,
         max_tokens=1200,
-        condition_label="search_adjudication",
+        condition_label=(
+            "search_adjudication_blind" if answer_blind
+            else "search_adjudication"
+        ),
         prompt_version_id=prompt_version_id,
         usage_context="search_adjudicate",
         subtrio_id=subtrio_id,

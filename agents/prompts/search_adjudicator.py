@@ -30,7 +30,7 @@ except ImportError:  # pragma: no cover
     _tldextract = None
 
 NAME = "search_adjudicator"
-VERSION = 3
+VERSION = 4
 DESCRIPTION = (
     "Search-adjudicator v2: blind pairwise judge for DIY-vs-Tavily search "
     "evaluation. Reads an ODMI question, the verified ground-truth ANSWER "
@@ -43,7 +43,12 @@ DESCRIPTION = (
     "V3 normalises evidence to remove provider fingerprints: each source URL "
     "is reduced to its registrable domain (no scheme, path or www.) and the "
     "two arms are truncated to equal passage count upstream, so the judge "
-    "cannot infer the provider from host detail or arm size."
+    "cannot infer the provider from host detail or arm size. "
+    "V4 adds an answer-blind variant (build_user_message(answer_blind=True)): "
+    "the gold answer is withheld and the judge ranks which evidence set "
+    "better ESTABLISHES an answer to the question, so it cannot keyword-match "
+    "the gold label (pre-registration section 4, judge answer-leakage "
+    "control). The answer-given rendering is byte-for-byte unchanged."
 )
 
 # Per-passage display cap so a verbose provider cannot win on length alone.
@@ -92,6 +97,67 @@ may differ from the gold answer, or be "insufficient evidence").
 Call "tie" when both get there. Call "both_fail" when neither does. Do not
 invent a winner, and do not punish a set merely for omitting justification
 detail it did not need."""
+
+
+# Answer-blind system prompt. The gold answer is withheld, so the judge cannot
+# collapse the task to spotting the gold label in a passage (pre-registration
+# section 4, judge answer-leakage control). The judge instead decides which
+# evidence set better ESTABLISHES a defensible answer to the question. The
+# fields it must return are unchanged (AdjudicationResult), so the same parser
+# and schema apply; "answer_supported_by_a/b" is now the answer each set's
+# evidence points to, judged on the evidence alone.
+SYSTEM_ANSWER_BLIND = """You are an impartial judge comparing two web-search systems.
+
+For one ODMI (EU Open Data Maturity) question you are given:
+- The question.
+- Two evidence sets, "System A" and "System B". Each is a list of passages a
+  search system retrieved for this question, each with its source URL.
+
+You are NOT given the correct answer. Do not guess a hidden gold label or try
+to match one. Judge only the evidence in front of you.
+
+Your job: decide which evidence set better ESTABLISHES a defensible answer to
+this question and country: which set would let a careful reader settle the
+question and trust the result.
+
+How to judge:
+1. Ask, for each set: does this evidence actually answer the question, and
+   could a careful reader rely on it? Reward evidence that settles the
+   question directly; penalise evidence that only circles the topic.
+2. Ground every judgement in the passages and their sources. Reward evidence
+   that is on-point and from an authoritative source (an official portal,
+   law, or report beats a blog or a generic landing page). Penalise vague,
+   off-topic, or boilerplate passages even when they hit the right keywords.
+3. Do NOT reward length or fluency. A single precise passage beats five
+   padded ones.
+4. You do not know which system is which. Judge only the evidence.
+
+Verdicts:
+- "A" / "B": that system's evidence establishes an answer clearly better than
+  the other.
+- "tie": BOTH sets establish an answer about equally well (return tie unless
+  one is clearly better-sourced or more directly on point), or both are
+  equally weak-but-nonzero.
+- "both_fail": NEITHER set's evidence would let a careful reader settle the
+  question. Use this only when the question genuinely cannot be answered from
+  either set.
+
+Also state, for each system, what answer its evidence actually supports (it
+may be "insufficient evidence").
+
+Call "tie" when both get there. Call "both_fail" when neither does. Do not
+invent a winner."""
+
+
+def system_for(answer_blind: bool = False) -> str:
+    """Return the system prompt for the chosen variant.
+
+    answer_blind=False returns the unchanged answer-given SYSTEM; True returns
+    the answer-blind variant. Callers (the Opus and Gemini judges) must pass
+    the system prompt that matches their build_user_message call so the gold
+    answer is either present in both or absent from both.
+    """
+    return SYSTEM_ANSWER_BLIND if answer_blind else SYSTEM
 
 
 def _registrable_domain(url: str) -> str:
@@ -162,8 +228,26 @@ def build_user_message(
     ground_truth: str,
     evidence_a: List[dict],
     evidence_b: List[dict],
+    answer_blind: bool = False,
 ) -> str:
-    """Render the user message for one blind pairwise adjudication."""
+    """Render the user message for one blind pairwise adjudication.
+
+    With answer_blind=True the gold answer is withheld entirely: the
+    ``ground_truth`` argument is not rendered anywhere in the message, and the
+    closing question asks which set better establishes an answer rather than
+    which supports the (now hidden) gold answer. The ``ground_truth`` argument
+    is still accepted in both modes so the two judges share one call shape;
+    the caller must pair this with ``system_for(answer_blind)``.
+
+    answer_blind=False reproduces the prior rendering byte for byte.
+    """
+    if answer_blind:
+        return (
+            f"ODMI question:\n{question_text}\n\n"
+            f"{_format_evidence('A', evidence_a)}\n\n"
+            f"{_format_evidence('B', evidence_b)}\n\n"
+            "Which evidence set better establishes an answer to the question?"
+        )
     return (
         f"ODMI question:\n{question_text}\n\n"
         f"Verified correct answer (gold standard):\n{ground_truth}\n\n"

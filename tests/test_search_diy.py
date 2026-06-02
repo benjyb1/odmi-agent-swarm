@@ -21,6 +21,9 @@ def mock_layers(monkeypatch, tmp_path):
     import agents.tools.search_cache as cache_mod
     monkeypatch.setattr(cache_mod, "_DB_PATH", tmp_path / "test_diy.db")
     monkeypatch.setattr(cache_mod, "_TABLES_ENSURED", False)
+    # Reset the cold-cache toggle so the cache-hit assertions below are not
+    # affected by a prior test leaving reads disabled.
+    monkeypatch.setattr(cache_mod, "_READ_DISABLED", False)
 
     # Mock serper_search at the import seam used by search_diy
     serper_calls = []

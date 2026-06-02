@@ -45,6 +45,9 @@ def _isolate_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Point the cache module at a throwaway DB and reset module state."""
     monkeypatch.setattr(sc, "_DB_PATH", tmp_path / "test_cache.db")
     monkeypatch.setattr(sc, "_TABLES_ENSURED", False)
+    # Reset the cold-cache toggle so a prior test cannot leak a disabled-read
+    # state into these read/write assertions.
+    monkeypatch.setattr(sc, "_READ_DISABLED", False)
 
 
 # ---------------------------------------------------------------------------

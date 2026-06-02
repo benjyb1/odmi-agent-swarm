@@ -194,6 +194,7 @@ def dispatch(
     provider: str = "auto",
     max_results_per_query: int = 5,
     num_queries: Optional[int] = None,
+    no_cache: bool = False,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: Optional[str] = None,
@@ -315,6 +316,11 @@ def dispatch(
             cmd += ["--max-results-per-query", str(max_results_per_query)]
             if num_queries is not None:
                 cmd += ["--num-queries", str(num_queries)]
+            if no_cache:
+                # Cold-cache mode (EXP-2): tell each child to bypass DIY cache
+                # reads so its measured search cost is not understated by a
+                # prior condition's cached hits.
+                cmd += ["--no-cache"]
             if experiment_id:
                 cmd += ["--experiment-id", experiment_id]
             if condition_label:
@@ -513,6 +519,11 @@ def main() -> int:
                         help="Results per search query (cost/recall knob).")
     parser.add_argument("--num-queries", type=int, default=None,
                         help="Cap generated search queries to this many (cost knob).")
+    parser.add_argument("--no-cache", action="store_true",
+                        help="Cold-cache mode (EXP-2): disable DIY cache reads "
+                             "for every pair in this batch so each condition "
+                             "pays its own full search cost. Forwarded to each "
+                             "run_coordinator subprocess. Default OFF.")
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
                         help="Tag every child row with this experiment_id (D27). "
@@ -551,6 +562,7 @@ def main() -> int:
         provider=args.provider,
         max_results_per_query=args.max_results_per_query,
         num_queries=args.num_queries,
+        no_cache=args.no_cache,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
         condition_label=args.condition_label,
