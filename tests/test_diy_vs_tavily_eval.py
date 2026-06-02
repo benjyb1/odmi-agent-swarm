@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from evaluation.diy_vs_tavily import (
     orientation_to_diy, combine_orientations, aggregate, stratify_pairs,
-    dimension_of,
+    dimension_of, decided_stats, select_subsample, filter_pairs,
 )
 
 
@@ -57,7 +57,7 @@ def test_combine_both_fail_when_both_orientations_fail():
 
 # --- aggregate: verdicts -> rates ------------------------------------------
 
-def test_aggregate_counts_and_not_worse_rate():
+def test_aggregate_counts_and_rates():
     verdicts = [
         {"verdict": "diy", "consistent": True},
         {"verdict": "diy", "consistent": True},
@@ -69,22 +69,23 @@ def test_aggregate_counts_and_not_worse_rate():
     assert agg["diy"] == 2
     assert agg["tie"] == 1
     assert agg["tavily"] == 1
-    # "not worse than Tavily" = (diy wins + ties) / total
-    assert agg["diy_not_worse_rate"] == 0.75
     assert agg["diy_win_rate"] == 0.5
     assert agg["consistency_rate"] == 0.75
+    # The discredited (diy+tie)/decisive metric is gone from the harness.
+    assert "diy_not_worse_decisive" not in agg
+    assert "diy_not_worse_rate" not in agg
 
 
 def test_aggregate_empty_is_safe():
     agg = aggregate([])
     assert agg["n"] == 0
-    assert agg["diy_not_worse_rate"] == 0.0
-    assert agg["diy_not_worse_decisive"] == 0.0
+    assert agg["decisive"] == 0
+    assert agg["diy_win_rate"] == 0.0
 
 
 def test_aggregate_decisive_excludes_both_fail():
     """both_fail pairs (question unanswerable from the web) must not count
-    in the head-to-head; the decisive rate uses (n - both_fail)."""
+    in the head-to-head; decisive uses (n - both_fail)."""
     verdicts = [
         {"verdict": "diy", "consistent": True},
         {"verdict": "both_fail", "consistent": True},
@@ -93,10 +94,104 @@ def test_aggregate_decisive_excludes_both_fail():
     agg = aggregate(verdicts)
     assert agg["both_fail"] == 1
     assert agg["decisive"] == 2
-    # among decisive {diy, tavily}: DIY not worse = 1/2
-    assert agg["diy_not_worse_decisive"] == 0.5
-    # overall still divides by all 3
-    assert round(agg["diy_not_worse_rate"], 3) == round(1 / 3, 3)
+
+
+# --- decided_stats: real win share + Wilson CI + sign test -----------------
+
+def test_decided_stats_known_inputs():
+    """12 DIY wins, 4 Tavily wins, ties excluded from the strict denominator.
+
+    decided = 16, share = 0.75; the sign test is the exact two-sided binomial
+    of 4 vs 12 against 0.5.
+    """
+    from evaluation.stats import sign_test, wilson_interval
+
+    out = decided_stats(diy_wins=12, tavily_wins=4)
+    assert out["decided_strict"] == 16
+    assert out["diy_win_share"] == 0.75
+    assert out["sign_test_p"] == sign_test(12, 4)
+    lo, hi = wilson_interval(12, 16)
+    assert out["wilson_low"] == lo
+    assert out["wilson_high"] == hi
+    # Ties never enter the strict denominator.
+    out_with_ties = decided_stats(diy_wins=12, tavily_wins=4)
+    assert out_with_ties["decided_strict"] == 16
+
+
+def test_decided_stats_zero_decided_is_safe():
+    out = decided_stats(diy_wins=0, tavily_wins=0)
+    assert out["decided_strict"] == 0
+    assert out["diy_win_share"] == 0.0
+    assert out["sign_test_p"] == 1.0
+    # Wilson on n=0 is the whole unit interval.
+    assert out["wilson_low"] == 0.0
+    assert out["wilson_high"] == 1.0
+
+
+# --- select_subsample: deterministic seeded 30% draw -----------------------
+
+def test_select_subsample_deterministic_for_fixed_seed():
+    records = [{"question_id": f"P{i}", "country_code": "FR"} for i in range(20)]
+    a = select_subsample(records, seed=20260602, frac=0.30)
+    b = select_subsample(records, seed=20260602, frac=0.30)
+    assert a == b  # same seed -> identical draw
+    # 30% of 20 = 6
+    assert len(a) == 6
+    # every selected record is one of the originals (no fabrication)
+    assert all(r in records for r in a)
+
+
+def test_select_subsample_seed_changes_draw():
+    records = [{"question_id": f"P{i}", "country_code": "FR"} for i in range(20)]
+    a = select_subsample(records, seed=20260602, frac=0.30)
+    c = select_subsample(records, seed=1, frac=0.30)
+    assert a != c  # a different seed gives a different (here, non-identical) draw
+
+
+def test_select_subsample_at_least_one_when_nonempty():
+    records = [{"question_id": "P1", "country_code": "FR"}]
+    out = select_subsample(records, seed=20260602, frac=0.30)
+    # round(0.3) == 0, but a non-empty input must yield at least one pair.
+    assert len(out) == 1
+
+
+# --- filter_pairs: country + exclude-dimensions ----------------------------
+
+def test_filter_pairs_excludes_quality_dimension():
+    pairs = [
+        {"question_id": "Q1", "country_code": "FR", "dimension": "Quality"},
+        {"question_id": "P1", "country_code": "FR", "dimension": "Policy"},
+        {"question_id": "I1", "country_code": "FR", "dimension": "Impact"},
+    ]
+    out = filter_pairs(pairs, countries=None, exclude_dimensions=["Quality"])
+    dims = {p["dimension"] for p in out}
+    assert "Quality" not in dims
+    assert len(out) == 2
+
+
+def test_filter_pairs_by_country():
+    pairs = [
+        {"question_id": "P1", "country_code": "FR", "dimension": "Policy"},
+        {"question_id": "P1", "country_code": "DE", "dimension": "Policy"},
+        {"question_id": "P2", "country_code": "EE", "dimension": "Policy"},
+    ]
+    out = filter_pairs(pairs, countries=["FR"], exclude_dimensions=[])
+    assert {p["country_code"] for p in out} == {"FR"}
+
+
+def test_filter_pairs_country_filter_is_case_insensitive():
+    pairs = [{"question_id": "P1", "country_code": "FR", "dimension": "Policy"}]
+    out = filter_pairs(pairs, countries=["fr"], exclude_dimensions=[])
+    assert len(out) == 1
+
+
+def test_filter_pairs_none_country_keeps_all_countries():
+    pairs = [
+        {"question_id": "P1", "country_code": "FR", "dimension": "Policy"},
+        {"question_id": "P2", "country_code": "DE", "dimension": "Portal"},
+    ]
+    out = filter_pairs(pairs, countries=None, exclude_dimensions=["Quality"])
+    assert len(out) == 2
 
 
 # --- dimension_of / stratify_pairs -----------------------------------------
