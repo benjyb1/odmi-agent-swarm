@@ -17,6 +17,7 @@ from typing import List, Optional
 
 from agents.tools.search import SearchResult
 from agents.tools.search_serper import serper_search
+from agents.tools.blocked_domains import is_blocked
 from agents.tools.fetch import fetch_html, fetch_rendered_html
 from agents.tools.extract import extract_text
 from agents.tools.snippet_picker import (
@@ -63,6 +64,16 @@ def diy_search(
             query, max_results=max_results, include_domains=include_domains,
         )
         cache.serp_put(query, max_results, include_domains, serp)
+
+    # 1b. Deny-list filter BEFORE the fetch step (fairness, see D29). Tavily
+    # and Brave exclude deny-listed domains at query time, so such a domain
+    # never costs them a result slot. The raw Serper SERP has no such hint,
+    # so a deny-listed hit would otherwise burn a fetch/extract slot here and
+    # only be removed post-hoc by _scrub_blocked in agents.tools.search. We
+    # drop those URLs now so they never consume a fetch slot, making the DIY
+    # cost/quality comparison against Tavily/Brave like-for-like. The post-hoc
+    # _scrub_blocked remains a backstop for anything a redirect sneaks past.
+    serp = [r for r in serp if not is_blocked(r.url)]
 
     # 2. Parallel fetch + extract (cached). Raw HTML is fetched and run
     # through trafilatura HERE so the picker only ever sees clean main

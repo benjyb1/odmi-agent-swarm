@@ -18,9 +18,19 @@ agents.tools.db.ensure_prompt_version on first use).
 from __future__ import annotations
 
 from typing import List
+from urllib.parse import urlsplit
+
+# tldextract gives correct public-suffix handling (so example.co.uk reduces to
+# example.co.uk, not co.uk). It is optional: if it is not installed we fall
+# back to a heuristic that is approximate for multi-label suffixes (see
+# _registrable_domain). Importing it here keeps the per-call path cheap.
+try:  # pragma: no cover - exercised by whichever branch is installed
+    import tldextract as _tldextract
+except ImportError:  # pragma: no cover
+    _tldextract = None
 
 NAME = "search_adjudicator"
-VERSION = 2
+VERSION = 3
 DESCRIPTION = (
     "Search-adjudicator v2: blind pairwise judge for DIY-vs-Tavily search "
     "evaluation. Reads an ODMI question, the verified ground-truth ANSWER "
@@ -29,7 +39,11 @@ DESCRIPTION = (
     "tie / both_fail. Run position-swapped to control position bias. Intended "
     "to run on a higher-tier (Opus) model. V2 re-anchors judgement on the "
     "answer label (per D22) rather than on reproducing the justification "
-    "specifics, which made V1 over-strict (spurious both_fail / split ties)."
+    "specifics, which made V1 over-strict (spurious both_fail / split ties). "
+    "V3 normalises evidence to remove provider fingerprints: each source URL "
+    "is reduced to its registrable domain (no scheme, path or www.) and the "
+    "two arms are truncated to equal passage count upstream, so the judge "
+    "cannot infer the provider from host detail or arm size."
 )
 
 # Per-passage display cap so a verbose provider cannot win on length alone.
@@ -80,18 +94,65 @@ invent a winner, and do not punish a set merely for omitting justification
 detail it did not need."""
 
 
+def _registrable_domain(url: str) -> str:
+    """Reduce a URL to its registrable domain, dropping provider fingerprints.
+
+    Examples: https://www.example.co.uk/a/b -> example.co.uk;
+    https://example.com/path -> example.com; www.example.org -> example.org.
+
+    The judge is blind, but a full URL (scheme, host, path) can betray which
+    provider returned a passage. The registrable domain (public suffix plus
+    one label) keeps enough source authority for judging while hiding the
+    path and any host the providers format differently.
+
+    With tldextract installed this uses the public-suffix list, so
+    two-label suffixes (.co.uk) keep two labels. Without it we fall back to
+    a heuristic: take the hostname, strip a leading "www.", and keep the last
+    two dotted labels. That is approximate for multi-label suffixes (it would
+    read example.co.uk as co.uk), which is why tldextract is preferred.
+    """
+    if not url:
+        return ""
+    raw = str(url).strip()
+    # urlsplit only finds a hostname when a scheme is present; bare hosts
+    # ("www.example.org") land in .path, so fall back to the raw string.
+    parts = urlsplit(raw)
+    host = parts.hostname or parts.path
+    host = (host or "").strip().strip("/").lower()
+    if not host:
+        return ""
+
+    if _tldextract is not None:
+        ext = _tldextract.extract(host)
+        if ext.domain and ext.suffix:
+            return f"{ext.domain}.{ext.suffix}"
+        # No recognised public suffix (e.g. a bare hostname): use what we have.
+        return ext.domain or host
+
+    # Fallback without tldextract: public-suffix handling is approximate.
+    if host.startswith("www."):
+        host = host[4:]
+    labels = host.split(".")
+    if len(labels) <= 2:
+        return host
+    return ".".join(labels[-2:])
+
+
 def _format_evidence(label: str, passages: List[dict]) -> str:
     """Render one evidence set as a numbered block.
 
     Each passage dict has keys: url, snippet (and optionally title, score).
+    The URL is shown as its registrable domain only (see _registrable_domain),
+    and the numeric score is never rendered: both are provider fingerprints a
+    blind judge must not see.
     """
     if not passages:
         return f"System {label} evidence: (no results returned)"
     lines = [f"System {label} evidence:"]
     for i, p in enumerate(passages, 1):
         snippet = str(p.get("snippet") or "").strip()[:PASSAGE_CHAR_CAP]
-        url = str(p.get("url") or "").strip()
-        lines.append(f"[{label}{i}] {url}\n      {snippet}")
+        domain = _registrable_domain(p.get("url") or "")
+        lines.append(f"[{label}{i}] {domain}\n      {snippet}")
     return "\n".join(lines)
 
 

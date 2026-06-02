@@ -23,6 +23,8 @@ dependencies = [
     "python-pptx>=1.0",    # slide deck generation
     "rdflib>=7",
     "pyshacl>=0.26",
+    "tldextract>=5",       # registrable-domain reduction for the blind judge
+    "scipy>=1.17.1",
 ]
 
 [project.optional-dependencies]

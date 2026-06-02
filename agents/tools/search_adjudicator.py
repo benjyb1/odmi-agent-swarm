@@ -38,6 +38,20 @@ class AdjudicationResult(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
 
 
+def _equalise_counts(
+    a: List[dict], b: List[dict]
+) -> tuple[List[dict], List[dict]]:
+    """Truncate both evidence lists to min(len(a), len(b)), top-ranked first.
+
+    A blind judge could guess the provider from one arm simply having more
+    passages than the other. Passages arrive already ranked best-first, so we
+    keep the top n of each and preserve their order. Returns new lists; the
+    inputs are not mutated.
+    """
+    n = min(len(a), len(b))
+    return a[:n], b[:n]
+
+
 def adjudicate(
     *,
     question_text: str,
@@ -56,6 +70,10 @@ def adjudicate(
     prompt_version_id = ensure_prompt_version(
         prompt.NAME, prompt.VERSION, prompt.SYSTEM, prompt.DESCRIPTION,
     )
+    # Normalise before formatting so the rendered blocks carry no provider
+    # fingerprint: equal passage count here, registrable-domain URLs (and no
+    # score) in the renderer.
+    evidence_a, evidence_b = _equalise_counts(evidence_a, evidence_b)
     user_message = prompt.build_user_message(
         question_text=question_text,
         ground_truth=ground_truth,
