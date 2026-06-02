@@ -216,8 +216,104 @@ def metric_q27_open_format(
     return MetricResult("Q27", "metric_q27_open_format", pct, num, denom, band, breakdown)
 
 
-# Registry of presence/count metrics by question_id. The SHACL metrics
-# (Q16/Q17/Q18) are registered in compute.py.
+# ------------------------------------------------------------------
+# DCAT-AP conformance metrics (Q16/Q17/Q18). These need a per-dataset
+# RDF graph (the dcat_rdf route, or graphs synthesised from JSON for
+# NL/EE). Datasets without a graph cannot be assessed; if none have one,
+# the function raises so the caller treats conformance as unavailable.
+# ------------------------------------------------------------------
+
+DEFAULT_SHACL_SAMPLE = 1000
+
+
+def _evenly_spaced_sample(
+    items: list, n: Optional[int]
+) -> tuple[list, bool]:
+    """Deterministic evenly-spaced sample of `n` items. Returns
+    (sample, was_sampled). No silent cap: the caller discloses the
+    sample size in the breakdown."""
+    if n is None or len(items) <= n:
+        return items, False
+    stride = len(items) / n
+    return [items[int(i * stride)] for i in range(n)], True
+
+
+def _graphed_datasets(datasets: list[HarvestedDataset]) -> list[HarvestedDataset]:
+    from agents.tools.catalogue import shacl
+    return [
+        d for d in datasets
+        if d.graph is not None and shacl.has_dataset_node(d.graph)
+    ]
+
+
+def metric_q16_mandatory_conformance(
+    datasets: list[HarvestedDataset],
+    shape: QuestionShape,
+    *,
+    sample_size: Optional[int] = DEFAULT_SHACL_SAMPLE,
+) -> MetricResult:
+    """Q16: percentage of metadata DCAT-AP compliant in mandatory classes."""
+    from agents.tools.catalogue import shacl
+
+    graphed = _graphed_datasets(datasets)
+    if not graphed:
+        raise ValueError("Q16 needs dataset RDF graphs; none available")
+    sampled, was_sampled = _evenly_spaced_sample(graphed, sample_size)
+    num = sum(1 for d in sampled if shacl.is_mandatory_conformant(d.graph))
+    denom = len(sampled)
+    pct = _pct(num, denom)
+    band = band_for_percentage(pct, shape.allowed_answers)
+    sample_note = (
+        f" (sampled {denom:,} of {len(graphed):,})" if was_sampled else ""
+    )
+    breakdown = (
+        f"{num:,} of {denom:,} datasets pass the SEMIC DCAT-AP mandatory "
+        f"SHACL shapes{sample_note} = {pct:.1f}% -> {band}"
+    )
+    return MetricResult("Q16", "metric_q16_mandatory_conformance", pct, num, denom, band, breakdown)
+
+
+def metric_q17_recommended_usage(
+    datasets: list[HarvestedDataset], shape: QuestionShape
+) -> MetricResult:
+    """Q17: percentage of metadata using DCAT-AP recommended classes."""
+    from agents.tools.catalogue import shacl
+
+    graphed = _graphed_datasets(datasets)
+    if not graphed:
+        raise ValueError("Q17 needs dataset RDF graphs; none available")
+    num = sum(1 for d in graphed if shacl.uses_recommended(d.graph))
+    denom = len(graphed)
+    pct = _pct(num, denom)
+    band = band_for_percentage(pct, shape.allowed_answers)
+    breakdown = (
+        f"{num:,} of {denom:,} datasets exercise a DCAT-AP recommended "
+        f"property = {pct:.1f}% -> {band}"
+    )
+    return MetricResult("Q17", "metric_q17_recommended_usage", pct, num, denom, band, breakdown)
+
+
+def metric_q18_optional_usage(
+    datasets: list[HarvestedDataset], shape: QuestionShape
+) -> MetricResult:
+    """Q18: percentage of metadata using DCAT-AP optional classes."""
+    from agents.tools.catalogue import shacl
+
+    graphed = _graphed_datasets(datasets)
+    if not graphed:
+        raise ValueError("Q18 needs dataset RDF graphs; none available")
+    num = sum(1 for d in graphed if shacl.uses_optional(d.graph))
+    denom = len(graphed)
+    pct = _pct(num, denom)
+    band = band_for_percentage(pct, shape.allowed_answers)
+    breakdown = (
+        f"{num:,} of {denom:,} datasets exercise a DCAT-AP optional "
+        f"property = {pct:.1f}% -> {band}"
+    )
+    return MetricResult("Q18", "metric_q18_optional_usage", pct, num, denom, band, breakdown)
+
+
+# Registry of presence/count metrics by question_id.
 PRESENCE_METRICS = {
     "Q12": metric_q12_licence_presence,
     "Q13": metric_q13_distinct_licences,
@@ -225,4 +321,11 @@ PRESENCE_METRICS = {
     "Q22": metric_q22_access_url,
     "Q25": metric_q25_open_licence,
     "Q27": metric_q27_open_format,
+}
+
+# Conformance metrics (need dataset RDF graphs).
+CONFORMANCE_METRICS = {
+    "Q16": metric_q16_mandatory_conformance,
+    "Q17": metric_q17_recommended_usage,
+    "Q18": metric_q18_optional_usage,
 }
