@@ -1,0 +1,31 @@
+{
+  "source": "Common open and machine-readable data formats. Matched against plain format tokens (e.g. 'CSV') and against the suffix of EU file-type authority URIs (e.g. http://publications.europa.eu/resource/authority/file-type/CSV -> 'CSV') that several portals emit. Open standard + machine-processable; excludes presentation/document formats (PDF, HTML, DOC) and proprietary binaries. Not sourced from data.europa.eu.",
+  "note": "Used by Q27. Adjustable: add a token here to widen the set. media-type spellings are mapped to these tokens in formats.py.",
+  "open_machine_readable": [
+    "csv",
+    "tsv",
+    "json",
+    "jsonld",
+    "geojson",
+    "xml",
+    "rdf",
+    "ttl",
+    "turtle",
+    "n3",
+    "nt",
+    "ntriples",
+    "xlsx",
+    "ods",
+    "gpkg",
+    "geopackage",
+    "parquet",
+    "arrow",
+    "avro",
+    "kml",
+    "gml",
+    "netcdf",
+    "sparql",
+    "wfs",
+    "wcs"
+  ]
+}

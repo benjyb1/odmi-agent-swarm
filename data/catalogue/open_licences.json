@@ -1,0 +1,17 @@
+{
+  "source": "SPDX licence list (spdx.org/licenses) and the Open Definition conformant-licence list (opendefinition.org/licenses), plus the national open licences each portal uses (Etalab Licence Ouverte, UK/RO Open Government Licence, Germany Datenlizenz Deutschland). Not sourced from data.europa.eu.",
+  "note": "Canonical licence families considered OPEN for Q25. licence_family() in licences.py maps a raw licence id/URI to one of these. Families absent here (e.g. cc-by-nc, cc-by-nd) carry usage restrictions and are not open under the Open Definition.",
+  "open_families": [
+    "cc0",
+    "pd",
+    "pddl",
+    "cc-by",
+    "cc-by-sa",
+    "odbl",
+    "odc-by",
+    "etalab",
+    "dl-de-by",
+    "dl-de-zero",
+    "ogl"
+  ]
+}
