@@ -14,6 +14,114 @@ file. No silent edits.
 
 ---
 
+## 0. Rules every experiment follows
+
+Sections 1 to 11 work the search experiments in detail. This section lifts the
+parts that bind **every** experiment, search or not, into one numbered checklist.
+Each per-experiment pre-registration (this file, `EXPERIMENTS_VERIFIER.md`, and
+the optimisation sections below) states which of these it meets and names any it
+cannot. A rule an experiment breaks is a limitation written into that experiment,
+not a silent omission. Section 12 grades the existing experiments against the
+list.
+
+**R1. Pre-register before the data.** The design is fixed in a dated commit whose
+timestamp predates the result file. Any change is a new dated commit with a
+change-log line. The run decides the answer, nothing else.
+
+**R2. Pair within the item.** Every arm sees the identical item set, and for
+provider work the identical query, so a difference is attributable to the arm and
+not to an easier question (sections 3, 4).
+
+**R3. Sample by a rule fixed in advance.** Stratify by ODMI dimension, draw with a
+named RNG seed, write the selected IDs into the results JSONL, and report the
+achieved per-stratum counts. No hand-picking of individual items (section 3).
+
+**R4. Refuse a base-rate-degenerate sample.** This is the France lesson, and it is
+a rule rather than a footnote. France's binary gold answers run 119 `yes` to 1
+`no`, so a model that answers `yes` to everything scores about 99% and a false
+`yes` never surfaces. Accuracy on that sample measures nothing. Three
+requirements follow.
+
+- (a) **Report the majority-class baseline beside every accuracy figure**, and
+  require the headline to beat it. The baseline is the score of the constant
+  majority-class predictor on the same items. An accuracy that does not clear it
+  is not a result.
+- (b) **When the classes are skewed, the headline metric is balance-aware:**
+  Youden's J, MCC, balanced accuracy, or the per-class rates (catch rate on the
+  minority class, false-positive rate on the majority), in place of raw accuracy.
+  EXP-6 already does this; the optimisation experiments below adopt it.
+- (c) **Pick the evaluation country by minority-class share, subject to a
+  well-resourced-language constraint.** A country needs enough negative golds for
+  a false positive to show up (the discrimination requirement), and a
+  well-resourced language so a poor result is the pipeline's doing and not the
+  language channel (the no-confound requirement). The two pull the same way here.
+  Malta is the clearest pick: English is an official language and most of its
+  open-data estate is in English, and it still carries about 30 `no` binary golds.
+  The selection table, computed from `ground_truth` over binary questions with a
+  yes/no gold (this denominator, not the all-question yes-share quoted in EXP-7):
+
+  | Country | Language | binary yes / no | No-share | majority baseline | Role |
+  |---|---|---|---|---|---|
+  | Malta (MT) | English (official) | 68 / 30 | 31% | 69% | primary test country |
+  | Netherlands (NL) | Dutch (well-resourced) | 93 / 26 | 22% | 78% | secondary (pipeline already runs NL) |
+  | Belgium (BE) | French / Dutch / German | 91 / 24 | 21% | 79% | viable, no pairs yet |
+  | Sweden (SE) | Swedish | 94 / 27 | 22% | 78% | viable, no pairs yet |
+  | France (FR) | French | 119 / 1 | 1% | 99% | **barred as a primary set**; degenerate-baseline contrast only |
+  | Estonia (EE) | Estonian | 117 / 3 | 2% | 98% | barred as primary (and a low-resource language) |
+  | Lithuania (LT) | Lithuanian | 120 / 0 | 0% | 100% | unusable: zero negative golds to discriminate |
+
+  A country whose binary gold is more than roughly 90% one class is barred as a
+  primary evaluation set. It may appear only as a deliberate degenerate-baseline
+  contrast, labelled as such, to show the trap empirically. This rule lands on two
+  already-pre-registered choices: EXP-1 ran on France, and EXP-3 anchors on
+  Estonia with Lithuania as a "discriminating control" that holds zero negative
+  binary golds. Both are graded in section 12.
+
+**R5. Blind the judge, swap positions.** Any LLM judge reads blinded evidence,
+each pair judged twice with the arms swapped, rendered at equal passage count and
+reduced to the registrable domain, from a single frozen snapshot, at temperature
+0 (sections 4, 5).
+
+**R6. Check the judge against itself and another family.** A cross-family judge
+re-rates a seeded subsample (Krippendorff's alpha), and an answer-blind variant
+measures how far the gold label is doing the work. Agreement statistics use the
+answer-blind variant (sections 4, 5).
+
+**R7. Break a confound by design, then report the residual.** Where two factors
+are tangled (maturity and language, provider and host), add a discriminating
+control rather than assert independence. Report the part the design cannot
+separate as the headline limitation, and state partial identification as
+"consistent with", never "proven" (sections 3, 11; EXP-3).
+
+**R8. Fix the statistics before the run.** Proportions as Wilson 95% intervals,
+the interval being the result; paired tests on the discordant pairs (McNemar
+exact for accuracy, sign test for win shares, Wilcoxon for cost); one
+confirmatory primary per experiment, the rest secondary and Holm-corrected;
+non-inferiority only against a margin justified by a decision rule (section 5).
+
+**R9. Cost per item, retries counted, cold cache.** Cost is measured per item, not
+per call or per search, because a leaner setting that retries more can cost more
+per item. Every cost run starts cold with caching off, unless the cache is itself
+the treatment, which is declared (sections 4, 5; EXP-2).
+
+**R10. Apply the deny-list equally and before retrieval.** The evaluation-cycle
+deny-list (`agents/tools/blocked_domains.py`) filters every arm pre-retrieval, so
+no arm competes for a different number of usable slots. Verified before each run
+(section 4).
+
+**R11. Fix the sample, do not peek and extend.** Run the pre-specified n, then
+analyse once. A quota-truncated run is reported as a partial with its achieved n;
+no item is selectively re-run to move a number (section 5).
+
+**R12. Report the negative, log what was dropped, keep the receipts.** A null or
+unflattering result is the finding. Any coverage bound (a cost ceiling, a top-N
+cap, a dropped country) is logged with what it removed. Every judgement streams to
+JSONL with its raw output and evidence, and the experiment is entered in the D27
+`experiments` table before the run, so an examiner replays it from logs alone
+(sections 6, 8).
+
+---
+
 ## 1. Why pre-register
 
 EXP-1 reported a headline of "DIY not worse than Tavily 78% of the time" on a
@@ -283,6 +391,91 @@ verdicts and the evidence, so an examiner can replay it.
   Krippendorff's alpha and answer-blind variant on the subsample. This is the
   parked June plan (see the project memory), now unparked.
 
+The remaining optimisation experiments are EXP-6 (Family 2, Verifier prompt
+strategies), pre-registered separately in `EXPERIMENTS_VERIFIER.md`; EXP-7 (retry
+chaining / evidence accumulation), parked in `EXPERIMENTS.md`; and EXP-8 and EXP-9
+below. METHODOLOGY.md describes the three optimisation families; this section
+pins the cost-side (Family 1) and model-variant (Family 3) families to the rules
+in section 0, the part the methodology draft left open.
+
+### EXP-8, cost-side optimisations (Family 1)
+
+- **Primary question.** How much of the per-pair cost can be cut before accuracy
+  drops below the `baseline`? The output is the cost axis of the accuracy-cost
+  surface (METHODOLOGY, RQ5).
+- **Arms** (`condition_label`, METHODOLOGY Family 1; pair set, country, and models
+  held fixed, only the named knob varies):
+
+  | condition_label | Change from baseline |
+  |---|---|
+  | `baseline` | Full prompt, full retrieval, no truncation. The reference accuracy and cost. |
+  | `prompt-compressed` | Prompts compressed: examples dropped, instructions terser. Same loop. |
+  | `retrieval-tight` | Search capped at top-3 hits, fetch capped at the first 4k characters (the D31 knobs). |
+  | `cache-hot` | Identical query within the hour returns cached evidence. The cache is the treatment here, so R9's cold-cache rule is suspended for this arm only, and the arm is declared as cache-on. |
+  | `model-fallback` | Cheaper model first, escalate to the baseline model only on a Verifier reject. Overlaps EXP-9's `model-tiered`; reported as the cost-knob view of it and cross-referenced. |
+
+- **Endpoints.** E1 accuracy, read **balance-aware** per R4(b) (balanced accuracy
+  and the per-class catch / false-positive rates, not raw accuracy), with the
+  Malta majority baseline (69%) printed beside it per R4(a). Cost per pair (total
+  Claude calls, tokens, cost, and mean `retry_count`) per R9 is the co-headline.
+  No judge, so no cross-family step.
+- **Sample.** Malta primary, Netherlands secondary, per R4(c). Paired: every
+  condition runs the **identical** pair set (R2), stratified by ODMI dimension
+  with achieved counts reported (R3). Target ~40 Malta pairs spanning the four
+  dimensions, with the `no`-gold pairs deliberately retained so a false `yes`
+  shows up.
+- **Statistics.** McNemar exact on accuracy for each lean arm against `baseline`,
+  Wilcoxon signed-rank on per-pair cost, Holm-corrected across the four
+  non-baseline arms (R8). The one confirmatory comparison is the cheapest arm that
+  holds accuracy against `baseline`; the rest are secondary.
+- **Headline.** Each accuracy delta is set against the calls-per-pair delta. A
+  lean arm that retries more and erases its own saving is reported as that result
+  (the EXP-2 confound, R9).
+- **Prerequisite (pending quota).** Needs a Researcher dispatch on Malta (and
+  optionally NL); those pairs do not exist in the DB yet. The dispatch is gated on
+  search quota, the same constraint as the parked D28 Phase 3 re-dispatch and
+  EXP-6's retarget. Do not assume it has run. `prompt-compressed` also needs a
+  committed compressed prompt version, and `model-fallback` the escalation path;
+  both are pre-run requirements (section 9).
+
+### EXP-9, model variants (Family 3)
+
+- **Primary question.** How much of accuracy is model capability versus pipeline
+  design, and does the tiered combination match the all-Sonnet baseline at
+  materially lower cost? The output is the accuracy-cost surface across model
+  tiers (METHODOLOGY Family 3).
+- **Arms** (same models across Researcher / Verifier / Adjudicator unless tiered;
+  exact version IDs are pinned at run time and recorded in `claude_usage_log` and
+  the registry `conditions`, per the receipts standard, so a later catalogue
+  change does not rewrite history):
+
+  | condition_label | Researcher | Verifier | Adjudicator |
+  |---|---|---|---|
+  | `model-haiku` | Haiku | Haiku | Haiku |
+  | `model-sonnet` (baseline) | Sonnet | Sonnet | Sonnet |
+  | `model-opus` | Opus | Opus | Opus |
+  | `model-tiered` | Haiku | Sonnet | Opus |
+
+- **Endpoints.** E1 accuracy, balance-aware per R4(b) against the Malta majority
+  baseline per R4(a); cost per pair per R9. The accuracy-cost surface (accuracy on
+  one axis, cumulative cost on the other, one marker per condition, coloured by
+  ODMI dimension) is the headline figure for the dissertation.
+- **Sample.** Malta primary, Netherlands secondary, per R4(c). Paired across the
+  four model conditions on the identical pair set (R2), stratified by dimension
+  (R3). Shares the EXP-8 Malta dispatch where the pairs overlap.
+- **Statistics.** Per-condition balanced accuracy with Wilson 95% intervals (R8).
+  The one confirmatory comparison is `model-tiered` vs `model-sonnet` (the
+  deployment hypothesis: cheap drafting, mid-tier verification, premium reasoning
+  only when the swarm fails to converge), tested by McNemar exact on accuracy and
+  Wilcoxon on per-pair cost. `model-haiku` and `model-opus` against the baseline
+  are secondary, Holm-corrected.
+- **Honest framing.** "Model tier does not matter much on this regime, Haiku is
+  enough" is as publishable a result as "only Opus reaches human-equivalent". A
+  null is the finding (R12).
+- **Prerequisite (pending quota).** The same Malta dispatch as EXP-8, plus the
+  per-agent model-override threading committed and tested (section 9). Pending
+  search quota; do not assume it has run.
+
 ---
 
 ## 8. Experiment registry (D27)
@@ -298,6 +491,9 @@ with `conditions` as a JSON object. IDs:
 | `diy_vs_tavily_multilingual` | EXP-3 | arms: diy, tavily; EE, LT, IS |
 | `brave_head_to_head_fr` | EXP-4 | arms: diy, tavily, brave; FR |
 | `provider_ab_fr` | EXP-5 | arms: diy, tavily, brave, serper; FR |
+| `verifier_strategy_disc_v1` | EXP-6 | strategies: disprove, negation, steelman, blind; MT primary, FR/INJ robustness |
+| `cost_side_optim_mt` | EXP-8 | baseline, prompt-compressed, retrieval-tight, cache-hot, model-fallback; MT, NL |
+| `model_variants_mt` | EXP-9 | model-haiku, model-sonnet, model-opus, model-tiered; MT, NL |
 
 ## 9. Pre-run requirements (must be committed and verified before any run)
 
@@ -332,6 +528,23 @@ so these are built, unit-tested, and committed **before** the first run:
 A pre-run check script asserts deny-list parity and a cold cache, mirroring the
 EXP-2a prompt's "did the swarm actually use DIY" sanity check. No experiment runs
 until items 1 to 8 are committed and their tests pass.
+
+For the optimisation experiments (EXP-6 retarget, EXP-8, EXP-9), three further
+items, all gated on search quota:
+
+9. **Malta dispatch:** a Researcher run over Malta (target ~30 `no`-gold binary
+   questions plus a matched ~30 `yes`-gold for the pass side, dimension-stratified),
+   optionally Netherlands. The `no`-gold candidates do not exist in the DB yet, so
+   this is the binding prerequisite for the base-rate rule (R4) to be satisfiable.
+   Same quota gate as the parked D28 Phase 3.
+10. **EXP-8 conditions:** a committed `prompt-compressed` prompt version in
+    `prompt_versions`, the `model-fallback` escalation path, and a per-arm
+    cache-bypass that leaves the `cache-hot` arm cache-on while every other arm
+    runs cold.
+11. **EXP-9 threading:** per-agent model overrides (Researcher / Verifier /
+    Adjudicator independently settable) threaded through the dispatch path and the
+    `model-tiered` assignment, with the resolved version IDs written to
+    `claude_usage_log`.
 
 ## 10. Execution and the parallelism constraint
 
@@ -374,6 +587,40 @@ dispatch next; EXP-4 and EXP-5 last, as they reuse EXP-1's pair set and harness.
   confirmatory, EXP-4/5 are exploratory, so the primaries are not treated as
   independent replications.
 
+## 12. Rubric audit: existing experiments against section 0
+
+Every experiment graded against the rules, with the focus on R4 (the new
+base-rate rule). The point is to find where already-pre-registered work breaks a
+rule, so the breach is named and fixed rather than buried.
+
+| EXP | R4 base-rate | Other notable | Verdict |
+|---|---|---|---|
+| EXP-1 (done, FR) | **Breach on the E1 accuracy co-endpoint** (FR binary 99% one class); E2 provider win-share is base-rate-robust | R6 Gemini reliability pending quota (disclosed) | Headline (E2, DIY 89% of 55 decided) **stands**; the E1 accuracy figure must carry the 99% baseline and not be read as a swarm-accuracy claim |
+| EXP-2a (queued, FR) | Breach: reuses FR answerable set for an accuracy-held claim | Cost endpoint is base-rate-independent | Move the accuracy claim to Malta; keep FR only for the cost mechanics |
+| EXP-2b (planned, EE) | Breach: Estonia is degenerate (98%) and low-resource | Conflates "thin web" with "low resource" | Re-anchor to Malta for the trade-off; use a balanced low-resource country (IS) only as the declared language-confound contrast |
+| EXP-3 (planned, EE/LT/IS) | **Breach: LT has zero negative binary golds**, so the "discriminating control" cannot discriminate a false positive on binary; EE degenerate | E2 win-share is base-rate-robust; the maturity x language claim (R7) leans on the broken binary accuracy | Restrict E1 to non-binary shapes where the gold varies, or re-anchor; keep E2 as the provider comparison |
+| EXP-4, EXP-5 (planned, FR) | Satisfied: endpoints are paired provider win-shares, not accuracy vs a skewed gold | Shared-sample dependency disclosed (R8) | FR acceptable for these endpoints; no change |
+| EXP-6 (running, retargeted) | Was a breach (should_fail 20/21 FR); the Malta retarget fixes R4(c) | R4(b) already met (J/MCC headline) | Compliant after retarget; pending Malta dispatch |
+| EXP-7 (parked) | Satisfied by design (Malta, no-gold-rich) | - | Compliant; parked |
+| EXP-8, EXP-9 (new) | Satisfied by design (Malta primary, NL secondary) | - | Compliant; pending Malta dispatch |
+
+Two findings carry weight for the writeup.
+
+- **EXP-1's provider result survives, its accuracy framing does not.** The
+  confirmatory endpoint is a within-pair preference between two evidence blocks,
+  which a skewed gold does not flatter, so "DIY wins 89% of 55 decided pairs"
+  holds. But any France E1 *accuracy* number sits on a 99% majority baseline and
+  cannot be presented as evidence the swarm answers well. R4(a) (print the
+  baseline) is the missing step, not a re-run.
+- **EXP-3's identification strategy is undercut by its own anchors.** Lithuania
+  was chosen as the high-maturity control whose underperformance would point to a
+  language channel, but on binary questions Lithuania has no negative golds at
+  all, so a false positive cannot even occur there. The maturity x language claim
+  (R7) therefore cannot rest on binary accuracy. Either move EXP-3's E1 to the
+  percentage-band and ordinal shapes, where the gold actually varies, or re-anchor
+  the country panel. This is the clearest case of the base-rate rule changing an
+  already-pre-registered design.
+
 ## Change log
 
 - 2026-06-02: created. Pre-registers EXP-1 refresh, EXP-2a/2b, EXP-3 (EE/LT/IS),
@@ -403,3 +650,14 @@ dispatch next; EXP-4 and EXP-5 last, as they reuse EXP-1's pair set and harness.
   as a discriminating control. Kept the speaker-population proxy and the
   partial-identification caveat (no proven causation at n=3); the maturity/language
   confound remains the headline EXP-3 limitation.
+- 2026-06-03: added section 0 (the universal rules R1 to R12 that bind every
+  experiment), with R4 the new base-rate rule that bars a degenerate evaluation
+  set and pins country selection to minority-class share subject to a
+  well-resourced-language constraint (Malta primary, NL secondary; the No-share
+  table is computed from `ground_truth`). Pre-registered EXP-8 (Family 1
+  cost-side) and EXP-9 (Family 3 model variants) under those rules; added their
+  registry rows and the Malta-dispatch / condition-threading pre-run requirements
+  (items 9 to 11), all gated on search quota. Added section 12, the rubric audit:
+  it flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider
+  result is unaffected) and EXP-3's Lithuania control as undiscriminating on
+  binary (zero negative golds). No runs in this commit.

@@ -57,9 +57,22 @@ The confusion matrix per strategy:
 
 ## 3. Items and sampling
 
-Three strata, fixed before the run. Selection is deterministic: RNG **seed
-20260603**, stratified round-robin, selected candidate IDs written into the
-results JSONL so the draw is reproducible and verifiably not post hoc.
+**Retargeted 2026-06-03 to a base-rate-balanced country**, per the universal rule
+R4(c) (`EXPERIMENTS_PROTOCOL.md`, section 0). The first design drew its natural
+errors almost entirely from France (20 of 21), where the binary gold runs 99%
+`yes`. A should_fail class built there is both tiny and tilted to one country, and
+a Verifier that waves everything through is barely penalised, so the primary
+endpoint would have been measured where false positives can hardly occur. The
+primary should_fail source moves to **Malta**: English is an official language, so
+a missed error is not a language artefact, and about 30 binary questions carry a
+`no` gold, so real Researcher errors on the minority class can actually happen.
+**Netherlands** is the secondary test country (Dutch, well-resourced, already in
+the pipeline). France and the injected flips are kept as **robustness arms**,
+reported separately and never folded into the primary.
+
+Selection is deterministic: RNG **seed 20260603**, stratified round-robin,
+selected candidate IDs written into the results JSONL so the draw is reproducible
+and verifiably not post hoc.
 
 A **candidate** is a distinct `(question_id, country_code, researcher_answer)`
 drawn from `phase2_researcher_runs`. The Researcher's real row supplies the
@@ -68,24 +81,28 @@ persisted `search_snippets`). Candidates whose Researcher answer is
 `inconclusive`/`not_applicable`, or which have no ODMI gold, are excluded: the
 classifier question is only defined on a definite answer with a reference.
 
-1. **NAT-fail (primary, scarce class).** Every distinct natural error: a
-   Researcher answer that differs from gold. The DB holds **21** (20 FR, 1 EE).
-   All are taken; none are hand-picked.
-2. **NAT-pass (primary).** A stratified sample of correct Researcher candidates,
-   drawn round-robin across country and ODMI dimension to cover all five
-   countries present (FR, EE, DE, NL, RO) and all four dimensions. Target ~45.
-3. **INJ-fail (secondary, controlled).** A counterfactual error stratum: take
-   correct binary candidates and flip the stated answer (`yes`↔`no`) while
-   leaving the evidence intact. The candidate is then wrong **by construction**,
-   which removes the ODMI-staleness confound that clouds NAT-fail, and balances
-   the should_fail class. Restricted to binary questions; FR and EE only (the two
-   countries with enough binary candidates). Target ~20. Labelled secondary and
-   reported separately, because a flipped label is a specific error type
-   (stated answer contradicts the cited evidence), not a random draw from the
-   real error distribution.
+1. **NAT-fail-MT (primary should_fail).** Every natural error on Malta: a Malta
+   Researcher answer that differs from gold, with the `no`-gold questions covered
+   so errors on the minority class are visible. All are taken; none hand-picked.
+   **Requires the Malta dispatch (section 8); it is pending search quota, so until
+   it lands this stratum is empty and the primary J is not computable.**
+2. **NAT-pass-MT (primary should_pass).** A stratified sample of correct Malta
+   candidates, round-robin across ODMI dimension, matched in size to NAT-fail-MT.
+3. **NAT-NL (secondary).** Natural fail and pass candidates on Netherlands, a
+   second balanced country to check the Malta ranking is not Malta-specific. Run
+   if the NL dispatch lands.
+4. **NAT-fail-FR + INJ-fail (robustness).** The original France-dominated natural
+   errors (21: 20 FR, 1 EE) and the injected label-flips (correct binary
+   candidates with `yes`/`no` flipped, wrong by construction; FR and EE). These
+   already exist in the DB and are the data behind the superseded partial run.
+   They are kept as a robustness check: the injected flips remove the
+   ODMI-staleness confound, and a strategy ranking that holds across the
+   Malta-natural and the injected arms is more trustworthy than one that does not.
+   Reported separately, never merged into the Malta primary.
 
-Combined target ≈ 86 candidates (≈41 should_fail, ≈45 should_pass). Achieved
-counts per stratum, country, and dimension are reported with the result.
+Achieved counts per stratum, country, and dimension are reported with the result.
+Until the Malta dispatch exists, only the robustness arm is runnable, and any
+number from it is labelled robustness-only, not the primary J.
 
 ## 4. Design: paired, frozen evidence
 
@@ -134,11 +151,11 @@ counts per stratum, country, and dimension are reported with the result.
 |---|---|
 | Question difficulty varies pair to pair | Paired: every strategy sees identical candidates. |
 | Search luck differs between arms | Evidence frozen once per candidate, shared across all four arms. |
-| Class base-rate flatters always-pass | J / MCC / balanced accuracy as headline, not raw accuracy; catch and false-reject reported separately; pass-rate per strategy shown. |
-| Cherry-picking items | All 21 natural errors taken; correct/injected drawn by seeded stratified rule fixed here. |
+| Class base-rate flatters always-pass | J / MCC / balanced accuracy as headline, not raw accuracy; catch and false-reject reported separately; pass-rate per strategy shown. Reinforced by R4: the primary should_fail class is sourced from Malta, a base-rate-balanced country, not from yes-heavy France. |
+| Cherry-picking items | All natural errors in the target country taken; correct/injected drawn by seeded stratified rule fixed here. |
 | ODMI ground truth one cycle stale (D22) | A NAT-fail "error" may be a stale-gold disagreement, not a Researcher error. Mitigated by the INJ-fail stratum (wrong by construction) and reported as the headline NAT caveat; natural-only and injected-only J both reported. |
 | Injection artefact | INJ-fail is a specific error type (label contradicts evidence); labelled secondary, reported separately, never folded into the primary headline silently. |
-| Country skew | should_fail is FR-dominated (20/21 natural). Per-country splits reported where n permits; FR-dominance named as the headline limitation, consistent with the project's France-first baseline (D4). |
+| Country skew | The first design had should_fail FR-dominated (20/21 natural), the breach the retarget fixes: the primary should_fail is now Malta-natural, NL secondary, FR kept only as a robustness arm. Per-country splits reported where n permits. |
 | Order / cross-arm leakage | Each strategy is an independent stateless call; no shared context between arms. |
 | Multiple comparisons | Six strategy pairs Holm-corrected; primary endpoint (J) fixed before the run. |
 | Temperature noise | Temperature 0, unchanged. |
@@ -150,13 +167,32 @@ buys no catch") is the finding and is reported plainly (CLAUDE.md, D17). Every
 verdict is written to JSONL with the frozen evidence, so an examiner can replay
 the judgement.
 
-## 8. Registry (D27)
+## 8. Registry (D27) and the Malta prerequisite
 
 `experiment_id = verifier_strategy_disc_v1`, inserted into the `experiments`
-table before the run. Harness: `evaluation/verifier_strategies.py`. Result:
+table before the run; the registry `conditions` record the target countries.
+Harness: `evaluation/verifier_strategies.py`. Result:
 `evaluation/results/verifier_strategies_*.jsonl` plus a summary block.
+
+**Prerequisite (pending search quota).** The primary endpoint needs a Researcher
+dispatch on Malta (target ~30 `no`-gold binary questions plus a matched ~30
+`yes`-gold for the pass side, dimension-stratified), optionally Netherlands. The
+`no`-gold candidates do not exist in the DB yet. The dispatch is gated on search
+quota, the same constraint as the parked D28 Phase 3 re-dispatch, so the primary J
+cannot be computed until it lands. Do not assume it has run.
 
 ## Change log
 
 - 2026-06-03: created. Pre-registers EXP-6 (four-arm Verifier strategy
   signal-detection, frozen evidence, J primary). No run yet at commit time.
+- 2026-06-03 (later): **retargeted to Malta** under the new universal base-rate
+  rule (R4, `EXPERIMENTS_PROTOCOL.md` section 0). The primary should_fail class
+  was France-dominated (20/21 natural errors) where the binary gold is 99% `yes`,
+  so false positives could barely occur; the primary now sources natural errors
+  from Malta (English official, ~30 `no` binary golds), with Netherlands secondary
+  and France plus the injected flips kept as a robustness arm. This change
+  predates the full run. The earlier partial run on the France/injected set
+  (committed at 3 of 89, extended to ~40 of 89 in working state) is **superseded
+  as the primary** and retained only as robustness-arm data, not deleted. Harness
+  strata updated in `evaluation/verifier_strategies.py` to match. Primary J is not
+  computable until the Malta dispatch lands (pending search quota).

@@ -8,6 +8,43 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20: experiment rules and the base-rate trap
+
+Wrote a universal rulebook for the experiments. The trigger was a concrete
+failure: the early runs leaned on France, but France's binary gold is 119 `yes`
+to 1 `no`, so a model that says `yes` to everything scores about 99% and a false
+positive never shows. Accuracy there measures nothing, and false positives were
+slipping through unseen.
+
+Added section 0 to `EXPERIMENTS_PROTOCOL.md`, twelve numbered rules (R1 to R12)
+that every experiment now answers to. R4 is the new one: report the majority-class
+baseline beside every accuracy number, use a balance-aware metric when the classes
+are skewed, and pick the evaluation country by minority-class share subject to a
+well-resourced-language constraint. Computed the No-share for every country from
+`ground_truth`; Malta is the standout (English is official, so no language
+confound, and about 30 `no`-gold binary questions), Netherlands the runner-up.
+France, Estonia, and Lithuania (zero negative binary golds) are barred as primary
+sets.
+
+Applied the rule rather than just stating it. EXP-6 (verifier strategies)
+retargeted from its France-dominated should_fail class to Malta-primary; the
+France and injected candidates stay as a robustness arm, and the harness strata in
+`evaluation/verifier_strategies.py` were rebuilt around primary / secondary /
+robustness roles. Verified it degrades cleanly: with no Malta data yet, the
+primary stratum is empty and the run falls back to an 82-candidate robustness arm,
+labelled as such. Pre-registered EXP-8 (cost-side, Family 1) and EXP-9 (model
+variants, Family 3) on Malta. Wrote a rubric audit (protocol section 12): it finds
+that EXP-1's France accuracy figure is degenerate although its provider win-share
+result stands, and that EXP-3's Lithuania "discriminating control" cannot
+discriminate a false positive on binary, since Lithuania has no negative binary
+golds at all.
+
+All three optimisation runs are blocked on a Malta Researcher dispatch, which is
+pending search quota, the same gate as the parked D28 Phase 3. Nothing was run.
+Recorded as SPEC D38.
+
+---
+
 ## 2026-06-02 — Session 19: scrub the stale LangGraph claims
 
 The report draft described the swarm as "LangGraph-based". It is not, and never
