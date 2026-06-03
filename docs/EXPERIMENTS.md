@@ -10,31 +10,45 @@ run) · `running` · `done`.
 
 | ID | Experiment | Status | Scope | Result (short) |
 |---|---|---|---|---|
-| EXP-1 | DIY vs Tavily, adjudicated | done | FR, 36 pairs | DIY at parity on answerable pairs: not worse 78%, wins 3:1 |
+| EXP-1 | DIY vs Tavily, adjudicated (refreshed) | done | FR, 90 pairs | DIY wins 89% of 55 decided pairs (49/6/1), Wilson CI [78,95], p<1e-4; leads all 3 dimensions |
 | EXP-2a | Search-knob cost vs quality | queued | FR subset | pending |
 | EXP-2b | Search-knob cost vs quality | planned | low-resource countries | pending |
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
+| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | running (partial) | 89 paired candidates, FR/EE/DE/NL/RO, all 4 dimensions | pending (3/89 judged; resume via `evaluation/verifier_strategies.py`) |
+| EXP-7 | Retry chaining: accumulate evidence across the loop | planned | high-resource-language, low-maturity country first (false-positive risk) | pending |
 
 ---
 
 ## EXP-1: DIY vs Tavily, adjudicated (done)
 
-SPEC: D29. Harness: `evaluation/diy_vs_tavily.py`. Results file:
-`evaluation/results/diy_vs_tavily_20260601_220315.jsonl`.
+**Refreshed 2026-06-02 (diy_vs_tavily_fr_v2), per the pre-registered protocol
+(`EXPERIMENTS_PROTOCOL.md`).** Harness: `evaluation/diy_vs_tavily.py`. Results:
+`evaluation/results/diy_vs_tavily_20260602_175403.jsonl` (git 533284b). The full
+FR non-Quality web-answerable stratum, 90 pairs, judged blind and
+position-swapped by Opus, with the deny-list applied pre-fetch to every arm and
+evidence normalised to equal passage count and registrable-domain URLs.
 
-A blind, position-swapped Opus judge compared DIY and Tavily evidence against
-the ODMI gold answer on 36 dimension-stratified French pairs.
+Result: DIY 49 wins, 1 tie, 6 Tavily wins, 34 both_fail. On the 55 decided pairs
+the DIY win share is 89% (Wilson 95% CI [78%, 95%]), exact sign test p < 1e-4
+against parity. DIY leads every dimension (Impact 13/2, Policy 12/2, Portal
+24/2). This supersedes the n=18 pilot below and clears the pre-registered
+non-inferiority margin decisively.
 
-Result: DIY 12 wins, 2 ties, 4 losses, 18 both_fail. On the 18 decisive
-(web-answerable) pairs DIY was not worse 78% of the time and out-won Tavily 3:1,
-leading on every answerable dimension. Half the sample, and all nine Quality
-questions, both-failed because the gold answer lives on the deny-listed
-data.europa.eu (MQA metric) or is a self-report.
+Caveats (honest): position consistency 81%; the answer-blind robustness check
+agrees with the answer-given verdict on only 67% of the 27-pair subsample (9
+flips), so the judge is somewhat sensitive to seeing the gold answer; the
+cross-family Gemini reliability check is pending quota (key authenticates but the
+Google project allows zero generations). France only, Tavily basic tier.
 
-Caveats: n=18 decisive, France only, Tavily basic tier, judge position
-consistency 67%. Read the 78% with those attached.
+---
+
+Pilot (superseded, n=18 decisive), SPEC D29. Run:
+`evaluation/results/diy_vs_tavily_20260601_220315.jsonl`. A blind,
+position-swapped Opus judge on 36 dimension-stratified French pairs: DIY 12 wins,
+2 ties, 4 losses, 18 both_fail; not worse 78% on the 18 decisive, wins 3:1.
+Caveats then: n=18, France only, Tavily basic tier, position consistency 67%.
 
 ## EXP-2: Search-knob cost vs quality
 
@@ -94,5 +108,69 @@ Result: pending.
 
 The parked plan: a paired A/B across five providers, agreed as the June
 starting point. Scope and provider list to be confirmed before running.
+
+Result: pending.
+
+## EXP-6: Verifier strategy discrimination (running, partial)
+
+Pre-registered in `docs/EXPERIMENTS_VERIFIER.md`. Treats each of the four D15
+verifier strategies (disprove / negation / steelman / blind) as a binary
+classifier over a Researcher candidate answer (pass = accept, fail = reject) and
+measures how well each tells a wrong answer from a correct one, per unit of token
+cost. Paired design: all four strategies judge the identical 89-candidate set
+(44 should-fail, 45 should-pass) on frozen evidence, so the only between-arm
+variable is the system prompt. Primary endpoint Youden's J; secondary MCC,
+balanced accuracy, the two error rates with Wilson CIs, per-dimension splits,
+paired McNemar (Holm), and a Wilcoxon token-cost comparison.
+
+Harness: `evaluation/verifier_strategies.py` (resumable: it skips already-judged
+candidates and appends, and sleeps through Anthropic rate-limit cooldowns).
+Status at last stop: 3 of 89 candidates judged. Resume with
+`uv run python evaluation/verifier_strategies.py`; it runs the analysis
+automatically when the set completes.
+
+Result: pending (run incomplete).
+
+## EXP-7: Retry chaining / evidence accumulation (planned, future)
+
+Up to eight calls run per pair (four Researcher, four Verifier across the retry
+budget), but they are independent shots. The Verifier searches the web every
+round and often finds real evidence, then the loop keeps only its verdict and
+bins the evidence. The Researcher on retry 3 does not know what the Verifier
+turned up on rounds 1 and 2. The calls are spent, the findings are thrown away.
+
+Idea: chain the calls into one cumulative investigation.
+- Feed the Verifier's independent evidence (its snippets and counter-evidence)
+  back to the Researcher on retry, not just the verdict and a suggested query.
+- Accumulate an evidence corpus across rounds (snippets are already persisted,
+  D34) and carry it forward, so each round sees everything found so far.
+- Let the Adjudicator synthesise over the whole corpus as the final call,
+  committing only when the evidence supports a confident label (the D37 floor)
+  and abstaining honestly otherwise.
+
+Hypothesis: chaining recovers more correct answers per call than independent
+retries, without raising the false-positive rate.
+
+Conditions: baseline (current independent retries, D33 / D37) vs chained.
+Metrics per arm: recovery (match against ground truth), false-positive rate
+(committed but wrong), abstention rate, and calls per resolved pair.
+
+Where to run, which matters as much as the design:
+- Not a yes-heavy country. On France (85% yes) a recovery number cannot be told
+  apart from majority-class guessing, the D35 / D37 lesson. The set must carry
+  plenty of no-gold pairs so a false `yes` is visible.
+- First run on a HIGH-resource-language, low-maturity country, so search and
+  model capability are not the bottleneck and the result isolates the chaining
+  effect rather than language difficulty. Malta is the leading candidate:
+  English is an official language and the open-data ecosystem is largely in
+  English, and it has many no-gold pairs (about 30). Defer the lower-resource
+  no-heavy countries (BA, MK, ME, BG, IS) to a follow-on so a poor result there
+  is not blamed on language.
+
+Prerequisite: the honest validation set (no-gold plus band pairs) must exist
+first, both to baseline the current D34 / D37 code and to measure chaining
+against it.
+
+Status: planned, not started. Parked as a future experiment.
 
 Result: pending.

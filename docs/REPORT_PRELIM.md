@@ -79,7 +79,7 @@ The project pursues four research questions:
 
 (TODO. Concrete deliverables:
 1. An end-to-end agent pipeline (Coordinator, Researcher, Adversarial Verifier)
-   running on LangGraph against a baseline country.
+   running against a baseline country.
 2. A locked, hand-marked dataset of 30-50 questions stratified by the three
    rubric dimensions for use as analytical strata.
 3. A retrospective benchmark of the pipeline against the most recent ODMI
@@ -175,7 +175,7 @@ literature.)
 - Phase 0 (now to mid-May): foundation. Repo housekeeping, locked methodology,
   preliminary report.
 - Phase A (mid-May to mid-June): France baseline. Hand-mark 30-50 questions,
-  build the minimal LangGraph swarm, run against France, analyse.
+  build the minimal swarm, run against France, analyse.
 - Phase B (mid-June to mid-July): six-country stratification. Re-mark the
   same questions for five more countries, extend the swarm, run, analyse.
 - Phase C (mid-July to early August): write-up. Final dissertation drafting,
@@ -188,7 +188,7 @@ literature.)
 | Preliminary report submitted | 2026-05-22 |
 | Phase A pilot hand-marks (10 questions) locked | 2026-05-25 |
 | Phase A full hand-marks (30-50 questions) locked | 2026-06-08 |
-| Minimal LangGraph swarm: one (question, country) end-to-end | 2026-06-08 |
+| Minimal swarm: one (question, country) end-to-end | 2026-06-08 |
 | Phase A full run against France complete | 2026-06-22 |
 | Phase B hand-marks locked for all six countries | 2026-07-06 |
 | Phase B full run complete | 2026-07-20 |

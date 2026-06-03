@@ -40,8 +40,8 @@ no more. Cite figures inline.
   - Adversarial Verifier: independent search, prompted to disprove, returns
     pass/fail + answer confidence.
   - Output: Yes / No / Other plus dual confidences and a verifiable source.
-- Stack: LangGraph, Claude via CLIProxyAPI, Tavily, Playwright, SQLite, DeepL
-  for low-resource languages.
+- Stack: plain Python state machine, Claude via CLIProxyAPI, Tavily,
+  Playwright, SQLite, DeepL for low-resource languages.
 
 ### Slide 4 — Methodology: the rubric as analytical lens
 

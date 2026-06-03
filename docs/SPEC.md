@@ -60,11 +60,16 @@ Rationale: SQLite keeps everything local and reproducible. No cloud dependency,
 no credentials, a single `.db` file can be handed to an examiner alongside the
 code. Reproducibility outweighs the convenience of a hosted store at this scale.
 
-### D3: LangGraph for the Phase 2 agent swarm
+### D3: Plain Python state machine for the Phase 2 agent swarm
 
-Explicit state machines map cleanly to the Coordinator → Researcher → Verifier
-pattern. Conditional edges express accept/reject/retry logic that plain
-LangChain chains cannot handle neatly.
+**Amended 2026-06-02.** The original D3 specified a graph-orchestration
+framework for the Coordinator → Researcher → Verifier pattern, on the
+reasoning that conditional edges express accept/reject/retry logic that plain
+chains cannot handle neatly. The implementation deviated: the Coordinator is a
+plain Python state machine (`scripts/run_coordinator.py`). The retry loop is
+linear, and a graph runtime added debugging overhead with no behavioural
+benefit at this scale. The deviation is recorded in the `run_coordinator.py`
+file header and in `docs/PROJECT_LOG.md`.
 
 ### D4: France-first baseline
 
@@ -504,8 +509,9 @@ the local dashboard's Run Console publish on the same code path.
 **Date:** 2026-05-25.
 
 The Researcher's search wrapper (`agents/tools/search.py`) routes
-queries through Tavily first and falls back to Brave if Tavily errors
-or hits its quota. Until D26, the only signal we had was a
+queries through Tavily first and falls back if Tavily errors or hits
+its quota (the fallback target is now DIY then Brave, per D36; it was
+Brave alone when D26 landed). Until D26, the only signal we had was a
 module-level `session_usage()` counter that died with the subprocess.
 That made provider-conditioned analysis impossible after the fact: we
 could not say "Tavily reached 92% match on Policy questions; Brave
@@ -759,6 +765,80 @@ text into ~500-char windows and rerank against the query, as Tavily advanced
 does) is the lever to push past 80% unambiguously; deferred as diminishing-return
 against the sample noise and the dominant deny-list ceiling.
 
+### D37: commit confidence floor, and honest abstention over a forced guess
+
+**Date:** 2026-06-02.
+
+The D35 validation exposed two problems. First, the test set was confounded:
+France is 85% yes-gold and the 15 re-run pairs were 14/15 yes, so "12 of 14
+recovered" cannot be told apart from a model that learned to guess the majority
+class. An "always yes" baseline scores 85.3% on France (122 yes, 20 band/other,
+1 no, of 143) and 67.9% globally. Second, D35 forced a commit at the end of the
+budget by routing every abstention to the Adjudicator. PT14 FR is the tell:
+forced to commit, it produced a confident wrong `no` that the Verifier passed.
+
+D37 makes the loop abstain rather than guess.
+- Commit confidence floor (`COMMIT_CONFIDENCE_FLOOR = 0.65`): an answer is
+  accepted only if the Verifier passes, the answer is a real label (not
+  `inconclusive`), and its confidence is at least 0.65. A sub-floor pass is
+  treated as not-yet-answered and retried with feedback that names the gap.
+  PT14's 0.55 would now be rejected.
+- Honest abstention: `inconclusive` or a sub-floor answer retries within the
+  existing 3-retry budget; if it cannot get confident, the Adjudicator may
+  return `inconclusive`. The Adjudicator prompt (V4) now prefers an honest
+  `inconclusive` over guessing a label to break a tie. `inconclusive` was
+  already an accepted Adjudicator output, so no schema change was needed, which
+  matters while a concurrent session is writing the shared DB.
+
+This trades raw accuracy against yes-heavy ground truth for honesty: an
+abstention beats a lucky or confident-wrong guess. The accuracy of D34, D35 and
+D37 is untrustworthy until measured on a set that is not yes-heavy. The honest
+validation set is being rebuilt from no-gold pairs (BA/MK/ME/BG/IS each have 50+)
+and band questions, where an "always yes" guess scores low so finding can be told
+from guessing. 393 non-live tests passing.
+
+### D35: `inconclusive` is an abstention, not a terminal answer
+
+**Date:** 2026-06-02.
+
+The D34 validation showed the gate fix alone recovered no pairs. With the false
+rejection gone, the Researcher answered `inconclusive` at R1 and the Verifier
+accepted the abstention, so the loop terminated before any retry. An
+`inconclusive` is not a result; it means the agent could not determine the
+answer. Treating it as a verified answer ended the search early.
+
+The coordinator now treats `inconclusive` as a retry trigger, bounded by the
+existing 3-retry budget (no new cap). On a non-final attempt an inconclusive
+answer short-circuits to a retry before the Verifier runs, which saves the
+Verifier call, carrying an abstention note plus the D33 query divergence so the
+retry searches differently. If the budget is exhausted while still inconclusive,
+the pair escalates to the Adjudicator; the Verifier still runs on the final
+attempt so the Adjudicator has material to weigh. Two pure helpers,
+`_is_abstention` and `_should_accept_verifier_pass`, carry the rule and are
+unit-tested. `not_applicable` is a valid determination and is untouched.
+
+This deliberately does not keep a "best answer" across retries. An answer the
+Verifier refuted must not be passed through, or the verification step means
+nothing. A refuted-but-correct answer has a legitimate home in the Adjudicator
+(D32), which is the only place a Verifier refutation is overturned.
+
+Receipt (forward validation, experiment_id `inconc_retry_v1`, on top of D34; 14
+of 15 pairs finalised, P25 FR errored without a final row): 12 of 14 recovered to
+match, against 2 of 14 under the gate fix alone (D34) and 0 in the original main
+run. Gate-collapse pairs the gate fix had left at `inconclusive` now resolve to
+the correct `yes`, reached across retries (rt1 to rt3) and, for PT11 and PT12 EE,
+via the Adjudicator once the budget was spent. Two did not recover: PT33 FR
+stayed `inconclusive` through the Adjudicator (its ground-truth string is itself
+a compound), and PT14 FR committed to `no` where the truth is `yes`. That last
+one is the honest cost of forcing commitment: a wrong answer that passed the
+Verifier rather than an abstention. On this set the gate fix plus the abstention
+rule moved recovery from 2/14 to 12/14. 368 non-live tests passing.
+
+Caveat (added under D37): this set is yes-heavy (14 of 15 yes-gold) on an
+85%-yes country, so 12/14 cannot be distinguished from majority-class guessing.
+The number is not trustworthy on its own; see D37 and the honest-validation
+note.
+
 ### D34: Verification gate checks the quote against retrieved snippets, not a live re-fetch
 
 **Date:** 2026-06-02.
@@ -1007,6 +1087,29 @@ their RDF omits `dct:license`; NL/EE synthesise graphs from JSON; Q16 on
 synthesised routes tends high; Q21 is authoritative only on RDF routes) are in
 `docs/CATALOGUE_METRICS.md`.
 
+### D36: search auto-fallback is Tavily → DIY → Brave
+
+**Date:** 2026-06-03.
+
+The `provider="auto"` chain in `agents/tools/search.py` now falls back through
+the DIY pipeline before Brave. The order is: Tavily first; on a quota / rate /
+credit error, the DIY pipeline (Serper SERP → fetch → trafilatura → snippet
+pick, per D29); and only if DIY also raises, Brave as a last resort.
+
+Rationale. D29 established that DIY is not worse than Tavily on the
+web-answerable pairs (EXP-1: DIY wins 89% of the 55 decided FR pairs), so when
+Tavily's credits run out DIY is a better stand-in than Brave, which has never
+cleared an adjudicated comparison and previously returned 422s on long-operator
+queries (D26). Brave stays in the chain as a final safety net rather than the
+first fallback. The explicit single-provider modes (`tavily`, `diy`, `brave`,
+`serper_raw`) are unchanged and never fall back, so A/B experiments that pin a
+provider are unaffected. `_PROVIDER_USAGE_COUNTERS` gains a `diy` slot and the
+`on_call` telemetry (D26) emits one record per provider attempt, so a
+Tavily-miss → DIY-hit now shows as two rows in `search_provider_calls`.
+
+This supersedes the two-provider description in D26 (the per-call telemetry
+mechanism D26 added is unchanged; only the fallback target changes).
+
 ---
 
 ## Current status
@@ -1145,6 +1248,7 @@ synthesised routes tends high; Q21 is authoritative only on RDF routes) are in
 
 | Date | Change |
 |---|---|
+| 2026-06-02 (langgraph removal) | D3 amended from "LangGraph for the Phase 2 agent swarm" to "Plain Python state machine", to match the shipped `run_coordinator.py`. The earlier rationale (graph framework for conditional edges) and the record of the deviation are retained. Stale "runs on LangGraph" claims corrected across METHODOLOGY §5/§8, AGENT_DESIGN §1/§5/§8 (deviation banner added at §5), REPORT_PRELIM objectives/plan/milestones, and PROGRESS_SLIDES stack line. The dead `langgraph`, `langchain-anthropic`, and `langchain-community` dependencies removed from `pyproject.toml` (no Python file imports them; the LLM interface uses the `anthropic` SDK directly). `anthropic>=0.87` promoted to a direct dependency, since `agents/tools/llm.py` imports it and it was only present transitively via `langchain-anthropic`. Lockfile re-resolved; 335 tests pass. Kept deliberately: the "why we dropped it" record (CLAUDE.md, PROJECT_LOG, `run_coordinator.py` header) and the related-work citations in REPORT_PRELIM §2.2 and references.bib. |
 | 2026-06-02 (retry/finalisation) | D32 + D33 added, both prompted by a failure-mode analysis of the 43 ground-truth disagreements. D32: finalisation now trusts `adjudicator_answer` for every resolved verdict instead of re-deriving from the verdict label; the logic moved into a pure helper `_finalise_after_adjudication`. Four pairs flip `differ` to `match` on a stored-row replay (P26-b FR, PT14 FR, I16 EE, I17 EE), each an Adjudicator `yes` previously overwritten with `inconclusive`. D33: retry queries forced to diverge; the query generator now receives the Verifier's rejection reason, suggested query, and prior queries with an instruction to vary (`_QUERY_GEN_VERSION` 1 to 2), `ResearcherInput.previous_search_queries` added, coordinator accumulates queries across attempts; first-attempt path unchanged. Defaults and non-retried runs behave as before. New `tests/test_finalise_after_adjudication.py` and `tests/test_query_gen_divergence.py`; 297 non-live passing. The dominant remaining loss (the 67% substring-gate failure that decays answers to `inconclusive`) is diagnosed but not fixed here; it needs snippet persistence first. |
 | 2026-06-02 (later) | D30 added: deterministic catalogue-metrics tool (`agents/tools/catalogue/`). Harvests national-portal metadata and computes the nine catalogue-derivable Quality band/count questions (Q12, Q13, Q16, Q17, Q18, Q21, Q22, Q25, Q27) without the deny-listed MQA. Per-country adapter layer over three stacks (udata, CKAN, custom) and four routes (dcat_rdf preferred; ckan_json / udata_json / estonia_json fallbacks); registry in `data/catalogue/portals/<CC>.json`. Conformance (Q16) via the official SEMIC DCAT-AP 2.1.1 mandatory SHACL shapes through pyshacl, sampled with disclosed size; recommended/optional usage (Q17/Q18) and the presence/count metrics by field counting; bands assigned from each question's own `allowed_answers`. Raw harvest cached gzipped on disk (gitignored); committed receipts in new `catalogue_snapshots` / `catalogue_metrics` tables (+ `scripts/migrate_catalogue_tables.py`). Wired into `run_researcher` (route before web search) and `run_verifier` (deterministic recompute-from-cache, pass iff the band matches). Mapping doc `docs/CATALOGUE_METRICS.md`. Validated against ODMI GT (leakage-guarded): HU 8/1/0, NL 5/0/4, DE 4/2/3, FR 4/1/4, RO 3/3/3; EE blocked (403). Headline: FR self-reported `>90%` on licence/conformance but the independent recompute reads ~38% licence coverage and ~32% mandatory conformance (the D29 self-report ceiling). Per-country route findings: HU and RO RDF feeds omit `dct:license` so they harvest via CKAN JSON; DE Q16 4.2% is a real DCAT-AP.de incompleteness (checksums missing `spdx:algorithm`) under strict whole-dataset SHACL. 33 new offline tests; 246 non-live passing. |
 | 2026-06-02 | Run Console: each active subtrio card gained a ✕ cancel button. Clicking it calls the new `db.cancel_subtrio(subtrio_id)`, which kills the coordinator process recorded in `subtrio_status.process_pid` (SIGTERM, escalating to SIGKILL, after a `ps`-based PID-reuse guard so a recycled PID is never signalled) and then deletes every row that run wrote, scoped by `pair_run_id`/`subtrio_id` across `phase2_final`, `phase2_adjudications`, `phase2_verifier_runs`, `phase2_researcher_runs`, and `subtrio_status`. Deletion is by subtrio, not by (question, country), so earlier finalised runs of the same pair survive; `claude_usage_log` is left intact so the cost receipt stays (same policy as `delete_pair`). The coordinator installs no SIGTERM handler, so it dies without rewriting a status row after deletion. Read-only deploys short-circuit via `mode.block_if_read_only()`. New `tests/test_cancel_subtrio.py` (2 cases: scoped deletion, unknown-id no-op). |

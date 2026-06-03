@@ -184,7 +184,8 @@ sub-design for the wealth × maturity matrix.
 
 ## 5. Agent swarm architecture (Phase 2, to be built)
 
-Three agents on LangGraph (per D3):
+Three agents coordinated by a plain Python state machine (per D3,
+`scripts/run_coordinator.py`):
 
 - **Coordinator.** Dispatches (question, country) pairs. Manages retries (max
   3). Logs all parameters and outputs. Escalates CAPTCHA and access blocks to
@@ -428,7 +429,8 @@ them.
 ## 8. Software stack and reproducibility
 
 - Python 3.11+, `uv` for dependency management. Lockfile committed.
-- LangGraph for orchestration. langchain-anthropic for the LLM interface.
+- A plain Python state machine for orchestration (per D3). The `anthropic`
+  SDK for the LLM interface, pointed at CLIProxyAPI.
 - LLM via CLIProxyAPI on `localhost:8317` (D1). Model version captured in
   every row.
 - SQLite (D2) as the single store. Schema in `scripts/setup_sqlite.py`.

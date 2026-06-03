@@ -1,11 +1,13 @@
-"""Web-search wrapper with a Tavily → Brave fallback.
+"""Web-search wrapper with a Tavily → DIY → Brave fallback.
 
 Tavily is the primary search provider; result quality is best for the
-ODMI-style questions the swarm asks. Brave Search is the fallback when
-Tavily's monthly credits are exhausted. The wrapper centralises retry
-policy, returns a single Pydantic-typed result type, and exposes a
-session-state record so the dashboard can show which provider served
-which query.
+ODMI-style questions the swarm asks. When Tavily's monthly credits are
+exhausted the wrapper falls back to the DIY pipeline (Serper SERP →
+fetch → trafilatura → snippet pick, per D29), and only if DIY also
+fails does it drop to Brave Search as a last resort. The wrapper
+centralises retry policy, returns a single Pydantic-typed result type,
+and exposes a session-state record so the dashboard can show which
+provider served which query.
 
 Optional include-domains routing piggybacks on the per-country trusted
 domains JSONs in `data/trusted_domains/<cc>.json` — see
@@ -19,10 +21,10 @@ import time
 from typing import Callable, List, Literal, Optional
 
 # Explicit provider selection for search() and search_many().
-# "auto"   — existing Tavily-first-then-Brave fallback chain (default).
-# "tavily" — Tavily only; errors propagate, no Brave fallback.
+# "auto"   — Tavily → DIY → Brave fallback chain (default).
+# "tavily" — Tavily only; errors propagate, no fallback.
+# "diy"    — DIY pipeline only (Serper SERP + trafilatura).
 # "brave"  — Brave only; Tavily is never called.
-# Future values ("diy", "serper_raw", …) will extend this union.
 Provider = Literal["auto", "tavily", "brave", "diy", "serper_raw"]
 
 import httpx
@@ -37,7 +39,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(_REPO_ROOT / ".env", override=True)
 
 
-_PROVIDER_USAGE_COUNTERS: dict[str, int] = {"tavily": 0, "brave": 0}
+_PROVIDER_USAGE_COUNTERS: dict[str, int] = {"tavily": 0, "diy": 0, "brave": 0}
 _TAVILY_QUOTA_EXHAUSTED: bool = False
 _BLOCKED_RESULT_COUNTER: int = 0
 
@@ -183,25 +185,28 @@ def search(
     `provider` controls which search backend is used:
 
     - ``"auto"`` (default) — Tavily first; if Tavily's quota is
-      exhausted or raises a rate/quota/credit error, falls back to
-      Brave. This is unchanged from the original behaviour.
+      exhausted or raises a rate/quota/credit error, falls back to the
+      DIY pipeline (Serper SERP + trafilatura, per D29); only if DIY
+      also fails does it drop to Brave as a last resort.
     - ``"tavily"`` — Tavily only. If Tavily raises for any reason the
-      error propagates immediately; Brave is never called. Use this
-      when you need deterministic provider selection (e.g. A/B
-      experiments where Brave must not silently substitute).
+      error propagates immediately; no fallback. Use this when you need
+      deterministic provider selection (e.g. A/B experiments where a
+      fallback must not silently substitute).
+    - ``"diy"`` — DIY pipeline only.
     - ``"brave"`` — Brave only. Tavily is never called.
 
-    `topic` is Tavily-specific; Brave ignores it. `include_domains`
-    works on both (Brave gets it via `site:` clauses).
+    `topic` is Tavily-specific; the other providers ignore it.
+    `include_domains` works on all three (Brave gets it via `site:`
+    clauses).
 
     Blocked domains (see `agents.tools.blocked_domains`) are excluded
     from all providers' results regardless of `include_domains`.
 
     `on_call(payload)` fires once per outbound provider call. In
-    ``"auto"`` mode a Tavily failure followed by a Brave success emits
-    two records. Payload keys: ``provider``, ``ms``, ``results``,
-    ``ok``, ``error``. Use this for per-call telemetry without relying
-    on the module-level counters.
+    ``"auto"`` mode a Tavily failure, then a DIY failure, then a Brave
+    success emits three records. Payload keys: ``provider``, ``ms``,
+    ``results``, ``ok``, ``error``. Use this for per-call telemetry
+    without relying on the module-level counters.
     """
     global _TAVILY_QUOTA_EXHAUSTED
 
@@ -277,7 +282,7 @@ def search(
             raise
 
     # ------------------------------------------------------------------
-    # provider == "auto" — original Tavily-first-then-Brave chain
+    # provider == "auto" — Tavily → DIY → Brave fallback chain
     # ------------------------------------------------------------------
 
     if not _TAVILY_QUOTA_EXHAUSTED:
@@ -295,7 +300,7 @@ def search(
         except UsageLimitExceededError as exc:
             _TAVILY_QUOTA_EXHAUSTED = True
             _emit("tavily", t0, [], ok=False, error=f"quota:{exc}"[:200])
-            # fall through to Brave
+            # fall through to DIY
         except Exception as exc:  # noqa: BLE001
             msg = str(exc).lower()
             _emit("tavily", t0, [], ok=False, error=str(exc)[:200])
@@ -304,6 +309,21 @@ def search(
             else:
                 raise
 
+    # First fallback: the DIY pipeline (Serper SERP + trafilatura, D29).
+    t0 = time.perf_counter()
+    try:
+        from agents.tools.search_diy import diy_search  # local import
+        results = diy_search(
+            query, max_results=max_results, include_domains=include_domains,
+        )
+        _PROVIDER_USAGE_COUNTERS["diy"] += 1
+        _emit("diy", t0, results, ok=True, error=None)
+        return _scrub_blocked(results)
+    except Exception as exc:  # noqa: BLE001
+        _emit("diy", t0, [], ok=False, error=str(exc)[:200])
+        # fall through to Brave as a last resort
+
+    # Last resort: Brave.
     t0 = time.perf_counter()
     try:
         results = _brave_search(

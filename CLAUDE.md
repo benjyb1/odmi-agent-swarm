@@ -100,7 +100,8 @@ tests/              # pytest
   state machine, not LangGraph (see `scripts/run_coordinator.py` for why).
 - Claude (Sonnet currently) routed through CLIProxyAPI on `localhost:8317`,
   using Benjy's Claude Max subscription. No direct Anthropic API billing.
-- Tavily for web search; Playwright for browser automation; DeepL for
+- Web search auto-fallback is Tavily → DIY (Serper SERP + trafilatura)
+  → Brave (D36). Playwright for browser automation; DeepL for
   low-resource language fallback (Phase B onward).
 - SQLite at `data/odmi.db` is the primary data store. Schema in
   `scripts/setup_sqlite.py`.
