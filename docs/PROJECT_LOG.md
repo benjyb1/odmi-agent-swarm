@@ -8,6 +8,38 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20c: EXP-8 / EXP-9 apparatus, ahead of the Malta data
+
+Built the code EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants)
+need, so both are runnable the moment the Malta pairs land. Pure code, no quota
+use, so it ran in parallel to the live experiment tabs.
+
+The sharp find was an EXP-9 hole. The dispatch path carried
+`--researcher-model` / `--verifier-model` and wrote them to `subtrio_status`,
+but only the Adjudicator actually obeyed its model: `run_researcher` and
+`run_verifier` never accepted or forwarded one. A `model-tiered` or
+`model-haiku` run would have recorded the intended models and then quietly used
+Sonnet for retrieval and verification, with no error to catch it. The receipts
+would have read tiered while the run was not. Fixed: the model is threaded
+through both agents (query-gen and main call) into `call_for_structured`, which
+already logs `response.model` (the served version ID, not the alias) to
+`claude_usage_log`. So once threaded, the receipts are honest by construction.
+
+For EXP-8: a `prompt-compressed` Researcher prompt as its own `prompt_versions`
+row (examples dropped, instructions condensed, the forbidden-source rule kept),
+selected by `--prompt-variant compressed`, baseline left untouched; and a
+`model-fallback` escalation (`--researcher-escalation-model` /
+`--verifier-escalation-model`) that runs the cheap model on attempt 0 and
+escalates after a Verifier reject. The `cache-hot`-vs-lean split was already
+covered by the `--no-cache` cold-cache switch, and the answer-blind judge
+variant already existed.
+
+New tests: `tests/test_model_threading.py`, `tests/test_prompt_compressed.py`
+(21 cases). Full suite 419 passed, 13 skipped. The only thing now blocking an
+EXP-8 / EXP-9 run is the Malta dispatch, which is search-quota gated.
+
+---
+
 ## 2026-06-03 — Session 20b: experiment rules and the base-rate trap
 
 Wrote a universal rulebook for the experiments. The trigger was a concrete

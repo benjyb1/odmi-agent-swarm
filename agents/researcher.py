@@ -120,6 +120,7 @@ def generate_queries(
     input: ResearcherInput,
     *,
     subtrio_id: str | None = None,
+    model: str | None = None,
 ) -> tuple[List[str], LLMUsage]:
     prompt_id = db_helpers.ensure_prompt_version(
         _QUERY_GEN_NAME, _QUERY_GEN_VERSION,
@@ -129,6 +130,7 @@ def generate_queries(
         system=_QUERY_GEN_SYSTEM,
         user_message=_build_query_gen_message(input),
         output_schema=_Queries,
+        model=model,
         max_tokens=200,
         condition_label="query_gen",
         prompt_version_id=prompt_id,
@@ -290,6 +292,8 @@ def _try_catalogue(
 def run_researcher(
     input: ResearcherInput,
     *,
+    model: str | None = None,
+    prompt_variant: str = "full",
     condition_label: str = "baseline",
     max_results_per_query: int = 5,
     provider: str = "auto",
@@ -303,9 +307,17 @@ def run_researcher(
     modes are recorded on the returned object rather than raised; the
     caller writes a row either way so the audit trail is complete.
 
+    `model` selects the Claude model for both the query-gen and the main
+    call (EXP-9 model variants); `None` keeps the wrapper default
+    (Sonnet). `prompt_variant` selects the system prompt: `"full"` is the
+    untouched baseline, `"compressed"` is the leaner EXP-8 prompt
+    (examples dropped, instructions terser) registered as its own row in
+    `prompt_versions`.
+
     `on_step(event, payload)` is the walkthrough callback. Set to
     something printing in the runner script when --walkthrough is on.
     """
+    prompt_spec = researcher_prompt.variant(prompt_variant)
     on_step("start", {"question_id": input.question_id, "country": input.country_code})
 
     # ----- Step 0: deterministic catalogue route (D30) -----
@@ -319,7 +331,9 @@ def run_researcher(
     # ----- Step 1: generate search queries -----
     on_step("query_gen_start", {})
     try:
-        queries, query_usage = generate_queries(input, subtrio_id=subtrio_id)
+        queries, query_usage = generate_queries(
+            input, subtrio_id=subtrio_id, model=model,
+        )
     except StructuredOutputError as exc:
         on_step("query_gen_failed", {"error": str(exc)})
         return ResearcherRunResult(
@@ -383,11 +397,15 @@ def run_researcher(
         )
 
     # ----- Step 3: register prompt version and call the LLM -----
+    # The variant chooses the system prompt and its prompt_versions row.
+    # The baseline ("full") keeps NAME/VERSION/SYSTEM unchanged; the
+    # compressed arm carries its own NAME/VERSION so the receipts trace to
+    # the exact prompt that ran (EXP-8).
     prompt_id = db_helpers.ensure_prompt_version(
-        researcher_prompt.NAME,
-        researcher_prompt.VERSION,
-        researcher_prompt.SYSTEM,
-        researcher_prompt.DESCRIPTION,
+        prompt_spec.name,
+        prompt_spec.version,
+        prompt_spec.system,
+        prompt_spec.description,
     )
     user_message = researcher_prompt.build_user_message(
         input,
@@ -396,14 +414,16 @@ def run_researcher(
     )
     on_step("main_call_start", {
         "prompt_version_id": prompt_id,
+        "prompt_variant": prompt_variant,
         "user_message_chars": len(user_message),
     })
 
     try:
         output, main_usage = call_for_structured(
-            system=researcher_prompt.SYSTEM,
+            system=prompt_spec.system,
             user_message=user_message,
             output_schema=ResearcherOutput,
+            model=model,
             max_tokens=2000,
             condition_label=condition_label,
             prompt_version_id=prompt_id,

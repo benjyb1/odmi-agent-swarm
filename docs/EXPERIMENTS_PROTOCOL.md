@@ -541,10 +541,31 @@ items, all gated on search quota:
     `prompt_versions`, the `model-fallback` escalation path, and a per-arm
     cache-bypass that leaves the `cache-hot` arm cache-on while every other arm
     runs cold.
+    **Done (2026-06-03).** `prompt-compressed` is a distinct Researcher prompt
+    (`agents/prompts/researcher.py`, NAME `phase2_researcher_compressed`,
+    examples dropped and instructions condensed, the forbidden-source rule kept),
+    selected by `--prompt-variant compressed`; the baseline `full` prompt is
+    untouched. `model-fallback` is the `--researcher-escalation-model` /
+    `--verifier-escalation-model` pair: attempt 0 runs the base model, a retry
+    after a Verifier reject escalates (`_model_for_attempt`). The cache switch is
+    the existing `--no-cache`: lean arms pass it (cold), `cache-hot` omits it
+    (reads on). Tested in `tests/test_prompt_compressed.py` and
+    `tests/test_model_threading.py`; `--no-cache` was already covered by
+    `tests/test_dispatch_no_cache.py`.
 11. **EXP-9 threading:** per-agent model overrides (Researcher / Verifier /
     Adjudicator independently settable) threaded through the dispatch path and the
     `model-tiered` assignment, with the resolved version IDs written to
     `claude_usage_log`.
+    **Done (2026-06-03).** Before this, only the Adjudicator threaded its model;
+    `run_researcher` / `run_verifier` recorded `researcher_model` /
+    `verifier_model` in `subtrio_status` but never drove the LLM with them, so a
+    tiered run would have silently used Sonnet for retrieval and verification.
+    The model is now threaded through both agents (query-gen and main call) and
+    `call_for_structured`; the wrapper logs `response.model` (the served version
+    ID, not the requested alias) to `claude_usage_log`, so a `model-tiered` run's
+    receipts are honest. `--researcher-model` / `--verifier-model` /
+    `--adjudicator-model` cover all four EXP-9 arms. Tested in
+    `tests/test_model_threading.py`.
 
 ## 10. Execution and the parallelism constraint
 
@@ -661,3 +682,17 @@ Two findings carry weight for the writeup.
   it flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider
   result is unaffected) and EXP-3's Lithuania control as undiscriminating on
   binary (zero negative golds). No runs in this commit.
+- 2026-06-03: built the EXP-8 / EXP-9 apparatus (section 9 items 10 and 11),
+  pure code with no quota use, ahead of the Malta dispatch. EXP-9: the per-agent
+  model override is now threaded through `run_researcher` and `run_verifier`
+  (previously only the Adjudicator obeyed its model), and the served version ID
+  is logged to `claude_usage_log`. EXP-8: a `prompt-compressed` Researcher prompt
+  (its own `prompt_versions` row, baseline untouched) and a `model-fallback`
+  escalation (`--researcher-escalation-model` / `--verifier-escalation-model`,
+  cheap on attempt 0, escalate on a Verifier-reject retry). The `--no-cache`
+  cold-cache switch already covered the `cache-hot`-vs-lean split, and the
+  answer-blind judge variant already exists (`adjudicate(answer_blind=True)`,
+  `run_answer_blind_subsample`). New tests: `tests/test_model_threading.py`,
+  `tests/test_prompt_compressed.py`. Both EXP-8 and EXP-9 are now runnable the
+  moment the Malta pairs land; the dispatch (item 9, search-quota-gated) is the
+  only remaining blocker. No runs in this commit.
