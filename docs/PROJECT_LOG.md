@@ -8,6 +8,29 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20d: EXP-10, why Malta abstains
+
+A recon on the live `exp6_malta` dispatch turned up something useful. Of the first
+13 finalised Malta pairs, 8 matched, 5 abstained, and none were wrong; the
+Researcher-level abstentions split 7 below the D37 confidence floor and 3 on a
+fetch 403. So Malta's problem is recall, not precision: when it commits, it is
+right; it just declines to commit. That reframes "improve Malta" as "recover
+abstentions safely", and Malta is the one country where recovering them too
+eagerly would show up as false positives (the R4 reason we left France).
+
+Pre-registered EXP-10 (`docs/EXPERIMENTS_MALTA_FAILURES.md`). Phase A codes every
+Malta non-match to one cause from a fixed taxonomy (fetch 4xx/5xx, no source,
+substring-gate failure, below-floor abstention, wrong answer, near-miss band,
+self-report/deny-list ceiling, stale ground truth), deterministically where the DB
+signal is clear and with an Opus judge over frozen evidence only for the
+genuine-error vs stale-gold residual. Phase B is a free confidence-floor sweep
+(0.65 / 0.55 / 0.50) replayed on the stored confidences, with a pre-set
+precision and false-positive bound for adopting any lower floor. The recon is
+named as a pilot so it cannot bias the coding. No results at commit time; Phase A
+runs incrementally on the Malta set and the floor sweep needs no quota.
+
+---
+
 ## 2026-06-03 — Session 20c: EXP-8 / EXP-9 apparatus, ahead of the Malta data
 
 Built the code EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants)

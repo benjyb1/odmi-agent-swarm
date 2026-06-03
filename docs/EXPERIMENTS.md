@@ -20,6 +20,7 @@ run) · `running` · `done`.
 | EXP-7 | Retry chaining: accumulate evidence across the loop | planned | high-resource-language, low-maturity country first (false-positive risk) | pending |
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | pending (Malta dispatch, quota-gated) |
 | EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | pending (Malta dispatch, quota-gated) |
+| EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | pending (Phase A runs incrementally on the exp6_malta set; floor sweep is free) |
 
 ---
 
@@ -172,6 +173,30 @@ threading is built (2026-06-03): `--researcher-model` / `--verifier-model` /
 `--adjudicator-model` now all drive the LLM (previously only the Adjudicator
 did), and the served version ID is written to `claude_usage_log`. All four arms
 are runnable. Only the Malta dispatch remains.
+
+Result: pending.
+
+## EXP-10: Malta failure-mode audit + confidence-floor recovery (planned)
+
+Pre-registered in `docs/EXPERIMENTS_MALTA_FAILURES.md`. Looks at why Malta swarm
+answers diverge from ODMI ground truth, to find the fixable bottleneck. A pilot on
+the in-progress `exp6_malta` dispatch showed Malta's losses are abstentions, not
+wrong answers (8 match / 5 abstain / 0 wrong of the first 13 finalised; the
+abstentions split 7 below the D37 confidence floor and 3 on a fetch 403). So the
+problem looks like recall, not precision.
+
+Phase A codes every Malta non-match to one cause from a pre-specified taxonomy
+(fetch 4xx/5xx, no source, substring-gate failure, below-floor abstention, wrong
+answer, near-miss band, self-report/deny-list ceiling, stale ground truth),
+deterministically where the DB signal is unambiguous and with an Opus judge over
+frozen evidence only for the genuine-error vs stale-gold residual. Phase B is a
+free confidence-floor sweep (0.65 / 0.55 / 0.50) replayed on the stored Researcher
+confidences, reporting the recovery-precision trade-off and adopting a lower floor
+only under a pre-set precision and false-positive bound. Malta being base-rate
+balanced (R4) is what makes the false-positive check meaningful.
+
+Harness: `evaluation/malta_failure_audit.py` (to build). Phase A runs incrementally
+on whatever Malta pairs exist; the floor sweep needs no quota. Tavily-independent.
 
 Result: pending.
 

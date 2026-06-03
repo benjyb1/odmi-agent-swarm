@@ -494,6 +494,7 @@ with `conditions` as a JSON object. IDs:
 | `verifier_strategy_disc_v1` | EXP-6 | strategies: disprove, negation, steelman, blind; MT primary, FR/INJ robustness |
 | `cost_side_optim_mt` | EXP-8 | baseline, prompt-compressed, retrieval-tight, cache-hot, model-fallback; MT, NL |
 | `model_variants_mt` | EXP-9 | model-haiku, model-sonnet, model-opus, model-tiered; MT, NL |
+| `malta_failure_audit_v1` | EXP-10 | Phase A failure-mode taxonomy + Phase B confidence-floor sweep; MT (see `EXPERIMENTS_MALTA_FAILURES.md`) |
 
 ## 9. Pre-run requirements (must be committed and verified before any run)
 
