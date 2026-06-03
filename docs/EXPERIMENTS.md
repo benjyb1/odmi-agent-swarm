@@ -16,6 +16,7 @@ run) · `running` · `done`.
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
+| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | running (partial) | 89 paired candidates, FR/EE/DE/NL/RO, all 4 dimensions | pending (3/89 judged; resume via `evaluation/verifier_strategies.py`) |
 | EXP-7 | Retry chaining: accumulate evidence across the loop | planned | high-resource-language, low-maturity country first (false-positive risk) | pending |
 
 ---
@@ -109,6 +110,26 @@ The parked plan: a paired A/B across five providers, agreed as the June
 starting point. Scope and provider list to be confirmed before running.
 
 Result: pending.
+
+## EXP-6: Verifier strategy discrimination (running, partial)
+
+Pre-registered in `docs/EXPERIMENTS_VERIFIER.md`. Treats each of the four D15
+verifier strategies (disprove / negation / steelman / blind) as a binary
+classifier over a Researcher candidate answer (pass = accept, fail = reject) and
+measures how well each tells a wrong answer from a correct one, per unit of token
+cost. Paired design: all four strategies judge the identical 89-candidate set
+(44 should-fail, 45 should-pass) on frozen evidence, so the only between-arm
+variable is the system prompt. Primary endpoint Youden's J; secondary MCC,
+balanced accuracy, the two error rates with Wilson CIs, per-dimension splits,
+paired McNemar (Holm), and a Wilcoxon token-cost comparison.
+
+Harness: `evaluation/verifier_strategies.py` (resumable: it skips already-judged
+candidates and appends, and sleeps through Anthropic rate-limit cooldowns).
+Status at last stop: 3 of 89 candidates judged. Resume with
+`uv run python evaluation/verifier_strategies.py`; it runs the analysis
+automatically when the set completes.
+
+Result: pending (run incomplete).
 
 ## EXP-7: Retry chaining / evidence accumulation (planned, future)
 
