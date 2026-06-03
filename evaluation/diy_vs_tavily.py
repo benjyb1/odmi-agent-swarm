@@ -405,13 +405,13 @@ def judge_pair(pair: dict, *, max_results: int, model: str, cache: dict) -> dict
     """
     from functools import partial
 
-    from agents.tools.search_adjudicator import adjudicate
+    from evaluation.adjudication_cache import cached_adjudicate
 
     diy_ev = get_evidence(pair["query"], "diy", max_results=max_results, cache=cache)
     tav_ev = get_evidence(pair["query"], "tavily", max_results=max_results, cache=cache)
 
     judged = _judge_orientations(
-        partial(adjudicate, model=model),
+        partial(cached_adjudicate, model=model),
         question_text=pair["question_text"], gold=pair["gold"],
         diy_ev=diy_ev, tav_ev=tav_ev, answer_blind=False,
     )
@@ -448,9 +448,9 @@ def run_answer_blind_subsample(subsample: List[dict], *, model: str) -> dict:
     """
     from functools import partial
 
-    from agents.tools.search_adjudicator import adjudicate
+    from evaluation.adjudication_cache import cached_adjudicate
 
-    judge = partial(adjudicate, model=model)
+    judge = partial(cached_adjudicate, model=model)
     per_pair = []
     agree = 0
     flips = 0

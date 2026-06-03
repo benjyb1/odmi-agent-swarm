@@ -56,6 +56,11 @@ evaluation/snippets_eyeball.html
 # Lets a re-run skip Serper / Tavily / fetch calls.
 evaluation/.cache_diy_vs_tavily.json
 
+# Adjudication verdict cache (transient; the durable verdicts live in the
+# committed evaluation/results/ JSONL). Lets a crashed Opus judge run resume
+# without re-paying for already-judged orientations.
+evaluation/.cache_adjudications.json
+
 # D30 catalogue-metrics raw harvest cache. FR is ~74k datasets, DE ~151k:
 # far too large for git. The committed reproducibility receipt is the
 # catalogue_snapshots / catalogue_metrics rows + each snapshot's manifest.

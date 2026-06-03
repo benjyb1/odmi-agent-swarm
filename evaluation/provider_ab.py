@@ -401,11 +401,11 @@ def judge_pair(
     """
     from functools import partial
 
-    from agents.tools.search_adjudicator import adjudicate
+    from evaluation.adjudication_cache import cached_adjudicate
 
     canon = [normalise_provider(p) for p in providers]
     snap = snapshot_evidence(pair, canon, max_results=max_results, cache=cache)
-    judge = partial(adjudicate, model=model)
+    judge = partial(cached_adjudicate, model=model)
 
     arm_pairs = []
     for px, py in itertools.combinations(canon, 2):
@@ -497,9 +497,9 @@ def run_answer_blind_subsample(
     """
     from functools import partial
 
-    from agents.tools.search_adjudicator import adjudicate
+    from evaluation.adjudication_cache import cached_adjudicate
 
-    judge = partial(adjudicate, model=model)
+    judge = partial(cached_adjudicate, model=model)
     canon = [normalise_provider(p) for p in providers]
     per_pair = []
     agree = 0
