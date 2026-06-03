@@ -177,6 +177,67 @@ under-credits stale-gold and cannot flatter results. Name it in the writeup.
 Data set PASSes: gold balance 30/30, evidence integrity (63/64 grounded; P22 a
 paraphrase), deny-list (0 data.europa.eu sources), stats module matches scipy.
 
+## When EXP-6 completes (the gate) - do this:
+1. Collect EXP-6 results (the agent afa338fc returns them; or run
+   `uv run python evaluation/verifier_strategies.py --analyse-only <jsonl>`).
+   Note the winning strategy by Youden's J (with Wilson CI), per-class rates,
+   token cost (Wilcoxon), Malta-natural J vs injected J, print 69% baseline.
+   Commit the EXP-6 result JSONL (excluded from the first checkpoint as it was
+   mid-write).
+2. EXP-7: register done. Apply EXP-6's winning verifier strategy to BOTH arms
+   (else verifier-disprove); record the choice. Dispatch ~40 dim-stratified MT
+   pairs (seed 20260603) BOTH arms cold under experiment_id=retry_chaining_mt_v1:
+     baseline arm: --no-cache --condition-label baseline  (NO --chained)
+     chained  arm: --no-cache --condition-label chained --chained
+   Run from MY worktree (writes my DB). Then
+   `uv run python evaluation/chaining_analysis.py --experiment-id retry_chaining_mt_v1`.
+3. EXP-8 then EXP-9, sequenced (each ~150-160 runs; Opus arm in EXP-9 is the
+   costliest). These + EXP-7 are ~370 fresh runs = many hours/days on the shared
+   Claude Max quota which is already rate-limiting EXP-6 hard. Launch, grind,
+   commit partials, report honestly. Do NOT fake completion. If quota is clearly
+   being exhausted, pause and leave resumable state + a clear handoff for Benjy
+   rather than starving his quota unattended.
+
+## PARALLELISM + QUOTA EXHAUSTION (later, ~22:30)
+
+Benjy asked to run experiments in parallel. Built the mechanism:
+- agents/tools/llm.py: `_make_client` now uses `max_retries=8` (was SDK default 2).
+  The CLIProxyAPI front end drops connections under concurrency
+  (APIConnectionError); the SDK now retries those + 5xx + transient 429 with
+  backoff, while a SUSTAINED 429 still surfaces as RateLimitError -> D41 shutdown.
+- evaluation/verifier_strategies.py: added `--workers N` (ThreadPoolExecutor over
+  candidates, write under a lock, resume-safe, per-candidate errors caught and
+  retried on resume). Default 1 (unchanged behaviour).
+
+THEN HIT THE UPSTREAM WALL. Diagnosed conclusively:
+- proxy (localhost:8317, pid live) is UP and serving HTTP (banner + instant 401
+  on /v1/models), but authenticated Anthropic message calls reset the connection
+  -> APIConnectionError, even a single minimal call, even after `brew services
+  restart cliproxyapi`.
+- timeline: 300+ calls SUCCEEDED during the 5-worker EXP-6 burst, then ALL calls
+  began failing. cliproxyapi.conf has an explicit `quota-exceeded` section.
+- conclusion: the Claude Max allowance is exhausted. Caused by my aggressive
+  burst: the earlier 80-coordinator spawn (a mistake) + the 5-worker run firing
+  300+ calls in minutes. Nothing code-side fixes it; it recovers when the Max
+  window resets.
+
+State at the wall:
+- DONE + committed: baseline 60/60, EXP-10, QA, dedup fixes, EXP-7/8/9 registered.
+- EXP-6: partial, 27/130 candidates (full 24 Malta should_fail + into should_pass),
+  JSONL intact + resumable. NOT yet analysable (needs the full primary stratum).
+- EXP-7/8/9: not started. retry_chaining_mt_v1 junk rows cleaned (0).
+- All my dispatch/verifier/coordinator processes killed; nothing hammering.
+
+RESUME PLAN when quota returns (do NOT burst):
+1. Gently probe the proxy with ONE minimal call. Only proceed when it succeeds.
+2. Resume EXP-6 at MODEST concurrency: `uv run python evaluation/verifier_strategies.py
+   --workers 3` (resumes from 27). Watch claude_usage_log rate_limited.
+3. Then EXP-7 both arms (the cleaned retry_chaining_mt_v1, ~40 pairs each), then
+   EXP-8/9 - but note the TOTAL remaining workload (EXP-6 remainder ~515 calls +
+   EXP-7 ~400 + EXP-8/9 thousands) likely EXCEEDS one Max window. Parallelism
+   reaches the cap faster, it does not raise the ceiling. Pace across windows or
+   get Benjy's call on scope.
+
 ## Progress log (append as I go)
 
 - 21:21 handoff. Re-dispatching the 11 stragglers next.

@@ -59,9 +59,17 @@ DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 def _make_client() -> anthropic.Anthropic:
+    # max_retries above the SDK default of 2. The CLIProxyAPI front end drops
+    # connections under concurrency (APIConnectionError), so a parallel run of
+    # several coordinators, or a parallel EXP-6, would otherwise crash on a
+    # transient blip. The SDK retries APIConnectionError / 5xx / 429 with
+    # exponential backoff and only raises after exhausting these, so a momentary
+    # drop now recovers while a *sustained* 429 still surfaces as RateLimitError
+    # and trips the D41 shutdown unchanged.
     return anthropic.Anthropic(
         api_key=os.environ["ANTHROPIC_API_KEY"],
         base_url=os.environ["ANTHROPIC_BASE_URL"],
+        max_retries=8,
     )
 
 
