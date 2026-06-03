@@ -309,6 +309,12 @@ def fetch_rendered_html(
         )
 
 
+# Status codes a Cloudflare / WAF challenge returns to a non-browser
+# client. A real browser executing the challenge JS clears them, so a
+# Playwright render is the right tie-breaker before calling a URL dead.
+_WAF_BLOCK_STATUSES = frozenset({403, 429, 503})
+
+
 def head_ok(url: str, *, timeout_s: float = 8.0) -> tuple[bool, int]:
     """HEAD-check that a URL returns HTTP 200. Used by the Researcher's
     post-call validation per AGENT_DESIGN section 3.5.
@@ -316,10 +322,17 @@ def head_ok(url: str, *, timeout_s: float = 8.0) -> tuple[bool, int]:
     Returns (ok, status_code). Some servers reject HEAD; on 4xx/5xx we
     fall back to a small GET so we don't misclassify a working URL.
 
+    A WAF block (403/429/503 from a Cloudflare-style challenge) is not
+    proof the URL is dead: government portals such as data.gov.mt 403 every
+    non-browser client but serve a real browser fine. On those statuses we
+    confirm with a Playwright render before reporting the URL unreachable,
+    so a reachable-but-WAF-protected source is not lost as `url_unreachable`.
+
     Refuses URLs on the data-leakage deny-list before any network call.
     """
     if is_blocked(url):
         return False, 0
+    status = 0
     try:
         with httpx.Client(
             timeout=timeout_s,
@@ -331,6 +344,16 @@ def head_ok(url: str, *, timeout_s: float = 8.0) -> tuple[bool, int]:
                 return True, resp.status_code
             # Some servers reject HEAD; try a tiny GET.
             resp = client.get(url, headers={"Range": "bytes=0-1023"})
-            return resp.status_code < 400, resp.status_code
+            if resp.status_code < 400:
+                return True, resp.status_code
+            status = resp.status_code
     except httpx.HTTPError:
-        return False, 0
+        status = 0
+
+    # httpx was blocked or errored. If it looks like a WAF challenge, give
+    # the URL one chance through a real browser before declaring it dead.
+    if status in _WAF_BLOCK_STATUSES or status == 0:
+        rendered = fetch_rendered_text(url, timeout_s=max(timeout_s, 25.0))
+        if rendered.status_code == 200 and rendered.content.strip():
+            return True, 200
+    return False, status
