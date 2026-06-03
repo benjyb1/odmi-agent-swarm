@@ -545,11 +545,12 @@ items, all gated on search quota:
    questions are included as the minority class; the 30 `yes`-gold pairs are a
    size-matched, dimension-stratified round-robin draw. The baseline dispatch
    (provider auto, `condition_label` baseline, no `experiment_id`; batches
-   `exp6_malta` then `malta_baseline`) finalised 58 of 60: 43 committed yes/no plus
-   15 honest `inconclusive` abstentions (D37). Two pairs are unfinished, I8-d and
-   PT12, both `no`-gold, both `agent_failure` on `search_empty` (empty SERPs under
-   exhausted-Tavily / DIY-only retrieval). Balance-aware result (R4): exact match
-   32/58 raw, 32/43 on committed answers; no-gold minority recall (TNR) 0.87 with 3
+   `exp6_malta` then `malta_baseline`) finalised all 60: 43 committed yes/no plus
+   17 honest `inconclusive` abstentions (D37). The last two, I8-d and PT12, had
+   failed on `search_empty` because their evidence URLs were on Cloudflare-protected
+   data.gov.mt; they recovered to `inconclusive` once `head_ok` gained a Playwright
+   fallback for WAF 403s. Balance-aware result (R4): exact match
+   32/60 raw, 32/43 on committed answers; no-gold minority recall (TNR) 0.87 with 3
    false positives of 23 committed (I7, I8-b, PT29, the visible-error class Malta's
    `no`-gold questions exist to surface); yes-gold recall (TPR) 0.60; Youden's J
    0.47; mean commit confidence 0.58. Zero data-leakage in any finalised row; batch
@@ -558,16 +559,19 @@ items, all gated on search quota:
    tags; the 13 baseline rows are plain (no `experiment_id`) and read identically
    to the `exp6_malta` set.
 
-   Two faults found and fixed during the dispatch (both gated the run, neither was
-   quota): a fresh worktree has no `.env`, and the desktop app injects an empty
+   Three faults found and fixed during the dispatch, none of them quota: a fresh
+   worktree has no `.env`, and the desktop app injects an empty
    `ANTHROPIC_AUTH_TOKEN` that made the Anthropic SDK send a malformed `Bearer`
    header, surfacing as `APIConnectionError` (fixed in `agents/tools/llm.py`,
-   blank token dropped at import); and `_find_resumable_researcher` resumed from
+   blank token dropped at import); `_find_resumable_researcher` resumed from
    failed / `inconclusive` Researcher rows, stranding 11 pairs at stage
    'researching' with no `phase2_final` (fixed in `scripts/run_coordinator.py`, only
-   clean committed results are now resumable). The not-done set is computed
-   dynamically as the canonical question IDs minus the distinct MT
-   `phase2_researcher_runs` question IDs, so any later top-up resumes cleanly.
+   clean committed results are now resumable); and `head_ok` reported
+   Cloudflare-protected data.gov.mt as `url_unreachable`, killing answers grounded
+   there, now cleared with a Playwright render on a WAF 403/429/503 (fixed in
+   `agents/tools/fetch.py`). The not-done set is computed dynamically as the
+   canonical question IDs minus the distinct MT `phase2_researcher_runs` question
+   IDs, so any later re-run resumes cleanly.
 10. **EXP-8 conditions:** a committed `prompt-compressed` prompt version in
     `prompt_versions`, the `model-fallback` escalation path, and a per-arm
     cache-bypass that leaves the `cache-hot` arm cache-on while every other arm

@@ -16,11 +16,11 @@ run) · `running` · `done`.
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
-| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (Malta dispatch done) | primary Malta natural errors, NL secondary, FR + injected robustness | unblocked; Malta baseline finalised 58/60 (43 committed, 15 abstentions), 2 search-empty (I8-d, PT12); the natural-error pool for the should_fail arm is now populated; FR/injected partial superseded |
+| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (Malta dispatch done) | primary Malta natural errors, NL secondary, FR + injected robustness | unblocked; Malta baseline finalised 60/60 (43 committed, 17 abstentions); the natural-error pool for the should_fail arm is now populated; FR/injected partial superseded |
 | EXP-7 | Retry chaining: accumulate evidence across the loop | planned | high-resource-language, low-maturity country first (false-positive risk) | unblocked; reuses the same Malta pair list and baseline set |
-| EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | unblocked; Malta baseline done (58/60), condition-tagged runs over the same pair list are runnable |
-| EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | unblocked; Malta baseline done (58/60), condition-tagged runs over the same pair list are runnable |
-| EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | unblocked; 58 finalised Malta pairs available (batches exp6_malta + malta_baseline), failure taxonomy drafted (search-empty, resume-orphan, abstention, conservative-FN, FP); floor sweep is free |
+| EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
+| EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
+| EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | unblocked; 60 finalised Malta pairs available (batches exp6_malta + malta_baseline), failure taxonomy drafted (search-empty, resume-orphan, abstention, conservative-FN, FP); floor sweep is free |
 
 ---
 
@@ -157,22 +157,25 @@ which is now done.
 Malta dispatch (done 2026-06-03): the canonical pair set is frozen and committed at
 `data/questions/malta_eval_pairs.json` (60 pairs, 30 `no` / 30 `yes`, seed
 20260603). The baseline dispatch (provider auto, `condition_label` baseline, no
-`experiment_id`, batches `exp6_malta` then `malta_baseline`) finalised 58 of 60:
-43 committed yes/no plus 15 honest `inconclusive` abstentions (D37). Two pairs
-remain unfinished, I8-d and PT12, both `no`-gold, both `agent_failure` on
-`search_empty` (empty SERPs under exhausted-Tavily / DIY-only retrieval, not a
-fetch block). Balance-aware quality (R4): exact match 32/58 raw, 32/43 on
+`experiment_id`, batches `exp6_malta` then `malta_baseline`) finalised all 60:
+43 committed yes/no plus 17 honest `inconclusive` abstentions (D37). The last two,
+I8-d and PT12, had failed on `search_empty` because their evidence URLs were on
+Cloudflare-protected data.gov.mt; they recovered to `inconclusive` once `head_ok`
+gained a Playwright fallback for WAF 403s. Balance-aware quality (R4): exact match 32/60 raw, 32/43 on
 committed answers; no-gold minority recall (TNR) 0.87 with 3 false positives of 23
 committed (I7, I8-b, PT29); yes-gold recall (TPR) 0.60; Youden's J 0.47; mean
 commit confidence 0.58. Zero data-leakage in any finalised row. Batch cost ~$4.98.
 The natural-error pool for the should_fail arm is now populated.
 
-Two faults surfaced and fixed during the dispatch: a missing worktree `.env` plus
-an empty `ANTHROPIC_AUTH_TOKEN` injected by the desktop app made every LLM call
-fail with a misleading `APIConnectionError` (fixed in `agents/tools/llm.py`); and
-the resume path reused failed/`inconclusive` Researcher rows, stranding 11 pairs
-at stage 'researching' with no `phase2_final` (fixed in
-`scripts/run_coordinator.py` `_find_resumable_researcher`).
+Three faults surfaced and fixed during the dispatch, none of them quota: a missing
+worktree `.env` plus an empty `ANTHROPIC_AUTH_TOKEN` injected by the desktop app
+made every LLM call fail with a misleading `APIConnectionError` (fixed in
+`agents/tools/llm.py`); the resume path reused failed/`inconclusive` Researcher
+rows, stranding 11 pairs at stage 'researching' with no `phase2_final` (fixed in
+`scripts/run_coordinator.py` `_find_resumable_researcher`); and `head_ok` marked
+Cloudflare-protected data.gov.mt as `url_unreachable`, killing answers grounded
+there, which it now clears with a Playwright render on a WAF 403/429/503 (fixed in
+`agents/tools/fetch.py`), recovering the final two pairs.
 
 Result: pending (apparatus and Malta natural-error set both ready; the four-arm
 judge run has not been executed).
@@ -191,7 +194,7 @@ The apparatus is built (2026-06-03): the compressed Researcher prompt
 (`--prompt-variant compressed`, its own `prompt_versions` row, baseline
 untouched), the `model-fallback` escalation (`--researcher-escalation-model` /
 `--verifier-escalation-model`), and the cold-cache switch (`--no-cache`) for the
-lean-vs-`cache-hot` split. The Malta baseline dispatch is now done (58/60 over the
+lean-vs-`cache-hot` split. The Malta baseline dispatch is now done (60/60 over the
 committed pair list), so the condition-tagged runs can proceed over the same set.
 
 Result: pending.
@@ -208,7 +211,7 @@ Prerequisite: the Malta dispatch and per-agent model-override threading. The
 threading is built (2026-06-03): `--researcher-model` / `--verifier-model` /
 `--adjudicator-model` now all drive the LLM (previously only the Adjudicator
 did), and the served version ID is written to `claude_usage_log`. All four arms
-are runnable. The Malta baseline dispatch is now done (58/60 over the committed
+are runnable. The Malta baseline dispatch is now done (60/60 over the committed
 pair list), so the condition-tagged runs can proceed over the same set.
 
 Result: pending.
@@ -217,16 +220,17 @@ Result: pending.
 
 Pre-registered in `docs/EXPERIMENTS_MALTA_FAILURES.md`. Looks at why Malta swarm
 answers diverge from ODMI ground truth, to find the fixable bottleneck. The full
-baseline set is now available (58 of 60 finalised, batches `exp6_malta` +
+baseline set is now available (60 of 60 finalised, batches `exp6_malta` +
 `malta_baseline`). The pattern from the earlier 13-pair pilot holds: losses are
-dominated by recall, not precision. Across all 58, 15 pairs abstain (`inconclusive`)
-and 27 of 58 commit below the D37 0.65 floor; yes-gold recall is 0.60 against
+dominated by recall, not precision. Across all 60, 17 pairs abstain (`inconclusive`)
+and 27 of 60 commit below the D37 0.65 floor; yes-gold recall is 0.60 against
 no-gold recall 0.87, so the swarm is far more willing to confirm a `no` than a
 `yes` on sparse Malta evidence. False positives are rare but present: 3 of 23
 committed no-gold answers (I7, I8-b, PT29), the visible-error class Malta exists to
-expose. The retrieval ceiling (exhausted Tavily, DIY-only, `data.gov.mt` fetch
-403s, self-report / deny-list questions) is the single largest driver and the main
-fixable bottleneck.
+expose. The retrieval ceiling (exhausted Tavily, DIY-only, self-report / deny-list
+questions) is the single largest driver; the `data.gov.mt` Cloudflare 403 part of
+it is now mitigated by the `head_ok` Playwright fallback, leaving the self-report
+and thin-SERP cases as the residual bottleneck.
 
 Phase A codes every Malta non-match to one cause from a pre-specified taxonomy
 (fetch 4xx/5xx, no source, substring-gate failure, below-floor abstention, wrong

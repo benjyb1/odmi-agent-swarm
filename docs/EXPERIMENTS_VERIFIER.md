@@ -84,7 +84,7 @@ classifier question is only defined on a definite answer with a reference.
 1. **NAT-fail-MT (primary should_fail).** Every natural error on Malta: a Malta
    Researcher answer that differs from gold, with the `no`-gold questions covered
    so errors on the minority class are visible. All are taken; none hand-picked.
-   **The Malta dispatch (section 8) is now done (58/60 finalised, 2026-06-03), so
+   **The Malta dispatch (section 8) is now done (60/60 finalised, 2026-06-03), so
    this stratum is populated: the natural Malta errors include 3 no-gold false
    positives (I7, I8-b, PT29) and the yes-gold false negatives, and the primary J
    is now computable once the four-arm judge run is executed.**
@@ -179,10 +179,12 @@ Harness: `evaluation/verifier_strategies.py`. Result:
 
 **Prerequisite (done 2026-06-03).** The primary endpoint needs a Researcher
 dispatch on Malta (target ~30 `no`-gold binary questions plus a matched ~30
-`yes`-gold for the pass side, dimension-stratified). That dispatch is now done: 58
-of 60 canonical pairs finalised (`data/questions/malta_eval_pairs.json`, batches
+`yes`-gold for the pass side, dimension-stratified). That dispatch is now done: all
+60 canonical pairs finalised (`data/questions/malta_eval_pairs.json`, batches
 `exp6_malta` + `malta_baseline`, baseline / no `experiment_id`), with the no-gold
-minority class fully covered bar two `search_empty` pairs (I8-d, PT12). The natural
+minority class fully covered (the last two, I8-d and PT12, recovered from
+`search_empty` once `head_ok` gained a Playwright fallback for the data.gov.mt
+Cloudflare 403). The natural
 Malta error set for NAT-fail-MT exists in the DB. Netherlands remains optional for
 the secondary stratum. The primary J is now computable once the four-arm judge run
 is executed; it has not been run yet.
