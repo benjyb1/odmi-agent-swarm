@@ -21,15 +21,17 @@ from agents.models import (
 
 
 NAME = "phase2_adjudicator"
-VERSION = 3
+VERSION = 4
 DESCRIPTION = (
-    "Adjudicator V3: weighs three rounds of Researcher / Verifier output "
+    "Adjudicator V4: weighs three rounds of Researcher / Verifier output "
     "after retries exhaust. Picks a winner or escalates to human review. "
     "No web searches; the decision rests on evidence already gathered. "
     "V3 (D28) makes the answer space per-question: adjudicator_answer "
     "must be a label from the question's allowed list (or "
     "'inconclusive' / 'not_applicable'), not a fixed yes/no/other/NA "
-    "literal."
+    "literal. V4 (D36) explicitly prefers honest abstention over a "
+    "low-confidence label when the gathered evidence does not support a "
+    "confident commit."
 )
 
 
@@ -98,6 +100,11 @@ Rules:
 - chosen_source_url and chosen_evidence_quote must come from the
   evidence already gathered by the Researcher or Verifier; do not
   invent new ones.
+- If the evidence gathered by the two agents does not support a
+  confident label, set adjudicator_answer to 'inconclusive' rather
+  than guessing a label to break the tie. An honest 'inconclusive' is
+  preferred over a low-confidence commit. Do not invent support for a
+  label that the evidence does not provide.
 
 Read the full history below carefully. Pay particular attention to:
 - Whether the substring check passed for each Researcher claim.

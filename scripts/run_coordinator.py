@@ -670,9 +670,24 @@ def _is_abstention(answer: Optional[str]) -> bool:
     return bool(answer) and answer.strip().lower() == "inconclusive"
 
 
-def _should_accept_verifier_pass(verdict: str, answer: Optional[str]) -> bool:
-    """A Verifier `pass` only finalises a real answer, never an abstention."""
-    return verdict == "pass" and not _is_abstention(answer)
+# Minimum answer confidence required to commit an answer that the Verifier
+# passed. A Verifier pass on a low-confidence answer is a likely false
+# positive (confident-wrong), so the coordinator retries instead.
+COMMIT_CONFIDENCE_FLOOR = 0.65
+
+
+def _should_accept_verifier_pass(
+    verdict: str,
+    answer: Optional[str],
+    answer_confidence: Optional[float],
+) -> bool:
+    """A Verifier `pass` finalises an answer only if it is a real label
+    (not an abstention) and its confidence clears the commit floor."""
+    return (
+        verdict == "pass"
+        and not _is_abstention(answer)
+        and (answer_confidence or 0.0) >= COMMIT_CONFIDENCE_FLOOR
+    )
 
 
 def coordinate(
@@ -984,7 +999,9 @@ def coordinate(
 
         # --- Verdict branching ---
         if _should_accept_verifier_pass(
-            v_result.output.verdict, last_researcher_output.answer
+            v_result.output.verdict,
+            last_researcher_output.answer,
+            last_researcher_output.answer_confidence,
         ):
             final_status = "accepted_by_verifier"
             _upsert_subtrio_status(
@@ -1008,10 +1025,30 @@ def coordinate(
             )
             return final_status, r_result.output
 
-        # Verifier failed. Either retry or escalate to Adjudicator.
+        # Verifier did not accept. Either retry or escalate to Adjudicator.
         if attempt < max_retries:
+            # If the Verifier passed but confidence was sub-floor, the
+            # rejection_reason from the Verifier would be misleading (it
+            # said "pass"). Use a clearer message so the Researcher knows
+            # exactly what to improve.
+            _conf = last_researcher_output.answer_confidence
+            if (
+                v_result.output.verdict == "pass"
+                and not _is_abstention(last_researcher_output.answer)
+                and (_conf or 0.0) < COMMIT_CONFIDENCE_FLOOR
+            ):
+                _rejection_reason = (
+                    f"The answer was accepted by the Verifier but its confidence "
+                    f"({_conf:.2f}) is below the {COMMIT_CONFIDENCE_FLOOR} commit "
+                    f"floor. Find stronger evidence or commit only if the evidence "
+                    f"clearly supports a label."
+                )
+            else:
+                _rejection_reason = (
+                    v_result.output.rejection_reason or "verifier rejected"
+                )
             feedback = VerifierFeedback(
-                rejection_reason=v_result.output.rejection_reason or "verifier rejected",
+                rejection_reason=_rejection_reason,
                 suggested_search_query=v_result.output.suggested_search_query,
                 failed_source_url=r_result.output.source_url,
             )

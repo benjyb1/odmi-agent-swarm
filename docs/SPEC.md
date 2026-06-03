@@ -765,6 +765,38 @@ text into ~500-char windows and rerank against the query, as Tavily advanced
 does) is the lever to push past 80% unambiguously; deferred as diminishing-return
 against the sample noise and the dominant deny-list ceiling.
 
+### D37: commit confidence floor, and honest abstention over a forced guess
+
+**Date:** 2026-06-02.
+
+The D35 validation exposed two problems. First, the test set was confounded:
+France is 85% yes-gold and the 15 re-run pairs were 14/15 yes, so "12 of 14
+recovered" cannot be told apart from a model that learned to guess the majority
+class. An "always yes" baseline scores 85.3% on France (122 yes, 20 band/other,
+1 no, of 143) and 67.9% globally. Second, D35 forced a commit at the end of the
+budget by routing every abstention to the Adjudicator. PT14 FR is the tell:
+forced to commit, it produced a confident wrong `no` that the Verifier passed.
+
+D37 makes the loop abstain rather than guess.
+- Commit confidence floor (`COMMIT_CONFIDENCE_FLOOR = 0.65`): an answer is
+  accepted only if the Verifier passes, the answer is a real label (not
+  `inconclusive`), and its confidence is at least 0.65. A sub-floor pass is
+  treated as not-yet-answered and retried with feedback that names the gap.
+  PT14's 0.55 would now be rejected.
+- Honest abstention: `inconclusive` or a sub-floor answer retries within the
+  existing 3-retry budget; if it cannot get confident, the Adjudicator may
+  return `inconclusive`. The Adjudicator prompt (V4) now prefers an honest
+  `inconclusive` over guessing a label to break a tie. `inconclusive` was
+  already an accepted Adjudicator output, so no schema change was needed, which
+  matters while a concurrent session is writing the shared DB.
+
+This trades raw accuracy against yes-heavy ground truth for honesty: an
+abstention beats a lucky or confident-wrong guess. The accuracy of D34, D35 and
+D37 is untrustworthy until measured on a set that is not yes-heavy. The honest
+validation set is being rebuilt from no-gold pairs (BA/MK/ME/BG/IS each have 50+)
+and band questions, where an "always yes" guess scores low so finding can be told
+from guessing. 393 non-live tests passing.
+
 ### D35: `inconclusive` is an abstention, not a terminal answer
 
 **Date:** 2026-06-02.
