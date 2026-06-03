@@ -16,11 +16,11 @@ run) · `running` · `done`.
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
-| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (pending Malta dispatch) | primary Malta natural errors, NL secondary, FR + injected robustness | pending; primary J needs the Malta dispatch (search-quota gated); FR/injected partial superseded |
-| EXP-7 | Retry chaining: accumulate evidence across the loop | code built, pre-registered | Malta primary (no-gold-rich), NL secondary | chained arm built behind `--chained` (default off, baseline byte-identical), pre-registered (`EXPERIMENTS_CHAINING.md`); run pending Malta dispatch + quota |
-| EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | pending (Malta dispatch, quota-gated) |
-| EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | pending (Malta dispatch, quota-gated) |
-| EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | pending (Phase A runs incrementally on the exp6_malta set; floor sweep is free) |
+| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | running | primary Malta natural errors (48 candidates, 24 should_fail / 24 should_pass), NL secondary, FR + injected robustness | Malta baseline landed (60/60); `verifier_strategies.py` running on frozen evidence, results streaming to `evaluation/results/verifier_strategies_verifier_strategy_disc_v1.jsonl` |
+| EXP-7 | Retry chaining: accumulate evidence across the loop | registered, run queued | Malta primary (no-gold-rich), NL secondary | both arms (`baseline`, `chained`) to dispatch cold under `retry_chaining_mt_v1`, ~40 dim-stratified pairs; queued behind EXP-6 (shared quota, protocol section 10) |
+| EXP-8 | Cost-side optimisations (Family 1) | registered, run queued | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | queued behind EXP-7; ~160 fresh swarm runs |
+| EXP-9 | Model variants (Family 3) | registered, run queued | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | queued behind EXP-8; Opus arm is the costliest single run in the programme |
+| EXP-10 | Malta failure-mode audit + confidence-floor recovery | done | MT 60 finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | match 32/60; losses 17 fixable + 11 wrong + 0 structural; floor stays 0.65 (lower floors fail the precision>=0.80 bound). `evaluation/results/malta_failure_audit_MT.jsonl` |
 
 ---
 
@@ -209,10 +209,32 @@ confidences, reporting the recovery-precision trade-off and adopting a lower flo
 only under a pre-set precision and false-positive bound. Malta being base-rate
 balanced (R4) is what makes the false-positive check meaningful.
 
-Harness: `evaluation/malta_failure_audit.py` (to build). Phase A runs incrementally
+Harness: `evaluation/malta_failure_audit.py`. Phase A runs incrementally
 on whatever Malta pairs exist; the floor sweep needs no quota. Tavily-independent.
 
-Result: pending.
+Result (done 2026-06-03, full canonical 60-pair Malta set). Match 32/60; losses
+split 15 abstain, 11 differ, 2 no-swarm-answer. Phase A taxonomy over the 28
+non-match pairs: 17 fixable (9 fetch 4xx/5xx, 5 below-floor abstention, 2
+substring-gate, 1 abstain-other), 11 genuine wrong answers, 0 structural/stale-gold
+(the conservative `--llm` residual judge coded every `differ` as a real error).
+This confirms the pre-registered framing: Malta's losses are recall-dominated and
+fixable, not silent wrong commits. Phase B floor sweep: 0.65 (baseline) commits 43,
+32 correct, negative-gold FPR 0.10; 0.55 recovers +4 at 0.50 precision; 0.50
+recovers +10 at 0.70 precision, FPR 0.13. The pre-set decision rule (precision
+>= 0.80, FPR rise <= 0.05) keeps the floor at **0.65**; both lower floors fail the
+precision bound. The D37 floor is vindicated. Receipts:
+`evaluation/results/malta_failure_audit_MT.jsonl`.
+
+Data-integrity fix found during the QA pass: the dispatch had written 72
+`phase2_final` rows for the 60 distinct MT questions (stale `agent_failure` rows
+superseded by real finalisations, plus a few concurrent double-finalisations,
+two of which conflicted: Q6, PT29). `load_pairs` counted all 72, double-counting
+questions and reading the negative-gold denominator as 40 not 30, which would have
+corrupted the Phase-B false-positive rate. Fixed by selecting the canonical row
+per (question, country) = highest id, `experiment_id IS NULL` for main runs,
+mirroring the dashboard's match-matrix rule (`dashboard/lib/db.py`). The same
+canonical dedup, partitioned per arm, was added to `chaining_analysis.py` for
+EXP-7. Both pinned by regression tests.
 
 ## EXP-7: Retry chaining / evidence accumulation (code built, pre-registered)
 

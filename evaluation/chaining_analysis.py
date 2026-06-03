@@ -301,30 +301,47 @@ def load_outcomes(conn: sqlite3.Connection,
     """
     from dashboard.lib.db import _MATCH_STATUS_SQL
 
+    # The dispatch can write more than one phase2_final row per pair within an arm
+    # (retries, or two concurrent re-runs). Keep the canonical row per
+    # (question, country, arm) = highest id, the same answer-blind rule the
+    # dashboard match matrix uses (dashboard/lib/db.py). Without this, a duplicated
+    # pair would be double-counted in one arm and break the paired design (R2).
     query = f"""
-        SELECT
-            f.question_id          AS question_id,
-            f.country_code         AS country_code,
-            COALESCE((
-                SELECT r.condition_label
-                FROM phase2_researcher_runs r
-                WHERE r.pair_run_id = f.pair_run_id
-                  AND r.condition_label IS NOT NULL
-                LIMIT 1
-            ), 'baseline')         AS arm,
-            f.terminal_status      AS terminal_status,
-            f.final_answer         AS final_answer,
-            gt.response            AS gold_answer,
-            {_MATCH_STATUS_SQL}    AS match_status,
-            (
-                SELECT COUNT(*) FROM claude_usage_log u
-                WHERE u.subtrio_id = f.pair_run_id
-            )                      AS calls
-        FROM phase2_final f
-        LEFT JOIN ground_truth gt
-          ON gt.question_id = f.question_id
-         AND gt.country_code = f.country_code
-        WHERE f.experiment_id = ?
+        WITH base AS (
+            SELECT
+                f.rowid                AS _fid,
+                f.question_id          AS question_id,
+                f.country_code         AS country_code,
+                COALESCE((
+                    SELECT r.condition_label
+                    FROM phase2_researcher_runs r
+                    WHERE r.pair_run_id = f.pair_run_id
+                      AND r.condition_label IS NOT NULL
+                    LIMIT 1
+                ), 'baseline')         AS arm,
+                f.terminal_status      AS terminal_status,
+                f.final_answer         AS final_answer,
+                gt.response            AS gold_answer,
+                {_MATCH_STATUS_SQL}    AS match_status,
+                (
+                    SELECT COUNT(*) FROM claude_usage_log u
+                    WHERE u.subtrio_id = f.pair_run_id
+                )                      AS calls
+            FROM phase2_final f
+            LEFT JOIN ground_truth gt
+              ON gt.question_id = f.question_id
+             AND gt.country_code = f.country_code
+            WHERE f.experiment_id = ?
+        ),
+        ranked AS (
+            SELECT *, ROW_NUMBER() OVER (
+                PARTITION BY question_id, country_code, arm ORDER BY _fid DESC
+            ) AS _canon_rn
+            FROM base
+        )
+        SELECT question_id, country_code, arm, terminal_status,
+               final_answer, gold_answer, match_status, calls
+        FROM ranked WHERE _canon_rn = 1
     """
     conn.row_factory = sqlite3.Row
     rows = conn.execute(query, (experiment_id,)).fetchall()

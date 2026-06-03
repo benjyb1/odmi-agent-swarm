@@ -1,5 +1,6 @@
 """Offline tests for the EXP-10 Malta failure-mode audit (no DB, no network)."""
 import re
+import sqlite3
 from pathlib import Path
 
 import evaluation.malta_failure_audit as mfa
@@ -135,3 +136,53 @@ def test_baseline_floor_in_sync_with_coordinator():
     m = re.search(r"COMMIT_CONFIDENCE_FLOOR\s*=\s*([0-9.]+)", src)
     assert m, "could not find COMMIT_CONFIDENCE_FLOOR in run_coordinator.py"
     assert float(m.group(1)) == mfa.BASELINE_FLOOR
+
+
+# ---- load_pairs canonical dedup (regression: duplicate phase2_final rows) ----
+
+def _mini_db():
+    """Minimal in-memory DB carrying only what load_pairs reads."""
+    conn = sqlite3.connect(":memory:")
+    conn.row_factory = sqlite3.Row
+    conn.executescript(
+        """
+        CREATE TABLE questions(question_id TEXT, dimension TEXT, answer_shape TEXT,
+                               allowed_answers TEXT);
+        CREATE TABLE ground_truth(question_id TEXT, country_code TEXT, response TEXT);
+        CREATE TABLE phase2_final(id INTEGER PRIMARY KEY, pair_run_id TEXT,
+                                  question_id TEXT, country_code TEXT,
+                                  experiment_id TEXT, final_answer TEXT,
+                                  final_answer_confidence REAL);
+        CREATE TABLE phase2_researcher_runs(pair_run_id TEXT, country_code TEXT);
+        CREATE TABLE phase2_verifier_runs(pair_run_id TEXT, country_code TEXT);
+        CREATE TABLE phase2_adjudications(pair_run_id TEXT, country_code TEXT);
+        """
+    )
+    conn.execute("INSERT INTO questions VALUES('Q6','Quality','binary','[\"yes\",\"no\"]')")
+    conn.execute("INSERT INTO ground_truth VALUES('Q6','MT','yes')")
+    return conn
+
+
+def test_load_pairs_keeps_one_canonical_row_per_pair():
+    """Two finalisations for the same pair must collapse to the highest-id row,
+    answer-blind (matches the dashboard rule). Guards against the EXP-10
+    double-counting bug that corrupted the negative-gold denominator."""
+    conn = _mini_db()
+    # An earlier finalisation (correct) and a later one (wrong). The latest id wins.
+    conn.execute("INSERT INTO phase2_final VALUES(254,'sub-a','Q6','MT',NULL,'yes',0.65)")
+    conn.execute("INSERT INTO phase2_final VALUES(258,'sub-b','Q6','MT',NULL,'no',0.45)")
+    pairs = mfa.load_pairs(conn, country="MT")
+    assert len(pairs) == 1
+    assert pairs[0]["final_answer"] == "no"  # highest id, not the gold-matching one
+    assert pairs[0]["pair_run_id"] == "sub-b"
+
+
+def test_load_pairs_excludes_experiment_rows_from_main():
+    """A specific experiment's rows must not contaminate the main (NULL) audit."""
+    conn = _mini_db()
+    conn.execute("INSERT INTO phase2_final VALUES(1,'sub-main','Q6','MT',NULL,'no',0.6)")
+    conn.execute("INSERT INTO phase2_final VALUES(2,'sub-exp','Q6','MT','some_exp','yes',0.6)")
+    main = mfa.load_pairs(conn, country="MT")
+    assert len(main) == 1 and main[0]["pair_run_id"] == "sub-main"
+    exp = mfa.load_pairs(conn, country="MT", experiment_id="some_exp")
+    assert len(exp) == 1 and exp[0]["pair_run_id"] == "sub-exp"

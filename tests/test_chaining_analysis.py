@@ -304,3 +304,29 @@ def test_load_outcomes_splits_arms_and_counts(tmp_path):
     assert c.calls == 5
     # The other_exp row was excluded by the experiment_id filter.
     assert len(arms["baseline"]) == 1
+
+
+def test_load_outcomes_dedups_duplicate_rows_within_arm(tmp_path):
+    """A pair finalised twice within one arm (retry or concurrent re-run) must
+    collapse to the canonical (latest-rowid) row, answer-blind, so the paired
+    design (R2) is not broken by double-counting."""
+    db = tmp_path / "dup.db"
+    _build_minimal_db(db)
+    conn = sqlite3.connect(db)
+    try:
+        # A second, later baseline finalisation of the same pair, disagreeing.
+        conn.execute(
+            "INSERT INTO phase2_final VALUES (?,?,?,?,?,?)",
+            ("b1b", "Q1", "MT", "escalated_adjudicator", "no", "exp7"),
+        )
+        conn.execute(
+            "INSERT INTO phase2_researcher_runs VALUES (?,?)", ("b1b", "baseline")
+        )
+        conn.commit()
+        arms = load_outcomes(conn, "exp7")
+    finally:
+        conn.close()
+    # One canonical baseline outcome, the later (rowid-higher) one wins.
+    assert len(arms["baseline"]) == 1
+    assert arms["baseline"][0].final_answer == "no"
+    assert len(arms["chained"]) == 1
