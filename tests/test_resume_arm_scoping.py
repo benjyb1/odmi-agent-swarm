@@ -36,6 +36,7 @@ def _make_db(path: Path) -> None:
             retrieval_confidence REAL, answer_confidence REAL,
             search_queries_used TEXT, fetched_urls TEXT,
             domain_trust_score REAL, language_route_used TEXT, notes TEXT,
+            failure_mode TEXT,
             created_at TEXT, experiment_id TEXT, condition_label TEXT
         );
         CREATE TABLE subtrio_status (
@@ -51,7 +52,8 @@ def _make_db(path: Path) -> None:
 
 
 def _insert_researcher(path: Path, *, pair_run_id, experiment_id,
-                       condition_label, answer="yes") -> None:
+                       condition_label, answer="yes",
+                       failure_mode=None) -> None:
     conn = sqlite3.connect(path)
     conn.execute(
         """INSERT INTO phase2_researcher_runs (
@@ -59,11 +61,11 @@ def _insert_researcher(path: Path, *, pair_run_id, experiment_id,
             answer_explanation, evidence_quote, source_url,
             retrieval_confidence, answer_confidence, search_queries_used,
             fetched_urls, domain_trust_score, language_route_used, notes,
-            created_at, experiment_id, condition_label
+            failure_mode, created_at, experiment_id, condition_label
         ) VALUES (?, 'P1', 'MT', 0, ?, 'x', 'a quote here', 'https://x.mt',
                   0.8, 0.7, '[]', '[]', 1.0, 'native', NULL,
-                  '2026-06-03T00:00:00Z', ?, ?)""",
-        (pair_run_id, answer, experiment_id, condition_label),
+                  ?, '2026-06-03T00:00:00Z', ?, ?)""",
+        (pair_run_id, answer, failure_mode, experiment_id, condition_label),
     )
     # Orphaned subtrio with no final row -> resumable if scope matches.
     conn.execute(
@@ -133,6 +135,29 @@ def test_production_still_resumes_production_row(patched_db):
     )
     assert got is not None
     assert got["pair_run_id"] == "b1"
+
+
+def test_does_not_resume_inconclusive_row(patched_db):
+    # An abstention is not a result; resuming from it stranded pairs at
+    # 'researching' with no phase2_final. The finder must skip it.
+    _insert_researcher(patched_db, pair_run_id="b1", answer="inconclusive",
+                       experiment_id=None, condition_label="baseline")
+    got = rc._find_resumable_researcher(
+        "P1", "MT", experiment_id=None, condition_label="baseline",
+    )
+    assert got is None
+
+
+def test_does_not_resume_failed_row(patched_db):
+    # A Researcher row that failed (failure_mode set, e.g. url_unreachable)
+    # is not a clean result; a fresh Researcher call is the right move.
+    _insert_researcher(patched_db, pair_run_id="b1", answer="no",
+                       failure_mode="url_unreachable",
+                       experiment_id=None, condition_label="baseline")
+    got = rc._find_resumable_researcher(
+        "P1", "MT", experiment_id=None, condition_label="baseline",
+    )
+    assert got is None
 
 
 def test_two_arms_each_resume_their_own(patched_db):

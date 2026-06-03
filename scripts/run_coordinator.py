@@ -582,6 +582,14 @@ def _find_resumable_researcher(
       - is no longer in an active stage (orphaned, interrupted, or
         merely stale by more than `max_age_minutes`).
 
+    Only a clean, committed Researcher result is resumable: rows that
+    failed (`failure_mode` set) or abstained (`answer = 'inconclusive'`)
+    are skipped. Resuming from those re-entered the retry/abstention
+    branch without finalising, which left the new subtrio orphaned at
+    'researching' with no `phase2_final`. A fresh Researcher call is the
+    right move for those pairs, so the finder ignores them and the
+    coordinator runs the Researcher from scratch.
+
     The experiment / condition scoping matters for paired experiments
     such as EXP-7 (D39): baseline and chained run on the identical pair
     set, often back to back, so an unscoped resume would let a chained
@@ -615,6 +623,8 @@ def _find_resumable_researcher(
               AND r.condition_label IS ?
               AND r.retry_count = 0
               AND r.answer IS NOT NULL
+              AND r.failure_mode IS NULL
+              AND lower(trim(r.answer)) != 'inconclusive'
               AND f.id IS NULL
               AND (s.stage IN ('orphaned', 'interrupted_rate_limit', 'failed')
                    OR (s.updated_at IS NOT NULL

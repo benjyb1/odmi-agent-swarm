@@ -538,6 +538,40 @@ items, all gated on search quota:
    optionally Netherlands. The `no`-gold candidates do not exist in the DB yet, so
    this is the binding prerequisite for the base-rate rule (R4) to be satisfiable.
    Same quota gate as the parked D28 Phase 3.
+   **Done (2026-06-03).** The canonical pair set is frozen and committed at
+   `data/questions/malta_eval_pairs.json` (60 pairs, 30 `no` / 30 `yes`, seed
+   20260603, dimension split Impact 17 / Portal 24 / Policy 10 / Quality 9;
+   generator `scripts/build_malta_eval_pairs.py`). All 30 `no`-gold binary
+   questions are included as the minority class; the 30 `yes`-gold pairs are a
+   size-matched, dimension-stratified round-robin draw. The baseline dispatch
+   (provider auto, `condition_label` baseline, no `experiment_id`; batches
+   `exp6_malta` then `malta_baseline`) finalised all 60: 43 committed yes/no plus
+   17 honest `inconclusive` abstentions (D37). The last two, I8-d and PT12, had
+   failed on `search_empty` because their evidence URLs were on Cloudflare-protected
+   data.gov.mt; they recovered to `inconclusive` once `head_ok` gained a Playwright
+   fallback for WAF 403s. Balance-aware result (R4): exact match
+   32/60 raw, 32/43 on committed answers; no-gold minority recall (TNR) 0.87 with 3
+   false positives of 23 committed (I7, I8-b, PT29, the visible-error class Malta's
+   `no`-gold questions exist to surface); yes-gold recall (TPR) 0.60; Youden's J
+   0.47; mean commit confidence 0.58. Zero data-leakage in any finalised row; batch
+   cost ~$4.98. The R4 base-rate metric is now satisfiable. EXP-7/8/9 reuse this
+   same committed pair list with their own `condition_label` / `experiment_id`
+   tags; the 13 baseline rows are plain (no `experiment_id`) and read identically
+   to the `exp6_malta` set.
+
+   Three faults found and fixed during the dispatch, none of them quota: a fresh
+   worktree has no `.env`, and the desktop app injects an empty
+   `ANTHROPIC_AUTH_TOKEN` that made the Anthropic SDK send a malformed `Bearer`
+   header, surfacing as `APIConnectionError` (fixed in `agents/tools/llm.py`,
+   blank token dropped at import); `_find_resumable_researcher` resumed from
+   failed / `inconclusive` Researcher rows, stranding 11 pairs at stage
+   'researching' with no `phase2_final` (fixed in `scripts/run_coordinator.py`, only
+   clean committed results are now resumable); and `head_ok` reported
+   Cloudflare-protected data.gov.mt as `url_unreachable`, killing answers grounded
+   there, now cleared with a Playwright render on a WAF 403/429/503 (fixed in
+   `agents/tools/fetch.py`). The not-done set is computed dynamically as the
+   canonical question IDs minus the distinct MT `phase2_researcher_runs` question
+   IDs, so any later re-run resumes cleanly.
 10. **EXP-8 conditions:** a committed `prompt-compressed` prompt version in
     `prompt_versions`, the `model-fallback` escalation path, and a per-arm
     cache-bypass that leaves the `cache-hot` arm cache-on while every other arm

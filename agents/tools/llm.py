@@ -41,6 +41,17 @@ from agents.models import LLMUsage
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(_REPO_ROOT / ".env", override=True)
 
+# Claude for Desktop (and some launch shells) inject an empty
+# ANTHROPIC_AUTH_TOKEN into the environment. The Anthropic SDK reads it and
+# sends an "Authorization: Bearer " header with no value, which httpx
+# rejects locally as an illegal header. That surfaces as a bare
+# APIConnectionError, easily mistaken for a rate-limit or a dead proxy. We
+# authenticate to CLIProxyAPI via x-api-key (ANTHROPIC_API_KEY), so an empty
+# bearer token is never wanted. Drop any blank value before the SDK sees it.
+for _stale in ("ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_CUSTOM_HEADERS"):
+    if os.environ.get(_stale, "").strip() == "":
+        os.environ.pop(_stale, None)
+
 
 # Anthropic published pricing in USD per million tokens for cost
 # arithmetic (Q9). Numbers are intentionally hard-coded here so the

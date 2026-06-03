@@ -1158,10 +1158,41 @@ Status (detail in `docs/EXPERIMENTS.md`):
   stalling at the search step under repeated machine restarts.
 - **EXP-4/EXP-5** (Brave, then the four-provider A/B): one judge run yields both;
   interrupted near 882 of ~1080 verdicts, resumable from the cache.
-- **EXP-6** (verifier strategy discrimination): designed and partially run (3/89).
+- **EXP-6** (verifier strategy discrimination): designed and partially run (3/89);
+  retargeted to Malta-primary under R4. Its binding prerequisite, the Malta
+  baseline dispatch, is now done (see below); the four-arm judge run is not yet
+  executed.
 - **EXP-7** (retry chaining): code built behind `--chained` (default off, baseline
   byte-identical) and pre-registered (`EXPERIMENTS_CHAINING.md`, Malta primary);
-  run pending the Malta dispatch and quota.
+  unblocked now the Malta baseline is done, run pending quota.
+
+**Malta baseline dispatch (2026-06-03, done; 60/60).** The shared prerequisite for
+EXP-6/7/8/9. The canonical pair set is frozen and committed at
+`data/questions/malta_eval_pairs.json` (60 pairs, 30 `no` / 30 `yes`, seed
+20260603, dimension split Impact 17 / Portal 24 / Policy 10 / Quality 9; all 30
+`no`-gold binary questions included as the minority class, the 30 `yes`-gold pairs
+a size-matched dimension-stratified draw). Generator
+`scripts/build_malta_eval_pairs.py`. The baseline dispatch (provider auto,
+`condition_label` baseline, no `experiment_id`; batches `exp6_malta` then
+`malta_baseline`) finalised all 60: 43 committed yes/no plus 17 honest
+`inconclusive` abstentions (D37). The last two, I8-d and PT12, had failed on
+`search_empty` because their evidence sat on Cloudflare-protected data.gov.mt;
+they were recovered to `inconclusive` once `head_ok` gained a Playwright fallback
+for WAF 403s (see Built). Balance-aware quality
+(R4): exact match 32/60 raw, 32/43 on committed answers; no-gold minority recall
+(TNR) 0.87 with 3 false positives of 23 committed (I7, I8-b, PT29); yes-gold recall
+(TPR) 0.60; Youden's J 0.47; mean commit confidence 0.58. Zero data-leakage in any
+finalised row; batch cost ~$4.98. EXP-7/8/9 run their own `condition_label` /
+`experiment_id` dispatches over the same committed pair list. Three faults were
+found and fixed along the way, none of them quota: a missing worktree `.env` plus
+an empty `ANTHROPIC_AUTH_TOKEN` injected by the desktop app, which made every LLM
+call fail as a misleading `APIConnectionError` (`agents/tools/llm.py`); a resume
+path that reused failed / `inconclusive` Researcher rows and stranded 11 pairs at
+stage 'researching' (`scripts/run_coordinator.py`); and `head_ok` reporting
+Cloudflare-protected portals (data.gov.mt) as `url_unreachable`, which it now
+clears with a Playwright render on a WAF 403/429/503 (`agents/tools/fetch.py`).
+The not-done set is computed dynamically (canonical IDs minus distinct MT
+`phase2_researcher_runs` IDs), so any later re-run resumes cleanly.
 
 ### Built (verified)
 
@@ -1316,8 +1347,9 @@ updated, the France/injected partial kept only as a robustness arm); EXP-8
 and a rubric audit (protocol section 12) that flags EXP-1's France E1 accuracy as
 base-rate degenerate (the E2 provider win-share is unaffected) and EXP-3's
 Lithuania control as undiscriminating on binary, since it holds zero negative
-golds. All three optimisation runs are gated on a Malta Researcher dispatch, which
-is pending search quota, the same constraint as the parked D28 Phase 3.
+golds. All three optimisation runs were gated on a Malta Researcher dispatch; that
+dispatch is now done (2026-06-03, 60/60 finalised, see the Malta baseline entry in
+Current status), so EXP-6/8/9 are unblocked.
 
 Rationale: the swarm's headline contribution is an accuracy-vs-cost surface. A
 surface measured on a degenerate country would be indistinguishable from
@@ -1442,6 +1474,7 @@ without re-introducing the friction D40 removed.
 
 | Date | Change |
 |---|---|
+| 2026-06-03 (Malta dispatch, done) | Malta baseline swarm dispatch completed, the shared prerequisite for EXP-6/7/8/9 (protocol section 9 item 9). Canonical 60-pair set (`data/questions/malta_eval_pairs.json`, 30 `no` / 30 `yes`, seed 20260603) was already committed; verified no-gold coverage (all 30 present) and dimension balance. Dispatched the remaining pairs in four passes (provider auto, `condition_label` baseline, no `experiment_id`, batch `malta_baseline`): all 60 finalised, 43 committed yes/no plus 17 honest `inconclusive` abstentions (D37). Balance-aware (R4): 32/43 committed accuracy, no-gold recall (TNR) 0.87 with 3 false positives of 23 committed (I7, I8-b, PT29), yes-gold recall (TPR) 0.60, Youden's J 0.47, mean commit confidence 0.58; zero data-leakage; batch cost ~$4.98. Three faults found and fixed, none quota: a fresh worktree had no `.env` and the desktop app injected an empty `ANTHROPIC_AUTH_TOKEN`, making every LLM call a misleading `APIConnectionError` (`agents/tools/llm.py` drops a blank token at import); `_find_resumable_researcher` resumed from failed / `inconclusive` Researcher rows, stranding 11 pairs at 'researching' (`scripts/run_coordinator.py` now resumes only clean committed results); and `head_ok` reported Cloudflare-protected data.gov.mt as `url_unreachable`, which it now clears with a Playwright render on a WAF 403/429/503 (`agents/tools/fetch.py`), recovering the last two pairs I8-d and PT12 to `inconclusive`. The first pass also hit a genuine Claude 429 `model_cooldown` near the end and stopped cleanly. New Malta DB rows committed on this branch; 446 tests pass. SPEC current-status, `EXPERIMENTS.md`, `EXPERIMENTS_PROTOCOL.md` section 9 item 9, and `EXPERIMENTS_VERIFIER.md` updated. Failure-mode taxonomy drafted for EXP-10 (retrieval ceiling dominant; the data.gov.mt WAF block now mitigated). |
 | 2026-06-03 (runaway guard) | D41 added, follows D40. Two runaway circuit breakers on `dispatch_subtrios.py`, keyed on real units and set far above any real run: a pre-flight refusal above `MAX_PAIRS_PER_DISPATCH = 500` pairs (on by default, overridable with `allow_large` / `--allow-large`; surfaced as a checkbox in the Run Console), and an opt-in mid-flight `--max-calls` breaker that stops spawning once the batch's logged calls (via new `_batch_call_count`) reach the cap. `DispatchResult` gains `aborted_oversize` and `calls_capped`. Replaces the deleted dollar budget with a "this is obviously broken, stop" guard rather than a per-run "may I spend this?". New `tests/test_dispatch_runaway_guard.py` (8 cases); 446 non-live passing. |
 | 2026-06-03 (soft limit) | D40 added, supersedes D20 layers 1 and 2. Removed the local cost soft limit: `DEFAULT_SOFT_LIMIT_USD`, `LOW_WATER_FRACTION`, the `soft_limit_usd`/`force` params and `--soft-limit-usd`/`--force` flags on `dispatch_subtrios.py`, the `CostEstimate.soft_limit_usd`/`budget_remaining_usd` and `DispatchResult.aborted_due_to_budget` fields, the pre-flight refusal, and the per-spawn low-water stop. `harness.py` no longer passes `--soft-limit-usd`; the dashboard sidebar loses the soft-limit slider/progress and the Run Console loses the "Window soft limit" metric and "Force release" checkbox. Rolling 5-hour spend is still computed and shown (sidebar, Run Console, Costs) and the pre-flight estimate is still logged, but nothing blocks a dispatch now; the only ceiling is Claude Max's own rate limit (D20 layer 3, the clean resumable 429 shutdown, kept). The cap was a guessed arithmetic equivalent of a flat subscription, not a real balance, so it was friction without protection. Tests updated; 438 non-live passing. |
 | 2026-06-03 (chaining) | D39 added: EXP-7 chained retry arm built behind `--chained` (default off, baseline byte-identical). New `EvidenceItem` model; `VerifierFeedback` gains `counter_evidence_quote` / `counter_source_url` (default None); `ResearcherInput.prior_evidence` and `AdjudicatorInput.evidence_corpus` added. Coordinator accumulates a de-duped, 40-capped evidence corpus across rounds when chained, feeds the Verifier's counter-evidence back to the Researcher, and adjudicates over the whole corpus; the D37 floor and abstention rules are untouched. Carried evidence rides in the user message, not the system prompt, so `prompt_versions` are stable and an empty corpus renders byte-for-byte as before. Flag threaded `dispatch_subtrios.py` → `run_coordinator.py`. Pre-registered in `docs/EXPERIMENTS_CHAINING.md` (Malta primary per R4, false-positive rate as a co-primary, paired McNemar/Wilcoxon, one confirmatory joint claim); EXP-7 status board updated. New `tests/test_chained_evidence.py` (18 cases); 418 non-live passing. Run gated only on the Malta dispatch (search quota) and Claude headroom. |

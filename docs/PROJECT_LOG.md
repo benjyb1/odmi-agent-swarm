@@ -8,6 +8,61 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20f: Malta baseline dispatch (done, 60/60)
+
+Picked up the shared prerequisite for EXP-6/7/8/9: the canonical Malta pair set
+plus a baseline swarm run over it. The pair set was already built and committed by
+an earlier window (`data/questions/malta_eval_pairs.json`, 60 pairs, 30 `no` / 30
+`yes`, seed 20260603; generator `scripts/build_malta_eval_pairs.py`). Verified it
+rather than regenerating: all 30 `no`-gold binary MT questions present (minority
+class not sampled down), 30 `yes`-gold a size-matched round-robin draw, dimension
+split Impact 17 / Portal 24 / Policy 10 / Quality 9. MT is in
+`run_coordinator.COUNTRIES`; `search_snippets` is a column on
+`phase2_researcher_runs`.
+
+The reported "quota wall" was a misdiagnosis, and worth recording as such. A fresh
+coordinator on P4:MT failed on the first LLM call with `APIConnectionError`, which
+reads like an exhausted window. The plan was at 43% of the 5-hour limit. The real
+cause was environment: a fresh worktree has no `.env` (gitignored), and Claude for
+Desktop injects an empty `ANTHROPIC_AUTH_TOKEN` into the session, so the Anthropic
+SDK built an `Authorization: Bearer ` header with no token and httpx rejected it
+locally, surfacing as a bare `APIConnectionError`. Fixed in `agents/tools/llm.py`
+by dropping a blank `ANTHROPIC_AUTH_TOKEN` (and empty `ANTHROPIC_CUSTOM_HEADERS`)
+at import.
+
+With that cleared, dispatched the remaining pairs over several passes (provider
+auto, which falls to DIY since Tavily is spent, `condition_label` baseline, no
+`experiment_id`, batch `malta_baseline`). One pass hit a genuine Claude 429
+`model_cooldown` near the end and the dispatcher stopped cleanly. Two more bugs
+surfaced and were fixed: `_find_resumable_researcher` resumed from failed /
+`inconclusive` Researcher rows and stranded 11 pairs at stage 'researching' with no
+`phase2_final` (`scripts/run_coordinator.py` now resumes only clean committed
+results); and `head_ok` marked Cloudflare-protected data.gov.mt as
+`url_unreachable`, killing answers grounded there (`agents/tools/fetch.py` now
+clears a WAF 403/429/503 with a Playwright render, a real browser solves the
+challenge JS). The last two pairs, I8-d and PT12, recovered from `search_empty` to
+`inconclusive` once the fetch fix landed.
+
+Final: all 60 finalised, 43 committed yes/no (32 correct, 74% on committed) plus 17
+honest `inconclusive` abstentions (D37). Balance-aware (R4): no-gold recall (TNR)
+0.87 with 3 false positives of 23 committed (I7, I8-b, PT29, the visible-error
+class Malta exists to surface), yes-gold recall (TPR) 0.60, Youden's J 0.47, mean
+commit confidence 0.58. Zero data-leakage; batch cost ~$4.98.
+
+Failure-mode taxonomy across the 28 non-matches (for EXP-10): WAF/CAPTCHA retrieval
+block is dominant (`url_unreachable` on 71 of 234 attempts, touches ~15 non-matches
+including all 3 false positives, now mitigated); the self-report / questionnaire
+ceiling is the hard limit (~8 non-matches, no open-web source exists); then
+substring-gate failures (12), thin SERP / Tavily exhaustion (3), and 2 conservative
+`no`-instead-of-abstain false negatives. Recorded in SPEC, `EXPERIMENTS.md`,
+`EXPERIMENTS_PROTOCOL.md` section 9 item 9, and `EXPERIMENTS_VERIFIER.md`. Merged
+`origin/main` (D39/D40/D41, EXP-7 chaining) into the branch, resolving the binary
+`data/odmi.db` to this branch's superset (verified a strict superset of main: MT 73
+vs 17 finalised rows, every other country identical). `uv run pytest -q`: 446
+passed, 13 skipped.
+
+---
+
 ## 2026-06-03 — Session 20g: remove the cost soft limit (D40)
 
 Ripped out the local cost soft limit. It was a three-layer thing (D20): a
