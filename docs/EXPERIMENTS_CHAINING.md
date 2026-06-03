@@ -238,8 +238,11 @@ Result: the finalised pairs in the phase2 tables plus an analysis JSONL under
    one-class sample cannot be passed off as balance-aware (R4). Committed and
    unit-tested before the run, the same standard as the search experiments
    (`EXPERIMENTS_PROTOCOL.md` section 9).
-3. **Resume-path scoping** verified so no Researcher row crosses arms (still to
-   confirm before the run).
+3. **Resume-path scoping** so no Researcher row crosses arms. **Done.**
+   `_find_resumable_researcher` now matches on `experiment_id` and
+   `condition_label`, so a chained run cannot inherit a baseline Researcher row
+   or vice versa; production (NULL experiment, `baseline`) resumes only its own
+   rows, unchanged. Covered by `tests/test_resume_arm_scoping.py` (5 cases).
 
 Both arms draw on the same Claude rate limit, so they run in sequence within the
 experiment, not in parallel (the `EXPERIMENTS_PROTOCOL.md` section 10 constraint).
@@ -259,3 +262,8 @@ experiment, not in parallel (the `EXPERIMENTS_PROTOCOL.md` section 10 constraint
   reusing `_MATCH_STATUS_SQL`; the joint confirmatory verdict is computed
   mechanically against the 0.05 false-positive margin. Still gated on the Malta
   dispatch and resume-path scoping (requirements 1 and 3).
+- 2026-06-03 (later still): closed requirement 3. `_find_resumable_researcher`
+  scoped to its own `experiment_id` + `condition_label` so the two arms cannot
+  cross-contaminate via the resume path; `tests/test_resume_arm_scoping.py` (5
+  cases). Only the Malta dispatch (requirement 1) now stands between the code and
+  the run.

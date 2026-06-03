@@ -569,14 +569,27 @@ def _save_final_row(
 def _find_resumable_researcher(
     question_id: str, country_code: str,
     *, max_age_minutes: int = 60,
+    experiment_id: Optional[str] = None,
+    condition_label: str = "baseline",
 ) -> Optional[dict]:
     """Look for a Researcher row from a recent incomplete subtrio.
 
     Returns the row dict (or None) for the most recent
     `phase2_researcher_runs` entry whose subtrio:
+      - belongs to the SAME experiment_id and condition_label as the
+        current run (so an arm never resumes another arm's work), and
       - never wrote a `phase2_final` row, and
       - is no longer in an active stage (orphaned, interrupted, or
         merely stale by more than `max_age_minutes`).
+
+    The experiment / condition scoping matters for paired experiments
+    such as EXP-7 (D39): baseline and chained run on the identical pair
+    set, often back to back, so an unscoped resume would let a chained
+    run inherit a baseline Researcher row (or vice versa) and silently
+    mix the arms. Matching on `experiment_id` and `condition_label`
+    keeps the comparison paired. Production runs carry a NULL
+    experiment_id and the 'baseline' condition, so they still resume only
+    other production rows, exactly as before.
 
     The freshness window protects us from reusing an answer that was
     correct yesterday but might have moved on.
@@ -598,6 +611,8 @@ def _find_resumable_researcher(
             JOIN subtrio_status s ON s.subtrio_id = r.pair_run_id
             LEFT JOIN phase2_final f ON f.pair_run_id = r.pair_run_id
             WHERE r.question_id = ? AND r.country_code = ?
+              AND r.experiment_id IS ?
+              AND r.condition_label IS ?
               AND r.retry_count = 0
               AND r.answer IS NOT NULL
               AND f.id IS NULL
@@ -607,7 +622,7 @@ def _find_resumable_researcher(
             ORDER BY r.id DESC
             LIMIT 1
             """,
-            (question_id, country_code, cutoff),
+            (question_id, country_code, experiment_id, condition_label, cutoff),
         ).fetchone()
     if row is None:
         return None
@@ -876,7 +891,10 @@ def coordinate(
     # Resume check: if a prior subtrio for this pair already wrote a
     # Researcher row (retry_count=0) and then died before finalising,
     # reuse that row instead of paying for a fresh Researcher call.
-    resumable = _find_resumable_researcher(question_id, country_code)
+    resumable = _find_resumable_researcher(
+        question_id, country_code,
+        experiment_id=experiment_id, condition_label=condition_label,
+    )
     if resumable:
         _mark_superseded(
             prior_subtrio_id=resumable["subtrio_id"],
