@@ -66,3 +66,6 @@ evaluation/.cache_adjudications.json
 # catalogue_snapshots / catalogue_metrics rows + each snapshot's manifest.
 # Re-harvest from the manifest endpoint to reproduce.
 data/catalogue_snapshots/
+
+# Transient run logs (results JSONL are kept; logs are not)
+evaluation/results/*.log
