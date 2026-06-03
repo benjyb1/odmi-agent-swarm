@@ -1,8 +1,8 @@
 """Tests for the provider kwarg added to search() and search_many().
 
 Behaviour contract:
-- provider="auto" (default) preserves the existing Tavily-first-then-Brave
-  fallback chain unchanged.
+- provider="auto" (default) is a Tavily → DIY → Brave fallback chain (D36):
+  Tavily first, DIY when Tavily's quota fails, Brave only if DIY also fails.
 - provider="tavily" calls Tavily only; if Tavily raises, the error propagates
   (no Brave fallback). This is the conservative choice for explicit-provider
   callers: they opted in deliberately and silence would hide failures.
@@ -50,6 +50,54 @@ def test_provider_default_is_auto(monkeypatch):
     out_default = search("test")
     out_auto = search("test", provider="auto")
     assert [r.url for r in out_default] == [r.url for r in out_auto]
+
+
+def _diy_result(query: str = "q", **_kwargs) -> list[SearchResult]:
+    return [SearchResult(title="d", url="https://diy.example", snippet="s",
+                         score=0.9, provider="diy")]
+
+
+def test_auto_falls_back_to_diy_when_tavily_quota_fails(monkeypatch):
+    """D36: when Tavily hits its quota, auto falls back to DIY, not Brave."""
+    monkeypatch.setattr("agents.tools.search._TAVILY_QUOTA_EXHAUSTED", False)
+    monkeypatch.setattr(
+        "agents.tools.search._tavily_search",
+        lambda q, **k: (_ for _ in ()).throw(RuntimeError("quota exhausted")),
+    )
+    monkeypatch.setattr(
+        "agents.tools.search_diy.diy_search",
+        lambda q, **k: _diy_result(q, **k),
+    )
+    monkeypatch.setattr(
+        "agents.tools.search._brave_search",
+        lambda q, **k: pytest.fail("Brave must not be called while DIY succeeds"),
+    )
+    out = search("test", provider="auto")
+    assert out and all(r.provider == "diy" for r in out)
+
+
+def test_auto_falls_through_diy_to_brave(monkeypatch):
+    """D36: Brave is the last resort, reached only when both Tavily and DIY fail."""
+    monkeypatch.setattr("agents.tools.search._TAVILY_QUOTA_EXHAUSTED", False)
+    monkeypatch.setattr(
+        "agents.tools.search._tavily_search",
+        lambda q, **k: (_ for _ in ()).throw(RuntimeError("quota exhausted")),
+    )
+    monkeypatch.setattr(
+        "agents.tools.search_diy.diy_search",
+        lambda q, **k: (_ for _ in ()).throw(RuntimeError("diy down")),
+    )
+    monkeypatch.setattr(
+        "agents.tools.search._brave_search",
+        lambda q, **k: _brave_result(q, **k),
+    )
+    records: list[dict] = []
+    out = search("test", provider="auto", on_call=records.append)
+    assert out and all(r.provider == "brave" for r in out)
+    # One telemetry record per attempt: tavily (fail), diy (fail), brave (ok).
+    assert [r["provider"] for r in records] == ["tavily", "diy", "brave"]
+    assert records[0]["ok"] is False and records[1]["ok"] is False
+    assert records[2]["ok"] is True
 
 
 # ---------------------------------------------------------------------------

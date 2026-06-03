@@ -509,8 +509,9 @@ the local dashboard's Run Console publish on the same code path.
 **Date:** 2026-05-25.
 
 The Researcher's search wrapper (`agents/tools/search.py`) routes
-queries through Tavily first and falls back to Brave if Tavily errors
-or hits its quota. Until D26, the only signal we had was a
+queries through Tavily first and falls back if Tavily errors or hits
+its quota (the fallback target is now DIY then Brave, per D36; it was
+Brave alone when D26 landed). Until D26, the only signal we had was a
 module-level `session_usage()` counter that died with the subprocess.
 That made provider-conditioned analysis impossible after the fact: we
 could not say "Tavily reached 92% match on Policy questions; Brave
@@ -1048,6 +1049,29 @@ harvest" outcome. Per-route reliability caveats (HU/RO use CKAN JSON because
 their RDF omits `dct:license`; NL/EE synthesise graphs from JSON; Q16 on
 synthesised routes tends high; Q21 is authoritative only on RDF routes) are in
 `docs/CATALOGUE_METRICS.md`.
+
+### D36: search auto-fallback is Tavily → DIY → Brave
+
+**Date:** 2026-06-03.
+
+The `provider="auto"` chain in `agents/tools/search.py` now falls back through
+the DIY pipeline before Brave. The order is: Tavily first; on a quota / rate /
+credit error, the DIY pipeline (Serper SERP → fetch → trafilatura → snippet
+pick, per D29); and only if DIY also raises, Brave as a last resort.
+
+Rationale. D29 established that DIY is not worse than Tavily on the
+web-answerable pairs (EXP-1: DIY wins 89% of the 55 decided FR pairs), so when
+Tavily's credits run out DIY is a better stand-in than Brave, which has never
+cleared an adjudicated comparison and previously returned 422s on long-operator
+queries (D26). Brave stays in the chain as a final safety net rather than the
+first fallback. The explicit single-provider modes (`tavily`, `diy`, `brave`,
+`serper_raw`) are unchanged and never fall back, so A/B experiments that pin a
+provider are unaffected. `_PROVIDER_USAGE_COUNTERS` gains a `diy` slot and the
+`on_call` telemetry (D26) emits one record per provider attempt, so a
+Tavily-miss → DIY-hit now shows as two rows in `search_provider_calls`.
+
+This supersedes the two-provider description in D26 (the per-call telemetry
+mechanism D26 added is unchanged; only the fallback target changes).
 
 ---
 
