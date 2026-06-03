@@ -20,6 +20,7 @@ run) · `running` · `done`.
 | EXP-7 | Retry chaining: accumulate evidence across the loop | code built, pre-registered | Malta primary (no-gold-rich), NL secondary | chained arm built behind `--chained` (default off, baseline byte-identical), pre-registered (`EXPERIMENTS_CHAINING.md`); run pending Malta dispatch + quota |
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | pending (Malta dispatch, quota-gated) |
 | EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | pending (Malta dispatch, quota-gated) |
+| EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | pending (Phase A runs incrementally on the exp6_malta set; floor sweep is free) |
 
 ---
 
@@ -40,9 +41,23 @@ non-inferiority margin decisively.
 
 Caveats (honest): position consistency 81%; the answer-blind robustness check
 agrees with the answer-given verdict on only 67% of the 27-pair subsample (9
-flips), so the judge is somewhat sensitive to seeing the gold answer; the
-cross-family Gemini reliability check is pending quota (key authenticates but the
-Google project allows zero generations). France only, Tavily basic tier.
+flips), so the judge is somewhat sensitive to seeing the gold answer. France
+only, Tavily basic tier.
+
+Cross-family reliability (done 2026-06-03). The planned Gemini re-judge stayed
+dead (zero quota), and Groq's free tier caps tokens per organisation not per
+key, so all available Groq keys shared one exhausted daily pool. Mistral Large,
+a third independent family, re-judged the same frozen 27-pair subsample
+(answer-given, position-swapped, byte-identical evidence; only the judge
+changed). Harness: `evaluation/cross_family_backfill.py --judge mistral`;
+result: `evaluation/results/cross_family_exp1_mistral.jsonl`. All 27 pairs
+judged: raw agreement 78% (21/27), Krippendorff alpha 0.648 (nominal, four
+categories). All six disagreements turn on Opus calling `both_fail` (five of
+six) where Mistral committed to a provider or a tie; where both judges committed
+to a provider they never disagreed (DIY 13, Tavily 3). This rebuts the
+same-family self-preference concern, that the Claude judge favours
+Claude-extracted DIY evidence. Mistral was position-inconsistent on 6 of 27
+pairs, more than Opus, which is reported alongside.
 
 ---
 
@@ -151,6 +166,11 @@ with retries counted (R9). Run on Malta primary, Netherlands secondary.
 
 Prerequisite: the Malta Researcher dispatch (search-quota gated), a committed
 `prompt-compressed` prompt version, and the `model-fallback` escalation path.
+The apparatus is built (2026-06-03): the compressed Researcher prompt
+(`--prompt-variant compressed`, its own `prompt_versions` row, baseline
+untouched), the `model-fallback` escalation (`--researcher-escalation-model` /
+`--verifier-escalation-model`), and the cold-cache switch (`--no-cache`) for the
+lean-vs-`cache-hot` split. Only the Malta dispatch remains.
 
 Result: pending.
 
@@ -162,7 +182,35 @@ verify, Opus adjudicate) on the same Malta pairs. The confirmatory comparison is
 tiered vs all-Sonnet on accuracy and cost; the accuracy-cost surface is the
 headline figure. Run on Malta primary, Netherlands secondary.
 
-Prerequisite: the Malta dispatch and per-agent model-override threading.
+Prerequisite: the Malta dispatch and per-agent model-override threading. The
+threading is built (2026-06-03): `--researcher-model` / `--verifier-model` /
+`--adjudicator-model` now all drive the LLM (previously only the Adjudicator
+did), and the served version ID is written to `claude_usage_log`. All four arms
+are runnable. Only the Malta dispatch remains.
+
+Result: pending.
+
+## EXP-10: Malta failure-mode audit + confidence-floor recovery (planned)
+
+Pre-registered in `docs/EXPERIMENTS_MALTA_FAILURES.md`. Looks at why Malta swarm
+answers diverge from ODMI ground truth, to find the fixable bottleneck. A pilot on
+the in-progress `exp6_malta` dispatch showed Malta's losses are abstentions, not
+wrong answers (8 match / 5 abstain / 0 wrong of the first 13 finalised; the
+abstentions split 7 below the D37 confidence floor and 3 on a fetch 403). So the
+problem looks like recall, not precision.
+
+Phase A codes every Malta non-match to one cause from a pre-specified taxonomy
+(fetch 4xx/5xx, no source, substring-gate failure, below-floor abstention, wrong
+answer, near-miss band, self-report/deny-list ceiling, stale ground truth),
+deterministically where the DB signal is unambiguous and with an Opus judge over
+frozen evidence only for the genuine-error vs stale-gold residual. Phase B is a
+free confidence-floor sweep (0.65 / 0.55 / 0.50) replayed on the stored Researcher
+confidences, reporting the recovery-precision trade-off and adopting a lower floor
+only under a pre-set precision and false-positive bound. Malta being base-rate
+balanced (R4) is what makes the false-positive check meaningful.
+
+Harness: `evaluation/malta_failure_audit.py` (to build). Phase A runs incrementally
+on whatever Malta pairs exist; the floor sweep needs no quota. Tavily-independent.
 
 Result: pending.
 

@@ -13,7 +13,7 @@ first time this version is used.
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, NamedTuple
 
 from agents.models import ResearcherInput
 from agents.tools.search import SearchResult, format_for_prompt
@@ -230,3 +230,91 @@ Web search results:
 {search_block}
 {_verifier_feedback_block(input)}{_prior_evidence_block(input)}
 Return your answer as JSON matching the ResearcherOutput schema."""
+
+
+# ============================================================
+# Compressed variant (EXP-8 `prompt-compressed` cost arm)
+# ============================================================
+#
+# Same task, same hard rules, but the worked examples are dropped and
+# the instructions are terser. The aim is to cut input tokens on the
+# main Researcher call and measure what that costs in accuracy. This is
+# a distinct prompt_versions row (its own NAME/VERSION) so a run's
+# receipts point at the exact text that produced the answer. The full
+# prompt above is the untouched baseline and is unaffected by this.
+
+COMPRESSED_NAME = "phase2_researcher_compressed"
+COMPRESSED_VERSION = 1
+COMPRESSED_DESCRIPTION = (
+    "Researcher compressed prompt (EXP-8 prompt-compressed arm). Same "
+    "shape-aware answer space and forbidden-source rules as V3, examples "
+    "removed and instructions condensed to cut input tokens. Selected by "
+    "prompt_variant='compressed'; the full V3 prompt is the baseline."
+)
+
+COMPRESSED_SYSTEM = """You are the Researcher agent for the ODMI Agent Swarm,
+the EU's annual benchmark of national open-data ecosystems. Produce one
+determination per (question, country), grounded in a verifiable source.
+
+You receive: one ODMI question and its scoring rule; the answer shape and
+the exact list of labels you may emit; a target country and language; and
+web search snippets.
+
+Rules.
+1. `answer` is exactly one label from the allowed list, or `inconclusive`,
+   or `not_applicable`. Never paraphrase or invent labels (e.g. "82% of
+   datasets" maps to the band `71-90%`, not "around 80%").
+2. `inconclusive` when evidence is insufficient, ambiguous, contradictory,
+   only on a forbidden source, lacks a verbatim quote, or would score
+   answer_confidence below 0.5. Do not collapse uncertainty to `other`.
+3. `not_applicable` only when the question does not apply to this country.
+4. Quote literally: evidence_quote must appear verbatim on the cited page.
+5. Cite exactly one source URL, and only one that appears in the snippets.
+6. Never cite ODMI's own outputs or these forbidden sources: data.europa.eu
+   (any subdomain), publications.europa.eu, op.europa.eu, europeandataportal.eu,
+   web.archive.org / archive.today and similar caches, or any URL containing
+   "open-data-maturity", "odmi", "merged_responses", or "odm-questionnaire".
+   If the only support sits there, return `inconclusive`.
+7. Answer only from the snippets, not memorised ODMI scores or rankings.
+8. retrieval_confidence: the source is real, current, authoritative.
+   answer_confidence: the quote supports the chosen label. Both in [0,1].
+9. answer_explanation is one English sentence.
+10. search_queries_used echoes the queries you were told Python ran.
+
+Return JSON matching the ResearcherOutput schema appended below.
+"""
+
+
+class PromptVariant(NamedTuple):
+    """A selectable Researcher prompt: which text runs and how it is logged."""
+
+    name: str
+    version: int
+    system: str
+    description: str
+
+
+_VARIANTS = {
+    "full": PromptVariant(NAME, VERSION, SYSTEM, DESCRIPTION),
+    "compressed": PromptVariant(
+        COMPRESSED_NAME, COMPRESSED_VERSION, COMPRESSED_SYSTEM,
+        COMPRESSED_DESCRIPTION,
+    ),
+}
+
+
+def variant(name: str = "full") -> PromptVariant:
+    """Return the prompt variant for `name` ('full' or 'compressed').
+
+    `full` is the baseline V3 prompt, untouched. `compressed` is the
+    EXP-8 cost arm. An unknown name is a configuration error and raises,
+    so a typo in a dispatch cannot silently fall back to the baseline and
+    mislabel a run.
+    """
+    try:
+        return _VARIANTS[name]
+    except KeyError:
+        raise ValueError(
+            f"unknown researcher prompt variant {name!r}; "
+            f"expected one of {sorted(_VARIANTS)}"
+        ) from None

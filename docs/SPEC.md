@@ -1134,9 +1134,11 @@ Apparatus, all built and unit-tested:
   drops D24 domains before retrieval, not after) and evidence normalisation
   (equal passage count, registrable-domain URLs) so the blind judge cannot
   fingerprint a provider.
-- Cross-family judges beside the Opus judge: Gemini (dead, zero quota) and
-  Groq / Llama-3.3-70B (live), plus an answer-blind variant, for inter-rater
-  reliability against the same-family self-preference threat.
+- Cross-family judges beside the Opus judge: Gemini (dead, zero quota), Groq /
+  Llama-3.3-70B (caps tokens per organisation, so its one daily pool blocks every
+  key once spent) and Mistral Large (`search_adjudicator_mistral.py`, the judge
+  that delivered the EXP-1 reliability number), plus an answer-blind variant, for
+  inter-rater reliability against the same-family self-preference threat.
 - Adjudication caching (`evaluation/adjudication_cache.py`) so a killed judge run
   resumes from disk rather than re-paying.
 - `evaluation/provider_ab.py` — N-provider pairwise round-robin, Copeland ranking.
@@ -1145,8 +1147,11 @@ Apparatus, all built and unit-tested:
 Status (detail in `docs/EXPERIMENTS.md`):
 - **EXP-1** (DIY vs Tavily, FR, refreshed): done. DIY wins 89% of the 55 decided
   FR pairs, Wilson CI [78, 95], sign-test p < 1e-4, leading every web-answerable
-  dimension. Answer-blind agreement 67%; the cross-family check waits on the Groq
-  daily-token quota.
+  dimension. Answer-blind agreement 67%. Cross-family reliability done
+  (2026-06-03) via Mistral Large on the frozen 27-pair subsample: raw agreement
+  78%, Krippendorff alpha 0.648; all six disagreements are Opus `both_fail` vs a
+  Mistral commitment, none a provider-vs-provider flip. Rebuts the same-family
+  self-preference concern.
 - **EXP-2a/2b** (search-knob cost vs quality, FR then EE): pairs selected, not yet
   dispatched.
 - **EXP-3** (multilingual EE/LT/IS): skipped this round; the LT/IS dispatch kept

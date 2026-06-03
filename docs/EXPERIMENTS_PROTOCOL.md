@@ -494,6 +494,7 @@ with `conditions` as a JSON object. IDs:
 | `verifier_strategy_disc_v1` | EXP-6 | strategies: disprove, negation, steelman, blind; MT primary, FR/INJ robustness |
 | `cost_side_optim_mt` | EXP-8 | baseline, prompt-compressed, retrieval-tight, cache-hot, model-fallback; MT, NL |
 | `model_variants_mt` | EXP-9 | model-haiku, model-sonnet, model-opus, model-tiered; MT, NL |
+| `malta_failure_audit_v1` | EXP-10 | Phase A failure-mode taxonomy + Phase B confidence-floor sweep; MT (see `EXPERIMENTS_MALTA_FAILURES.md`) |
 
 ## 9. Pre-run requirements (must be committed and verified before any run)
 
@@ -541,10 +542,31 @@ items, all gated on search quota:
     `prompt_versions`, the `model-fallback` escalation path, and a per-arm
     cache-bypass that leaves the `cache-hot` arm cache-on while every other arm
     runs cold.
+    **Done (2026-06-03).** `prompt-compressed` is a distinct Researcher prompt
+    (`agents/prompts/researcher.py`, NAME `phase2_researcher_compressed`,
+    examples dropped and instructions condensed, the forbidden-source rule kept),
+    selected by `--prompt-variant compressed`; the baseline `full` prompt is
+    untouched. `model-fallback` is the `--researcher-escalation-model` /
+    `--verifier-escalation-model` pair: attempt 0 runs the base model, a retry
+    after a Verifier reject escalates (`_model_for_attempt`). The cache switch is
+    the existing `--no-cache`: lean arms pass it (cold), `cache-hot` omits it
+    (reads on). Tested in `tests/test_prompt_compressed.py` and
+    `tests/test_model_threading.py`; `--no-cache` was already covered by
+    `tests/test_dispatch_no_cache.py`.
 11. **EXP-9 threading:** per-agent model overrides (Researcher / Verifier /
     Adjudicator independently settable) threaded through the dispatch path and the
     `model-tiered` assignment, with the resolved version IDs written to
     `claude_usage_log`.
+    **Done (2026-06-03).** Before this, only the Adjudicator threaded its model;
+    `run_researcher` / `run_verifier` recorded `researcher_model` /
+    `verifier_model` in `subtrio_status` but never drove the LLM with them, so a
+    tiered run would have silently used Sonnet for retrieval and verification.
+    The model is now threaded through both agents (query-gen and main call) and
+    `call_for_structured`; the wrapper logs `response.model` (the served version
+    ID, not the requested alias) to `claude_usage_log`, so a `model-tiered` run's
+    receipts are honest. `--researcher-model` / `--verifier-model` /
+    `--adjudicator-model` cover all four EXP-9 arms. Tested in
+    `tests/test_model_threading.py`.
 
 ## 10. Execution and the parallelism constraint
 
@@ -595,7 +617,7 @@ rule, so the breach is named and fixed rather than buried.
 
 | EXP | R4 base-rate | Other notable | Verdict |
 |---|---|---|---|
-| EXP-1 (done, FR) | **Breach on the E1 accuracy co-endpoint** (FR binary 99% one class); E2 provider win-share is base-rate-robust | R6 Gemini reliability pending quota (disclosed) | Headline (E2, DIY 89% of 55 decided) **stands**; the E1 accuracy figure must carry the 99% baseline and not be read as a swarm-accuracy claim |
+| EXP-1 (done, FR) | **Breach on the E1 accuracy co-endpoint** (FR binary 99% one class); E2 provider win-share is base-rate-robust | R6 reliability **done** 2026-06-03 via Mistral Large (Gemini dead, Groq per-org cap spent): 78% agreement, alpha 0.648, disagreements all Opus `both_fail` vs a commitment | Headline (E2, DIY 89% of 55 decided) **stands**; cross-family reliability now satisfies R6; the E1 accuracy figure must carry the 99% baseline and not be read as a swarm-accuracy claim |
 | EXP-2a (queued, FR) | Breach: reuses FR answerable set for an accuracy-held claim | Cost endpoint is base-rate-independent | Move the accuracy claim to Malta; keep FR only for the cost mechanics |
 | EXP-2b (planned, EE) | Breach: Estonia is degenerate (98%) and low-resource | Conflates "thin web" with "low resource" | Re-anchor to Malta for the trade-off; use a balanced low-resource country (IS) only as the declared language-confound contrast |
 | EXP-3 (planned, EE/LT/IS) | **Breach: LT has zero negative binary golds**, so the "discriminating control" cannot discriminate a false positive on binary; EE degenerate | E2 win-share is base-rate-robust; the maturity x language claim (R7) leans on the broken binary accuracy | Restrict E1 to non-binary shapes where the gold varies, or re-anchor; keep E2 as the provider comparison |
@@ -661,3 +683,29 @@ Two findings carry weight for the writeup.
   it flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider
   result is unaffected) and EXP-3's Lithuania control as undiscriminating on
   binary (zero negative golds). No runs in this commit.
+- 2026-06-03: built the EXP-8 / EXP-9 apparatus (section 9 items 10 and 11),
+  pure code with no quota use, ahead of the Malta dispatch. EXP-9: the per-agent
+  model override is now threaded through `run_researcher` and `run_verifier`
+  (previously only the Adjudicator obeyed its model), and the served version ID
+  is logged to `claude_usage_log`. EXP-8: a `prompt-compressed` Researcher prompt
+  (its own `prompt_versions` row, baseline untouched) and a `model-fallback`
+  escalation (`--researcher-escalation-model` / `--verifier-escalation-model`,
+  cheap on attempt 0, escalate on a Verifier-reject retry). The `--no-cache`
+  cold-cache switch already covered the `cache-hot`-vs-lean split, and the
+  answer-blind judge variant already exists (`adjudicate(answer_blind=True)`,
+  `run_answer_blind_subsample`). New tests: `tests/test_model_threading.py`,
+  `tests/test_prompt_compressed.py`. Both EXP-8 and EXP-9 are now runnable the
+  moment the Malta pairs land; the dispatch (item 9, search-quota-gated) is the
+  only remaining blocker. No runs in this commit.
+- 2026-06-03: EXP-1 cross-family reliability (R6, section 4) run and closed. The
+  pre-registered Gemini judge stayed dead (zero quota); the Groq / Llama-3.3-70B
+  substitute is blocked because Groq caps tokens per organisation, not per key,
+  so one spent daily pool 429s every key in the org. The judge of record for the
+  reliability arm is therefore **Mistral Large**, a third independent family on a
+  separate quota. It re-judged the frozen, seeded 27-pair subsample answer-given
+  and position-swapped on byte-identical evidence (only the judge changed):
+  raw agreement 78%, Krippendorff alpha 0.648 (nominal, four categories), all six
+  disagreements Opus `both_fail` vs a Mistral commitment, none provider-vs-provider.
+  Harness `evaluation/cross_family_backfill.py --judge mistral`, result
+  `evaluation/results/cross_family_exp1_mistral.jsonl`. This is a judge
+  substitution, not a change to the sample, endpoints, or statistics (R1 holds).

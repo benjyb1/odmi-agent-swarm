@@ -50,7 +50,10 @@ DEFAULT_RETRY_UPLIFT = 1.2
 # Runaway guards (D41). These are circuit breakers, not a budget: set far
 # above any real experiment so a normal run never trips them, and they fire
 # only on a clearly misspecified dispatch that would eat the 5-hour Claude
-# Max window.
+# Max window. They replace the dollar soft limit (D40), including the $20
+# raise that landed concurrently on main, which is moot once the limit is
+# removed: a guess at a flat subscription's equivalent cost never tracked a
+# real balance, so it was friction without protection.
 #
 # A single dispatch above this many pairs is refused unless allow_large is
 # set. The biggest legitimate runs are ~100-150 pairs (a full single
@@ -195,6 +198,9 @@ def dispatch(
     researcher_model: Optional[str] = None,
     verifier_model: Optional[str] = None,
     adjudicator_model: Optional[str] = None,
+    researcher_escalation_model: Optional[str] = None,
+    verifier_escalation_model: Optional[str] = None,
+    prompt_variant: str = "full",
     parallel_limit: int = 4,
     max_retries: int = 3,
     provider: str = "auto",
@@ -331,6 +337,14 @@ def dispatch(
                 cmd += ["--verifier-model", verifier_model]
             if adjudicator_model:
                 cmd += ["--adjudicator-model", adjudicator_model]
+            if researcher_escalation_model:
+                cmd += ["--researcher-escalation-model",
+                        researcher_escalation_model]
+            if verifier_escalation_model:
+                cmd += ["--verifier-escalation-model",
+                        verifier_escalation_model]
+            if prompt_variant and prompt_variant != "full":
+                cmd += ["--prompt-variant", prompt_variant]
             if provider and provider != "auto":
                 cmd += ["--provider", provider]
             cmd += ["--max-results-per-query", str(max_results_per_query)]
@@ -553,6 +567,17 @@ def main() -> int:
     parser.add_argument("--researcher-model", default=None)
     parser.add_argument("--verifier-model", default=None)
     parser.add_argument("--adjudicator-model", default=None)
+    parser.add_argument("--researcher-escalation-model", default=None,
+                        help="EXP-8 model-fallback: Researcher model on a retry "
+                             "after a Verifier reject (attempt 0 uses the base "
+                             "model). Unset = hold one model.")
+    parser.add_argument("--verifier-escalation-model", default=None,
+                        help="EXP-8 model-fallback: Verifier model on a retry. "
+                             "Unset = hold one model.")
+    parser.add_argument("--prompt-variant", default="full",
+                        choices=["full", "compressed"],
+                        help="Researcher system prompt (EXP-8 prompt-compressed "
+                             "arm). 'full' baseline; 'compressed' is leaner.")
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--provider", default="auto",
@@ -616,6 +641,9 @@ def main() -> int:
         researcher_model=args.researcher_model,
         verifier_model=args.verifier_model,
         adjudicator_model=args.adjudicator_model,
+        researcher_escalation_model=args.researcher_escalation_model,
+        verifier_escalation_model=args.verifier_escalation_model,
+        prompt_variant=args.prompt_variant,
         parallel_limit=args.parallel,
         max_retries=args.max_retries,
         provider=args.provider,

@@ -30,7 +30,7 @@ def _researcher_input() -> ResearcherInput:
 def test_run_researcher_threads_provider_and_caps_queries(monkeypatch):
     captured = {}
     monkeypatch.setattr(researcher, "generate_queries",
-                        lambda inp, subtrio_id=None: (["q1", "q2", "q3"], _usage()))
+                        lambda inp, subtrio_id=None, model=None: (["q1", "q2", "q3"], _usage()))
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: [])
 
     def fake_search_many(queries, **kw):
@@ -54,7 +54,7 @@ def test_run_researcher_defaults_unchanged(monkeypatch):
     """Without knobs, behaviour is the old behaviour: all queries, auto provider."""
     captured = {}
     monkeypatch.setattr(researcher, "generate_queries",
-                        lambda inp, subtrio_id=None: (["q1", "q2", "q3"], _usage()))
+                        lambda inp, subtrio_id=None, model=None: (["q1", "q2", "q3"], _usage()))
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: [])
     monkeypatch.setattr(researcher, "search_many",
                         lambda queries, **kw: captured.update(

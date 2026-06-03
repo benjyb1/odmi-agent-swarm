@@ -8,7 +8,7 @@ Entries newest first.
 
 ---
 
-## 2026-06-03 — Session 20d: remove the cost soft limit (D40)
+## 2026-06-03 — Session 20g: remove the cost soft limit (D40)
 
 Ripped out the local cost soft limit. It was a three-layer thing (D20): a
 pre-flight refusal if projected cost exceeded a notional budget, a low-water stop
@@ -41,7 +41,7 @@ on the spawn stagger); 446 non-live passing.
 
 ---
 
-## 2026-06-03 — Session 20c: EXP-7 chained retry arm (built, gated, pre-registered)
+## 2026-06-03 — Session 20f: EXP-7 chained retry arm (built, gated, pre-registered)
 
 Built the chaining arm for EXP-7. The loop spends up to eight calls per pair but
 treats each retry as a fresh shot: the Verifier searches the web every round,
@@ -90,6 +90,97 @@ including a temp-SQLite round trip for the arm split and call counting.
 Next: when the Malta dispatch lands, confirm the resume path does not let a
 Researcher row cross arms, then run baseline and chained in sequence on the same
 Malta pair set and point the harness at the experiment_id.
+
+---
+
+## 2026-06-03 — Session 20e: EXP-1 cross-family reliability, via Mistral
+
+Closed the one open arm of EXP-1: the cross-family reliability check. The plan
+was Gemini (zero quota, dead), then Groq / Llama-3.3-70B. Groq turned out to be a
+dead end for a reason worth recording: its free tier caps tokens **per
+organisation, not per key**, so the three keys to hand all drew on one already
+spent daily pool and every call 429'd. Confirmed it by resolving the new key in
+the module and still seeing the identical org id in the 429. More keys from one
+org buy nothing.
+
+Added Mistral Large as a third cross-family judge (`search_adjudicator_mistral.py`),
+the twin of the Groq judge: same adjudicate signature, shared prompt builder,
+OpenAI-compatible endpoint. Mistral's free tier throttles to about one request a
+second, so the client paces calls and retries a 429 with exponential backoff; a
+hard quota still raises and is reported as an errored pair, never padded.
+Generalised `cross_family_backfill.py` to pick the judge with `--judge`
+{groq,mistral} and renamed its output fields `judge_*` with a `judge_family`
+receipt; Groq stays the default so its path and tests are unchanged. New tests
+for the Mistral adjudicator (parse, probe, answer-blind, throttle/retry) and the
+backfill generalisation; 25 pass.
+
+Result (`cross_family_exp1_mistral.jsonl`): Mistral re-judged the frozen 27-pair
+subsample, answer-given and position-swapped, on byte-identical evidence, so only
+the judge changed. All 27 judged, raw agreement 78%, Krippendorff alpha 0.648
+(nominal, four categories). Every one of the six disagreements is Opus calling
+`both_fail` where Mistral committed to a provider or a tie; where both judges
+committed to a provider they never disagreed (DIY 13, Tavily 3). So the
+same-family self-preference worry, that the Claude judge flatters Claude-extracted
+DIY evidence, does not hold: an independent family lands on the same verdicts.
+Honest note: Mistral was position-inconsistent on 6 of 27 pairs, more than Opus.
+
+Next: this is the figure to quote at writeup beside EXP-1's 89% decided-win
+share. The cross-family judge note belongs in the results methodology.
+
+---
+
+## 2026-06-03 — Session 20d: EXP-10, why Malta abstains
+
+A recon on the live `exp6_malta` dispatch turned up something useful. Of the first
+13 finalised Malta pairs, 8 matched, 5 abstained, and none were wrong; the
+Researcher-level abstentions split 7 below the D37 confidence floor and 3 on a
+fetch 403. So Malta's problem is recall, not precision: when it commits, it is
+right; it just declines to commit. That reframes "improve Malta" as "recover
+abstentions safely", and Malta is the one country where recovering them too
+eagerly would show up as false positives (the R4 reason we left France).
+
+Pre-registered EXP-10 (`docs/EXPERIMENTS_MALTA_FAILURES.md`). Phase A codes every
+Malta non-match to one cause from a fixed taxonomy (fetch 4xx/5xx, no source,
+substring-gate failure, below-floor abstention, wrong answer, near-miss band,
+self-report/deny-list ceiling, stale ground truth), deterministically where the DB
+signal is clear and with an Opus judge over frozen evidence only for the
+genuine-error vs stale-gold residual. Phase B is a free confidence-floor sweep
+(0.65 / 0.55 / 0.50) replayed on the stored confidences, with a pre-set
+precision and false-positive bound for adopting any lower floor. The recon is
+named as a pilot so it cannot bias the coding. No results at commit time; Phase A
+runs incrementally on the Malta set and the floor sweep needs no quota.
+
+---
+
+## 2026-06-03 — Session 20c: EXP-8 / EXP-9 apparatus, ahead of the Malta data
+
+Built the code EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants)
+need, so both are runnable the moment the Malta pairs land. Pure code, no quota
+use, so it ran in parallel to the live experiment tabs.
+
+The sharp find was an EXP-9 hole. The dispatch path carried
+`--researcher-model` / `--verifier-model` and wrote them to `subtrio_status`,
+but only the Adjudicator actually obeyed its model: `run_researcher` and
+`run_verifier` never accepted or forwarded one. A `model-tiered` or
+`model-haiku` run would have recorded the intended models and then quietly used
+Sonnet for retrieval and verification, with no error to catch it. The receipts
+would have read tiered while the run was not. Fixed: the model is threaded
+through both agents (query-gen and main call) into `call_for_structured`, which
+already logs `response.model` (the served version ID, not the alias) to
+`claude_usage_log`. So once threaded, the receipts are honest by construction.
+
+For EXP-8: a `prompt-compressed` Researcher prompt as its own `prompt_versions`
+row (examples dropped, instructions condensed, the forbidden-source rule kept),
+selected by `--prompt-variant compressed`, baseline left untouched; and a
+`model-fallback` escalation (`--researcher-escalation-model` /
+`--verifier-escalation-model`) that runs the cheap model on attempt 0 and
+escalates after a Verifier reject. The `cache-hot`-vs-lean split was already
+covered by the `--no-cache` cold-cache switch, and the answer-blind judge
+variant already existed.
+
+New tests: `tests/test_model_threading.py`, `tests/test_prompt_compressed.py`
+(21 cases). Full suite 419 passed, 13 skipped. The only thing now blocking an
+EXP-8 / EXP-9 run is the Malta dispatch, which is search-quota gated.
 
 ---
 

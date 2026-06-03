@@ -778,6 +778,24 @@ def _is_abstention(answer: Optional[str]) -> bool:
 COMMIT_CONFIDENCE_FLOOR = 0.65
 
 
+def _model_for_attempt(
+    base_model: Optional[str],
+    escalation_model: Optional[str],
+    attempt: int,
+) -> Optional[str]:
+    """Pick the model for a given retry attempt (EXP-8 model-fallback).
+
+    Attempt 0 always uses `base_model` (the cheaper model in the fallback
+    arm). A later attempt uses `escalation_model` when one is set, so a
+    retry after a Verifier reject escalates to the stronger model. With no
+    escalation model the base model holds across every attempt, which is
+    the behaviour for every other arm.
+    """
+    if attempt > 0 and escalation_model is not None:
+        return escalation_model
+    return base_model
+
+
 def _should_accept_verifier_pass(
     verdict: str,
     answer: Optional[str],
@@ -800,6 +818,9 @@ def coordinate(
     researcher_model: Optional[str] = None,
     verifier_model: Optional[str] = None,
     adjudicator_model: Optional[str] = None,
+    researcher_escalation_model: Optional[str] = None,
+    verifier_escalation_model: Optional[str] = None,
+    prompt_variant: str = "full",
     max_retries: int = 3,
     provider: str = "auto",
     max_results_per_query: int = 5,
@@ -817,6 +838,16 @@ def coordinate(
 
     Returns (terminal_status, final_output).
 
+    `researcher_model` / `verifier_model` / `adjudicator_model` set the
+    Claude model per agent (EXP-9 model variants); `None` keeps the
+    wrapper default. `researcher_escalation_model` /
+    `verifier_escalation_model` implement the EXP-8 `model-fallback` arm:
+    the first attempt uses the cheaper base model, and every retry after a
+    Verifier reject uses the escalation model. Leave them `None` to hold
+    one model across all attempts. `prompt_variant` ('full' or
+    'compressed') selects the Researcher system prompt for the EXP-8
+    `prompt-compressed` arm; the baseline 'full' prompt is untouched.
+
     `chained` is the EXP-7 evidence-accumulation arm. When False (the
     default, and what every production and EXP-8/9 baseline run uses) the
     loop is byte-identical to the independent-retry behaviour: each retry is
@@ -826,6 +857,7 @@ def coordinate(
     rounds, and the Adjudicator synthesises over the whole corpus. The D37
     commit-confidence floor and honest-abstention rules are unchanged in
     both arms. See `docs/EXPERIMENTS_CHAINING.md`.
+
 
     Raises RateLimitedShutdown if any LLM call hits a 429; the caller
     (main()) catches it, marks the subtrio as interrupted_rate_limit,
@@ -960,8 +992,15 @@ def coordinate(
                         last_message=f"R{_att + 1} · {e}",
                     )
 
+            # model-fallback (EXP-8): the first attempt runs the cheaper
+            # base model; a retry after a Verifier reject escalates. With
+            # no escalation model set, the base model holds throughout.
+            r_model = _model_for_attempt(
+                researcher_model, researcher_escalation_model, attempt,
+            )
             r_result = run_researcher(
                 r_inp, subtrio_id=subtrio_id, on_step=_r_step,
+                model=r_model, prompt_variant=prompt_variant,
                 provider=provider, max_results_per_query=max_results_per_query,
                 num_queries=num_queries,
             )
@@ -1073,8 +1112,12 @@ def coordinate(
                     last_message=f"V{_att + 1} · {e}",
                 )
 
+        v_model = _model_for_attempt(
+            verifier_model, verifier_escalation_model, attempt,
+        )
         v_result = run_verifier(
             v_inp, subtrio_id=subtrio_id, on_step=_v_step,
+            model=v_model,
             provider=provider, max_results_per_query=max_results_per_query,
             num_queries=num_queries,
         )
@@ -1314,6 +1357,19 @@ def main() -> int:
     parser.add_argument("--researcher-model", default=None)
     parser.add_argument("--verifier-model", default=None)
     parser.add_argument("--adjudicator-model", default=None)
+    parser.add_argument("--researcher-escalation-model", default=None,
+                        help="EXP-8 model-fallback: model used for the "
+                             "Researcher on a retry after a Verifier reject. "
+                             "Attempt 0 uses --researcher-model. Unset = hold "
+                             "one model across attempts.")
+    parser.add_argument("--verifier-escalation-model", default=None,
+                        help="EXP-8 model-fallback: model used for the Verifier "
+                             "on a retry. Unset = hold one model.")
+    parser.add_argument("--prompt-variant", default="full",
+                        choices=["full", "compressed"],
+                        help="Researcher system prompt (EXP-8 prompt-compressed "
+                             "arm). 'full' is the baseline; 'compressed' drops "
+                             "examples and condenses instructions.")
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--provider", default="auto",
                         choices=["auto", "tavily", "brave", "diy", "serper_raw"],
@@ -1372,6 +1428,9 @@ def main() -> int:
             researcher_model=args.researcher_model,
             verifier_model=args.verifier_model,
             adjudicator_model=args.adjudicator_model,
+            researcher_escalation_model=args.researcher_escalation_model,
+            verifier_escalation_model=args.verifier_escalation_model,
+            prompt_variant=args.prompt_variant,
             max_retries=args.max_retries,
             provider=args.provider,
             max_results_per_query=args.max_results_per_query,

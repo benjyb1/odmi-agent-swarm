@@ -1,21 +1,21 @@
-"""Tests for the Groq cross-family reliability backfill (EXP-1).
+"""Tests for the cross-family reliability backfill (EXP-1).
 
-There are NO live Groq calls here. The whole point of the backfill is that the
-evidence is frozen, so the network is mocked: ``groq_verdict_for`` is patched in
-the ``run_backfill`` tests, and the ``cached_adjudicate``-routed Groq call is
+There are NO live judge calls here. The whole point of the backfill is that the
+evidence is frozen, so the network is mocked: ``judge_verdict_for`` is patched in
+the ``run_backfill`` tests, and the ``cached_adjudicate``-routed judge call is
 patched at its module boundary where the orientation plumbing is exercised.
 
 Coverage:
-- ``compute_reliability`` pairs [opus, groq] verdicts and returns the right
+- ``compute_reliability`` pairs [opus, judge] verdicts and returns the right
   raw agreement, Krippendorff's alpha (matched against the stats module on the
   same units), error handling (errored pairs excluded and counted), and a
   confusion breakdown.
 - ``run_backfill`` reads a hand-made EXP-1-shaped result, re-judges the recorded
-  subsample with a mocked Groq verdict per pair, and surfaces a per-pair list
-  plus the reliability summary; a per-pair Groq error is caught and recorded,
+  subsample with a mocked judge verdict per pair, and surfaces a per-pair list
+  plus the reliability summary; a per-pair judge error is caught and recorded,
   not raised.
-- ``groq_verdict_for`` position-swaps and combines exactly like the Opus harness
-  (mocked at the adjudicate boundary, so the orientation -> DIY-frame ->
+- ``judge_verdict_for`` position-swaps and combines exactly like the Opus
+  harness (mocked at the adjudicate boundary, so the orientation -> DIY-frame ->
   combine plumbing is what is under test, not the network).
 """
 from __future__ import annotations
@@ -37,9 +37,9 @@ from evaluation.stats import krippendorff_alpha
 def test_perfect_agreement_alpha_one():
     """Identical verdicts on every pair => agreement 1.0 and alpha 1.0."""
     per_pair = [
-        {"pair_id": "P1/FR", "opus_verdict": "diy", "groq_verdict": "diy"},
-        {"pair_id": "P2/FR", "opus_verdict": "tavily", "groq_verdict": "tavily"},
-        {"pair_id": "P3/FR", "opus_verdict": "both_fail", "groq_verdict": "both_fail"},
+        {"pair_id": "P1/FR", "opus_verdict": "diy", "judge_verdict": "diy"},
+        {"pair_id": "P2/FR", "opus_verdict": "tavily", "judge_verdict": "tavily"},
+        {"pair_id": "P3/FR", "opus_verdict": "both_fail", "judge_verdict": "both_fail"},
     ]
     rel = cfb.compute_reliability(per_pair)
     assert rel["n_subsample"] == 3
@@ -58,10 +58,10 @@ def test_agreement_and_alpha_match_stats_module():
     re-deriving the coefficient by hand.
     """
     per_pair = [
-        {"pair_id": "P1/FR", "opus_verdict": "diy", "groq_verdict": "diy"},
-        {"pair_id": "P2/FR", "opus_verdict": "diy", "groq_verdict": "tavily"},
-        {"pair_id": "P3/FR", "opus_verdict": "tie", "groq_verdict": "tie"},
-        {"pair_id": "P4/FR", "opus_verdict": "both_fail", "groq_verdict": "both_fail"},
+        {"pair_id": "P1/FR", "opus_verdict": "diy", "judge_verdict": "diy"},
+        {"pair_id": "P2/FR", "opus_verdict": "diy", "judge_verdict": "tavily"},
+        {"pair_id": "P3/FR", "opus_verdict": "tie", "judge_verdict": "tie"},
+        {"pair_id": "P4/FR", "opus_verdict": "both_fail", "judge_verdict": "both_fail"},
     ]
     rel = cfb.compute_reliability(per_pair)
     assert rel["n_judged"] == 4
@@ -83,10 +83,10 @@ def test_errored_pair_excluded_from_denominators():
     three JUDGED pairs agree => 2/3, computed over the judged pairs only.
     """
     per_pair = [
-        {"pair_id": "P1/FR", "opus_verdict": "diy", "groq_verdict": "diy"},
-        {"pair_id": "P2/FR", "opus_verdict": "tavily", "groq_verdict": "tavily"},
-        {"pair_id": "P3/FR", "opus_verdict": "diy", "groq_verdict": "tavily"},
-        {"pair_id": "P4/FR", "opus_verdict": "tie", "groq_verdict": None,
+        {"pair_id": "P1/FR", "opus_verdict": "diy", "judge_verdict": "diy"},
+        {"pair_id": "P2/FR", "opus_verdict": "tavily", "judge_verdict": "tavily"},
+        {"pair_id": "P3/FR", "opus_verdict": "diy", "judge_verdict": "tavily"},
+        {"pair_id": "P4/FR", "opus_verdict": "tie", "judge_verdict": None,
          "error": "GroqAuthError: HTTP 429"},
     ]
     rel = cfb.compute_reliability(per_pair)
@@ -136,28 +136,28 @@ def _write_result(path, pair_ids, verdict_by_pair, seed=99):
 
 
 def test_run_backfill_pairs_and_summarises(tmp_path):
-    """End-to-end: subsample re-judged with a mocked Groq verdict per pair.
+    """End-to-end: subsample re-judged with a mocked judge verdict per pair.
 
-    Groq is stubbed at ``groq_verdict_for`` so each pair gets a deterministic
-    verdict (no network). The summary must pair each record's Opus verdict with
-    the stubbed Groq verdict, report the right agreement and a real alpha, and
-    write one summary line plus one record per subsample pair.
+    The judge is stubbed at ``judge_verdict_for`` so each pair gets a
+    deterministic verdict (no network). The summary must pair each record's Opus
+    verdict with the stubbed judge verdict, report the right agreement and a
+    real alpha, and write one summary line plus one record per subsample pair.
     """
     result = tmp_path / "exp1.jsonl"
     pair_ids = ["P1/FR", "P2/FR", "P3/FR"]
     opus = {"P1/FR": "diy", "P2/FR": "tavily", "P3/FR": "both_fail"}
     _write_result(result, pair_ids, opus)
 
-    # Stubbed Groq verdicts: P1 agrees, P2 flips to diy, P3 agrees.
-    groq = {"P1/FR": "diy", "P2/FR": "diy", "P3/FR": "both_fail"}
+    # Stubbed judge verdicts: P1 agrees, P2 flips to diy, P3 agrees.
+    judge = {"P1/FR": "diy", "P2/FR": "diy", "P3/FR": "both_fail"}
 
-    def fake_groq_verdict_for(rec, *, model):
+    def fake_judge_verdict_for(rec, *, adjudicate_fn, model):
         pid = f"{rec['question_id']}/{rec['country_code']}"
-        return {"verdict": groq[pid], "consistent": True,
-                "orientation_1": {"winner": "A", "diy_frame": groq[pid]},
-                "orientation_2": {"winner": "B", "diy_frame": groq[pid]}}
+        return {"verdict": judge[pid], "consistent": True,
+                "orientation_1": {"winner": "A", "diy_frame": judge[pid]},
+                "orientation_2": {"winner": "B", "diy_frame": judge[pid]}}
 
-    with patch.object(cfb, "groq_verdict_for", side_effect=fake_groq_verdict_for):
+    with patch.object(cfb, "judge_verdict_for", side_effect=fake_judge_verdict_for):
         out = cfb.run_backfill(result)
 
     summary = out["summary"]
@@ -165,32 +165,60 @@ def test_run_backfill_pairs_and_summarises(tmp_path):
     assert summary["n_judged"] == 3
     assert summary["n_errors"] == 0
     assert summary["opus_model"] == "claude-opus-4-6"
-    assert summary["groq_model"] == cfb.GROQ_JUDGE_MODEL
+    assert summary["judge_family"] == "groq"
+    assert summary["judge_model"] == cfb.GROQ_JUDGE_MODEL
     # P1 and P3 agree, P2 disagrees => 2/3.
     assert summary["raw_agreement"] == pytest.approx(2 / 3)
     assert summary["confusion"]["tavily"]["diy"] == 1
 
     by_pair = {p["pair_id"]: p for p in out["per_pair"]}
     assert by_pair["P2/FR"]["opus_verdict"] == "tavily"
-    assert by_pair["P2/FR"]["groq_verdict"] == "diy"
+    assert by_pair["P2/FR"]["judge_verdict"] == "diy"
     assert len(out["per_pair"]) == 3
 
 
-def test_run_backfill_catches_per_pair_groq_error(tmp_path):
-    """A Groq error on one pair is recorded, not raised; the rest still judge."""
+def test_run_backfill_mistral_judge_records_family(tmp_path):
+    """Selecting --judge mistral routes the Mistral fn and records its family.
+
+    The judge is stubbed at ``judge_verdict_for`` so no network is touched; the
+    test pins that ``run_backfill(judge='mistral')`` resolves the Mistral model
+    and writes ``judge_family='mistral'`` into the summary receipt.
+    """
     result = tmp_path / "exp1.jsonl"
     pair_ids = ["P1/FR", "P2/FR"]
     opus = {"P1/FR": "diy", "P2/FR": "tavily"}
     _write_result(result, pair_ids, opus)
 
-    def flaky(rec, *, model):
-        pid = f"{rec['question_id']}/{rec['country_code']}"
-        if pid == "P2/FR":
-            raise RuntimeError("Groq HTTP 500")
+    def fake_judge_verdict_for(rec, *, adjudicate_fn, model):
+        # The Mistral family's default model must have been resolved.
+        assert model == cfb.MISTRAL_JUDGE_MODEL
+        assert adjudicate_fn is cfb.adjudicate_mistral
         return {"verdict": "diy", "consistent": True,
                 "orientation_1": {}, "orientation_2": {}}
 
-    with patch.object(cfb, "groq_verdict_for", side_effect=flaky):
+    with patch.object(cfb, "judge_verdict_for", side_effect=fake_judge_verdict_for):
+        out = cfb.run_backfill(result, judge="mistral")
+
+    summary = out["summary"]
+    assert summary["judge_family"] == "mistral"
+    assert summary["judge_model"] == cfb.MISTRAL_JUDGE_MODEL
+
+
+def test_run_backfill_catches_per_pair_judge_error(tmp_path):
+    """A judge error on one pair is recorded, not raised; the rest still judge."""
+    result = tmp_path / "exp1.jsonl"
+    pair_ids = ["P1/FR", "P2/FR"]
+    opus = {"P1/FR": "diy", "P2/FR": "tavily"}
+    _write_result(result, pair_ids, opus)
+
+    def flaky(rec, *, adjudicate_fn, model):
+        pid = f"{rec['question_id']}/{rec['country_code']}"
+        if pid == "P2/FR":
+            raise RuntimeError("Judge HTTP 500")
+        return {"verdict": "diy", "consistent": True,
+                "orientation_1": {}, "orientation_2": {}}
+
+    with patch.object(cfb, "judge_verdict_for", side_effect=flaky):
         out = cfb.run_backfill(result)
 
     summary = out["summary"]
@@ -198,13 +226,13 @@ def test_run_backfill_catches_per_pair_groq_error(tmp_path):
     assert summary["n_errors"] == 1
     by_pair = {p["pair_id"]: p for p in out["per_pair"]}
     assert "error" in by_pair["P2/FR"]
-    assert by_pair["P2/FR"]["groq_verdict"] is None
+    assert by_pair["P2/FR"]["judge_verdict"] is None
     # The healthy pair agrees, so agreement over the judged set is 1.0.
     assert summary["raw_agreement"] == 1.0
 
 
 # --------------------------------------------------------------------------
-# groq_verdict_for: position-swap + DIY-frame combination (adjudicate mocked)
+# judge_verdict_for: position-swap + DIY-frame combination (adjudicate mocked)
 # --------------------------------------------------------------------------
 
 def _adj(winner):
@@ -214,7 +242,7 @@ def _adj(winner):
     )
 
 
-def test_groq_verdict_for_combines_position_swapped(tmp_path):
+def test_judge_verdict_for_combines_position_swapped(tmp_path):
     """Both orientations call DIY the winner => combined DIY verdict.
 
     Orientation 1 has DIY in slot A and the judge picks "A"; orientation 2 swaps
@@ -243,7 +271,7 @@ def test_groq_verdict_for_combines_position_swapped(tmp_path):
         "evaluation.cross_family_backfill.cached_adjudicate",
         side_effect=fake_adjudicate,
     ):
-        judged = cfb.groq_verdict_for(rec)
+        judged = cfb.judge_verdict_for(rec)
 
     assert calls["n"] == 2  # exactly two position-swapped calls
     assert judged["verdict"] == "diy"
