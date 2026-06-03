@@ -189,6 +189,36 @@ def fetch_html(
         )
 
 
+# Anti-automation hardening for the Playwright fallback. Cloudflare's passive
+# JS challenge (seen on data.gov.mt) clears for a real browser but is quicker to
+# refuse an obviously-automated one. These options make the headless browser
+# look ordinary; the settle step waits out the challenge redirect to content.
+_PW_LAUNCH_ARGS = ["--disable-blink-features=AutomationControlled"]
+_PW_CONTEXT_KWARGS = {
+    "locale": "en-GB",
+    "timezone_id": "Europe/London",
+    "viewport": {"width": 1280, "height": 800},
+}
+_CF_CHALLENGE_MARKERS = (
+    "Attention Required", "cf-browser-verification", "challenge-platform",
+    "Just a moment", "_cf_chl_",
+)
+
+
+def _settle_through_challenge(page, timeout_s: float) -> str:
+    """Return the page HTML, waiting out a Cloudflare passive challenge when
+    the first paint is the interstitial rather than the real page."""
+    body = page.content()
+    if any(marker in body for marker in _CF_CHALLENGE_MARKERS):
+        try:
+            page.wait_for_timeout(4000)
+            page.wait_for_load_state("networkidle", timeout=int(timeout_s * 1000))
+        except Exception:  # noqa: BLE001
+            pass
+        body = page.content()
+    return body
+
+
 def fetch_rendered_text(
     url: str,
     *,
@@ -216,13 +246,15 @@ def fetch_rendered_text(
 
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(user_agent=DEFAULT_USER_AGENT)
+            browser = p.chromium.launch(headless=True, args=_PW_LAUNCH_ARGS)
+            context = browser.new_context(
+                user_agent=DEFAULT_USER_AGENT, **_PW_CONTEXT_KWARGS
+            )
             page = context.new_page()
             try:
                 page.goto(url, timeout=timeout_s * 1000, wait_until="domcontentloaded")
                 page.wait_for_timeout(500)  # let JS settle briefly
-                body = page.content()
+                body = _settle_through_challenge(page, timeout_s)
                 status = 200
             except PWTimeout:
                 return FetchResult(
@@ -275,13 +307,15 @@ def fetch_rendered_html(
 
     try:
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(user_agent=DEFAULT_USER_AGENT)
+            browser = p.chromium.launch(headless=True, args=_PW_LAUNCH_ARGS)
+            context = browser.new_context(
+                user_agent=DEFAULT_USER_AGENT, **_PW_CONTEXT_KWARGS
+            )
             page = context.new_page()
             try:
                 page.goto(url, timeout=timeout_s * 1000, wait_until="domcontentloaded")
                 page.wait_for_timeout(500)  # let JS settle briefly
-                body = page.content()
+                body = _settle_through_challenge(page, timeout_s)
                 status = 200
             except PWTimeout:
                 return FetchResult(

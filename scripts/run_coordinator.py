@@ -302,8 +302,21 @@ def _finalise_after_adjudication(
     # All three resolved verdicts share the same finalisation logic: use
     # the Adjudicator's authoritative answer and evidence, not the raw
     # researcher or verifier fields.
+    #
+    # The D37 commit-confidence floor applies here too. Without this the
+    # floor only gated the in-loop Verifier-pass path, so at retry
+    # exhaustion the Adjudicator could commit a sub-floor label and have it
+    # finalised as a real answer. On sparse evidence that commit is usually
+    # a defensive `no` (and occasionally a weak `yes` false positive), so a
+    # low-confidence commit is downgraded to an honest `inconclusive`
+    # abstention. We abstain rather than guess under the floor.
+    adj_answer = adj_output.adjudicator_answer or "inconclusive"
+    adj_conf = adj_output.adjudicator_confidence
+    if (not _is_abstention(adj_answer)
+            and (adj_conf or 0.0) < COMMIT_CONFIDENCE_FLOOR):
+        adj_answer = "inconclusive"
     chosen = ResearcherOutput(
-        answer=adj_output.adjudicator_answer or "inconclusive",
+        answer=adj_answer,
         answer_explanation=adj_output.adjudicator_reasoning[:300],
         evidence_quote=(
             adj_output.chosen_evidence_quote
@@ -313,7 +326,7 @@ def _finalise_after_adjudication(
             adj_output.chosen_source_url or last_researcher_output.source_url
         ),
         retrieval_confidence=0.7,
-        answer_confidence=adj_output.adjudicator_confidence,
+        answer_confidence=adj_conf,
     )
     return ("accepted_by_adjudicator", chosen)
 

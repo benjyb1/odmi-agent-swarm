@@ -1,0 +1,777 @@
+{
+  "description": "Per-question answerability class for separate reporting (not exclusion). catalogue = D30-computable; self_report = questionnaire-only internal practice; web = public-web answerable. self_report is a reviewable first-pass keyword rule; catalogue is authoritative from agents.tools.catalogue.compute.",
+  "generator": "scripts/build_answerability.py",
+  "total": 143,
+  "counts": {
+    "web": 119,
+    "catalogue": 9,
+    "self_report": 15
+  },
+  "by_dimension": {
+    "Impact": {
+      "web": 33,
+      "catalogue": 0,
+      "self_report": 5
+    },
+    "Policy": {
+      "web": 26,
+      "catalogue": 0,
+      "self_report": 5
+    },
+    "Portal": {
+      "web": 41,
+      "catalogue": 0,
+      "self_report": 4
+    },
+    "Quality": {
+      "web": 19,
+      "catalogue": 9,
+      "self_report": 1
+    }
+  },
+  "catalogue_question_ids": [
+    "Q12",
+    "Q13",
+    "Q16",
+    "Q17",
+    "Q18",
+    "Q21",
+    "Q22",
+    "Q25",
+    "Q27"
+  ],
+  "self_report_question_ids": [
+    "I2",
+    "I4",
+    "I8-b",
+    "I8-c",
+    "I9-a",
+    "P18",
+    "P20",
+    "P21",
+    "P22",
+    "P25",
+    "PT23",
+    "PT25",
+    "PT29",
+    "PT44",
+    "Q7"
+  ],
+  "questions": [
+    {
+      "question_id": "I1",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I10",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I11",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I12",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I13",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I14",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I15",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I16",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I17",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I18",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I19",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I2",
+      "dimension": "Impact",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "I20",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I21",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I22",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I23",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I24",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I25",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I26",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I27",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I28",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I29",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I3",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I30",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I31",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I4",
+      "dimension": "Impact",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "I5",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I6",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I7",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I8",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I8-a",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I8-b",
+      "dimension": "Impact",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "I8-c",
+      "dimension": "Impact",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "I8-d",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I9",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I9-a",
+      "dimension": "Impact",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "I9-b",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "I9-c",
+      "dimension": "Impact",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P1",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P10-a",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P10-b",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P11",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P12",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P13",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P14",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P15",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P16",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P17",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P18",
+      "dimension": "Policy",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "P19",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P2",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P20",
+      "dimension": "Policy",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "P21",
+      "dimension": "Policy",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "P22",
+      "dimension": "Policy",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "P23",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P24",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P25",
+      "dimension": "Policy",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "P26-a",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P26-b",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P27",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P28",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P29",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P3",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P4",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P5",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P6",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P7",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P8",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "P9",
+      "dimension": "Policy",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT1",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT10",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT11",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT12",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT13",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT14",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT15",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT16",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT17",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT18",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT19",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT2",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT20",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT21",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT22",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT23",
+      "dimension": "Portal",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "PT24",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT25",
+      "dimension": "Portal",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "PT26",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT27",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT28",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT29",
+      "dimension": "Portal",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "PT3",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT30",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT31",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT32",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT33",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT34",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT35",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT36",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT37",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT38",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT39",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT4",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT40",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT41",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT42",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT43",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT44",
+      "dimension": "Portal",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "PT45",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT5",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT6",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT7",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT8",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "PT9",
+      "dimension": "Portal",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q1",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q10",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q11",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q12",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q13",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q14",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q15",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q16",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q17",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q18",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q19",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q2",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q20",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q21",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q22",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q23",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q24",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q25",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q26",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q27",
+      "dimension": "Quality",
+      "answerability": "catalogue"
+    },
+    {
+      "question_id": "Q28",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q29",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q3",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q4",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q5",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q6",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q7",
+      "dimension": "Quality",
+      "answerability": "self_report"
+    },
+    {
+      "question_id": "Q8",
+      "dimension": "Quality",
+      "answerability": "web"
+    },
+    {
+      "question_id": "Q9",
+      "dimension": "Quality",
+      "answerability": "web"
+    }
+  ]
+}
