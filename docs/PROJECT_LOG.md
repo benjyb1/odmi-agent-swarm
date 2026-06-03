@@ -8,6 +8,44 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20f: Malta baseline dispatch (partial, quota-walled)
+
+Picked up the shared prerequisite for EXP-6/7/8/9: the canonical Malta pair set
+plus a baseline swarm run over it. The pair set was already built and committed by
+an earlier window (`data/questions/malta_eval_pairs.json`, 60 pairs, 30 `no` / 30
+`yes`, seed 20260603; generator `scripts/build_malta_eval_pairs.py`). Verified it
+rather than regenerating: all 30 `no`-gold binary MT questions are present (the
+minority class is not sampled down), the 30 `yes`-gold pairs are a size-matched
+round-robin draw, and the dimension split is Impact 17 / Portal 24 / Policy 10 /
+Quality 9. MT is in `run_coordinator.COUNTRIES` and `search_snippets` is a column
+on `phase2_researcher_runs`; both confirmed.
+
+The DB already held a partial baseline dispatch (batch `exp6_malta`, provider auto
+which falls to DIY since Tavily is spent, `condition_label` baseline, no
+`experiment_id`): 25 of 60 pairs with Researcher rows, 17 finalised. Of those 17,
+12 carry a real answer (all `no`-gold, 11 of 12 matching ground truth; the one
+differ is I8-b, a false-positive `yes` against a `no` gold, the visible
+false-positive Malta was chosen to expose) and 5 are `agent_failure` on
+`search_empty`.
+
+Probed whether the run could continue: a single foreground coordinator on P4:MT
+failed on the first LLM call with `APIConnectionError` through CLIProxyAPI. The
+proxy is up (HTTP 401 on `/v1/models`, brew service started), so the wall is the
+exhausted Claude Max rolling window, not the proxy. The last successful usage-log
+call was 14:49Z; the window had not recovered by 15:45Z. Stopped there rather than
+dispatch the remaining 35 pairs into a connection-error loop on the shared quota
+that concurrent windows also draw on. Discarded the probe's stray subtrio row so
+the committed DB stays identical to the inherited partial.
+
+What is left: the 35 not-done pairs (30 `yes`-gold plus the 5 `no`-gold I14, I22,
+I23, PT42, Q19). Resume is clean, the not-done set is the canonical IDs minus the
+distinct MT `phase2_researcher_runs` IDs. Re-run when the Claude window recovers.
+Recorded the partial in SPEC current-status, `EXPERIMENTS.md` (EXP-6), and
+`EXPERIMENTS_PROTOCOL.md` section 9 item 9. `uv run pytest -q`: 446 passed, 13
+skipped.
+
+---
+
 ## 2026-06-03 — Session 20e: EXP-1 cross-family reliability, via Mistral
 
 Closed the one open arm of EXP-1: the cross-family reliability check. The plan

@@ -16,7 +16,7 @@ run) · `running` · `done`.
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
-| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (pending Malta dispatch) | primary Malta natural errors, NL secondary, FR + injected robustness | pending; primary J needs the Malta dispatch (search-quota gated); FR/injected partial superseded |
+| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (Malta dispatch partial) | primary Malta natural errors, NL secondary, FR + injected robustness | pending; Malta dispatch 25/60 with Researcher rows, 17 finalised (12 real + 5 agent_failure), 35 left and blocked on the exhausted Claude window; primary J needs the full set; FR/injected partial superseded |
 | EXP-7 | Retry chaining: accumulate evidence across the loop | planned | high-resource-language, low-maturity country first (false-positive risk) | pending |
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | pending (Malta dispatch, quota-gated) |
 | EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | pending (Malta dispatch, quota-gated) |
@@ -154,7 +154,18 @@ rate-limit cooldowns). The strata are now role-based (primary MT, secondary NL,
 robustness FR/EE + injection). The primary Youden's J is not computable until the
 Malta dispatch lands, which is gated on search quota.
 
-Result: pending (primary run blocked on the Malta dispatch).
+Malta dispatch (2026-06-03): the canonical pair set is frozen and committed at
+`data/questions/malta_eval_pairs.json` (60 pairs, 30 `no` / 30 `yes`, seed
+20260603). The baseline dispatch (provider auto, `condition_label` baseline, no
+`experiment_id`) has reached 25 of 60 pairs with Researcher rows and 17 finalised
+(12 real answers, all `no`-gold, 11 of 12 matching ground truth; plus 5
+`agent_failure` on `search_empty`). The remaining 35 pairs (30 `yes`-gold and the 5
+`no`-gold I14, I22, I23, PT42, Q19) are not yet dispatched: the Claude Max window
+is exhausted, so the run stopped cleanly rather than thrash the shared quota.
+Re-run the 35 when the window recovers; the not-done set is recomputed from the DB,
+so resume is clean. EXP-6 cannot run its primary arm until the full set exists.
+
+Result: pending (primary run blocked on completing the Malta dispatch).
 
 ## EXP-8: Cost-side optimisations, Family 1 (planned)
 

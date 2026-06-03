@@ -538,6 +538,25 @@ items, all gated on search quota:
    optionally Netherlands. The `no`-gold candidates do not exist in the DB yet, so
    this is the binding prerequisite for the base-rate rule (R4) to be satisfiable.
    Same quota gate as the parked D28 Phase 3.
+   **Partial (2026-06-03).** The canonical pair set is frozen and committed at
+   `data/questions/malta_eval_pairs.json` (60 pairs, 30 `no` / 30 `yes`, seed
+   20260603, dimension split Impact 17 / Portal 24 / Policy 10 / Quality 9;
+   generator `scripts/build_malta_eval_pairs.py`). All 30 `no`-gold binary
+   questions are included as the minority class; the 30 `yes`-gold pairs are a
+   size-matched, dimension-stratified round-robin draw. The baseline dispatch
+   (provider auto, `condition_label` baseline, no `experiment_id`; batch
+   `exp6_malta`) reached 25 of the 60 pairs with Researcher rows and 17 finalised:
+   12 with a real answer and 5 `agent_failure` (all on `search_empty`). All 12
+   real-answer finalised pairs are `no`-gold; 11 of 12 match ground truth, the one
+   differ being I8-b (a false-positive `yes` against a `no` gold, the kind of error
+   Malta's `no`-gold questions exist to surface). The remaining 35 pairs (30
+   `yes`-gold plus the 5 `no`-gold I14, I22, I23, PT42, Q19) are not yet dispatched:
+   the Claude Max rolling window is exhausted (first LLM call returns
+   `APIConnectionError` through CLIProxyAPI), so the run was stopped rather than
+   thrashed on the shared quota. Resume is clean: the not-done set is computed
+   dynamically as the canonical question IDs minus the distinct MT
+   `phase2_researcher_runs` question IDs. The set must be re-run when the window
+   recovers before the R4 base-rate metric is fully satisfiable.
 10. **EXP-8 conditions:** a committed `prompt-compressed` prompt version in
     `prompt_versions`, the `model-fallback` escalation path, and a per-arm
     cache-bypass that leaves the `cache-hot` arm cache-on while every other arm
