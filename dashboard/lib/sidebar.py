@@ -16,7 +16,7 @@ from dashboard.lib import db, mode
 from dashboard.lib.currency import USD_TO_GBP, format_gbp, to_gbp
 
 
-DEFAULT_SOFT_LIMIT_USD = 5.0
+DEFAULT_SOFT_LIMIT_USD = 20.0  # raised 4x 2026-06-03 (was 5.0); keep in step with scripts/dispatch_subtrios.py
 
 
 def render_read_only_banner() -> None:
