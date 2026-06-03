@@ -343,6 +343,15 @@ the primary RQ5 output.
 Two families of experimental conditions. Each variant writes into the
 same schema with a `condition_label` column.
 
+These experiments are now pre-registered before each run, with the design,
+endpoints, sampling, and analysis fixed in advance: `docs/EXPERIMENTS_PROTOCOL.md`
+covers the search-provider and search-knob experiments (EXP-1..5) and
+`docs/EXPERIMENTS_VERIFIER.md` covers the Verifier-strategy comparison (EXP-6,
+Family 2 below). The live status board is `docs/EXPERIMENTS.md`. A third family
+sits alongside the two below: the search-provider comparison (DIY vs Tavily vs
+Brave vs Serper), where EXP-1 already reports DIY winning 89% of the decided
+French pairs.
+
 **Family 1: cost-side optimisations.** Aimed at the cost axis of the
 accuracy-cost surface.
 

@@ -8,6 +8,53 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20: the experiments programme, and a branch merge
+
+Two strands: running the search experiments, and untangling the branch mess that
+several parallel Claude windows had left behind.
+
+The experiments were pre-registered in `EXPERIMENTS_PROTOCOL.md` before any run,
+so the numbers cannot be reverse-fitted to a hypothesis. Two adversarial
+methodology reviews caught three real holes in the first draft: a win metric that
+counted ties as DIY successes, a deny-list applied unequally across providers
+(DIY scrubbed after fetch while Tavily and Brave excluded at query time), and a
+judge that saw the gold answer and so could reward keyword overlap rather than
+evidence. All three are fixed in the apparatus.
+
+EXP-1 is the headline. On the full FR non-Quality stratum (90 pairs) DIY wins 89%
+of the 55 decided pairs, Wilson CI [78, 95], sign-test p < 1e-4, leading every
+web-answerable dimension. It supersedes the n=18 pilot. The caveats stay
+attached: position consistency 81%, and the answer-blind judge agrees with the
+answer-given verdict on only 67% of the subsample, so the judge is somewhat
+swayed by seeing the answer.
+
+Apparatus built and tested: a stats module (Wilson, sign test, McNemar, Wilcoxon,
+Krippendorff alpha); evidence normalisation and pre-fetch deny-list parity so the
+blind judge cannot fingerprint a provider; a Groq / Llama-3.3-70B cross-family
+judge (Gemini was first choice but both keys had zero generate quota) and an
+answer-blind variant; adjudication caching so a killed judge run resumes from
+disk; and a multi-provider pairwise harness with Copeland ranking.
+
+What did not finish: the machine kept restarting and killing background jobs, so
+EXP-4/5 (one four-provider judge run yields both) stopped near 882 of ~1080
+verdicts and resumes from the cache. EXP-3 (multilingual EE/LT/IS) was skipped
+after the LT/IS dispatch repeatedly stalled at search. EXP-2a/2b are selected but
+not dispatched. The Groq cross-family backfill is built and tested but blocked by
+the free-tier daily token cap, so it waits for the window to roll over. EXP-6
+(the other window's verifier-strategy experiment) is partially run at 3/89.
+
+The cleanup: all of this had landed on `gate-retry-fixes` along with the other
+windows' D34-D37 and EXP-6/EXP-7 work, while `main` had drifted to a single
+worktree-isolation commit. Merged `gate-retry-fixes` into `main` so main is the
+frontier again (CLAUDE.md auto-resolved, no manual conflict), pushed it, and
+pruned the seven stale agent worktrees. The partial EXP-6 rows in `odmi.db` stay
+local and out of main until that experiment finishes.
+
+Next: resume EXP-4/5 from the cache, backfill the Groq cross-family agreement
+once the quota resets, then run EXP-2a/2b.
+
+---
+
 ## 2026-06-02 — Session 19: scrub the stale LangGraph claims
 
 The report draft described the swarm as "LangGraph-based". It is not, and never

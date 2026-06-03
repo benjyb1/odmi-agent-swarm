@@ -1,6 +1,6 @@
 # ODMI Agent Swarm — Living Spec
 
-Last updated: 2026-05-25
+Last updated: 2026-06-03
 
 Single source of truth for project state. Updated every session. All numbered
 decisions go in here so they can be referenced as "per D7" elsewhere in the
@@ -1114,7 +1114,44 @@ mechanism D26 added is unchanged; only the fallback target changes).
 
 ## Current status
 
-**Phase:** Phase A. Swarm running end-to-end; dashboard live (local + Streamlit Cloud); ODMI ground truth loaded; ready to scale to harder questions and more countries.
+**Phase:** Phase A, experiments programme underway. Swarm running end-to-end; dashboard live (local + Streamlit Cloud); ODMI ground truth loaded. The search-provider and verifier experiments are pre-registered and partly run.
+
+### Experiments programme (EXP-1..7) and search apparatus (D30-D37)
+
+Two pre-registrations fix the designs before the runs: `docs/EXPERIMENTS_PROTOCOL.md`
+(the search experiments EXP-1..5) and `docs/EXPERIMENTS_VERIFIER.md` (EXP-6). The
+human-readable board is `docs/EXPERIMENTS.md`; the machine registry is the
+`experiments` table (D27).
+
+Apparatus, all built and unit-tested:
+- `evaluation/stats.py` — Wilson intervals, exact binomial sign test, McNemar,
+  Wilcoxon, Krippendorff alpha. The judge harnesses report intervals, not bare
+  point estimates.
+- Deny-list parity (DIY filters the Serper SERP pre-fetch, so every provider
+  drops D24 domains before retrieval, not after) and evidence normalisation
+  (equal passage count, registrable-domain URLs) so the blind judge cannot
+  fingerprint a provider.
+- Cross-family judges beside the Opus judge: Gemini (dead, zero quota) and
+  Groq / Llama-3.3-70B (live), plus an answer-blind variant, for inter-rater
+  reliability against the same-family self-preference threat.
+- Adjudication caching (`evaluation/adjudication_cache.py`) so a killed judge run
+  resumes from disk rather than re-paying.
+- `evaluation/provider_ab.py` — N-provider pairwise round-robin, Copeland ranking.
+- `evaluation/verifier_strategies.py` — the EXP-6 four-arm signal-detection harness.
+
+Status (detail in `docs/EXPERIMENTS.md`):
+- **EXP-1** (DIY vs Tavily, FR, refreshed): done. DIY wins 89% of the 55 decided
+  FR pairs, Wilson CI [78, 95], sign-test p < 1e-4, leading every web-answerable
+  dimension. Answer-blind agreement 67%; the cross-family check waits on the Groq
+  daily-token quota.
+- **EXP-2a/2b** (search-knob cost vs quality, FR then EE): pairs selected, not yet
+  dispatched.
+- **EXP-3** (multilingual EE/LT/IS): skipped this round; the LT/IS dispatch kept
+  stalling at the search step under repeated machine restarts.
+- **EXP-4/EXP-5** (Brave, then the four-provider A/B): one judge run yields both;
+  interrupted near 882 of ~1080 verdicts, resumable from the cache.
+- **EXP-6** (verifier strategy discrimination): designed and partially run (3/89).
+- **EXP-7** (retry chaining): planned, parked.
 
 ### Built (verified)
 

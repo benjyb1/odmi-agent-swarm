@@ -164,7 +164,7 @@ a branch.
 
 ## What's actually built
 
-See `docs/SPEC.md` for the current status block. As of 2026-06-01: full
+See `docs/SPEC.md` for the current status block. As of 2026-06-03: full
 three-agent swarm running end-to-end, nine-page Streamlit dashboard live
 (local and on Streamlit Cloud), 143 questions catalogued and tagged by
 answer shape (124 binary / 12 percentage_band / 3 ordinal_magnitude /
@@ -195,4 +195,18 @@ Validated against ODMI GT across the Phase B set (HU 8/1/0, NL 5/0/4,
 DE 4/2/3, FR 4/1/4, RO 3/3/3; EE blocked by a 403). Headline finding:
 France self-reported `>90%` on licence coverage and conformance but the
 independent recompute reads ~38% and ~32%, the D29 self-report ceiling
-made measurable.
+made measurable. D32-D37 and the experiments programme (2026-06-02/03):
+D32+D33 trust the adjudicator's answer at finalisation and force retry
+queries to diverge; D34 checks the evidence quote against the snippets the
+Researcher actually read, not a live re-fetch; D35 makes `inconclusive` an
+abstention that retries then adjudicates rather than a terminal label; D36
+sets search auto-fallback to Tavily → DIY → Brave; D37 adds a 0.65
+commit-confidence floor, abstaining honestly over a forced guess. The search
+and verifier experiments are pre-registered
+(`docs/EXPERIMENTS_PROTOCOL.md`, `docs/EXPERIMENTS_VERIFIER.md`) and tracked
+in `docs/EXPERIMENTS.md`. EXP-1 is done and supersedes the D29 pilot above:
+on the full FR non-Quality stratum (90 pairs) DIY wins 89% of the 55 decided
+pairs (Wilson CI [78, 95], p < 1e-4), with answer-blind agreement 67% and the
+cross-family (Groq / Llama-3.3-70B) check pending its daily token quota.
+EXP-4/5 are mid-run and resumable, EXP-2a/2b queued, EXP-3 skipped, EXP-6
+partial (3/89), EXP-7 parked.
