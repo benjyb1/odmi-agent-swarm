@@ -1398,12 +1398,46 @@ Rationale: a cap that does not track a real balance and that the user has to
 force past on every meaningful run is friction without protection. Cost
 visibility stays; the gate goes.
 
+### D41: Runaway circuit breakers (not a budget)
+
+**Date:** 2026-06-03. Follows D40.
+
+With the dollar soft limit gone, the one residual risk is a misspecified
+experiment that burns the whole 5-hour Claude Max window before anyone notices.
+D41 adds two circuit breakers, both keyed on real units (pairs and calls) and
+both set far above any real run, so they are silent in normal use and fire only
+on a clear runaway. This is the opposite of D20's budget: not "may I spend this?"
+on every run, but "this is obviously broken, stop".
+
+1. **Pre-flight size guard (on by default).** A single dispatch above
+   `MAX_PAIRS_PER_DISPATCH = 500` pairs is refused before anything spawns, with a
+   clear message, unless `allow_large=True` / `--allow-large` is set. The biggest
+   legitimate runs are ~100-150 pairs (a full single country); the
+   all-questions x all-countries cross-product accident is 5,148. 500 sits
+   cleanly between, so it catches the footgun without nagging. The Run Console
+   surfaces it as a one-off "allow this large run" checkbox.
+2. **Mid-flight call breaker (opt-in).** If `--max-calls N` is set, the dispatch
+   loop stops spawning new subtrios once the batch's own logged Claude calls
+   (`claude_usage_log` scoped to this batch's subtrios, via `_batch_call_count`)
+   reach N. Off by default, for the rarer runaway-loop case. A normal pair is ~5
+   calls (~17 worst case), so a sane cap is well above n_pairs x 17.
+
+`DispatchResult` gains `aborted_oversize` and `calls_capped` flags so the UI and
+logs can show why a batch stopped short. The real ceiling is still Claude Max's
+own 429 (D20 layer 3, the clean resumable shutdown). New
+`tests/test_dispatch_runaway_guard.py` (8 cases); 446 non-live passing.
+
+Rationale: the user's actual worry is "a rogue experiment eats the 5-hour token
+budget", not per-run cost. A high circuit breaker on the real units answers that
+without re-introducing the friction D40 removed.
+
 ---
 
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-03 (runaway guard) | D41 added, follows D40. Two runaway circuit breakers on `dispatch_subtrios.py`, keyed on real units and set far above any real run: a pre-flight refusal above `MAX_PAIRS_PER_DISPATCH = 500` pairs (on by default, overridable with `allow_large` / `--allow-large`; surfaced as a checkbox in the Run Console), and an opt-in mid-flight `--max-calls` breaker that stops spawning once the batch's logged calls (via new `_batch_call_count`) reach the cap. `DispatchResult` gains `aborted_oversize` and `calls_capped`. Replaces the deleted dollar budget with a "this is obviously broken, stop" guard rather than a per-run "may I spend this?". New `tests/test_dispatch_runaway_guard.py` (8 cases); 446 non-live passing. |
 | 2026-06-03 (soft limit) | D40 added, supersedes D20 layers 1 and 2. Removed the local cost soft limit: `DEFAULT_SOFT_LIMIT_USD`, `LOW_WATER_FRACTION`, the `soft_limit_usd`/`force` params and `--soft-limit-usd`/`--force` flags on `dispatch_subtrios.py`, the `CostEstimate.soft_limit_usd`/`budget_remaining_usd` and `DispatchResult.aborted_due_to_budget` fields, the pre-flight refusal, and the per-spawn low-water stop. `harness.py` no longer passes `--soft-limit-usd`; the dashboard sidebar loses the soft-limit slider/progress and the Run Console loses the "Window soft limit" metric and "Force release" checkbox. Rolling 5-hour spend is still computed and shown (sidebar, Run Console, Costs) and the pre-flight estimate is still logged, but nothing blocks a dispatch now; the only ceiling is Claude Max's own rate limit (D20 layer 3, the clean resumable 429 shutdown, kept). The cap was a guessed arithmetic equivalent of a flat subscription, not a real balance, so it was friction without protection. Tests updated; 438 non-live passing. |
 | 2026-06-03 (chaining) | D39 added: EXP-7 chained retry arm built behind `--chained` (default off, baseline byte-identical). New `EvidenceItem` model; `VerifierFeedback` gains `counter_evidence_quote` / `counter_source_url` (default None); `ResearcherInput.prior_evidence` and `AdjudicatorInput.evidence_corpus` added. Coordinator accumulates a de-duped, 40-capped evidence corpus across rounds when chained, feeds the Verifier's counter-evidence back to the Researcher, and adjudicates over the whole corpus; the D37 floor and abstention rules are untouched. Carried evidence rides in the user message, not the system prompt, so `prompt_versions` are stable and an empty corpus renders byte-for-byte as before. Flag threaded `dispatch_subtrios.py` → `run_coordinator.py`. Pre-registered in `docs/EXPERIMENTS_CHAINING.md` (Malta primary per R4, false-positive rate as a co-primary, paired McNemar/Wilcoxon, one confirmatory joint claim); EXP-7 status board updated. New `tests/test_chained_evidence.py` (18 cases); 418 non-live passing. Run gated only on the Malta dispatch (search quota) and Claude headroom. |
 | 2026-06-03 (experiment rules) | D38 added: a universal experiment checklist (R1 to R12) in `EXPERIMENTS_PROTOCOL.md` section 0, headed by R4, the base-rate rule that bars a degenerate evaluation country and pins selection to minority-class share subject to a well-resourced-language constraint (Malta primary, Netherlands secondary; the No-share table is computed from `ground_truth` over binary yes/no golds). Pre-registered EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants) under the rules, with registry rows and Malta-dispatch / condition-threading pre-run requirements (items 9 to 11), all gated on search quota. Retargeted EXP-6 to Malta-primary (France/injected demoted to a robustness arm; `EXPERIMENTS_VERIFIER.md` and `evaluation/verifier_strategies.py` strata updated, the partial superseded not deleted). Added protocol section 12, a rubric audit that flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider result stands) and EXP-3's Lithuania control as undiscriminating on binary. `build_candidates` verified to degrade gracefully (empty Malta primary, 82-candidate robustness arm) until the dispatch lands. No experiment runs in this change. |

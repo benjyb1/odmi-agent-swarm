@@ -22,6 +22,7 @@ from dashboard.lib import db, mode
 from dashboard.lib.currency import format_gbp
 from dashboard.lib.sidebar import page_header, render_session_widget
 from scripts.dispatch_subtrios import (
+    MAX_PAIRS_PER_DISPATCH,
     dispatch,
     estimate_pair_cost,
 )
@@ -311,10 +312,25 @@ def render_launcher() -> None:
 
     n_effective = len(effective_pairs)
 
+    # Runaway guard (D41): a dispatch above the pair threshold is refused by
+    # the dispatcher unless explicitly allowed. Surface that here so the run
+    # doesn't silently no-op.
+    allow_large = False
+    if n_effective > MAX_PAIRS_PER_DISPATCH:
+        st.error(
+            f"⚠ {n_effective} pairs exceeds the {MAX_PAIRS_PER_DISPATCH}-pair "
+            f"runaway guard. This is usually a misspecified selection. The "
+            f"dispatcher will refuse unless you confirm."
+        )
+        allow_large = st.checkbox(
+            "Allow this large run (override the runaway guard)", value=False,
+        )
+
     clicked = st.button(
         f"▶ Release {n_effective} subtrio(s)",
         type="primary", use_container_width=True,
-        disabled=(n_effective == 0),
+        disabled=(n_effective == 0
+                  or (n_effective > MAX_PAIRS_PER_DISPATCH and not allow_large)),
     )
 
     if clicked:
@@ -330,7 +346,7 @@ def render_launcher() -> None:
             parallel=parallel, max_retries=max_retries,
             provider=provider, max_results_per_query=max_results_per_query,
             num_queries=num_queries, experiment_id=experiment_id,
-            condition_label=condition_label,
+            condition_label=condition_label, allow_large=allow_large,
         )
 
 
@@ -339,7 +355,7 @@ def _trigger_release(
     researcher_model, verifier_model, adjudicator_model,
     parallel, max_retries,
     provider="auto", max_results_per_query=5, num_queries=0,
-    experiment_id="", condition_label="baseline",
+    experiment_id="", condition_label="baseline", allow_large=False,
 ) -> None:
     """Spawn dispatch_subtrios.py as a fire-and-forget subprocess.
 
@@ -368,6 +384,8 @@ def _trigger_release(
     if experiment_id:
         cmd += ["--experiment-id", experiment_id,
                 "--condition-label", condition_label or "baseline"]
+    if allow_large:
+        cmd.append("--allow-large")
 
     # Fire-and-forget; capture stdout to a log file.
     logs_dir = REPO_ROOT / "dashboard" / "logs"

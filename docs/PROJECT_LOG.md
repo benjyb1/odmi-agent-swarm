@@ -27,6 +27,18 @@ and Costs page. The pre-flight estimate still logs a projection; it just no long
 blocks anything. Annotated D20 as superseded and added D40. 438 non-live tests
 pass.
 
+Then put back the one guard that's actually worth having (D41), reframed as a
+circuit breaker rather than a budget. The real worry is a misspecified experiment
+eating the whole 5-hour Max window, so the guard works on real units and sits far
+above any real run. Pre-flight: refuse a single dispatch above 500 pairs (the
+cross-product footgun is 5,148; legitimate runs are ~100-150), overridable with
+`--allow-large` and surfaced as a one-off checkbox in the Run Console. Mid-flight,
+opt-in: `--max-calls` stops spawning once the batch's own logged calls reach a
+cap, for the runaway-loop case. Both silent in normal use. `DispatchResult` gained
+`aborted_oversize` / `calls_capped`. New `tests/test_dispatch_runaway_guard.py`
+(8 cases, with `time.sleep` monkeypatched so the 500-pair test doesn't spend 25s
+on the spawn stagger); 446 non-live passing.
+
 ---
 
 ## 2026-06-03 — Session 20c: EXP-7 chained retry arm (built, gated, pre-registered)
