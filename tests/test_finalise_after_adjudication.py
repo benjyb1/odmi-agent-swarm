@@ -38,11 +38,12 @@ def _make_adj_output(
     reasoning: str = "A" * 55,
     source_url: str = "https://gov.example.com/source",
     evidence_quote: str = "quote text from adjudicator",
+    confidence: float = 0.8,
 ) -> AdjudicatorOutput:
     return AdjudicatorOutput(
         adjudicator_verdict=verdict,  # type: ignore[arg-type]
         adjudicator_answer=adj_answer if verdict != "escalate_human" else None,
-        adjudicator_confidence=0.8,
+        adjudicator_confidence=confidence,
         adjudicator_reasoning=reasoning,
         chosen_source_url=source_url,
         chosen_evidence_quote=evidence_quote,
@@ -163,3 +164,34 @@ def test_resolved_verdict_copies_adjudicator_urls():
 
     assert "data.gouv.fr" in str(chosen.source_url)
     assert chosen.evidence_quote == "adjudicator selected this passage"
+
+
+# ---------------------------------------------------------------------------
+# Case 7: a sub-floor Adjudicator commit is downgraded to an abstention.
+# Under the D37 commit-confidence floor we abstain rather than commit a
+# low-confidence label (usually a defensive `no` on sparse evidence).
+# ---------------------------------------------------------------------------
+
+def test_subfloor_commit_downgraded_to_inconclusive():
+    helper = _import_helper()
+    adj = _make_adj_output(verdict="verifier_correct", adj_answer="no",
+                           confidence=0.45)
+    last_r = _make_researcher_output(answer="yes")
+
+    status, chosen = helper(adj, [last_r])
+
+    assert status == "accepted_by_adjudicator"
+    assert chosen.answer == "inconclusive", (
+        "a sub-0.65 Adjudicator commit must abstain, not finalise the guess"
+    )
+
+
+def test_above_floor_commit_is_kept():
+    helper = _import_helper()
+    adj = _make_adj_output(verdict="verifier_correct", adj_answer="no",
+                           confidence=0.7)
+    last_r = _make_researcher_output(answer="yes")
+
+    status, chosen = helper(adj, [last_r])
+
+    assert chosen.answer == "no", "an above-floor commit is unchanged"
