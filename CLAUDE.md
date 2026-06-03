@@ -141,6 +141,26 @@ uv run pytest
 - Commit small and often. Five weeks without a commit is why we are
   reverse-engineering state today.
 
+## Branch isolation per window (mandatory)
+
+Benjy runs several Claude instances against this repo at the same time, each on
+its own branch, merged later. They share one folder, and a folder holds one
+branch, so a plain `git checkout -b` in the main checkout drags every other
+window onto the new branch. The isolation unit is therefore a git worktree, not
+a branch.
+
+- At the start of any task that will change files, if this session is not
+  already in a worktree, call `EnterWorktree` before editing anything. It makes
+  an isolated worktree under `.claude/worktrees/` on a fresh branch off
+  `origin/main` (the `worktree.baseRef=fresh` default), so concurrent windows
+  never collide.
+- Read-only work is exempt: questions, reviews, searches, explanations, status
+  checks. No worktree needed for those.
+- Never run `git checkout -b` for new work in the main checkout. It switches the
+  shared folder and disrupts other running instances.
+- When the work is done, merge the branch back and let the worktree be removed
+  (`ExitWorktree`, or `git worktree remove`). Prune stale ones periodically.
+
 ## What's actually built
 
 See `docs/SPEC.md` for the current status block. As of 2026-06-01: full
