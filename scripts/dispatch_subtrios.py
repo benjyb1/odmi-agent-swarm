@@ -49,7 +49,7 @@ DEFAULT_RETRY_UPLIFT = 1.2
 
 # Rolling-window soft cap. Used only for the budget calculation; the
 # real cap is whatever Claude Max enforces. Tunable per Q-DASH-1.
-DEFAULT_SOFT_LIMIT_USD = 5.00  # ~$5 per 5-hour window as a sensible default
+DEFAULT_SOFT_LIMIT_USD = 20.00  # ~$20 per 5-hour window (raised 4x 2026-06-03; the old $5 truncated batches early)
 
 # Low-water mark: stop spawning new subtrios when the rolling cost
 # exceeds (1 - low_water) of the soft limit. Per spec §6.1 / §9.2.
