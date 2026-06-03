@@ -206,7 +206,10 @@ and verifier experiments are pre-registered
 (`docs/EXPERIMENTS_PROTOCOL.md`, `docs/EXPERIMENTS_VERIFIER.md`) and tracked
 in `docs/EXPERIMENTS.md`. EXP-1 is done and supersedes the D29 pilot above:
 on the full FR non-Quality stratum (90 pairs) DIY wins 89% of the 55 decided
-pairs (Wilson CI [78, 95], p < 1e-4), with answer-blind agreement 67% and the
-cross-family (Groq / Llama-3.3-70B) check pending its daily token quota.
+pairs (Wilson CI [78, 95], p < 1e-4), with answer-blind agreement 67%. The
+cross-family reliability check is done (Mistral Large, after Groq's per-org
+daily-token cap blocked every available key): 78% raw agreement, Krippendorff
+alpha 0.648 on the frozen 27-pair subsample, all disagreements Opus `both_fail`
+vs a Mistral commitment, rebutting the same-family self-preference concern.
 EXP-4/5 are mid-run and resumable, EXP-2a/2b queued, EXP-3 skipped, EXP-6
 partial (3/89), EXP-7 parked.

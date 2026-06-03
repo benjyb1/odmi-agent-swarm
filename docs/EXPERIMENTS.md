@@ -40,9 +40,23 @@ non-inferiority margin decisively.
 
 Caveats (honest): position consistency 81%; the answer-blind robustness check
 agrees with the answer-given verdict on only 67% of the 27-pair subsample (9
-flips), so the judge is somewhat sensitive to seeing the gold answer; the
-cross-family Gemini reliability check is pending quota (key authenticates but the
-Google project allows zero generations). France only, Tavily basic tier.
+flips), so the judge is somewhat sensitive to seeing the gold answer. France
+only, Tavily basic tier.
+
+Cross-family reliability (done 2026-06-03). The planned Gemini re-judge stayed
+dead (zero quota), and Groq's free tier caps tokens per organisation not per
+key, so all available Groq keys shared one exhausted daily pool. Mistral Large,
+a third independent family, re-judged the same frozen 27-pair subsample
+(answer-given, position-swapped, byte-identical evidence; only the judge
+changed). Harness: `evaluation/cross_family_backfill.py --judge mistral`;
+result: `evaluation/results/cross_family_exp1_mistral.jsonl`. All 27 pairs
+judged: raw agreement 78% (21/27), Krippendorff alpha 0.648 (nominal, four
+categories). All six disagreements turn on Opus calling `both_fail` (five of
+six) where Mistral committed to a provider or a tie; where both judges committed
+to a provider they never disagreed (DIY 13, Tavily 3). This rebuts the
+same-family self-preference concern, that the Claude judge favours
+Claude-extracted DIY evidence. Mistral was position-inconsistent on 6 of 27
+pairs, more than Opus, which is reported alongside.
 
 ---
 

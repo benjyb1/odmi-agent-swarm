@@ -8,6 +8,42 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20c: EXP-1 cross-family reliability, via Mistral
+
+Closed the one open arm of EXP-1: the cross-family reliability check. The plan
+was Gemini (zero quota, dead), then Groq / Llama-3.3-70B. Groq turned out to be a
+dead end for a reason worth recording: its free tier caps tokens **per
+organisation, not per key**, so the three keys to hand all drew on one already
+spent daily pool and every call 429'd. Confirmed it by resolving the new key in
+the module and still seeing the identical org id in the 429. More keys from one
+org buy nothing.
+
+Added Mistral Large as a third cross-family judge (`search_adjudicator_mistral.py`),
+the twin of the Groq judge: same adjudicate signature, shared prompt builder,
+OpenAI-compatible endpoint. Mistral's free tier throttles to about one request a
+second, so the client paces calls and retries a 429 with exponential backoff; a
+hard quota still raises and is reported as an errored pair, never padded.
+Generalised `cross_family_backfill.py` to pick the judge with `--judge`
+{groq,mistral} and renamed its output fields `judge_*` with a `judge_family`
+receipt; Groq stays the default so its path and tests are unchanged. New tests
+for the Mistral adjudicator (parse, probe, answer-blind, throttle/retry) and the
+backfill generalisation; 25 pass.
+
+Result (`cross_family_exp1_mistral.jsonl`): Mistral re-judged the frozen 27-pair
+subsample, answer-given and position-swapped, on byte-identical evidence, so only
+the judge changed. All 27 judged, raw agreement 78%, Krippendorff alpha 0.648
+(nominal, four categories). Every one of the six disagreements is Opus calling
+`both_fail` where Mistral committed to a provider or a tie; where both judges
+committed to a provider they never disagreed (DIY 13, Tavily 3). So the
+same-family self-preference worry, that the Claude judge flatters Claude-extracted
+DIY evidence, does not hold: an independent family lands on the same verdicts.
+Honest note: Mistral was position-inconsistent on 6 of 27 pairs, more than Opus.
+
+Next: this is the figure to quote at writeup beside EXP-1's 89% decided-win
+share. The cross-family judge note belongs in the results methodology.
+
+---
+
 ## 2026-06-03 — Session 20b: experiment rules and the base-rate trap
 
 Wrote a universal rulebook for the experiments. The trigger was a concrete
