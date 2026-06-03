@@ -112,6 +112,7 @@ def generate_adversarial_queries(
     inp: VerifierInput,
     *,
     subtrio_id: str | None = None,
+    model: str | None = None,
 ) -> tuple[List[str], LLMUsage]:
     prompt_id = db_helpers.ensure_prompt_version(
         _QUERY_GEN_NAME, _QUERY_GEN_VERSION,
@@ -121,6 +122,7 @@ def generate_adversarial_queries(
         system=_QUERY_GEN_SYSTEM,
         user_message=_build_query_gen_message(inp),
         output_schema=_Queries,
+        model=model,
         max_tokens=200,
         condition_label="verifier_query_gen",
         prompt_version_id=prompt_id,
@@ -371,6 +373,7 @@ def _verify_catalogue(
 def run_verifier(
     inp: VerifierInput,
     *,
+    model: str | None = None,
     condition_label: str = "baseline",
     max_results_per_query: int = 5,
     provider: str = "auto",
@@ -382,6 +385,10 @@ def run_verifier(
 
     Failure modes are recorded on the returned object rather than raised;
     the caller writes a row either way to preserve the audit trail.
+
+    `model` selects the Claude model for both the adversarial query-gen
+    and the main verdict call (EXP-9 model variants); `None` keeps the
+    wrapper default (Sonnet).
 
     `on_step(event, payload)` is the walkthrough callback.
     """
@@ -420,7 +427,9 @@ def run_verifier(
     # ----- Stage 2: adversarial query generation -----
     on_step("query_gen_start", {})
     try:
-        queries, query_usage = generate_adversarial_queries(inp, subtrio_id=subtrio_id)
+        queries, query_usage = generate_adversarial_queries(
+            inp, subtrio_id=subtrio_id, model=model,
+        )
     except StructuredOutputError as exc:
         on_step("query_gen_failed", {"error": str(exc)})
         return VerifierRunResult(
@@ -492,6 +501,7 @@ def run_verifier(
             system=spec.system,
             user_message=user_message,
             output_schema=VerifierOutput,
+            model=model,
             max_tokens=1500,
             condition_label=condition_label,
             prompt_version_id=prompt_id,

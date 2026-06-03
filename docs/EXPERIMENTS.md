@@ -151,6 +151,11 @@ with retries counted (R9). Run on Malta primary, Netherlands secondary.
 
 Prerequisite: the Malta Researcher dispatch (search-quota gated), a committed
 `prompt-compressed` prompt version, and the `model-fallback` escalation path.
+The apparatus is built (2026-06-03): the compressed Researcher prompt
+(`--prompt-variant compressed`, its own `prompt_versions` row, baseline
+untouched), the `model-fallback` escalation (`--researcher-escalation-model` /
+`--verifier-escalation-model`), and the cold-cache switch (`--no-cache`) for the
+lean-vs-`cache-hot` split. Only the Malta dispatch remains.
 
 Result: pending.
 
@@ -162,7 +167,11 @@ verify, Opus adjudicate) on the same Malta pairs. The confirmatory comparison is
 tiered vs all-Sonnet on accuracy and cost; the accuracy-cost surface is the
 headline figure. Run on Malta primary, Netherlands secondary.
 
-Prerequisite: the Malta dispatch and per-agent model-override threading.
+Prerequisite: the Malta dispatch and per-agent model-override threading. The
+threading is built (2026-06-03): `--researcher-model` / `--verifier-model` /
+`--adjudicator-model` now all drive the LLM (previously only the Adjudicator
+did), and the served version ID is written to `claude_usage_log`. All four arms
+are runnable. Only the Malta dispatch remains.
 
 Result: pending.
 

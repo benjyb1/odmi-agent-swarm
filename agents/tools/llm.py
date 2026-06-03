@@ -163,7 +163,7 @@ def call_for_structured(
     system: str,
     user_message: str,
     output_schema: type[M],
-    model: str = DEFAULT_MODEL,
+    model: str | None = None,
     max_tokens: int = 2000,
     temperature: float = 0.0,
     timeout_s: float = 60.0,
@@ -181,7 +181,15 @@ def call_for_structured(
     (parsed_object, usage)
         `parsed_object` is an instance of `output_schema`.
         `usage` records tokens, wall-clock ms, and estimated cost.
+
+    `model=None` resolves to DEFAULT_MODEL, so a caller threading an
+    optional per-agent override (EXP-9) can pass it straight through
+    without re-implementing the default. The model the API actually
+    served is logged from `response.model`, so the resolved version ID
+    lands in claude_usage_log regardless of the alias requested.
     """
+    if model is None:
+        model = DEFAULT_MODEL
     client = _make_client()
     schema = output_schema.model_json_schema()
     schema_text = json.dumps(schema, indent=2)
