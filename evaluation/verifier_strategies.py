@@ -288,6 +288,15 @@ def build_candidates(limit: Optional[int] = None):
             stratum="INJ-fail", role="robustness", gold_label="should_fail",
             injected=True, **bb))
 
+    # Process primary (Malta) first, then secondary, then robustness. The run
+    # is gated on the Claude Max rolling window, so a quota-truncated run must
+    # land the primary endpoint before spending budget on the superseded
+    # robustness arm. The sort is stable, so within-role order (and the seeded
+    # draw) is preserved; order does not affect results, only which records
+    # survive truncation. Resume skips already-done candidates regardless.
+    _role_rank = {"primary": 0, "secondary": 1, "robustness": 2}
+    cands.sort(key=lambda c: _role_rank.get(c.role, 3))
+
     if limit:
         # Keep a mix across strata for a smoke run.
         by_stratum = defaultdict(list)
