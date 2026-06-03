@@ -94,6 +94,18 @@ which was never exercised. A concurrent session was building the search-experime
 apparatus in the same tree at the same time; the gate work is committed separately
 to keep the two clean. 335 non-live tests passing.
 
+Then closed the loop with D35: `inconclusive` is an abstention, so it triggers a
+retry (same 3-retry budget) and escalates to the Adjudicator if the budget runs
+out, rather than terminating the run. Deliberately did not add a "keep the best
+answer across retries" rule: that would pass through answers the Verifier
+refuted, and the Adjudicator (D32) is the proper place to overturn a refutation.
+This was the missing half. Where the gate fix alone recovered nothing, the early
+read of the re-run (`inconc_retry_v1`, on top of D34) is the opposite: the first
+three gate-collapse pairs all flipped from `inconclusive` to the correct `yes`
+(I11, I5, I8-a FR), because the Researcher now retries past its R1 abstention and
+the fixed gate accepts the `yes`. The run was interrupted at three pairs and is
+being completed. 368 non-live tests passing.
+
 ## 2026-06-02 — Session 17: catalogue-metrics tool for the computed Quality questions (D30)
 
 The Quality questions that ask for a share of the national catalogue ("what

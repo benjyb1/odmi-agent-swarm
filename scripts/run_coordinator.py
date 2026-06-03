@@ -662,6 +662,19 @@ def _researcher_output_from_row(row: dict) -> ResearcherOutput:
     )
 
 
+def _is_abstention(answer: Optional[str]) -> bool:
+    """True if the answer is the `inconclusive` abstention literal.
+
+    `not_applicable` is a valid determination and is NOT an abstention.
+    """
+    return bool(answer) and answer.strip().lower() == "inconclusive"
+
+
+def _should_accept_verifier_pass(verdict: str, answer: Optional[str]) -> bool:
+    """A Verifier `pass` only finalises a real answer, never an abstention."""
+    return verdict == "pass" and not _is_abstention(answer)
+
+
 def coordinate(
     *,
     question_id: str,
@@ -865,6 +878,25 @@ def coordinate(
                   f"({r_result.output.answer_confidence:.2f}) "
                   f"£{(r_result.cumulative_cost_usd or 0) * 0.79:.4f}", flush=True)
 
+        # An `inconclusive` answer is an abstention, not a result. Do not
+        # let it run the Verifier or terminate the loop. Retry (the
+        # accumulated queries already diverge the search) with an
+        # abstention note, until the retry budget is spent. On the final
+        # attempt fall through so the Verifier still runs (feeding the
+        # Adjudicator) but the accept-guard below refuses to accept it.
+        if _is_abstention(r_result.output.answer) and attempt < max_retries:
+            feedback = VerifierFeedback(
+                rejection_reason=(
+                    "The Researcher returned `inconclusive`, which is an "
+                    "abstention, not an answer. Search differently and commit "
+                    "to a label from the allowed set if the evidence supports "
+                    "one."
+                ),
+            )
+            print(f"  R{attempt+1} inconclusive -> abstention, retrying",
+                  flush=True)
+            continue
+
         # --- Verifier stage ---
         _upsert_subtrio_status(
             subtrio_id=subtrio_id, batch_id=batch_id,
@@ -951,7 +983,9 @@ def coordinate(
               f"£{(v_result.cumulative_cost_usd or 0) * 0.79:.4f}", flush=True)
 
         # --- Verdict branching ---
-        if v_result.output.verdict == "pass":
+        if _should_accept_verifier_pass(
+            v_result.output.verdict, last_researcher_output.answer
+        ):
             final_status = "accepted_by_verifier"
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,

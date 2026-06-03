@@ -764,6 +764,38 @@ text into ~500-char windows and rerank against the query, as Tavily advanced
 does) is the lever to push past 80% unambiguously; deferred as diminishing-return
 against the sample noise and the dominant deny-list ceiling.
 
+### D35: `inconclusive` is an abstention, not a terminal answer
+
+**Date:** 2026-06-02.
+
+The D34 validation showed the gate fix alone recovered no pairs. With the false
+rejection gone, the Researcher answered `inconclusive` at R1 and the Verifier
+accepted the abstention, so the loop terminated before any retry. An
+`inconclusive` is not a result; it means the agent could not determine the
+answer. Treating it as a verified answer ended the search early.
+
+The coordinator now treats `inconclusive` as a retry trigger, bounded by the
+existing 3-retry budget (no new cap). On a non-final attempt an inconclusive
+answer short-circuits to a retry before the Verifier runs, which saves the
+Verifier call, carrying an abstention note plus the D33 query divergence so the
+retry searches differently. If the budget is exhausted while still inconclusive,
+the pair escalates to the Adjudicator; the Verifier still runs on the final
+attempt so the Adjudicator has material to weigh. Two pure helpers,
+`_is_abstention` and `_should_accept_verifier_pass`, carry the rule and are
+unit-tested. `not_applicable` is a valid determination and is untouched.
+
+This deliberately does not keep a "best answer" across retries. An answer the
+Verifier refuted must not be passed through, or the verification step means
+nothing. A refuted-but-correct answer has a legitimate home in the Adjudicator
+(D32), which is the only place a Verifier refutation is overturned.
+
+Receipt (forward validation, experiment_id `inconc_retry_v1`, on top of D34): of
+the first three gate-collapse pairs re-run before the run was interrupted, all
+three recovered from `inconclusive` to the correct `yes` (I11 FR at retry 1, I5
+FR at retry 1, I8-a FR at retry 2), against 0 of 11 under the gate fix alone. The
+Researcher retries past its R1 abstention and the D34 gate accepts the faithful
+`yes`. Full re-run of the 15-pair set pending. 368 non-live tests passing.
+
 ### D34: Verification gate checks the quote against retrieved snippets, not a live re-fetch
 
 **Date:** 2026-06-02.
