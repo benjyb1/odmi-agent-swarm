@@ -617,7 +617,7 @@ rule, so the breach is named and fixed rather than buried.
 
 | EXP | R4 base-rate | Other notable | Verdict |
 |---|---|---|---|
-| EXP-1 (done, FR) | **Breach on the E1 accuracy co-endpoint** (FR binary 99% one class); E2 provider win-share is base-rate-robust | R6 Gemini reliability pending quota (disclosed) | Headline (E2, DIY 89% of 55 decided) **stands**; the E1 accuracy figure must carry the 99% baseline and not be read as a swarm-accuracy claim |
+| EXP-1 (done, FR) | **Breach on the E1 accuracy co-endpoint** (FR binary 99% one class); E2 provider win-share is base-rate-robust | R6 reliability **done** 2026-06-03 via Mistral Large (Gemini dead, Groq per-org cap spent): 78% agreement, alpha 0.648, disagreements all Opus `both_fail` vs a commitment | Headline (E2, DIY 89% of 55 decided) **stands**; cross-family reliability now satisfies R6; the E1 accuracy figure must carry the 99% baseline and not be read as a swarm-accuracy claim |
 | EXP-2a (queued, FR) | Breach: reuses FR answerable set for an accuracy-held claim | Cost endpoint is base-rate-independent | Move the accuracy claim to Malta; keep FR only for the cost mechanics |
 | EXP-2b (planned, EE) | Breach: Estonia is degenerate (98%) and low-resource | Conflates "thin web" with "low resource" | Re-anchor to Malta for the trade-off; use a balanced low-resource country (IS) only as the declared language-confound contrast |
 | EXP-3 (planned, EE/LT/IS) | **Breach: LT has zero negative binary golds**, so the "discriminating control" cannot discriminate a false positive on binary; EE degenerate | E2 win-share is base-rate-robust; the maturity x language claim (R7) leans on the broken binary accuracy | Restrict E1 to non-binary shapes where the gold varies, or re-anchor; keep E2 as the provider comparison |
@@ -697,3 +697,15 @@ Two findings carry weight for the writeup.
   `tests/test_prompt_compressed.py`. Both EXP-8 and EXP-9 are now runnable the
   moment the Malta pairs land; the dispatch (item 9, search-quota-gated) is the
   only remaining blocker. No runs in this commit.
+- 2026-06-03: EXP-1 cross-family reliability (R6, section 4) run and closed. The
+  pre-registered Gemini judge stayed dead (zero quota); the Groq / Llama-3.3-70B
+  substitute is blocked because Groq caps tokens per organisation, not per key,
+  so one spent daily pool 429s every key in the org. The judge of record for the
+  reliability arm is therefore **Mistral Large**, a third independent family on a
+  separate quota. It re-judged the frozen, seeded 27-pair subsample answer-given
+  and position-swapped on byte-identical evidence (only the judge changed):
+  raw agreement 78%, Krippendorff alpha 0.648 (nominal, four categories), all six
+  disagreements Opus `both_fail` vs a Mistral commitment, none provider-vs-provider.
+  Harness `evaluation/cross_family_backfill.py --judge mistral`, result
+  `evaluation/results/cross_family_exp1_mistral.jsonl`. This is a judge
+  substitution, not a change to the sample, endpoints, or statistics (R1 holds).
