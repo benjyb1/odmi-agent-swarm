@@ -88,6 +88,15 @@ floor, report:
 - the **precision** of the newly committed answers (correct / recovered),
 - the false-positive rate on Malta's negative (`no`) golds.
 
+The 0.65 floor governs only the Verifier-pass commit path
+(`_should_accept_verifier_pass`); the Adjudicator commits its answer regardless of
+the floor (D32), so on the current data several pairs already commit below 0.65 via
+adjudication. The sweep therefore measures recovery of **Verifier-pass
+abstentions** specifically: a committed pair (adjudicator commits included) stays
+committed, and only an abstention is floor-recoverable. The harness replays this
+faithfully and reports a check that no abstention already carries a candidate at or
+above the baseline floor.
+
 **Pre-specified decision rule** (so the floor is not chosen post hoc): adopt a
 lower floor only if, among the newly committed answers, precision is at least
 0.80 **and** the false-positive rate on negative golds does not exceed the
@@ -151,3 +160,13 @@ stored data with no quota. The fetch-403 retry (Lever 2) needs non-Tavily search
   confidence-floor recovery sweep). Motivated by a pilot on the in-progress
   `exp6_malta` dispatch (8 match / 5 abstain / 0 wrong; abstentions 7 below-floor,
   3 fetch-4xx). No results at commit time.
+- 2026-06-03 (later): built the harness (`evaluation/malta_failure_audit.py`, with
+  `tests/test_malta_failure_audit.py`). While building it, found the 0.65 floor
+  governs only the Verifier-pass path; Adjudicator commits bypass it (D32). The
+  Phase B model is clarified above: committed pairs stay committed, only
+  abstentions are floor-recoverable. First **live partial** (n=17, dispatch still
+  running, so the snapshot grows): Phase A is fixable-dominated (4 fetch-4xx, 1
+  below-floor, 1 wrong answer); Phase B recovers 3 correct answers at floor 0.50
+  with no new false positives, so the pre-set rule **adopts 0.50 on this partial**.
+  Reported as a partial with achieved n, not the final result; re-run once the
+  Malta dispatch completes.
