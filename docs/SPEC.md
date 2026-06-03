@@ -1151,7 +1151,9 @@ Status (detail in `docs/EXPERIMENTS.md`):
 - **EXP-4/EXP-5** (Brave, then the four-provider A/B): one judge run yields both;
   interrupted near 882 of ~1080 verdicts, resumable from the cache.
 - **EXP-6** (verifier strategy discrimination): designed and partially run (3/89).
-- **EXP-7** (retry chaining): planned, parked.
+- **EXP-7** (retry chaining): code built behind `--chained` (default off, baseline
+  byte-identical) and pre-registered (`EXPERIMENTS_CHAINING.md`, Malta primary);
+  run pending the Malta dispatch and quota.
 
 ### Built (verified)
 
@@ -1313,12 +1315,64 @@ Rationale: the swarm's headline contribution is an accuracy-vs-cost surface. A
 surface measured on a degenerate country would be indistinguishable from
 majority-class guessing, so the base-rate rule protects the central result.
 
+### D39: EXP-7 chained retry arm, built behind a default-off flag
+
+**Date:** 2026-06-03.
+
+The retry loop spends up to eight calls per pair but treats each as an
+independent shot. The Verifier searches the web every round and often finds real
+counter-evidence; the loop keeps its verdict and bins the rest. D33 carries
+queries and the rejection reason forward, D34 persists snippets, D37 applies the
+commit floor, but no round sees the evidence the earlier rounds gathered. EXP-7
+tests whether chaining the evidence across the loop recovers more correct answers
+per call than independent retries, without raising the false-positive rate.
+
+The chained arm is built and gated behind `--chained` (default off), so
+production and the EXP-8/9 baseline are byte-identical to the independent-retry
+loop. Three changes, all flag-gated:
+
+- The Verifier's counter-evidence (`counter_evidence_quote` / `counter_source_url`)
+  is fed back into `ResearcherInput` on retry, not just the verdict and a query
+  (`VerifierFeedback` extended with two optional fields, both default None).
+- An evidence corpus accumulates across rounds (a new `EvidenceItem` model; the
+  snippets are already persisted under D34) and is carried forward via
+  `ResearcherInput.prior_evidence`. The coordinator merges with de-dup on
+  (URL, snippet prefix) and a 40-item cap, in pure helpers
+  (`_evidence_from_researcher`, `_evidence_from_verifier`, `_merge_evidence`).
+- The Adjudicator synthesises over the whole corpus
+  (`AdjudicatorInput.evidence_corpus`), committing only above the D37 floor and
+  abstaining otherwise. The floor and abstention rules are unchanged across both
+  arms; the treatment only changes what each call sees, never the commit bar.
+
+The carried evidence and its using-instruction travel in the per-call user
+message, not the system prompt, so `prompt_versions` rows are identical across
+arms and an empty corpus renders byte-for-byte as the pre-EXP-7 prompt. The flag
+is threaded through `dispatch_subtrios.py` → `run_coordinator.py` as `--chained`.
+Offline tests (`tests/test_chained_evidence.py`, 18 cases) pin the three
+properties: the chained path carries evidence forward, the baseline path is
+byte-identical, and the flag defaults off. 418 non-live tests passing.
+
+Pre-registered in `docs/EXPERIMENTS_CHAINING.md` under the universal rules
+(`EXPERIMENTS_PROTOCOL.md` R1 to R12): Malta primary per R4 (no-gold-rich, so a
+false `yes` shows up), baseline vs chained, balance-aware endpoints with the
+false-positive rate as a co-primary, paired McNemar and Wilcoxon, one
+confirmatory joint claim (balanced-accuracy non-decrease at a non-increased
+false-positive rate). The run is gated only on the Malta dispatch (search quota,
+shared with EXP-6/8/9) and Claude headroom; the code and pre-registration are
+done.
+
+Rationale: this is an optimisation experiment on the loop itself, so the arm has
+to be runnable yet must not perturb the baseline it is measured against. A
+default-off flag with byte-identical baseline prompts is the only way to keep the
+EXP-8/9 baseline and production untouched while the chained arm waits on quota.
+
 ---
 
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-03 (chaining) | D39 added: EXP-7 chained retry arm built behind `--chained` (default off, baseline byte-identical). New `EvidenceItem` model; `VerifierFeedback` gains `counter_evidence_quote` / `counter_source_url` (default None); `ResearcherInput.prior_evidence` and `AdjudicatorInput.evidence_corpus` added. Coordinator accumulates a de-duped, 40-capped evidence corpus across rounds when chained, feeds the Verifier's counter-evidence back to the Researcher, and adjudicates over the whole corpus; the D37 floor and abstention rules are untouched. Carried evidence rides in the user message, not the system prompt, so `prompt_versions` are stable and an empty corpus renders byte-for-byte as before. Flag threaded `dispatch_subtrios.py` → `run_coordinator.py`. Pre-registered in `docs/EXPERIMENTS_CHAINING.md` (Malta primary per R4, false-positive rate as a co-primary, paired McNemar/Wilcoxon, one confirmatory joint claim); EXP-7 status board updated. New `tests/test_chained_evidence.py` (18 cases); 418 non-live passing. Run gated only on the Malta dispatch (search quota) and Claude headroom. |
 | 2026-06-03 (experiment rules) | D38 added: a universal experiment checklist (R1 to R12) in `EXPERIMENTS_PROTOCOL.md` section 0, headed by R4, the base-rate rule that bars a degenerate evaluation country and pins selection to minority-class share subject to a well-resourced-language constraint (Malta primary, Netherlands secondary; the No-share table is computed from `ground_truth` over binary yes/no golds). Pre-registered EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants) under the rules, with registry rows and Malta-dispatch / condition-threading pre-run requirements (items 9 to 11), all gated on search quota. Retargeted EXP-6 to Malta-primary (France/injected demoted to a robustness arm; `EXPERIMENTS_VERIFIER.md` and `evaluation/verifier_strategies.py` strata updated, the partial superseded not deleted). Added protocol section 12, a rubric audit that flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider result stands) and EXP-3's Lithuania control as undiscriminating on binary. `build_candidates` verified to degrade gracefully (empty Malta primary, 82-candidate robustness arm) until the dispatch lands. No experiment runs in this change. |
 | 2026-06-02 (langgraph removal) | D3 amended from "LangGraph for the Phase 2 agent swarm" to "Plain Python state machine", to match the shipped `run_coordinator.py`. The earlier rationale (graph framework for conditional edges) and the record of the deviation are retained. Stale "runs on LangGraph" claims corrected across METHODOLOGY §5/§8, AGENT_DESIGN §1/§5/§8 (deviation banner added at §5), REPORT_PRELIM objectives/plan/milestones, and PROGRESS_SLIDES stack line. The dead `langgraph`, `langchain-anthropic`, and `langchain-community` dependencies removed from `pyproject.toml` (no Python file imports them; the LLM interface uses the `anthropic` SDK directly). `anthropic>=0.87` promoted to a direct dependency, since `agents/tools/llm.py` imports it and it was only present transitively via `langchain-anthropic`. Lockfile re-resolved; 335 tests pass. Kept deliberately: the "why we dropped it" record (CLAUDE.md, PROJECT_LOG, `run_coordinator.py` header) and the related-work citations in REPORT_PRELIM §2.2 and references.bib. |
 | 2026-06-02 (retry/finalisation) | D32 + D33 added, both prompted by a failure-mode analysis of the 43 ground-truth disagreements. D32: finalisation now trusts `adjudicator_answer` for every resolved verdict instead of re-deriving from the verdict label; the logic moved into a pure helper `_finalise_after_adjudication`. Four pairs flip `differ` to `match` on a stored-row replay (P26-b FR, PT14 FR, I16 EE, I17 EE), each an Adjudicator `yes` previously overwritten with `inconclusive`. D33: retry queries forced to diverge; the query generator now receives the Verifier's rejection reason, suggested query, and prior queries with an instruction to vary (`_QUERY_GEN_VERSION` 1 to 2), `ResearcherInput.previous_search_queries` added, coordinator accumulates queries across attempts; first-attempt path unchanged. Defaults and non-retried runs behave as before. New `tests/test_finalise_after_adjudication.py` and `tests/test_query_gen_divergence.py`; 297 non-live passing. The dominant remaining loss (the 67% substring-gate failure that decays answers to `inconclusive`) is diagnosed but not fixed here; it needs snippet persistence first. |

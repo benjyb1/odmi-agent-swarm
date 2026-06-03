@@ -138,8 +138,48 @@ def _verifier_feedback_block(input: ResearcherInput) -> str:
         parts.append(f"Suggested search query: {fb.suggested_search_query}")
     if fb.failed_source_url:
         parts.append(f"Source URL that failed: {fb.failed_source_url}")
+    # EXP-7 chained arm: the Verifier's own counter-evidence, handed back so
+    # the Researcher can weigh it rather than rediscover it. Only present when
+    # the chained arm populated these fields; baseline retries leave them None.
+    if fb.counter_evidence_quote:
+        parts.append(
+            f"Counter-evidence the Verifier found: \"{fb.counter_evidence_quote}\""
+        )
+    if fb.counter_source_url:
+        parts.append(f"Counter-evidence source: {fb.counter_source_url}")
     parts.append("")
     return "\n".join(parts)
+
+
+def _prior_evidence_block(input: ResearcherInput) -> str:
+    """EXP-7 chained arm: the accumulated evidence corpus from prior rounds.
+
+    Renders nothing when `prior_evidence` is empty, which is always the case
+    in the baseline (independent-retry) loop, so the user message is
+    byte-identical there. The using instruction lives in this block rather
+    than the system prompt so the system prompt, and therefore the registered
+    prompt version, stays unchanged across both arms.
+    """
+    items = input.prior_evidence
+    if not items:
+        return ""
+    lines = [
+        "",
+        "--- Evidence gathered on earlier attempts in this investigation ---",
+        "This is the running corpus from previous rounds (both your earlier",
+        "searches and the Verifier's). Use it as additional context alongside",
+        "the fresh snippets above. You must still cite a source URL that",
+        "appears in the snippets you were given on this attempt.",
+        "",
+    ]
+    for i, ev in enumerate(items, start=1):
+        snippet = ev.snippet[:300] + ("..." if len(ev.snippet) > 300 else "")
+        src = ev.source_url or "(no URL)"
+        lines.append(
+            f"  [{i}] (round {ev.round_index}, {ev.origin}) {src}\n      {snippet}"
+        )
+    lines.append("")
+    return "\n".join(lines)
 
 
 def _answer_space_block(input: ResearcherInput) -> str:
@@ -188,5 +228,5 @@ Search queries Python ran on your behalf:
 
 Web search results:
 {search_block}
-{_verifier_feedback_block(input)}
+{_verifier_feedback_block(input)}{_prior_evidence_block(input)}
 Return your answer as JSON matching the ResearcherOutput schema."""

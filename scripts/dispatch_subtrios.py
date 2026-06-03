@@ -195,6 +195,7 @@ def dispatch(
     max_results_per_query: int = 5,
     num_queries: Optional[int] = None,
     no_cache: bool = False,
+    chained: bool = False,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: Optional[str] = None,
@@ -321,6 +322,10 @@ def dispatch(
                 # reads so its measured search cost is not understated by a
                 # prior condition's cached hits.
                 cmd += ["--no-cache"]
+            if chained:
+                # EXP-7 evidence-accumulation arm; default off, so the
+                # baseline batch is byte-identical to the independent loop.
+                cmd += ["--chained"]
             if experiment_id:
                 cmd += ["--experiment-id", experiment_id]
             if condition_label:
@@ -524,6 +529,13 @@ def main() -> int:
                              "for every pair in this batch so each condition "
                              "pays its own full search cost. Forwarded to each "
                              "run_coordinator subprocess. Default OFF.")
+    parser.add_argument("--chained", action="store_true",
+                        help="EXP-7 evidence-accumulation arm: feed the "
+                             "Verifier's counter-evidence back to the "
+                             "Researcher, carry a corpus across rounds, and "
+                             "adjudicate over the whole corpus. Forwarded to "
+                             "each run_coordinator subprocess. Default OFF, so "
+                             "the baseline batch is byte-identical.")
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
                         help="Tag every child row with this experiment_id (D27). "
@@ -563,6 +575,7 @@ def main() -> int:
         max_results_per_query=args.max_results_per_query,
         num_queries=args.num_queries,
         no_cache=args.no_cache,
+        chained=args.chained,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
         condition_label=args.condition_label,

@@ -209,4 +209,7 @@ on the full FR non-Quality stratum (90 pairs) DIY wins 89% of the 55 decided
 pairs (Wilson CI [78, 95], p < 1e-4), with answer-blind agreement 67% and the
 cross-family (Groq / Llama-3.3-70B) check pending its daily token quota.
 EXP-4/5 are mid-run and resumable, EXP-2a/2b queued, EXP-3 skipped, EXP-6
-partial (3/89), EXP-7 parked.
+partial (3/89). EXP-7 (retry chaining): the chained arm is built behind
+`--chained` (default off, so production and the EXP-8/9 baseline are
+byte-identical) and pre-registered (D39, `docs/EXPERIMENTS_CHAINING.md`,
+Malta primary); the run is gated only on the Malta dispatch and Claude quota.

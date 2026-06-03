@@ -8,6 +8,47 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20c: EXP-7 chained retry arm (built, gated, pre-registered)
+
+Built the chaining arm for EXP-7. The loop spends up to eight calls per pair but
+treats each retry as a fresh shot: the Verifier searches the web every round,
+finds real counter-evidence, and the loop keeps only its verdict and bins the
+rest. D33 already carries queries and the rejection reason forward and D34
+persists the snippets, so the evidence was being thrown away on the floor next to
+the persistence that could have carried it. EXP-7 asks whether chaining it
+recovers more correct answers per call without raising the false-positive rate.
+
+Three changes, all behind a `--chained` flag that defaults off: feed the
+Verifier's counter-evidence back into the Researcher on retry (not just the
+verdict and a query), accumulate a de-duped evidence corpus across rounds and
+carry it forward, and have the Adjudicator synthesise over the whole corpus. The
+D37 commit floor and the abstention rules are untouched in both arms; the
+treatment only changes what each call sees, never the bar it has to clear. That
+separation is what lets a recovery gain be read as better evidence use rather
+than a lowered threshold.
+
+The hard constraint was that the EXP-8/9 baseline and production must not move,
+because they are measured against this same loop and another tab is about to run
+them on Malta. So the carried evidence rides in the per-call user message, not the
+system prompt: `prompt_versions` rows stay put, and an empty corpus renders
+byte-for-byte as the old prompt. Wrote `tests/test_chained_evidence.py` (18 cases)
+to pin exactly that, plus that the corpus carries forward when populated and that
+the flag defaults off. 418 non-live tests pass.
+
+Pre-registered in `docs/EXPERIMENTS_CHAINING.md` under R1 to R12: Malta primary
+(no-gold-rich, so a false `yes` is visible), baseline vs chained, balance-aware
+endpoints with the false-positive rate as a co-primary, paired McNemar and
+Wilcoxon, one confirmatory joint claim. The run is gated only on the Malta
+dispatch (search quota, shared with EXP-6/8/9) and Claude headroom. Logged as D39;
+EXP-7 status board and the SPEC current-status block updated. No swarm was
+dispatched: pure code and docs, so this ran fully parallel to the Malta tab.
+
+Next: when the Malta dispatch lands, write the small analysis harness (the
+section 6 stats already live in `evaluation/stats.py`) and run the two arms in
+sequence on the same Malta pair set.
+
+---
+
 ## 2026-06-03 — Session 20b: experiment rules and the base-rate trap
 
 Wrote a universal rulebook for the experiments. The trigger was a concrete
