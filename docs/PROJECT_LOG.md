@@ -103,8 +103,13 @@ This was the missing half. Where the gate fix alone recovered nothing, the early
 read of the re-run (`inconc_retry_v1`, on top of D34) is the opposite: the first
 three gate-collapse pairs all flipped from `inconclusive` to the correct `yes`
 (I11, I5, I8-a FR), because the Researcher now retries past its R1 abstention and
-the fixed gate accepts the `yes`. The run was interrupted at three pairs and is
-being completed. 368 non-live tests passing.
+the fixed gate accepts the `yes`. The full re-run confirmed it: 12 of 14 pairs
+recovered to match (P25 FR errored), against 2 of 14 under the gate fix alone and
+0 in the original run. The two misses are honest: PT33 FR stayed inconclusive
+through the Adjudicator (its ground-truth answer is a compound string), and PT14
+FR committed to `no` where the truth is `yes`, the cost of forcing a commitment.
+So the gate fix was necessary but inert on its own; the abstention rule was the
+half that moved the numbers, 2/14 to 12/14. 368 non-live tests passing.
 
 ## 2026-06-02 — Session 17: catalogue-metrics tool for the computed Quality questions (D30)
 

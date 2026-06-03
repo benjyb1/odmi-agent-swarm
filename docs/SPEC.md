@@ -789,12 +789,17 @@ Verifier refuted must not be passed through, or the verification step means
 nothing. A refuted-but-correct answer has a legitimate home in the Adjudicator
 (D32), which is the only place a Verifier refutation is overturned.
 
-Receipt (forward validation, experiment_id `inconc_retry_v1`, on top of D34): of
-the first three gate-collapse pairs re-run before the run was interrupted, all
-three recovered from `inconclusive` to the correct `yes` (I11 FR at retry 1, I5
-FR at retry 1, I8-a FR at retry 2), against 0 of 11 under the gate fix alone. The
-Researcher retries past its R1 abstention and the D34 gate accepts the faithful
-`yes`. Full re-run of the 15-pair set pending. 368 non-live tests passing.
+Receipt (forward validation, experiment_id `inconc_retry_v1`, on top of D34; 14
+of 15 pairs finalised, P25 FR errored without a final row): 12 of 14 recovered to
+match, against 2 of 14 under the gate fix alone (D34) and 0 in the original main
+run. Gate-collapse pairs the gate fix had left at `inconclusive` now resolve to
+the correct `yes`, reached across retries (rt1 to rt3) and, for PT11 and PT12 EE,
+via the Adjudicator once the budget was spent. Two did not recover: PT33 FR
+stayed `inconclusive` through the Adjudicator (its ground-truth string is itself
+a compound), and PT14 FR committed to `no` where the truth is `yes`. That last
+one is the honest cost of forcing commitment: a wrong answer that passed the
+Verifier rather than an abstention. On this set the gate fix plus the abstention
+rule moved recovery from 2/14 to 12/14. 368 non-live tests passing.
 
 ### D34: Verification gate checks the quote against retrieved snippets, not a live re-fetch
 
