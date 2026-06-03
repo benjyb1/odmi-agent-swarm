@@ -385,7 +385,11 @@ def _freeze_evidence(cand: Candidate, ro: ResearcherOutput):
     except StructuredOutputError:
         queries, qusage = [], None
     try:
-        results = search_many(queries, max_results_per_query=5, provider="auto") if queries else []
+        # Pinned to DIY (Serper + trafilatura): Tavily's quota is exhausted, and
+        # "auto" would attempt Tavily first and fail once per candidate before
+        # falling back. Pinning keeps the frozen evidence consistent across the
+        # whole run and honours the EXP-6 search constraint.
+        results = search_many(queries, max_results_per_query=5, provider="diy") if queries else []
     except Exception as e:
         print(f"   ! search failed: {type(e).__name__}: {str(e)[:100]}")
         results = []
