@@ -16,6 +16,7 @@ run) · `running` · `done`.
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
+| EXP-7 | Retry chaining: accumulate evidence across the loop | planned | high-resource-language, low-maturity country first (false-positive risk) | pending |
 
 ---
 
@@ -106,5 +107,49 @@ Result: pending.
 
 The parked plan: a paired A/B across five providers, agreed as the June
 starting point. Scope and provider list to be confirmed before running.
+
+Result: pending.
+
+## EXP-7: Retry chaining / evidence accumulation (planned, future)
+
+Up to eight calls run per pair (four Researcher, four Verifier across the retry
+budget), but they are independent shots. The Verifier searches the web every
+round and often finds real evidence, then the loop keeps only its verdict and
+bins the evidence. The Researcher on retry 3 does not know what the Verifier
+turned up on rounds 1 and 2. The calls are spent, the findings are thrown away.
+
+Idea: chain the calls into one cumulative investigation.
+- Feed the Verifier's independent evidence (its snippets and counter-evidence)
+  back to the Researcher on retry, not just the verdict and a suggested query.
+- Accumulate an evidence corpus across rounds (snippets are already persisted,
+  D34) and carry it forward, so each round sees everything found so far.
+- Let the Adjudicator synthesise over the whole corpus as the final call,
+  committing only when the evidence supports a confident label (the D37 floor)
+  and abstaining honestly otherwise.
+
+Hypothesis: chaining recovers more correct answers per call than independent
+retries, without raising the false-positive rate.
+
+Conditions: baseline (current independent retries, D33 / D37) vs chained.
+Metrics per arm: recovery (match against ground truth), false-positive rate
+(committed but wrong), abstention rate, and calls per resolved pair.
+
+Where to run, which matters as much as the design:
+- Not a yes-heavy country. On France (85% yes) a recovery number cannot be told
+  apart from majority-class guessing, the D35 / D37 lesson. The set must carry
+  plenty of no-gold pairs so a false `yes` is visible.
+- First run on a HIGH-resource-language, low-maturity country, so search and
+  model capability are not the bottleneck and the result isolates the chaining
+  effect rather than language difficulty. Malta is the leading candidate:
+  English is an official language and the open-data ecosystem is largely in
+  English, and it has many no-gold pairs (about 30). Defer the lower-resource
+  no-heavy countries (BA, MK, ME, BG, IS) to a follow-on so a poor result there
+  is not blamed on language.
+
+Prerequisite: the honest validation set (no-gold plus band pairs) must exist
+first, both to baseline the current D34 / D37 code and to measure chaining
+against it.
+
+Status: planned, not started. Parked as a future experiment.
 
 Result: pending.

@@ -834,6 +834,11 @@ one is the honest cost of forcing commitment: a wrong answer that passed the
 Verifier rather than an abstention. On this set the gate fix plus the abstention
 rule moved recovery from 2/14 to 12/14. 368 non-live tests passing.
 
+Caveat (added under D37): this set is yes-heavy (14 of 15 yes-gold) on an
+85%-yes country, so 12/14 cannot be distinguished from majority-class guessing.
+The number is not trustworthy on its own; see D37 and the honest-validation
+note.
+
 ### D34: Verification gate checks the quote against retrieved snippets, not a live re-fetch
 
 **Date:** 2026-06-02.
