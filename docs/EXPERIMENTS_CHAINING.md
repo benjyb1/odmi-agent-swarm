@@ -227,11 +227,19 @@ Result: the finalised pairs in the phase2 tables plus an analysis JSONL under
    the DB yet. Gated on search quota, the same constraint as the parked D28 Phase
    3 re-dispatch. Do not assume it has run.
 2. **An analysis harness** that reads the two `condition_label`s, computes the
-   section 6 statistics (Wilson, McNemar, Wilcoxon are already in
-   `evaluation/stats.py`), and writes the JSONL. To be committed and unit-tested
-   before the run, the same standard as the search experiments
+   section 6 statistics, and writes the JSONL. **Built and unit-tested**
+   (`evaluation/chaining_analysis.py`, `tests/test_chaining_analysis.py`, 15
+   cases): a pure layer (PairOutcome classifiers, `arm_summary`,
+   `paired_comparison` with paired McNemar on recovery and on the
+   committed-but-wrong indicator, Wilcoxon on calls, and a mechanical joint
+   verdict against the 0.05 false-positive margin) over a thin DB layer that
+   reuses `_MATCH_STATUS_SQL` so recovery is classified exactly as elsewhere.
+   Balanced accuracy is reported only when both binary classes are present, so a
+   one-class sample cannot be passed off as balance-aware (R4). Committed and
+   unit-tested before the run, the same standard as the search experiments
    (`EXPERIMENTS_PROTOCOL.md` section 9).
-3. **Resume-path scoping** verified so no Researcher row crosses arms.
+3. **Resume-path scoping** verified so no Researcher row crosses arms (still to
+   confirm before the run).
 
 Both arms draw on the same Claude rate limit, so they run in sequence within the
 experiment, not in parallel (the `EXPERIMENTS_PROTOCOL.md` section 10 constraint).
@@ -245,3 +253,9 @@ experiment, not in parallel (the `EXPERIMENTS_PROTOCOL.md` section 10 constraint
   gated behind `--chained` (default off) so production and the EXP-8/9 baseline
   are byte-identical. No run at commit time; gated on the Malta dispatch (search
   quota) and Claude headroom.
+- 2026-06-03 (later): built the analysis harness
+  (`evaluation/chaining_analysis.py`, `tests/test_chaining_analysis.py`),
+  pre-run requirement 2, ahead of the run. Pure stats layer over a thin DB layer
+  reusing `_MATCH_STATUS_SQL`; the joint confirmatory verdict is computed
+  mechanically against the 0.05 false-positive margin. Still gated on the Malta
+  dispatch and resume-path scoping (requirements 1 and 3).

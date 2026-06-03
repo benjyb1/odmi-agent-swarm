@@ -43,9 +43,20 @@ dispatch (search quota, shared with EXP-6/8/9) and Claude headroom. Logged as D3
 EXP-7 status board and the SPEC current-status block updated. No swarm was
 dispatched: pure code and docs, so this ran fully parallel to the Malta tab.
 
-Next: when the Malta dispatch lands, write the small analysis harness (the
-section 6 stats already live in `evaluation/stats.py`) and run the two arms in
-sequence on the same Malta pair set.
+Then built the analysis harness too (`evaluation/chaining_analysis.py`,
+pre-run requirement 2), so it is ready and tested before the data exists rather
+than thrown together after. A pure stats layer (PairOutcome classifiers, the
+per-arm summary, and a paired comparison that runs McNemar on both recovery and
+the committed-but-wrong indicator, Wilcoxon on calls, and a mechanical joint
+verdict against the 0.05 false-positive margin) sits over a thin DB layer that
+reuses `_MATCH_STATUS_SQL`, so recovery means the same thing here as on the
+dashboard. Balanced accuracy is reported only when both binary classes are
+present, so a one-class sample cannot masquerade as balance-aware. 15 new tests,
+including a temp-SQLite round trip for the arm split and call counting.
+
+Next: when the Malta dispatch lands, confirm the resume path does not let a
+Researcher row cross arms, then run baseline and chained in sequence on the same
+Malta pair set and point the harness at the experiment_id.
 
 ---
 
