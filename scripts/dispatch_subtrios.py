@@ -1,4 +1,4 @@
-"""Dispatch N parallel Coordinator subprocesses with budget enforcement.
+"""Dispatch N parallel Coordinator subprocesses.
 
 The higher-order entry point. Spawns one `run_coordinator.py` subprocess
 per (question, country) pair, up to `--parallel` at a time. Holds a
@@ -47,26 +47,21 @@ from dashboard.lib.currency import format_gbp
 COLD_START_COST_PER_SUBTRIO = 0.10
 DEFAULT_RETRY_UPLIFT = 1.2
 
-# Rolling-window soft cap. Used only for the budget calculation; the
-# real cap is whatever Claude Max enforces. Tunable per Q-DASH-1.
-DEFAULT_SOFT_LIMIT_USD = 5.00  # ~$5 per 5-hour window as a sensible default
-
-# Low-water mark: stop spawning new subtrios when the rolling cost
-# exceeds (1 - low_water) of the soft limit. Per spec §6.1 / §9.2.
-LOW_WATER_FRACTION = 0.05
-
 
 # ============================================================
 # Cost prediction
 # ============================================================
+#
+# The dispatcher predicts and reports spend, but does NOT enforce a cap.
+# The only real ceiling is whatever Claude Max enforces; a local soft
+# limit only ever got in the way, so it was removed. The rolling-window
+# cost is still computed and logged as information.
 
 @dataclass
 class CostEstimate:
     per_subtrio_usd: float
     projected_total_usd: float
     rolling_window_cost_usd: float
-    soft_limit_usd: float
-    budget_remaining_usd: float
     fallback_level: str  # "tuple" / "model-triple" / "model-pair" / "cold_start"
     sample_size: int
 
@@ -79,12 +74,12 @@ def estimate_pair_cost(
     strategy: str,
     n_pairs: int,
     retry_uplift: float = DEFAULT_RETRY_UPLIFT,
-    soft_limit_usd: float = DEFAULT_SOFT_LIMIT_USD,
 ) -> CostEstimate:
     """Estimate per-subtrio cost from history, with three fallback levels.
 
     Per spec §6.1: match on the exact model/strategy tuple first; fall
-    back to looser matches; ultimately use the cold-start default.
+    back to looser matches; ultimately use the cold-start default. This is
+    a projection for display only; it never blocks a dispatch.
     """
     with connect() as conn:
         # Level 1: exact tuple
@@ -137,8 +132,6 @@ def estimate_pair_cost(
         per_subtrio_usd=mean_cost,
         projected_total_usd=mean_cost * n_pairs * retry_uplift,
         rolling_window_cost_usd=rolling_cost,
-        soft_limit_usd=soft_limit_usd,
-        budget_remaining_usd=max(0.0, soft_limit_usd - rolling_cost),
         fallback_level=fallback,
         sample_size=len(rows),
     )
@@ -176,7 +169,6 @@ class DispatchResult:
     batch_id: str
     jobs: List[SubtrioJob]
     rate_limited: bool = False
-    aborted_due_to_budget: bool = False
     messages: List[str] = field(default_factory=list)
 
 
@@ -199,8 +191,6 @@ def dispatch(
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: Optional[str] = None,
-    soft_limit_usd: float = DEFAULT_SOFT_LIMIT_USD,
-    force: bool = False,
     on_message: Optional[Callable[[str], None]] = None,
 ) -> DispatchResult:
     """Spawn one Coordinator subprocess per pair.
@@ -210,8 +200,10 @@ def dispatch(
     `pairs` takes precedence if both are given.
 
     Returns when all subprocesses have exited (or rate-limit shutdown
-    triggered a global terminate). `force=True` bypasses the pre-flight
-    budget refusal but the warning is still logged.
+    triggered a global terminate). There is no local cost cap: the
+    pre-flight estimate is logged for information only and never blocks a
+    dispatch. The only ceiling is Claude Max's own rate limit, which
+    surfaces as a 429 and a clean interrupted-and-resumable shutdown.
     """
     batch_id = batch_id or str(uuid.uuid4())
     log = on_message or (lambda m: print(f"[dispatch] {m}", flush=True))
@@ -233,36 +225,21 @@ def dispatch(
     verifier_model = verifier_model or _read_default("verifier")
     adjudicator_model = adjudicator_model or _read_default("adjudicator")
 
-    # Pre-flight cost check.
+    # Pre-flight cost projection (informational; never blocks a dispatch).
     estimate = estimate_pair_cost(
         researcher_model=researcher_model,
         verifier_model=verifier_model,
         adjudicator_model=adjudicator_model,
         strategy=strategy,
         n_pairs=len(pairs),
-        soft_limit_usd=soft_limit_usd,
     )
     log(
         f"pre-flight: {len(pairs)} pairs, est "
         f"{format_gbp(estimate.per_subtrio_usd, places=3)}/pair "
         f"(fallback={estimate.fallback_level}, n={estimate.sample_size}), "
         f"projected {format_gbp(estimate.projected_total_usd)}, "
-        f"window-used {format_gbp(estimate.rolling_window_cost_usd)} of "
-        f"{format_gbp(soft_limit_usd)}, remaining "
-        f"{format_gbp(estimate.budget_remaining_usd)}"
+        f"window-used {format_gbp(estimate.rolling_window_cost_usd)} (5h)"
     )
-    if estimate.projected_total_usd > estimate.budget_remaining_usd and not force:
-        msg = (
-            f"REFUSED: projected {format_gbp(estimate.projected_total_usd)}"
-            f" > budget remaining "
-            f"{format_gbp(estimate.budget_remaining_usd)}. "
-            f"Use force=True or wait."
-        )
-        log(msg)
-        return DispatchResult(
-            batch_id=batch_id, jobs=[],
-            aborted_due_to_budget=True, messages=[msg],
-        )
 
     # Build the job list.
     jobs: List[SubtrioJob] = [
@@ -277,25 +254,12 @@ def dispatch(
     # The dispatch loop. Run with a semaphore equal to parallel_limit.
     sem = threading.Semaphore(parallel_limit)
     rate_limited = False
-    abort_due_to_budget = False
 
     def spawn(job: SubtrioJob) -> None:
-        nonlocal rate_limited, abort_due_to_budget
+        nonlocal rate_limited
         sem.acquire()
         try:
             if rate_limited:
-                return
-            # Re-check budget before each spawn.
-            current_cost = rolling_window_cost_usd()
-            if current_cost >= soft_limit_usd * (1 - LOW_WATER_FRACTION):
-                msg = (
-                    f"budget low-water hit: {format_gbp(current_cost)} "
-                    f">= "
-                    f"{format_gbp(soft_limit_usd * (1 - LOW_WATER_FRACTION))}; "
-                    f"skipping {job.question_id}/{job.country_code}"
-                )
-                log(msg)
-                abort_due_to_budget = True
                 return
 
             cmd = [
@@ -372,7 +336,6 @@ def dispatch(
         batch_id=batch_id,
         jobs=jobs,
         rate_limited=rate_limited,
-        aborted_due_to_budget=abort_due_to_budget,
         messages=[],
     )
 
@@ -466,8 +429,6 @@ def publish_to_main(
     flags = []
     if result.rate_limited:
         flags.append("rate-limited")
-    if result.aborted_due_to_budget:
-        flags.append("budget-aborted")
     suffix = f" [{', '.join(flags)}]" if flags else ""
     msg = f"Batch: {q_label} x {c_label} ({n_ok}/{n_total} ok){suffix}"
 
@@ -543,8 +504,6 @@ def main() -> int:
     parser.add_argument("--condition-label", default=None,
                         help="Per-condition label inside an experiment (e.g. "
                              "'disprove' vs 'approve').")
-    parser.add_argument("--soft-limit-usd", type=float, default=DEFAULT_SOFT_LIMIT_USD)
-    parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
 
     explicit_pairs = None
@@ -579,15 +538,12 @@ def main() -> int:
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
         condition_label=args.condition_label,
-        soft_limit_usd=args.soft_limit_usd,
-        force=args.force,
     )
 
     print(f"\n=== DISPATCH COMPLETE ===")
     print(f"batch_id: {result.batch_id}")
     print(f"jobs: {len(result.jobs)}")
     print(f"rate_limited: {result.rate_limited}")
-    print(f"aborted_due_to_budget: {result.aborted_due_to_budget}")
     return EXIT_CODE_RATE_LIMITED if result.rate_limited else 0
 
 

@@ -593,10 +593,10 @@ def slide_dashboard_highlights(prs: Presentation) -> None:
          "those that differ. Headline accuracy KPI is read straight off "
          "the comparison.",
          "📊", SUCCESS),
-        ("Cost tracking and rolling budget",
+        ("Cost tracking",
          "Costs page shows the 5-hour rolling spend, per-model "
-         "breakdown, and per-strategy averages. Rate-limit hits and "
-         "soft-limit progress on every page's sidebar.",
+         "breakdown, and per-strategy averages. Rolling 5-hour spend and "
+         "rate-limit hits on every page's sidebar.",
          "💷", TEAL_DARK),
     ]
 

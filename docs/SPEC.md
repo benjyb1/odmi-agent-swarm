@@ -259,7 +259,10 @@ Q-DASH-3.
 
 ### D20: Rolling-window credit budget enforcement
 
-**Date:** 2026-05-12.
+**Date:** 2026-05-12. **Layers 1 and 2 superseded by D40 (2026-06-03):** the
+soft limit and its enforcement (pre-flight refusal and the low-water spawn stop)
+are removed. The rolling-window cost is still computed and displayed (layer 3,
+the clean rate-limit shutdown, is unchanged); it just no longer blocks anything.
 
 The dispatcher (`scripts/dispatch_subtrios.py`) enforces a three-layer
 credit policy against the rolling 5-hour Claude Max window:
@@ -1366,12 +1369,42 @@ to be runnable yet must not perturb the baseline it is measured against. A
 default-off flag with byte-identical baseline prompts is the only way to keep the
 EXP-8/9 baseline and production untouched while the chained arm waits on quota.
 
+### D40: Remove the local cost soft limit
+
+**Date:** 2026-06-03. Supersedes D20 layers 1 and 2.
+
+The dispatcher's soft limit (D20) refused a launch when the projected cost
+exceeded a notional remaining budget, and stopped spawning new subtrios once the
+rolling-window cost crossed a 5% low-water mark. In practice it only got in the
+way: the figure is a guessed arithmetic equivalent of a flat CLIProxyAPI
+subscription (D1, Q9), not a real balance, and CLIProxyAPI strips the
+rate-limit headers anyway, so the "budget" never reflected actual Max capacity.
+The one real ceiling is Claude Max's own rate limit, which already surfaces
+cleanly as a 429 and a resumable interrupted shutdown (D20 layer 3, kept).
+
+Removed: `DEFAULT_SOFT_LIMIT_USD`, `LOW_WATER_FRACTION`, the `soft_limit_usd` and
+`force` parameters and `--soft-limit-usd` / `--force` CLI flags on
+`dispatch_subtrios.py`, the `CostEstimate.soft_limit_usd` /
+`budget_remaining_usd` fields, the `DispatchResult.aborted_due_to_budget` field,
+the pre-flight refusal, and the per-spawn low-water check. `harness.py` no longer
+passes `--soft-limit-usd`. The dashboard sidebar drops the soft-limit slider and
+the progress-toward-limit bar; the Run Console drops the "Window soft limit"
+metric and the "Force release" checkbox. The rolling 5-hour spend is still
+computed and shown everywhere it was (sidebar, Run Console, Costs page) as a
+plain information meter, and the pre-flight estimate is still logged; neither
+blocks a dispatch. Tests updated; 438 non-live passing.
+
+Rationale: a cap that does not track a real balance and that the user has to
+force past on every meaningful run is friction without protection. Cost
+visibility stays; the gate goes.
+
 ---
 
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-03 (soft limit) | D40 added, supersedes D20 layers 1 and 2. Removed the local cost soft limit: `DEFAULT_SOFT_LIMIT_USD`, `LOW_WATER_FRACTION`, the `soft_limit_usd`/`force` params and `--soft-limit-usd`/`--force` flags on `dispatch_subtrios.py`, the `CostEstimate.soft_limit_usd`/`budget_remaining_usd` and `DispatchResult.aborted_due_to_budget` fields, the pre-flight refusal, and the per-spawn low-water stop. `harness.py` no longer passes `--soft-limit-usd`; the dashboard sidebar loses the soft-limit slider/progress and the Run Console loses the "Window soft limit" metric and "Force release" checkbox. Rolling 5-hour spend is still computed and shown (sidebar, Run Console, Costs) and the pre-flight estimate is still logged, but nothing blocks a dispatch now; the only ceiling is Claude Max's own rate limit (D20 layer 3, the clean resumable 429 shutdown, kept). The cap was a guessed arithmetic equivalent of a flat subscription, not a real balance, so it was friction without protection. Tests updated; 438 non-live passing. |
 | 2026-06-03 (chaining) | D39 added: EXP-7 chained retry arm built behind `--chained` (default off, baseline byte-identical). New `EvidenceItem` model; `VerifierFeedback` gains `counter_evidence_quote` / `counter_source_url` (default None); `ResearcherInput.prior_evidence` and `AdjudicatorInput.evidence_corpus` added. Coordinator accumulates a de-duped, 40-capped evidence corpus across rounds when chained, feeds the Verifier's counter-evidence back to the Researcher, and adjudicates over the whole corpus; the D37 floor and abstention rules are untouched. Carried evidence rides in the user message, not the system prompt, so `prompt_versions` are stable and an empty corpus renders byte-for-byte as before. Flag threaded `dispatch_subtrios.py` → `run_coordinator.py`. Pre-registered in `docs/EXPERIMENTS_CHAINING.md` (Malta primary per R4, false-positive rate as a co-primary, paired McNemar/Wilcoxon, one confirmatory joint claim); EXP-7 status board updated. New `tests/test_chained_evidence.py` (18 cases); 418 non-live passing. Run gated only on the Malta dispatch (search quota) and Claude headroom. |
 | 2026-06-03 (experiment rules) | D38 added: a universal experiment checklist (R1 to R12) in `EXPERIMENTS_PROTOCOL.md` section 0, headed by R4, the base-rate rule that bars a degenerate evaluation country and pins selection to minority-class share subject to a well-resourced-language constraint (Malta primary, Netherlands secondary; the No-share table is computed from `ground_truth` over binary yes/no golds). Pre-registered EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants) under the rules, with registry rows and Malta-dispatch / condition-threading pre-run requirements (items 9 to 11), all gated on search quota. Retargeted EXP-6 to Malta-primary (France/injected demoted to a robustness arm; `EXPERIMENTS_VERIFIER.md` and `evaluation/verifier_strategies.py` strata updated, the partial superseded not deleted). Added protocol section 12, a rubric audit that flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider result stands) and EXP-3's Lithuania control as undiscriminating on binary. `build_candidates` verified to degrade gracefully (empty Malta primary, 82-candidate robustness arm) until the dispatch lands. No experiment runs in this change. |
 | 2026-06-02 (langgraph removal) | D3 amended from "LangGraph for the Phase 2 agent swarm" to "Plain Python state machine", to match the shipped `run_coordinator.py`. The earlier rationale (graph framework for conditional edges) and the record of the deviation are retained. Stale "runs on LangGraph" claims corrected across METHODOLOGY §5/§8, AGENT_DESIGN §1/§5/§8 (deviation banner added at §5), REPORT_PRELIM objectives/plan/milestones, and PROGRESS_SLIDES stack line. The dead `langgraph`, `langchain-anthropic`, and `langchain-community` dependencies removed from `pyproject.toml` (no Python file imports them; the LLM interface uses the `anthropic` SDK directly). `anthropic>=0.87` promoted to a direct dependency, since `agents/tools/llm.py` imports it and it was only present transitively via `langchain-anthropic`. Lockfile re-resolved; 335 tests pass. Kept deliberately: the "why we dropped it" record (CLAUDE.md, PROJECT_LOG, `run_coordinator.py` header) and the related-work citations in REPORT_PRELIM §2.2 and references.bib. |

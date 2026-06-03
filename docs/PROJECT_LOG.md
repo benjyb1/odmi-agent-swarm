@@ -8,6 +8,27 @@ Entries newest first.
 
 ---
 
+## 2026-06-03 — Session 20d: remove the cost soft limit (D40)
+
+Ripped out the local cost soft limit. It was a three-layer thing (D20): a
+pre-flight refusal if projected cost exceeded a notional budget, a low-water stop
+that halted spawning at 95% of the cap, and a clean rate-limit shutdown. The
+first two only ever got in the way. The "budget" was a guessed arithmetic
+equivalent of a flat CLIProxyAPI subscription, not a real balance, and the proxy
+strips the rate-limit headers so the figure never tracked actual Max capacity. So
+the gate refused or stalled real runs against a number that meant nothing.
+
+Removed the threshold, both aborts, the `soft_limit_usd`/`force` params and the
+`--soft-limit-usd`/`--force` flags, the `CostEstimate`/`DispatchResult` budget
+fields, the dashboard slider and progress-toward-limit bar, and the Run Console
+"Force release" checkbox. Kept the clean 429 shutdown (the only real ceiling) and
+the rolling 5-hour spend as a plain information meter on the sidebar, Run Console,
+and Costs page. The pre-flight estimate still logs a projection; it just no longer
+blocks anything. Annotated D20 as superseded and added D40. 438 non-live tests
+pass.
+
+---
+
 ## 2026-06-03 — Session 20c: EXP-7 chained retry arm (built, gated, pre-registered)
 
 Built the chaining arm for EXP-7. The loop spends up to eight calls per pair but

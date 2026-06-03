@@ -93,8 +93,9 @@ experiment_id has a `phase2_final` row or a terminal failure. Poll
 
 ## Guardrails
 - This spends real Claude rate-limit budget, and DIY is five to eight times
-  Tavily per pair. Keep the subset small and `--parallel` low (2). Respect the
-  budget soft limit; never `--force` past a budget refusal.
+  Tavily per pair. Keep the subset small and `--parallel` low (2). There is no
+  local cost cap any more (D40); watch the rolling 5-hour spend in the sidebar
+  and stop if it climbs faster than expected.
 - Same pair list across all three conditions. No exceptions.
 - Temperature is already 0 in the LLM wrapper; leave it.
 - If quotas are exhausted mid-run, record the partial result honestly and stop.
