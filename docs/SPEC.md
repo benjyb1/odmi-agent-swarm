@@ -1281,10 +1281,45 @@ Status (detail in `docs/EXPERIMENTS.md`):
 
 ---
 
+### D38: Universal experiment rules, with a base-rate rule on country selection
+
+Decision: every experiment now answers to one numbered checklist, R1 to R12, in
+`docs/EXPERIMENTS_PROTOCOL.md` section 0. Each per-experiment pre-registration
+declares which rules it meets and names any it cannot; a broken rule is a written
+limitation, not a silent omission.
+
+The rule that changes designs is R4, the base-rate rule. France's binary gold
+runs 119 `yes` to 1 `no`, so a model that always answers `yes` scores about 99%
+and a false positive never surfaces; accuracy there measures nothing. R4 requires
+(a) the majority-class baseline printed beside every accuracy figure, (b) a
+balance-aware headline metric (Youden's J, MCC, balanced accuracy, per-class
+rates) when the classes are skewed, and (c) country selection by minority-class
+share subject to a well-resourced-language constraint. Malta is the primary test
+country (English official, ~30 `no`-gold binary questions), Netherlands the
+secondary; countries above roughly 90% one class are barred as a primary set and
+may appear only as a labelled degenerate-baseline contrast.
+
+Consequences applied in the same pass: EXP-6 retargeted from a France-dominated
+should_fail class to Malta-primary (`EXPERIMENTS_VERIFIER.md`, harness strata
+updated, the France/injected partial kept only as a robustness arm); EXP-8
+(Family 1 cost-side) and EXP-9 (Family 3 model variants) pre-registered on Malta;
+and a rubric audit (protocol section 12) that flags EXP-1's France E1 accuracy as
+base-rate degenerate (the E2 provider win-share is unaffected) and EXP-3's
+Lithuania control as undiscriminating on binary, since it holds zero negative
+golds. All three optimisation runs are gated on a Malta Researcher dispatch, which
+is pending search quota, the same constraint as the parked D28 Phase 3.
+
+Rationale: the swarm's headline contribution is an accuracy-vs-cost surface. A
+surface measured on a degenerate country would be indistinguishable from
+majority-class guessing, so the base-rate rule protects the central result.
+
+---
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-03 (experiment rules) | D38 added: a universal experiment checklist (R1 to R12) in `EXPERIMENTS_PROTOCOL.md` section 0, headed by R4, the base-rate rule that bars a degenerate evaluation country and pins selection to minority-class share subject to a well-resourced-language constraint (Malta primary, Netherlands secondary; the No-share table is computed from `ground_truth` over binary yes/no golds). Pre-registered EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants) under the rules, with registry rows and Malta-dispatch / condition-threading pre-run requirements (items 9 to 11), all gated on search quota. Retargeted EXP-6 to Malta-primary (France/injected demoted to a robustness arm; `EXPERIMENTS_VERIFIER.md` and `evaluation/verifier_strategies.py` strata updated, the partial superseded not deleted). Added protocol section 12, a rubric audit that flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider result stands) and EXP-3's Lithuania control as undiscriminating on binary. `build_candidates` verified to degrade gracefully (empty Malta primary, 82-candidate robustness arm) until the dispatch lands. No experiment runs in this change. |
 | 2026-06-02 (langgraph removal) | D3 amended from "LangGraph for the Phase 2 agent swarm" to "Plain Python state machine", to match the shipped `run_coordinator.py`. The earlier rationale (graph framework for conditional edges) and the record of the deviation are retained. Stale "runs on LangGraph" claims corrected across METHODOLOGY §5/§8, AGENT_DESIGN §1/§5/§8 (deviation banner added at §5), REPORT_PRELIM objectives/plan/milestones, and PROGRESS_SLIDES stack line. The dead `langgraph`, `langchain-anthropic`, and `langchain-community` dependencies removed from `pyproject.toml` (no Python file imports them; the LLM interface uses the `anthropic` SDK directly). `anthropic>=0.87` promoted to a direct dependency, since `agents/tools/llm.py` imports it and it was only present transitively via `langchain-anthropic`. Lockfile re-resolved; 335 tests pass. Kept deliberately: the "why we dropped it" record (CLAUDE.md, PROJECT_LOG, `run_coordinator.py` header) and the related-work citations in REPORT_PRELIM §2.2 and references.bib. |
 | 2026-06-02 (retry/finalisation) | D32 + D33 added, both prompted by a failure-mode analysis of the 43 ground-truth disagreements. D32: finalisation now trusts `adjudicator_answer` for every resolved verdict instead of re-deriving from the verdict label; the logic moved into a pure helper `_finalise_after_adjudication`. Four pairs flip `differ` to `match` on a stored-row replay (P26-b FR, PT14 FR, I16 EE, I17 EE), each an Adjudicator `yes` previously overwritten with `inconclusive`. D33: retry queries forced to diverge; the query generator now receives the Verifier's rejection reason, suggested query, and prior queries with an instruction to vary (`_QUERY_GEN_VERSION` 1 to 2), `ResearcherInput.previous_search_queries` added, coordinator accumulates queries across attempts; first-attempt path unchanged. Defaults and non-retried runs behave as before. New `tests/test_finalise_after_adjudication.py` and `tests/test_query_gen_divergence.py`; 297 non-live passing. The dominant remaining loss (the 67% substring-gate failure that decays answers to `inconclusive`) is diagnosed but not fixed here; it needs snippet persistence first. |
 | 2026-06-02 (later) | D30 added: deterministic catalogue-metrics tool (`agents/tools/catalogue/`). Harvests national-portal metadata and computes the nine catalogue-derivable Quality band/count questions (Q12, Q13, Q16, Q17, Q18, Q21, Q22, Q25, Q27) without the deny-listed MQA. Per-country adapter layer over three stacks (udata, CKAN, custom) and four routes (dcat_rdf preferred; ckan_json / udata_json / estonia_json fallbacks); registry in `data/catalogue/portals/<CC>.json`. Conformance (Q16) via the official SEMIC DCAT-AP 2.1.1 mandatory SHACL shapes through pyshacl, sampled with disclosed size; recommended/optional usage (Q17/Q18) and the presence/count metrics by field counting; bands assigned from each question's own `allowed_answers`. Raw harvest cached gzipped on disk (gitignored); committed receipts in new `catalogue_snapshots` / `catalogue_metrics` tables (+ `scripts/migrate_catalogue_tables.py`). Wired into `run_researcher` (route before web search) and `run_verifier` (deterministic recompute-from-cache, pass iff the band matches). Mapping doc `docs/CATALOGUE_METRICS.md`. Validated against ODMI GT (leakage-guarded): HU 8/1/0, NL 5/0/4, DE 4/2/3, FR 4/1/4, RO 3/3/3; EE blocked (403). Headline: FR self-reported `>90%` on licence/conformance but the independent recompute reads ~38% licence coverage and ~32% mandatory conformance (the D29 self-report ceiling). Per-country route findings: HU and RO RDF feeds omit `dct:license` so they harvest via CKAN JSON; DE Q16 4.2% is a real DCAT-AP.de incompleteness (checksums missing `spdx:algorithm`) under strict whole-dataset SHACL. 33 new offline tests; 246 non-live passing. |

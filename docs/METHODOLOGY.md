@@ -340,7 +340,7 @@ the primary RQ5 output.
 
 ### Optimisation experiments
 
-Two families of experimental conditions. Each variant writes into the
+Three families of experimental conditions. Each variant writes into the
 same schema with a `condition_label` column.
 
 These experiments are now pre-registered before each run, with the design,
@@ -351,6 +351,17 @@ Family 2 below). The live status board is `docs/EXPERIMENTS.md`. A third family
 sits alongside the two below: the search-provider comparison (DIY vs Tavily vs
 Brave vs Serper), where EXP-1 already reports DIY winning 89% of the decided
 French pairs.
+
+The families are also bound by the universal experiment rules
+(`docs/EXPERIMENTS_PROTOCOL.md` section 0, SPEC D38). The rule that matters most
+here is the base-rate rule (R4): the accuracy axis of the surface is measured on a
+base-rate-balanced country, not on France. France's binary gold is about 99%
+`yes`, so an accuracy figure there cannot be told apart from majority-class
+guessing. Family 1 (EXP-8) and Family 3 (EXP-9) therefore run on Malta (English
+official, ~30 `no`-gold binary questions) as the primary country and Netherlands
+as the secondary, with accuracy read balance-aware (balanced accuracy and
+per-class rates against the printed majority baseline) rather than as raw
+accuracy. Family 2 (EXP-6) follows the same rule.
 
 **Family 1: cost-side optimisations.** Aimed at the cost axis of the
 accuracy-cost surface.

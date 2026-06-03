@@ -13,9 +13,15 @@ Design (see the pre-registration for the full rationale):
   - Frozen evidence: substring check + one adversarial query-gen + one search are
     run ONCE per candidate; the identical frozen block feeds all four strategy
     prompts. The only between-arm variable is the system prompt.
-  - Three strata: NAT-fail (all 21 natural errors), NAT-pass (stratified correct),
-    INJ-fail (correct binary candidates with the label flipped, wrong by
-    construction). Seed 20260603.
+  - Retargeted (2026-06-03) to a base-rate-balanced country per rule R4
+    (EXPERIMENTS_PROTOCOL.md section 0): primary should_fail comes from Malta
+    (English official, ~30 no-gold binary questions), Netherlands is secondary,
+    and the France-dominated natural errors plus the injected label-flips are kept
+    as a robustness arm, reported separately and never folded into the primary.
+  - Roles: primary (MT), secondary (NL), robustness (FR/EE natural + INJ). Each
+    role carries a matched should_pass set. Seed 20260603. The Malta dispatch is
+    pending search quota, so until it lands the primary strata are empty and only
+    the robustness arm is runnable (labelled robustness-only, not the primary J).
 
 Usage:
   uv run python evaluation/verifier_strategies.py            # full run
@@ -75,7 +81,25 @@ STRATEGIES = [
     "verifier-steelman",
     "verifier-blind",
 ]
+# Country roles, per the R4 base-rate rule. Primary is a base-rate-balanced,
+# well-resourced-language country (Malta: English official, ~30 no-gold binary
+# questions); secondary is a second balanced country; robustness carries the
+# legacy France/Estonia natural errors and is the source of the injected flips.
+PRIMARY_COUNTRIES = ["MT"]
+SECONDARY_COUNTRIES = ["NL"]
+ROBUSTNESS_COUNTRIES = ["FR", "EE"]
+INJ_TARGET = 20
 EXPERIMENT_ID = "verifier_strategy_disc_v1"
+
+
+def _role_of(cc: str) -> Optional[str]:
+    if cc in PRIMARY_COUNTRIES:
+        return "primary"
+    if cc in SECONDARY_COUNTRIES:
+        return "secondary"
+    if cc in ROBUSTNESS_COUNTRIES:
+        return "robustness"
+    return None
 RESULTS_DIR = REPO_ROOT / "evaluation" / "results"
 
 
@@ -109,6 +133,7 @@ def _label(researcher_answer: str, gold: str, shape, allowed) -> str:
 class Candidate:
     cand_id: str
     stratum: str            # NAT-fail | NAT-pass | INJ-fail
+    role: str               # primary | secondary | robustness
     gold_label: str         # should_pass | should_fail
     question_id: str
     country_code: str
@@ -174,51 +199,64 @@ def build_candidates(limit: Optional[int] = None):
         elif lab == "should_pass":
             correct_pool.append(base)
 
-    # ---- NAT-fail: take all ----
+    dim_order = ["Policy", "Portal", "Impact", "Quality"]
+
+    # ---- NAT-fail: take every natural error in a targeted country, tagged by role ----
     cands = []
+    nat_fail_by_role = Counter()
     for b in sorted(nat_fail, key=lambda x: (x["country_code"], x["question_id"])):
+        role = _role_of(b["country_code"])
+        if role is None:
+            continue
+        nat_fail_by_role[role] += 1
         cands.append(Candidate(
             cand_id=f"NATF::{b['question_id']}::{b['country_code']}",
-            stratum="NAT-fail", gold_label="should_fail", injected=False, **b))
+            stratum="NAT-fail", role=role, gold_label="should_fail", injected=False, **b))
 
-    # ---- NAT-pass: round-robin across country then dimension, target 45 ----
-    buckets = defaultdict(list)
+    # ---- NAT-pass: matched per role, round-robin across dimension within the role's countries ----
+    # Robustness also carries the negatives for the injected arm, so its pass target
+    # adds INJ_TARGET. Primary/secondary match their own natural-fail count, so an
+    # empty Malta dispatch yields an empty (not unbalanced) primary stratum.
+    pass_buckets = defaultdict(list)   # role -> dimension -> [candidate]
     for b in correct_pool:
-        buckets[(b["country_code"], b["dimension"])].append(b)
-    for k in buckets:
-        rng.shuffle(buckets[k])
-    # Country order puts the scarce non-FR first so they are not starved.
-    country_order = ["EE", "DE", "NL", "RO", "FR"]
-    dim_order = ["Policy", "Portal", "Impact", "Quality"]
-    nat_pass_target = 45
+        role = _role_of(b["country_code"])
+        if role is None:
+            continue
+        pass_buckets[(role, b["dimension"])].append(b)
+    for k in pass_buckets:
+        rng.shuffle(pass_buckets[k])
+    pass_target = {
+        "primary": nat_fail_by_role.get("primary", 0),
+        "secondary": nat_fail_by_role.get("secondary", 0),
+        "robustness": nat_fail_by_role.get("robustness", 0) + INJ_TARGET,
+    }
     used_keys = set()
-    nat_pass = []
-    progressing = True
-    while len(nat_pass) < nat_pass_target and progressing:
-        progressing = False
-        for cc in country_order:
+    for role in ("primary", "secondary", "robustness"):
+        target = pass_target[role]
+        picked = []
+        progressing = True
+        while len(picked) < target and progressing:
+            progressing = False
             for dim in dim_order:
-                bk = buckets.get((cc, dim))
+                bk = pass_buckets.get((role, dim))
                 if bk:
                     b = bk.pop()
                     used_keys.add((b["question_id"], b["country_code"]))
-                    nat_pass.append(b)
+                    picked.append(b)
                     progressing = True
-                    if len(nat_pass) >= nat_pass_target:
+                    if len(picked) >= target:
                         break
-            if len(nat_pass) >= nat_pass_target:
-                break
-    for b in nat_pass:
-        cands.append(Candidate(
-            cand_id=f"NATP::{b['question_id']}::{b['country_code']}",
-            stratum="NAT-pass", gold_label="should_pass", injected=False, **b))
+        for b in picked:
+            cands.append(Candidate(
+                cand_id=f"NATP::{b['question_id']}::{b['country_code']}",
+                stratum="NAT-pass", role=role, gold_label="should_pass", injected=False, **b))
 
-    # ---- INJ-fail: flip binary correct candidates not used in NAT-pass ----
+    # ---- INJ-fail: flip binary robustness candidates not used in NAT-pass ----
     inj_pool = [
         b for b in correct_pool
         if b["answer_shape"] == "binary"
         and (b["question_id"], b["country_code"]) not in used_keys
-        and b["country_code"] in ("FR", "EE")
+        and b["country_code"] in ROBUSTNESS_COUNTRIES
         and (b["researcher_answer"] or "").strip().lower() in ("yes", "no")
     ]
     inj_buckets = defaultdict(list)
@@ -226,20 +264,19 @@ def build_candidates(limit: Optional[int] = None):
         inj_buckets[(b["country_code"], b["dimension"])].append(b)
     for k in inj_buckets:
         rng.shuffle(inj_buckets[k])
-    inj_target = 20
     inj = []
     progressing = True
-    while len(inj) < inj_target and progressing:
+    while len(inj) < INJ_TARGET and progressing:
         progressing = False
-        for cc in ("EE", "FR"):
+        for cc in ROBUSTNESS_COUNTRIES:
             for dim in dim_order:
                 bk = inj_buckets.get((cc, dim))
                 if bk:
                     inj.append(bk.pop())
                     progressing = True
-                    if len(inj) >= inj_target:
+                    if len(inj) >= INJ_TARGET:
                         break
-            if len(inj) >= inj_target:
+            if len(inj) >= INJ_TARGET:
                 break
     for b in inj:
         orig = (b["researcher_answer"] or "").strip().lower()
@@ -248,7 +285,8 @@ def build_candidates(limit: Optional[int] = None):
         bb["researcher_answer"] = flipped
         cands.append(Candidate(
             cand_id=f"INJF::{b['question_id']}::{b['country_code']}",
-            stratum="INJ-fail", gold_label="should_fail", injected=True, **bb))
+            stratum="INJ-fail", role="robustness", gold_label="should_fail",
+            injected=True, **bb))
 
     if limit:
         # Keep a mix across strata for a smoke run.
@@ -458,9 +496,15 @@ def run(limit: Optional[int] = None):
     ccounts = Counter(c.country_code for c in cands)
     dcounts = Counter(c.dimension for c in cands)
     print(f"Built {len(cands)} candidates. Strata: {dict(Counter(c.stratum for c in cands))}")
+    print(f"  roles: {dict(Counter(c.role for c in cands))}")
     print(f"  gold labels: {dict(Counter(c.gold_label for c in cands))}")
     print(f"  country: {dict(ccounts)}")
     print(f"  dimension: {dict(dcounts)}")
+    n_primary = sum(1 for c in cands if c.role == "primary")
+    if n_primary == 0:
+        print("  ! WARNING: primary (Malta) stratum is EMPTY -- the Malta dispatch "
+              "is pending search quota. Only the robustness arm is runnable; the "
+              "primary Youden's J is NOT computable from this run.")
     _register_experiment(len(cands), {f"{k[0]}/{k[1]}": v for k, v in counts.items()})
 
     RESULTS_DIR.mkdir(exist_ok=True)
@@ -505,6 +549,7 @@ def run(limit: Optional[int] = None):
         frozen = _freeze_evidence(cand, ro)
         rec = {
             "_record": "candidate", "cand_id": cand.cand_id, "stratum": cand.stratum,
+            "role": cand.role,
             "gold_label": cand.gold_label, "question_id": cand.question_id,
             "country_code": cand.country_code, "dimension": cand.dimension,
             "answer_shape": cand.answer_shape, "researcher_answer": cand.researcher_answer,
@@ -615,17 +660,35 @@ def analyse(path):
                   f"{m['mcc']:6.2f} {m['bal_acc']:7.2f} {pass_rate:9.2f}")
         return out
 
-    combined = report("COMBINED (primary endpoint)", lambda r: True)
-    report("NATURAL only (NAT-fail + NAT-pass)", lambda r: r["stratum"].startswith("NAT"))
-    report("INJECTED errors + NAT-pass", lambda r: r["stratum"] in ("INJ-fail", "NAT-pass"))
+    # Role is the primary axis (R4 retarget). Old JSONL records predate the
+    # `role` field, so derive it from the country for backward compatibility.
+    def _rec_role(r):
+        return r.get("role") or _role_of(r.get("country_code")) or "robustness"
+
+    combined = report("PRIMARY endpoint (Malta natural)", lambda r: _rec_role(r) == "primary")
+    report("SECONDARY (Netherlands natural)", lambda r: _rec_role(r) == "secondary")
+    report("ROBUSTNESS natural (FR/EE)",
+           lambda r: _rec_role(r) == "robustness" and not r.get("injected"))
+    report("ROBUSTNESS injected (INJ-fail + robustness pass)",
+           lambda r: _rec_role(r) == "robustness" and (r.get("injected") or r["gold_label"] == "should_pass"))
     for dim in ["Policy", "Portal", "Impact", "Quality"]:
-        report(f"Dimension={dim}", lambda r, d=dim: r["dimension"] == d)
+        report(f"PRIMARY Dimension={dim}",
+               lambda r, d=dim: _rec_role(r) == "primary" and r["dimension"] == d)
 
     # Paired McNemar on verdict-correctness, Holm-corrected over the 6 pairs.
-    print("\n----- Paired strategy comparison (McNemar exact on verdict-correctness, Holm) -----")
+    # Scoped to the PRIMARY endpoint; if Malta is absent it falls back to the
+    # robustness arm with an explicit label so the number is not misread as primary.
+    primary_records = [r for r in records if _rec_role(r) == "primary"]
+    if primary_records:
+        mcnemar_records, mcnemar_scope = primary_records, "PRIMARY (Malta)"
+    else:
+        mcnemar_records = [r for r in records if _rec_role(r) == "robustness"]
+        mcnemar_scope = "ROBUSTNESS only (no Malta dispatch yet; not the primary J)"
+    print(f"\n----- Paired strategy comparison, {mcnemar_scope} "
+          f"(McNemar exact on verdict-correctness, Holm) -----")
     def correct_vec(s):
         v = {}
-        for r in records:
+        for r in mcnemar_records:
             verdict = r["verdicts"].get(s, {}).get("verdict")
             if verdict is None:
                 v[r["cand_id"]] = None
