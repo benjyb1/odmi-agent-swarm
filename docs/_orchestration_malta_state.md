@@ -228,6 +228,15 @@ State at the wall:
 - EXP-7/8/9: not started. retry_chaining_mt_v1 junk rows cleaned (0).
 - All my dispatch/verifier/coordinator processes killed; nothing hammering.
 
+PAUSED AT BENJY'S REQUEST (~22:50). At 88% of the 5x Max plan, so little headroom
+left this window. Decision: WRAP UP NOW. Drop EXP-7/8/9 for the moment. Recovery
+probe killed; nothing running. EXP-6 left paused at 27/130 (resumable any time).
+Caching note from Benjy: when work resumes, be stringent with caching to stretch
+quota. The search layer already caches (search_cache_serp/snippet/fetch); EXP-6's
+resume run should NOT pass --no-cache so its freeze-evidence searches reuse cache.
+LLM calls themselves are not cached, so the main lever is the resume logic (skip
+done candidates) + search cache + not re-running completed work.
+
 RESUME PLAN when quota returns (do NOT burst):
 1. Gently probe the proxy with ONE minimal call. Only proceed when it succeeds.
 2. Resume EXP-6 at MODEST concurrency: `uv run python evaluation/verifier_strategies.py
