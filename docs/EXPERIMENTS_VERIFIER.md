@@ -84,8 +84,10 @@ classifier question is only defined on a definite answer with a reference.
 1. **NAT-fail-MT (primary should_fail).** Every natural error on Malta: a Malta
    Researcher answer that differs from gold, with the `no`-gold questions covered
    so errors on the minority class are visible. All are taken; none hand-picked.
-   **Requires the Malta dispatch (section 8); it is pending search quota, so until
-   it lands this stratum is empty and the primary J is not computable.**
+   **The Malta dispatch (section 8) is now done (58/60 finalised, 2026-06-03), so
+   this stratum is populated: the natural Malta errors include 3 no-gold false
+   positives (I7, I8-b, PT29) and the yes-gold false negatives, and the primary J
+   is now computable once the four-arm judge run is executed.**
 2. **NAT-pass-MT (primary should_pass).** A stratified sample of correct Malta
    candidates, round-robin across ODMI dimension, matched in size to NAT-fail-MT.
 3. **NAT-NL (secondary).** Natural fail and pass candidates on Netherlands, a
@@ -101,8 +103,9 @@ classifier question is only defined on a definite answer with a reference.
    Reported separately, never merged into the Malta primary.
 
 Achieved counts per stratum, country, and dimension are reported with the result.
-Until the Malta dispatch exists, only the robustness arm is runnable, and any
-number from it is labelled robustness-only, not the primary J.
+The Malta dispatch is now done, so the primary NAT-fail-MT / NAT-pass-MT strata
+are runnable; the robustness arm (FR/injected) stays labelled robustness-only and
+is never merged into the primary J.
 
 ## 4. Design: paired, frozen evidence
 
@@ -174,12 +177,15 @@ table before the run; the registry `conditions` record the target countries.
 Harness: `evaluation/verifier_strategies.py`. Result:
 `evaluation/results/verifier_strategies_*.jsonl` plus a summary block.
 
-**Prerequisite (pending search quota).** The primary endpoint needs a Researcher
+**Prerequisite (done 2026-06-03).** The primary endpoint needs a Researcher
 dispatch on Malta (target ~30 `no`-gold binary questions plus a matched ~30
-`yes`-gold for the pass side, dimension-stratified), optionally Netherlands. The
-`no`-gold candidates do not exist in the DB yet. The dispatch is gated on search
-quota, the same constraint as the parked D28 Phase 3 re-dispatch, so the primary J
-cannot be computed until it lands. Do not assume it has run.
+`yes`-gold for the pass side, dimension-stratified). That dispatch is now done: 58
+of 60 canonical pairs finalised (`data/questions/malta_eval_pairs.json`, batches
+`exp6_malta` + `malta_baseline`, baseline / no `experiment_id`), with the no-gold
+minority class fully covered bar two `search_empty` pairs (I8-d, PT12). The natural
+Malta error set for NAT-fail-MT exists in the DB. Netherlands remains optional for
+the secondary stratum. The primary J is now computable once the four-arm judge run
+is executed; it has not been run yet.
 
 ## Change log
 

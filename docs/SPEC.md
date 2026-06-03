@@ -1157,26 +1157,34 @@ Status (detail in `docs/EXPERIMENTS.md`):
   interrupted near 882 of ~1080 verdicts, resumable from the cache.
 - **EXP-6** (verifier strategy discrimination): designed and partially run (3/89);
   retargeted to Malta-primary under R4. Its binding prerequisite, the Malta
-  baseline dispatch, is partial (see below).
-- **EXP-7** (retry chaining): planned, parked.
+  baseline dispatch, is now done (see below); the four-arm judge run is not yet
+  executed.
+- **EXP-7** (retry chaining): planned, parked. Reuses the Malta pair list.
 
-**Malta baseline dispatch (2026-06-03, partial).** The shared prerequisite for
+**Malta baseline dispatch (2026-06-03, done; 58/60).** The shared prerequisite for
 EXP-6/7/8/9. The canonical pair set is frozen and committed at
 `data/questions/malta_eval_pairs.json` (60 pairs, 30 `no` / 30 `yes`, seed
 20260603, dimension split Impact 17 / Portal 24 / Policy 10 / Quality 9; all 30
 `no`-gold binary questions included as the minority class, the 30 `yes`-gold pairs
 a size-matched dimension-stratified draw). Generator
 `scripts/build_malta_eval_pairs.py`. The baseline dispatch (provider auto,
-`condition_label` baseline, no `experiment_id`) has reached 25 of 60 pairs with
-Researcher rows and 17 finalised: 12 with a real answer (all `no`-gold, 11 of 12
-matching ground truth, the one differ I8-b a visible false-positive `yes`) and 5
-`agent_failure` on `search_empty`. The remaining 35 pairs (30 `yes`-gold plus the 5
-`no`-gold I14, I22, I23, PT42, Q19) are not yet dispatched: the Claude Max rolling
-window is exhausted (first LLM call returns `APIConnectionError` through
-CLIProxyAPI), so the run stopped rather than thrash the shared quota. Resume is
-clean (the not-done set is the canonical IDs minus the distinct MT
-`phase2_researcher_runs` IDs). The 35 must be re-run when the window recovers
-before the R4 base-rate metric and the EXP-6/8/9 primary arms are satisfiable.
+`condition_label` baseline, no `experiment_id`; batches `exp6_malta` then
+`malta_baseline`) finalised 58 of 60: 43 committed yes/no plus 15 honest
+`inconclusive` abstentions (D37). Two pairs unfinished, I8-d and PT12, both
+`no`-gold, both `agent_failure` on `search_empty` (empty SERPs under
+exhausted-Tavily / DIY-only retrieval, not a fetch block). Balance-aware quality
+(R4): exact match 32/58 raw, 32/43 on committed answers; no-gold minority recall
+(TNR) 0.87 with 3 false positives of 23 committed (I7, I8-b, PT29); yes-gold recall
+(TPR) 0.60; Youden's J 0.47; mean commit confidence 0.58. Zero data-leakage in any
+finalised row; batch cost ~$4.98. EXP-7/8/9 run their own `condition_label` /
+`experiment_id` dispatches over the same committed pair list. Two run-gating faults
+were found and fixed (neither was quota): a missing worktree `.env` plus an empty
+`ANTHROPIC_AUTH_TOKEN` injected by the desktop app, which made every LLM call fail
+as a misleading `APIConnectionError` (fixed in `agents/tools/llm.py`); and a resume
+path that reused failed / `inconclusive` Researcher rows and stranded 11 pairs at
+stage 'researching' (fixed in `scripts/run_coordinator.py`). The not-done set is
+computed dynamically (canonical IDs minus distinct MT `phase2_researcher_runs`
+IDs), so a later top-up of I8-d / PT12 resumes cleanly.
 
 ### Built (verified)
 
@@ -1331,8 +1339,9 @@ updated, the France/injected partial kept only as a robustness arm); EXP-8
 and a rubric audit (protocol section 12) that flags EXP-1's France E1 accuracy as
 base-rate degenerate (the E2 provider win-share is unaffected) and EXP-3's
 Lithuania control as undiscriminating on binary, since it holds zero negative
-golds. All three optimisation runs are gated on a Malta Researcher dispatch, which
-is pending search quota, the same constraint as the parked D28 Phase 3.
+golds. All three optimisation runs were gated on a Malta Researcher dispatch; that
+dispatch is now done (2026-06-03, 58/60 finalised, see the Malta baseline entry in
+Current status), so EXP-6/8/9 are unblocked.
 
 Rationale: the swarm's headline contribution is an accuracy-vs-cost surface. A
 surface measured on a degenerate country would be indistinguishable from
@@ -1344,7 +1353,7 @@ majority-class guessing, so the base-rate rule protects the central result.
 
 | Date | Change |
 |---|---|
-| 2026-06-03 (Malta dispatch, partial) | Malta baseline dispatch advanced and recorded as partial, the shared prerequisite for EXP-6/7/8/9 (protocol section 9 item 9). The canonical 60-pair set (`data/questions/malta_eval_pairs.json`, 30 `no` / 30 `yes`, seed 20260603) was already committed; verified its no-gold coverage (all 30 `no`-gold binary questions present) and dimension balance. The baseline dispatch (provider auto, `condition_label` baseline, no `experiment_id`) reached 25 of 60 pairs with Researcher rows and 17 finalised (12 real answers, all `no`-gold, 11/12 matching ground truth with I8-b a visible false positive; 5 `agent_failure` on `search_empty`). The remaining 35 pairs (30 `yes`-gold plus 5 `no`-gold) could not be dispatched: the Claude Max rolling window is exhausted (`APIConnectionError` on the first LLM call), so the run stopped cleanly rather than thrash the shared quota. Resume is clean from the DB. SPEC current-status, `EXPERIMENTS.md` (EXP-6 row and section), and `EXPERIMENTS_PROTOCOL.md` section 9 item 9 updated. No new DB rows committed this pass (the probe write was discarded). |
+| 2026-06-03 (Malta dispatch, done) | Malta baseline swarm dispatch completed, the shared prerequisite for EXP-6/7/8/9 (protocol section 9 item 9). Canonical 60-pair set (`data/questions/malta_eval_pairs.json`, 30 `no` / 30 `yes`, seed 20260603) was already committed; verified no-gold coverage (all 30 present) and dimension balance. Dispatched the remaining pairs in three passes (provider auto, `condition_label` baseline, no `experiment_id`, batch `malta_baseline`): 58 of 60 finalised, 43 committed yes/no plus 15 honest `inconclusive` abstentions (D37); 2 unfinished (I8-d, PT12), both `no`-gold `agent_failure` on `search_empty`. Balance-aware (R4): 32/43 committed accuracy, no-gold recall (TNR) 0.87 with 3 false positives of 23 committed (I7, I8-b, PT29), yes-gold recall (TPR) 0.60, Youden's J 0.47, mean commit confidence 0.58; zero data-leakage; batch cost ~$4.98. Two run-gating faults found and fixed, neither quota: a fresh worktree had no `.env` and the desktop app injected an empty `ANTHROPIC_AUTH_TOKEN`, making every LLM call a misleading `APIConnectionError` (`agents/tools/llm.py` drops a blank token at import); and `_find_resumable_researcher` resumed from failed / `inconclusive` Researcher rows, stranding 11 pairs at 'researching' (`scripts/run_coordinator.py` now resumes only clean committed results). The first pass also hit a genuine Claude 429 `model_cooldown` near the end and stopped cleanly. New Malta DB rows committed on this branch; 446 tests pass. SPEC current-status, `EXPERIMENTS.md`, and `EXPERIMENTS_PROTOCOL.md` section 9 item 9 updated. Failure-mode taxonomy drafted for EXP-10 (retrieval ceiling dominant). |
 | 2026-06-03 (experiment rules) | D38 added: a universal experiment checklist (R1 to R12) in `EXPERIMENTS_PROTOCOL.md` section 0, headed by R4, the base-rate rule that bars a degenerate evaluation country and pins selection to minority-class share subject to a well-resourced-language constraint (Malta primary, Netherlands secondary; the No-share table is computed from `ground_truth` over binary yes/no golds). Pre-registered EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants) under the rules, with registry rows and Malta-dispatch / condition-threading pre-run requirements (items 9 to 11), all gated on search quota. Retargeted EXP-6 to Malta-primary (France/injected demoted to a robustness arm; `EXPERIMENTS_VERIFIER.md` and `evaluation/verifier_strategies.py` strata updated, the partial superseded not deleted). Added protocol section 12, a rubric audit that flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider result stands) and EXP-3's Lithuania control as undiscriminating on binary. `build_candidates` verified to degrade gracefully (empty Malta primary, 82-candidate robustness arm) until the dispatch lands. No experiment runs in this change. |
 | 2026-06-02 (langgraph removal) | D3 amended from "LangGraph for the Phase 2 agent swarm" to "Plain Python state machine", to match the shipped `run_coordinator.py`. The earlier rationale (graph framework for conditional edges) and the record of the deviation are retained. Stale "runs on LangGraph" claims corrected across METHODOLOGY §5/§8, AGENT_DESIGN §1/§5/§8 (deviation banner added at §5), REPORT_PRELIM objectives/plan/milestones, and PROGRESS_SLIDES stack line. The dead `langgraph`, `langchain-anthropic`, and `langchain-community` dependencies removed from `pyproject.toml` (no Python file imports them; the LLM interface uses the `anthropic` SDK directly). `anthropic>=0.87` promoted to a direct dependency, since `agents/tools/llm.py` imports it and it was only present transitively via `langchain-anthropic`. Lockfile re-resolved; 335 tests pass. Kept deliberately: the "why we dropped it" record (CLAUDE.md, PROJECT_LOG, `run_coordinator.py` header) and the related-work citations in REPORT_PRELIM §2.2 and references.bib. |
 | 2026-06-02 (retry/finalisation) | D32 + D33 added, both prompted by a failure-mode analysis of the 43 ground-truth disagreements. D32: finalisation now trusts `adjudicator_answer` for every resolved verdict instead of re-deriving from the verdict label; the logic moved into a pure helper `_finalise_after_adjudication`. Four pairs flip `differ` to `match` on a stored-row replay (P26-b FR, PT14 FR, I16 EE, I17 EE), each an Adjudicator `yes` previously overwritten with `inconclusive`. D33: retry queries forced to diverge; the query generator now receives the Verifier's rejection reason, suggested query, and prior queries with an instruction to vary (`_QUERY_GEN_VERSION` 1 to 2), `ResearcherInput.previous_search_queries` added, coordinator accumulates queries across attempts; first-attempt path unchanged. Defaults and non-retried runs behave as before. New `tests/test_finalise_after_adjudication.py` and `tests/test_query_gen_divergence.py`; 297 non-live passing. The dominant remaining loss (the 67% substring-gate failure that decays answers to `inconclusive`) is diagnosed but not fixed here; it needs snippet persistence first. |

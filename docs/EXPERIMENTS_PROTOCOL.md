@@ -538,25 +538,36 @@ items, all gated on search quota:
    optionally Netherlands. The `no`-gold candidates do not exist in the DB yet, so
    this is the binding prerequisite for the base-rate rule (R4) to be satisfiable.
    Same quota gate as the parked D28 Phase 3.
-   **Partial (2026-06-03).** The canonical pair set is frozen and committed at
+   **Done (2026-06-03).** The canonical pair set is frozen and committed at
    `data/questions/malta_eval_pairs.json` (60 pairs, 30 `no` / 30 `yes`, seed
    20260603, dimension split Impact 17 / Portal 24 / Policy 10 / Quality 9;
    generator `scripts/build_malta_eval_pairs.py`). All 30 `no`-gold binary
    questions are included as the minority class; the 30 `yes`-gold pairs are a
    size-matched, dimension-stratified round-robin draw. The baseline dispatch
-   (provider auto, `condition_label` baseline, no `experiment_id`; batch
-   `exp6_malta`) reached 25 of the 60 pairs with Researcher rows and 17 finalised:
-   12 with a real answer and 5 `agent_failure` (all on `search_empty`). All 12
-   real-answer finalised pairs are `no`-gold; 11 of 12 match ground truth, the one
-   differ being I8-b (a false-positive `yes` against a `no` gold, the kind of error
-   Malta's `no`-gold questions exist to surface). The remaining 35 pairs (30
-   `yes`-gold plus the 5 `no`-gold I14, I22, I23, PT42, Q19) are not yet dispatched:
-   the Claude Max rolling window is exhausted (first LLM call returns
-   `APIConnectionError` through CLIProxyAPI), so the run was stopped rather than
-   thrashed on the shared quota. Resume is clean: the not-done set is computed
+   (provider auto, `condition_label` baseline, no `experiment_id`; batches
+   `exp6_malta` then `malta_baseline`) finalised 58 of 60: 43 committed yes/no plus
+   15 honest `inconclusive` abstentions (D37). Two pairs are unfinished, I8-d and
+   PT12, both `no`-gold, both `agent_failure` on `search_empty` (empty SERPs under
+   exhausted-Tavily / DIY-only retrieval). Balance-aware result (R4): exact match
+   32/58 raw, 32/43 on committed answers; no-gold minority recall (TNR) 0.87 with 3
+   false positives of 23 committed (I7, I8-b, PT29, the visible-error class Malta's
+   `no`-gold questions exist to surface); yes-gold recall (TPR) 0.60; Youden's J
+   0.47; mean commit confidence 0.58. Zero data-leakage in any finalised row; batch
+   cost ~$4.98. The R4 base-rate metric is now satisfiable. EXP-7/8/9 reuse this
+   same committed pair list with their own `condition_label` / `experiment_id`
+   tags; the 13 baseline rows are plain (no `experiment_id`) and read identically
+   to the `exp6_malta` set.
+
+   Two faults found and fixed during the dispatch (both gated the run, neither was
+   quota): a fresh worktree has no `.env`, and the desktop app injects an empty
+   `ANTHROPIC_AUTH_TOKEN` that made the Anthropic SDK send a malformed `Bearer`
+   header, surfacing as `APIConnectionError` (fixed in `agents/tools/llm.py`,
+   blank token dropped at import); and `_find_resumable_researcher` resumed from
+   failed / `inconclusive` Researcher rows, stranding 11 pairs at stage
+   'researching' with no `phase2_final` (fixed in `scripts/run_coordinator.py`, only
+   clean committed results are now resumable). The not-done set is computed
    dynamically as the canonical question IDs minus the distinct MT
-   `phase2_researcher_runs` question IDs. The set must be re-run when the window
-   recovers before the R4 base-rate metric is fully satisfiable.
+   `phase2_researcher_runs` question IDs, so any later top-up resumes cleanly.
 10. **EXP-8 conditions:** a committed `prompt-compressed` prompt version in
     `prompt_versions`, the `model-fallback` escalation path, and a per-arm
     cache-bypass that leaves the `cache-hot` arm cache-on while every other arm
