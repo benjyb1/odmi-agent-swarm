@@ -73,6 +73,13 @@ COUNTRIES = {
            "portal_url": "https://data.gov.hu/"},
     "EE": {"country_name": "Estonia",  "country_language": "et",
            "portal_url": "https://avaandmed.eesti.ee/"},
+    # Malta: English is an official language, so its open-data estate is
+    # largely in English and a poor result is the pipeline's doing, not a
+    # language artefact. This is why EXP-6 retargets its primary should_fail
+    # class here (SPEC D38, R4). Binary questions route through web search,
+    # so portal_url is not on the critical path for the Malta run.
+    "MT": {"country_name": "Malta",    "country_language": "en",
+           "portal_url": "https://data.gov.mt/"},
 }
 
 
