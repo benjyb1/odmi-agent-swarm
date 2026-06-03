@@ -212,4 +212,7 @@ daily-token cap blocked every available key): 78% raw agreement, Krippendorff
 alpha 0.648 on the frozen 27-pair subsample, all disagreements Opus `both_fail`
 vs a Mistral commitment, rebutting the same-family self-preference concern.
 EXP-4/5 are mid-run and resumable, EXP-2a/2b queued, EXP-3 skipped, EXP-6
-partial (3/89), EXP-7 parked.
+partial (3/89). EXP-7 (retry chaining): the chained arm is built behind
+`--chained` (default off, so production and the EXP-8/9 baseline are
+byte-identical) and pre-registered (D39, `docs/EXPERIMENTS_CHAINING.md`,
+Malta primary); the run is gated only on the Malta dispatch and Claude quota.

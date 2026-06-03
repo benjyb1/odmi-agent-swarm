@@ -308,7 +308,6 @@ def cmd_run(args: argparse.Namespace) -> int:
     dispatch_cmd = [
         "uv", "run", "python", str(REPO_ROOT / "scripts" / "dispatch_subtrios.py"),
         "--pairs", *pair_args,
-        "--soft-limit-usd", f"{est_cost_usd * 1.5:.2f}",
     ]
     if args.strategy:
         dispatch_cmd += ["--strategy", args.strategy]

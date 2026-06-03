@@ -8,41 +8,143 @@ Entries newest first.
 
 ---
 
-## 2026-06-03 — Session 20f: Malta baseline dispatch (partial, quota-walled)
+## 2026-06-03 — Session 20f: Malta baseline dispatch (done, 60/60)
 
 Picked up the shared prerequisite for EXP-6/7/8/9: the canonical Malta pair set
 plus a baseline swarm run over it. The pair set was already built and committed by
 an earlier window (`data/questions/malta_eval_pairs.json`, 60 pairs, 30 `no` / 30
 `yes`, seed 20260603; generator `scripts/build_malta_eval_pairs.py`). Verified it
-rather than regenerating: all 30 `no`-gold binary MT questions are present (the
-minority class is not sampled down), the 30 `yes`-gold pairs are a size-matched
-round-robin draw, and the dimension split is Impact 17 / Portal 24 / Policy 10 /
-Quality 9. MT is in `run_coordinator.COUNTRIES` and `search_snippets` is a column
-on `phase2_researcher_runs`; both confirmed.
+rather than regenerating: all 30 `no`-gold binary MT questions present (minority
+class not sampled down), 30 `yes`-gold a size-matched round-robin draw, dimension
+split Impact 17 / Portal 24 / Policy 10 / Quality 9. MT is in
+`run_coordinator.COUNTRIES`; `search_snippets` is a column on
+`phase2_researcher_runs`.
 
-The DB already held a partial baseline dispatch (batch `exp6_malta`, provider auto
-which falls to DIY since Tavily is spent, `condition_label` baseline, no
-`experiment_id`): 25 of 60 pairs with Researcher rows, 17 finalised. Of those 17,
-12 carry a real answer (all `no`-gold, 11 of 12 matching ground truth; the one
-differ is I8-b, a false-positive `yes` against a `no` gold, the visible
-false-positive Malta was chosen to expose) and 5 are `agent_failure` on
-`search_empty`.
+The reported "quota wall" was a misdiagnosis, and worth recording as such. A fresh
+coordinator on P4:MT failed on the first LLM call with `APIConnectionError`, which
+reads like an exhausted window. The plan was at 43% of the 5-hour limit. The real
+cause was environment: a fresh worktree has no `.env` (gitignored), and Claude for
+Desktop injects an empty `ANTHROPIC_AUTH_TOKEN` into the session, so the Anthropic
+SDK built an `Authorization: Bearer ` header with no token and httpx rejected it
+locally, surfacing as a bare `APIConnectionError`. Fixed in `agents/tools/llm.py`
+by dropping a blank `ANTHROPIC_AUTH_TOKEN` (and empty `ANTHROPIC_CUSTOM_HEADERS`)
+at import.
 
-Probed whether the run could continue: a single foreground coordinator on P4:MT
-failed on the first LLM call with `APIConnectionError` through CLIProxyAPI. The
-proxy is up (HTTP 401 on `/v1/models`, brew service started), so the wall is the
-exhausted Claude Max rolling window, not the proxy. The last successful usage-log
-call was 14:49Z; the window had not recovered by 15:45Z. Stopped there rather than
-dispatch the remaining 35 pairs into a connection-error loop on the shared quota
-that concurrent windows also draw on. Discarded the probe's stray subtrio row so
-the committed DB stays identical to the inherited partial.
+With that cleared, dispatched the remaining pairs over several passes (provider
+auto, which falls to DIY since Tavily is spent, `condition_label` baseline, no
+`experiment_id`, batch `malta_baseline`). One pass hit a genuine Claude 429
+`model_cooldown` near the end and the dispatcher stopped cleanly. Two more bugs
+surfaced and were fixed: `_find_resumable_researcher` resumed from failed /
+`inconclusive` Researcher rows and stranded 11 pairs at stage 'researching' with no
+`phase2_final` (`scripts/run_coordinator.py` now resumes only clean committed
+results); and `head_ok` marked Cloudflare-protected data.gov.mt as
+`url_unreachable`, killing answers grounded there (`agents/tools/fetch.py` now
+clears a WAF 403/429/503 with a Playwright render, a real browser solves the
+challenge JS). The last two pairs, I8-d and PT12, recovered from `search_empty` to
+`inconclusive` once the fetch fix landed.
 
-What is left: the 35 not-done pairs (30 `yes`-gold plus the 5 `no`-gold I14, I22,
-I23, PT42, Q19). Resume is clean, the not-done set is the canonical IDs minus the
-distinct MT `phase2_researcher_runs` IDs. Re-run when the Claude window recovers.
-Recorded the partial in SPEC current-status, `EXPERIMENTS.md` (EXP-6), and
-`EXPERIMENTS_PROTOCOL.md` section 9 item 9. `uv run pytest -q`: 446 passed, 13
-skipped.
+Final: all 60 finalised, 43 committed yes/no (32 correct, 74% on committed) plus 17
+honest `inconclusive` abstentions (D37). Balance-aware (R4): no-gold recall (TNR)
+0.87 with 3 false positives of 23 committed (I7, I8-b, PT29, the visible-error
+class Malta exists to surface), yes-gold recall (TPR) 0.60, Youden's J 0.47, mean
+commit confidence 0.58. Zero data-leakage; batch cost ~$4.98.
+
+Failure-mode taxonomy across the 28 non-matches (for EXP-10): WAF/CAPTCHA retrieval
+block is dominant (`url_unreachable` on 71 of 234 attempts, touches ~15 non-matches
+including all 3 false positives, now mitigated); the self-report / questionnaire
+ceiling is the hard limit (~8 non-matches, no open-web source exists); then
+substring-gate failures (12), thin SERP / Tavily exhaustion (3), and 2 conservative
+`no`-instead-of-abstain false negatives. Recorded in SPEC, `EXPERIMENTS.md`,
+`EXPERIMENTS_PROTOCOL.md` section 9 item 9, and `EXPERIMENTS_VERIFIER.md`. Merged
+`origin/main` (D39/D40/D41, EXP-7 chaining) into the branch, resolving the binary
+`data/odmi.db` to this branch's superset (verified a strict superset of main: MT 73
+vs 17 finalised rows, every other country identical). `uv run pytest -q`: 446
+passed, 13 skipped.
+
+---
+
+## 2026-06-03 — Session 20g: remove the cost soft limit (D40)
+
+Ripped out the local cost soft limit. It was a three-layer thing (D20): a
+pre-flight refusal if projected cost exceeded a notional budget, a low-water stop
+that halted spawning at 95% of the cap, and a clean rate-limit shutdown. The
+first two only ever got in the way. The "budget" was a guessed arithmetic
+equivalent of a flat CLIProxyAPI subscription, not a real balance, and the proxy
+strips the rate-limit headers so the figure never tracked actual Max capacity. So
+the gate refused or stalled real runs against a number that meant nothing.
+
+Removed the threshold, both aborts, the `soft_limit_usd`/`force` params and the
+`--soft-limit-usd`/`--force` flags, the `CostEstimate`/`DispatchResult` budget
+fields, the dashboard slider and progress-toward-limit bar, and the Run Console
+"Force release" checkbox. Kept the clean 429 shutdown (the only real ceiling) and
+the rolling 5-hour spend as a plain information meter on the sidebar, Run Console,
+and Costs page. The pre-flight estimate still logs a projection; it just no longer
+blocks anything. Annotated D20 as superseded and added D40. 438 non-live tests
+pass.
+
+Then put back the one guard that's actually worth having (D41), reframed as a
+circuit breaker rather than a budget. The real worry is a misspecified experiment
+eating the whole 5-hour Max window, so the guard works on real units and sits far
+above any real run. Pre-flight: refuse a single dispatch above 500 pairs (the
+cross-product footgun is 5,148; legitimate runs are ~100-150), overridable with
+`--allow-large` and surfaced as a one-off checkbox in the Run Console. Mid-flight,
+opt-in: `--max-calls` stops spawning once the batch's own logged calls reach a
+cap, for the runaway-loop case. Both silent in normal use. `DispatchResult` gained
+`aborted_oversize` / `calls_capped`. New `tests/test_dispatch_runaway_guard.py`
+(8 cases, with `time.sleep` monkeypatched so the 500-pair test doesn't spend 25s
+on the spawn stagger); 446 non-live passing.
+
+---
+
+## 2026-06-03 — Session 20f: EXP-7 chained retry arm (built, gated, pre-registered)
+
+Built the chaining arm for EXP-7. The loop spends up to eight calls per pair but
+treats each retry as a fresh shot: the Verifier searches the web every round,
+finds real counter-evidence, and the loop keeps only its verdict and bins the
+rest. D33 already carries queries and the rejection reason forward and D34
+persists the snippets, so the evidence was being thrown away on the floor next to
+the persistence that could have carried it. EXP-7 asks whether chaining it
+recovers more correct answers per call without raising the false-positive rate.
+
+Three changes, all behind a `--chained` flag that defaults off: feed the
+Verifier's counter-evidence back into the Researcher on retry (not just the
+verdict and a query), accumulate a de-duped evidence corpus across rounds and
+carry it forward, and have the Adjudicator synthesise over the whole corpus. The
+D37 commit floor and the abstention rules are untouched in both arms; the
+treatment only changes what each call sees, never the bar it has to clear. That
+separation is what lets a recovery gain be read as better evidence use rather
+than a lowered threshold.
+
+The hard constraint was that the EXP-8/9 baseline and production must not move,
+because they are measured against this same loop and another tab is about to run
+them on Malta. So the carried evidence rides in the per-call user message, not the
+system prompt: `prompt_versions` rows stay put, and an empty corpus renders
+byte-for-byte as the old prompt. Wrote `tests/test_chained_evidence.py` (18 cases)
+to pin exactly that, plus that the corpus carries forward when populated and that
+the flag defaults off. 418 non-live tests pass.
+
+Pre-registered in `docs/EXPERIMENTS_CHAINING.md` under R1 to R12: Malta primary
+(no-gold-rich, so a false `yes` is visible), baseline vs chained, balance-aware
+endpoints with the false-positive rate as a co-primary, paired McNemar and
+Wilcoxon, one confirmatory joint claim. The run is gated only on the Malta
+dispatch (search quota, shared with EXP-6/8/9) and Claude headroom. Logged as D39;
+EXP-7 status board and the SPEC current-status block updated. No swarm was
+dispatched: pure code and docs, so this ran fully parallel to the Malta tab.
+
+Then built the analysis harness too (`evaluation/chaining_analysis.py`,
+pre-run requirement 2), so it is ready and tested before the data exists rather
+than thrown together after. A pure stats layer (PairOutcome classifiers, the
+per-arm summary, and a paired comparison that runs McNemar on both recovery and
+the committed-but-wrong indicator, Wilcoxon on calls, and a mechanical joint
+verdict against the 0.05 false-positive margin) sits over a thin DB layer that
+reuses `_MATCH_STATUS_SQL`, so recovery means the same thing here as on the
+dashboard. Balanced accuracy is reported only when both binary classes are
+present, so a one-class sample cannot masquerade as balance-aware. 15 new tests,
+including a temp-SQLite round trip for the arm split and call counting.
+
+Next: when the Malta dispatch lands, confirm the resume path does not let a
+Researcher row cross arms, then run baseline and chained in sequence on the same
+Malta pair set and point the harness at the experiment_id.
 
 ---
 

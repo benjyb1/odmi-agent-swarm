@@ -17,7 +17,7 @@ run) · `running` · `done`.
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
 | EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (Malta dispatch done) | primary Malta natural errors, NL secondary, FR + injected robustness | unblocked; Malta baseline finalised 60/60 (43 committed, 17 abstentions); the natural-error pool for the should_fail arm is now populated; FR/injected partial superseded |
-| EXP-7 | Retry chaining: accumulate evidence across the loop | planned | high-resource-language, low-maturity country first (false-positive risk) | unblocked; reuses the same Malta pair list and baseline set |
+| EXP-7 | Retry chaining: accumulate evidence across the loop | code built, pre-registered | Malta primary (no-gold-rich), NL secondary | chained arm built behind `--chained` (default off, baseline byte-identical), pre-registered (`EXPERIMENTS_CHAINING.md`); unblocked now the Malta baseline is done (60/60), reuses the same pair list; run pending quota |
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
 | EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
 | EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | unblocked; 60 finalised Malta pairs available (batches exp6_malta + malta_baseline), failure taxonomy drafted (search-empty, resume-orphan, abstention, conservative-FN, FP); floor sweep is free |
@@ -247,46 +247,61 @@ on whatever Malta pairs exist; the floor sweep needs no quota. Tavily-independen
 
 Result: pending.
 
-## EXP-7: Retry chaining / evidence accumulation (planned, future)
+## EXP-7: Retry chaining / evidence accumulation (code built, pre-registered)
+
+Pre-registered in `docs/EXPERIMENTS_CHAINING.md` under the universal rules
+(`EXPERIMENTS_PROTOCOL.md` section 0). The chained code path is **built and
+committed**, gated behind `--chained` (default off), so production and the
+EXP-8/9 baseline are byte-identical to the independent-retry loop.
 
 Up to eight calls run per pair (four Researcher, four Verifier across the retry
-budget), but they are independent shots. The Verifier searches the web every
-round and often finds real evidence, then the loop keeps only its verdict and
-bins the evidence. The Researcher on retry 3 does not know what the Verifier
+budget), but today they are independent shots. The Verifier searches the web
+every round and often finds real evidence, then the loop keeps only its verdict
+and bins the evidence. The Researcher on retry 3 does not know what the Verifier
 turned up on rounds 1 and 2. The calls are spent, the findings are thrown away.
+SPEC D33 carries queries and the rejection reason forward, D34 persists snippets,
+D37 applies the commit floor, but no round sees what the earlier rounds gathered.
 
-Idea: chain the calls into one cumulative investigation.
-- Feed the Verifier's independent evidence (its snippets and counter-evidence)
-  back to the Researcher on retry, not just the verdict and a suggested query.
-- Accumulate an evidence corpus across rounds (snippets are already persisted,
-  D34) and carry it forward, so each round sees everything found so far.
-- Let the Adjudicator synthesise over the whole corpus as the final call,
-  committing only when the evidence supports a confident label (the D37 floor)
-  and abstaining honestly otherwise.
+What the `--chained` arm now does (all flag-gated, default off):
+- Feeds the Verifier's counter-evidence (its `counter_evidence_quote` /
+  `counter_source_url`) back into the `ResearcherInput` on retry, not just the
+  verdict and a suggested query (`VerifierFeedback` extended).
+- Accumulates an evidence corpus across rounds (the Researcher's and Verifier's
+  snippets, already persisted under D34; new `EvidenceItem` model) and carries it
+  forward via `ResearcherInput.prior_evidence`, so each round sees everything
+  found so far. The coordinator merges with de-dup and a 40-item cap.
+- Has the Adjudicator synthesise over the whole corpus
+  (`AdjudicatorInput.evidence_corpus`), committing only above the D37 floor and
+  abstaining honestly otherwise. The floor and abstention rules are unchanged
+  across both arms; the treatment only changes what each call sees.
+
+Carried evidence and its using-instruction travel in the per-call user message,
+not the system prompt, so `prompt_versions` rows are identical across arms and an
+empty corpus renders byte-for-byte as the pre-EXP-7 prompt. Offline tests in
+`tests/test_chained_evidence.py` pin all three: the chained path carries evidence
+forward, the baseline path is byte-identical, and the flag defaults off.
 
 Hypothesis: chaining recovers more correct answers per call than independent
 retries, without raising the false-positive rate.
 
-Conditions: baseline (current independent retries, D33 / D37) vs chained.
-Metrics per arm: recovery (match against ground truth), false-positive rate
-(committed but wrong), abstention rate, and calls per resolved pair.
+Conditions: `baseline` (current independent retries, D33 / D37) vs `chained`.
+Endpoints, read balance-aware per R4: recovery (balanced accuracy + per-class
+rates against ground truth), false-positive rate (committed but wrong, the
+co-primary), abstention rate, and calls per resolved pair. Paired McNemar (×2)
+and Wilcoxon; one confirmatory joint claim (balanced-accuracy non-decrease at a
+non-increased false-positive rate). Full design in `EXPERIMENTS_CHAINING.md`.
 
-Where to run, which matters as much as the design:
-- Not a yes-heavy country. On France (85% yes) a recovery number cannot be told
-  apart from majority-class guessing, the D35 / D37 lesson. The set must carry
-  plenty of no-gold pairs so a false `yes` is visible.
-- First run on a HIGH-resource-language, low-maturity country, so search and
-  model capability are not the bottleneck and the result isolates the chaining
-  effect rather than language difficulty. Malta is the leading candidate:
-  English is an official language and the open-data ecosystem is largely in
-  English, and it has many no-gold pairs (about 30). Defer the lower-resource
-  no-heavy countries (BA, MK, ME, BG, IS) to a follow-on so a poor result there
-  is not blamed on language.
+Where to run: Malta primary (English official, ~30 `no`-gold binary questions so
+a false `yes` is visible), Netherlands secondary. France is barred (99% `yes`,
+recovery indistinguishable from majority-class guessing, the D35 / D37 / R4
+lesson). The lower-resource `no`-heavy countries (BA, MK, ME, BG, IS) are deferred
+to a follow-on so a poor result there is not blamed on language.
 
-Prerequisite: the honest validation set (no-gold plus band pairs) must exist
-first, both to baseline the current D34 / D37 code and to measure chaining
-against it.
+Prerequisite: the Malta dispatch (search-quota gated, shared with EXP-6/8/9; the
+`no`-gold candidates do not exist in the DB yet) and Claude headroom. The run is
+gated only on those two; the code and pre-registration are done.
 
-Status: planned, not started. Parked as a future experiment.
+Status: code built and committed (flag-gated, default off), pre-registered. Run
+not started, pending the Malta dispatch and quota.
 
 Result: pending.

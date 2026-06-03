@@ -100,6 +100,25 @@ class LLMUsage(BaseModel):
 # ============================================================
 
 
+class EvidenceItem(BaseModel):
+    """One piece of evidence gathered during a pair's investigation.
+
+    Used only by the EXP-7 chained retry arm to accumulate everything the
+    Researcher and Verifier turned up across rounds and carry it forward.
+    The baseline (independent-retry) loop never builds these, so the
+    corpus is empty and every prompt is byte-identical to the pre-EXP-7
+    behaviour. See `docs/EXPERIMENTS_CHAINING.md`.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    snippet: str
+    source_url: Optional[str] = None
+    # Which agent surfaced this evidence, and on which retry round.
+    origin: Literal["researcher", "verifier"] = "researcher"
+    round_index: int = 0
+
+
 class VerifierFeedback(BaseModel):
     """Carried from a previous Verifier rejection back into the next
     Researcher attempt. Empty on the first attempt.
@@ -110,6 +129,13 @@ class VerifierFeedback(BaseModel):
     rejection_reason: str
     suggested_search_query: Optional[str] = None
     failed_source_url: Optional[AnyHttpUrl] = None
+
+    # EXP-7 (chained arm only): the Verifier's own counter-evidence handed
+    # back to the Researcher, not just the verdict and a suggested query.
+    # Both default None, so the baseline loop never sets them and the
+    # Researcher prompt blocks below render nothing extra.
+    counter_evidence_quote: Optional[str] = None
+    counter_source_url: Optional[AnyHttpUrl] = None
 
 
 class ResearcherInput(BaseModel):
@@ -137,6 +163,13 @@ class ResearcherInput(BaseModel):
     # Carried through on retries so the query generator can diverge
     # from already-tried phrasings (Change 2).
     previous_search_queries: List[str] = Field(default_factory=list)
+
+    # EXP-7 (chained arm only): every piece of evidence gathered on prior
+    # rounds by both the Researcher and the Verifier, carried forward so a
+    # later round sees everything found so far. Empty in the baseline loop,
+    # so the Researcher prompt renders no extra block and behaviour is
+    # byte-identical. See `docs/EXPERIMENTS_CHAINING.md`.
+    prior_evidence: List["EvidenceItem"] = Field(default_factory=list)
 
 
 class ResearcherOutput(BaseModel):
@@ -238,6 +271,12 @@ class AdjudicatorInput(BaseModel):
     # D28: shape + allowed labels copied from the question row.
     answer_shape: str = "binary"
     allowed_answers: List[str] = Field(default_factory=lambda: ["yes", "no"])
+
+    # EXP-7 (chained arm only): the accumulated evidence corpus from every
+    # round, so the Adjudicator synthesises over the whole investigation
+    # rather than just the per-attempt summaries. Empty in the baseline
+    # loop, so the Adjudicator prompt renders no extra block.
+    evidence_corpus: List["EvidenceItem"] = Field(default_factory=list)
 
 
 class AdjudicatorOutput(BaseModel):

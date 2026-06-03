@@ -259,7 +259,10 @@ Q-DASH-3.
 
 ### D20: Rolling-window credit budget enforcement
 
-**Date:** 2026-05-12.
+**Date:** 2026-05-12. **Layers 1 and 2 superseded by D40 (2026-06-03):** the
+soft limit and its enforcement (pre-flight refusal and the low-water spawn stop)
+are removed. The rolling-window cost is still computed and displayed (layer 3,
+the clean rate-limit shutdown, is unchanged); it just no longer blocks anything.
 
 The dispatcher (`scripts/dispatch_subtrios.py`) enforces a three-layer
 credit policy against the rolling 5-hour Claude Max window:
@@ -1159,7 +1162,9 @@ Status (detail in `docs/EXPERIMENTS.md`):
   retargeted to Malta-primary under R4. Its binding prerequisite, the Malta
   baseline dispatch, is now done (see below); the four-arm judge run is not yet
   executed.
-- **EXP-7** (retry chaining): planned, parked. Reuses the Malta pair list.
+- **EXP-7** (retry chaining): code built behind `--chained` (default off, baseline
+  byte-identical) and pre-registered (`EXPERIMENTS_CHAINING.md`, Malta primary);
+  unblocked now the Malta baseline is done, run pending quota.
 
 **Malta baseline dispatch (2026-06-03, done; 60/60).** The shared prerequisite for
 EXP-6/7/8/9. The canonical pair set is frozen and committed at
@@ -1350,6 +1355,119 @@ Rationale: the swarm's headline contribution is an accuracy-vs-cost surface. A
 surface measured on a degenerate country would be indistinguishable from
 majority-class guessing, so the base-rate rule protects the central result.
 
+### D39: EXP-7 chained retry arm, built behind a default-off flag
+
+**Date:** 2026-06-03.
+
+The retry loop spends up to eight calls per pair but treats each as an
+independent shot. The Verifier searches the web every round and often finds real
+counter-evidence; the loop keeps its verdict and bins the rest. D33 carries
+queries and the rejection reason forward, D34 persists snippets, D37 applies the
+commit floor, but no round sees the evidence the earlier rounds gathered. EXP-7
+tests whether chaining the evidence across the loop recovers more correct answers
+per call than independent retries, without raising the false-positive rate.
+
+The chained arm is built and gated behind `--chained` (default off), so
+production and the EXP-8/9 baseline are byte-identical to the independent-retry
+loop. Three changes, all flag-gated:
+
+- The Verifier's counter-evidence (`counter_evidence_quote` / `counter_source_url`)
+  is fed back into `ResearcherInput` on retry, not just the verdict and a query
+  (`VerifierFeedback` extended with two optional fields, both default None).
+- An evidence corpus accumulates across rounds (a new `EvidenceItem` model; the
+  snippets are already persisted under D34) and is carried forward via
+  `ResearcherInput.prior_evidence`. The coordinator merges with de-dup on
+  (URL, snippet prefix) and a 40-item cap, in pure helpers
+  (`_evidence_from_researcher`, `_evidence_from_verifier`, `_merge_evidence`).
+- The Adjudicator synthesises over the whole corpus
+  (`AdjudicatorInput.evidence_corpus`), committing only above the D37 floor and
+  abstaining otherwise. The floor and abstention rules are unchanged across both
+  arms; the treatment only changes what each call sees, never the commit bar.
+
+The carried evidence and its using-instruction travel in the per-call user
+message, not the system prompt, so `prompt_versions` rows are identical across
+arms and an empty corpus renders byte-for-byte as the pre-EXP-7 prompt. The flag
+is threaded through `dispatch_subtrios.py` → `run_coordinator.py` as `--chained`.
+Offline tests (`tests/test_chained_evidence.py`, 18 cases) pin the three
+properties: the chained path carries evidence forward, the baseline path is
+byte-identical, and the flag defaults off. 418 non-live tests passing.
+
+Pre-registered in `docs/EXPERIMENTS_CHAINING.md` under the universal rules
+(`EXPERIMENTS_PROTOCOL.md` R1 to R12): Malta primary per R4 (no-gold-rich, so a
+false `yes` shows up), baseline vs chained, balance-aware endpoints with the
+false-positive rate as a co-primary, paired McNemar and Wilcoxon, one
+confirmatory joint claim (balanced-accuracy non-decrease at a non-increased
+false-positive rate). The run is gated only on the Malta dispatch (search quota,
+shared with EXP-6/8/9) and Claude headroom; the code and pre-registration are
+done.
+
+Rationale: this is an optimisation experiment on the loop itself, so the arm has
+to be runnable yet must not perturb the baseline it is measured against. A
+default-off flag with byte-identical baseline prompts is the only way to keep the
+EXP-8/9 baseline and production untouched while the chained arm waits on quota.
+
+### D40: Remove the local cost soft limit
+
+**Date:** 2026-06-03. Supersedes D20 layers 1 and 2.
+
+The dispatcher's soft limit (D20) refused a launch when the projected cost
+exceeded a notional remaining budget, and stopped spawning new subtrios once the
+rolling-window cost crossed a 5% low-water mark. In practice it only got in the
+way: the figure is a guessed arithmetic equivalent of a flat CLIProxyAPI
+subscription (D1, Q9), not a real balance, and CLIProxyAPI strips the
+rate-limit headers anyway, so the "budget" never reflected actual Max capacity.
+The one real ceiling is Claude Max's own rate limit, which already surfaces
+cleanly as a 429 and a resumable interrupted shutdown (D20 layer 3, kept).
+
+Removed: `DEFAULT_SOFT_LIMIT_USD`, `LOW_WATER_FRACTION`, the `soft_limit_usd` and
+`force` parameters and `--soft-limit-usd` / `--force` CLI flags on
+`dispatch_subtrios.py`, the `CostEstimate.soft_limit_usd` /
+`budget_remaining_usd` fields, the `DispatchResult.aborted_due_to_budget` field,
+the pre-flight refusal, and the per-spawn low-water check. `harness.py` no longer
+passes `--soft-limit-usd`. The dashboard sidebar drops the soft-limit slider and
+the progress-toward-limit bar; the Run Console drops the "Window soft limit"
+metric and the "Force release" checkbox. The rolling 5-hour spend is still
+computed and shown everywhere it was (sidebar, Run Console, Costs page) as a
+plain information meter, and the pre-flight estimate is still logged; neither
+blocks a dispatch. Tests updated; 438 non-live passing.
+
+Rationale: a cap that does not track a real balance and that the user has to
+force past on every meaningful run is friction without protection. Cost
+visibility stays; the gate goes.
+
+### D41: Runaway circuit breakers (not a budget)
+
+**Date:** 2026-06-03. Follows D40.
+
+With the dollar soft limit gone, the one residual risk is a misspecified
+experiment that burns the whole 5-hour Claude Max window before anyone notices.
+D41 adds two circuit breakers, both keyed on real units (pairs and calls) and
+both set far above any real run, so they are silent in normal use and fire only
+on a clear runaway. This is the opposite of D20's budget: not "may I spend this?"
+on every run, but "this is obviously broken, stop".
+
+1. **Pre-flight size guard (on by default).** A single dispatch above
+   `MAX_PAIRS_PER_DISPATCH = 500` pairs is refused before anything spawns, with a
+   clear message, unless `allow_large=True` / `--allow-large` is set. The biggest
+   legitimate runs are ~100-150 pairs (a full single country); the
+   all-questions x all-countries cross-product accident is 5,148. 500 sits
+   cleanly between, so it catches the footgun without nagging. The Run Console
+   surfaces it as a one-off "allow this large run" checkbox.
+2. **Mid-flight call breaker (opt-in).** If `--max-calls N` is set, the dispatch
+   loop stops spawning new subtrios once the batch's own logged Claude calls
+   (`claude_usage_log` scoped to this batch's subtrios, via `_batch_call_count`)
+   reach N. Off by default, for the rarer runaway-loop case. A normal pair is ~5
+   calls (~17 worst case), so a sane cap is well above n_pairs x 17.
+
+`DispatchResult` gains `aborted_oversize` and `calls_capped` flags so the UI and
+logs can show why a batch stopped short. The real ceiling is still Claude Max's
+own 429 (D20 layer 3, the clean resumable shutdown). New
+`tests/test_dispatch_runaway_guard.py` (8 cases); 446 non-live passing.
+
+Rationale: the user's actual worry is "a rogue experiment eats the 5-hour token
+budget", not per-run cost. A high circuit breaker on the real units answers that
+without re-introducing the friction D40 removed.
+
 ---
 
 ## Change log
@@ -1357,6 +1475,9 @@ majority-class guessing, so the base-rate rule protects the central result.
 | Date | Change |
 |---|---|
 | 2026-06-03 (Malta dispatch, done) | Malta baseline swarm dispatch completed, the shared prerequisite for EXP-6/7/8/9 (protocol section 9 item 9). Canonical 60-pair set (`data/questions/malta_eval_pairs.json`, 30 `no` / 30 `yes`, seed 20260603) was already committed; verified no-gold coverage (all 30 present) and dimension balance. Dispatched the remaining pairs in four passes (provider auto, `condition_label` baseline, no `experiment_id`, batch `malta_baseline`): all 60 finalised, 43 committed yes/no plus 17 honest `inconclusive` abstentions (D37). Balance-aware (R4): 32/43 committed accuracy, no-gold recall (TNR) 0.87 with 3 false positives of 23 committed (I7, I8-b, PT29), yes-gold recall (TPR) 0.60, Youden's J 0.47, mean commit confidence 0.58; zero data-leakage; batch cost ~$4.98. Three faults found and fixed, none quota: a fresh worktree had no `.env` and the desktop app injected an empty `ANTHROPIC_AUTH_TOKEN`, making every LLM call a misleading `APIConnectionError` (`agents/tools/llm.py` drops a blank token at import); `_find_resumable_researcher` resumed from failed / `inconclusive` Researcher rows, stranding 11 pairs at 'researching' (`scripts/run_coordinator.py` now resumes only clean committed results); and `head_ok` reported Cloudflare-protected data.gov.mt as `url_unreachable`, which it now clears with a Playwright render on a WAF 403/429/503 (`agents/tools/fetch.py`), recovering the last two pairs I8-d and PT12 to `inconclusive`. The first pass also hit a genuine Claude 429 `model_cooldown` near the end and stopped cleanly. New Malta DB rows committed on this branch; 446 tests pass. SPEC current-status, `EXPERIMENTS.md`, `EXPERIMENTS_PROTOCOL.md` section 9 item 9, and `EXPERIMENTS_VERIFIER.md` updated. Failure-mode taxonomy drafted for EXP-10 (retrieval ceiling dominant; the data.gov.mt WAF block now mitigated). |
+| 2026-06-03 (runaway guard) | D41 added, follows D40. Two runaway circuit breakers on `dispatch_subtrios.py`, keyed on real units and set far above any real run: a pre-flight refusal above `MAX_PAIRS_PER_DISPATCH = 500` pairs (on by default, overridable with `allow_large` / `--allow-large`; surfaced as a checkbox in the Run Console), and an opt-in mid-flight `--max-calls` breaker that stops spawning once the batch's logged calls (via new `_batch_call_count`) reach the cap. `DispatchResult` gains `aborted_oversize` and `calls_capped`. Replaces the deleted dollar budget with a "this is obviously broken, stop" guard rather than a per-run "may I spend this?". New `tests/test_dispatch_runaway_guard.py` (8 cases); 446 non-live passing. |
+| 2026-06-03 (soft limit) | D40 added, supersedes D20 layers 1 and 2. Removed the local cost soft limit: `DEFAULT_SOFT_LIMIT_USD`, `LOW_WATER_FRACTION`, the `soft_limit_usd`/`force` params and `--soft-limit-usd`/`--force` flags on `dispatch_subtrios.py`, the `CostEstimate.soft_limit_usd`/`budget_remaining_usd` and `DispatchResult.aborted_due_to_budget` fields, the pre-flight refusal, and the per-spawn low-water stop. `harness.py` no longer passes `--soft-limit-usd`; the dashboard sidebar loses the soft-limit slider/progress and the Run Console loses the "Window soft limit" metric and "Force release" checkbox. Rolling 5-hour spend is still computed and shown (sidebar, Run Console, Costs) and the pre-flight estimate is still logged, but nothing blocks a dispatch now; the only ceiling is Claude Max's own rate limit (D20 layer 3, the clean resumable 429 shutdown, kept). The cap was a guessed arithmetic equivalent of a flat subscription, not a real balance, so it was friction without protection. Tests updated; 438 non-live passing. |
+| 2026-06-03 (chaining) | D39 added: EXP-7 chained retry arm built behind `--chained` (default off, baseline byte-identical). New `EvidenceItem` model; `VerifierFeedback` gains `counter_evidence_quote` / `counter_source_url` (default None); `ResearcherInput.prior_evidence` and `AdjudicatorInput.evidence_corpus` added. Coordinator accumulates a de-duped, 40-capped evidence corpus across rounds when chained, feeds the Verifier's counter-evidence back to the Researcher, and adjudicates over the whole corpus; the D37 floor and abstention rules are untouched. Carried evidence rides in the user message, not the system prompt, so `prompt_versions` are stable and an empty corpus renders byte-for-byte as before. Flag threaded `dispatch_subtrios.py` → `run_coordinator.py`. Pre-registered in `docs/EXPERIMENTS_CHAINING.md` (Malta primary per R4, false-positive rate as a co-primary, paired McNemar/Wilcoxon, one confirmatory joint claim); EXP-7 status board updated. New `tests/test_chained_evidence.py` (18 cases); 418 non-live passing. Run gated only on the Malta dispatch (search quota) and Claude headroom. |
 | 2026-06-03 (experiment rules) | D38 added: a universal experiment checklist (R1 to R12) in `EXPERIMENTS_PROTOCOL.md` section 0, headed by R4, the base-rate rule that bars a degenerate evaluation country and pins selection to minority-class share subject to a well-resourced-language constraint (Malta primary, Netherlands secondary; the No-share table is computed from `ground_truth` over binary yes/no golds). Pre-registered EXP-8 (Family 1 cost-side) and EXP-9 (Family 3 model variants) under the rules, with registry rows and Malta-dispatch / condition-threading pre-run requirements (items 9 to 11), all gated on search quota. Retargeted EXP-6 to Malta-primary (France/injected demoted to a robustness arm; `EXPERIMENTS_VERIFIER.md` and `evaluation/verifier_strategies.py` strata updated, the partial superseded not deleted). Added protocol section 12, a rubric audit that flags EXP-1's France E1 accuracy as base-rate degenerate (the E2 provider result stands) and EXP-3's Lithuania control as undiscriminating on binary. `build_candidates` verified to degrade gracefully (empty Malta primary, 82-candidate robustness arm) until the dispatch lands. No experiment runs in this change. |
 | 2026-06-02 (langgraph removal) | D3 amended from "LangGraph for the Phase 2 agent swarm" to "Plain Python state machine", to match the shipped `run_coordinator.py`. The earlier rationale (graph framework for conditional edges) and the record of the deviation are retained. Stale "runs on LangGraph" claims corrected across METHODOLOGY §5/§8, AGENT_DESIGN §1/§5/§8 (deviation banner added at §5), REPORT_PRELIM objectives/plan/milestones, and PROGRESS_SLIDES stack line. The dead `langgraph`, `langchain-anthropic`, and `langchain-community` dependencies removed from `pyproject.toml` (no Python file imports them; the LLM interface uses the `anthropic` SDK directly). `anthropic>=0.87` promoted to a direct dependency, since `agents/tools/llm.py` imports it and it was only present transitively via `langchain-anthropic`. Lockfile re-resolved; 335 tests pass. Kept deliberately: the "why we dropped it" record (CLAUDE.md, PROJECT_LOG, `run_coordinator.py` header) and the related-work citations in REPORT_PRELIM §2.2 and references.bib. |
 | 2026-06-02 (retry/finalisation) | D32 + D33 added, both prompted by a failure-mode analysis of the 43 ground-truth disagreements. D32: finalisation now trusts `adjudicator_answer` for every resolved verdict instead of re-deriving from the verdict label; the logic moved into a pure helper `_finalise_after_adjudication`. Four pairs flip `differ` to `match` on a stored-row replay (P26-b FR, PT14 FR, I16 EE, I17 EE), each an Adjudicator `yes` previously overwritten with `inconclusive`. D33: retry queries forced to diverge; the query generator now receives the Verifier's rejection reason, suggested query, and prior queries with an instruction to vary (`_QUERY_GEN_VERSION` 1 to 2), `ResearcherInput.previous_search_queries` added, coordinator accumulates queries across attempts; first-attempt path unchanged. Defaults and non-retried runs behave as before. New `tests/test_finalise_after_adjudication.py` and `tests/test_query_gen_divergence.py`; 297 non-live passing. The dominant remaining loss (the 67% substring-gate failure that decays answers to `inconclusive`) is diagnosed but not fixed here; it needs snippet persistence first. |

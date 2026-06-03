@@ -106,6 +106,14 @@ def _build_query_gen_message(input: ResearcherInput) -> str:
                 f"\nSuggested search query (use as a starting point, "
                 f"vary the phrasing):\n{fb.suggested_search_query}"
             )
+        # EXP-7 chained arm only: the Verifier's counter-evidence, so the
+        # next query targets the gap it exposed. Baseline retries leave this
+        # None, so the message is unchanged there.
+        if fb.counter_evidence_quote:
+            parts.append(
+                f"\nCounter-evidence the Verifier found (search to confirm "
+                f"or refute it):\n{fb.counter_evidence_quote}"
+            )
 
     if input.previous_search_queries:
         listed = "\n".join(f"  - {q}" for q in input.previous_search_queries)

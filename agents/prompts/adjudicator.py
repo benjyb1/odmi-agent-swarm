@@ -157,6 +157,38 @@ def _format_verifier_attempt(idx: int, v: VerifierOutput) -> str:
     )
 
 
+def _evidence_corpus_block(inp: AdjudicatorInput) -> str:
+    """EXP-7 chained arm: the full evidence corpus accumulated across rounds.
+
+    Renders nothing when `evidence_corpus` is empty (always so in the
+    baseline loop), so the user message and the registered prompt version are
+    unchanged there. The instruction to synthesise over the corpus travels in
+    this block, not the system prompt, so the system prompt stays identical
+    across arms.
+    """
+    items = inp.evidence_corpus
+    if not items:
+        return ""
+    lines = [
+        "",
+        "--- Full evidence corpus (all rounds) ---",
+        "Every snippet and counter-evidence quote both agents gathered across",
+        "the whole investigation, not just the per-attempt summaries above.",
+        "Synthesise over all of it. Commit to a label only when the corpus",
+        "supports a confident answer; otherwise set adjudicator_answer to",
+        "'inconclusive'. Cite only a source that appears in this corpus.",
+        "",
+    ]
+    for i, ev in enumerate(items, start=1):
+        snippet = ev.snippet[:300] + ("..." if len(ev.snippet) > 300 else "")
+        src = ev.source_url or "(no URL)"
+        lines.append(
+            f"  [{i}] (round {ev.round_index}, {ev.origin}) {src}\n      {snippet}"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
 def _answer_space_block(inp: AdjudicatorInput) -> str:
     bullets = "\n".join(f"  - {a!r}" for a in inp.allowed_answers)
     return (
@@ -195,5 +227,5 @@ Question:
 --- Verifier history ({len(inp.verifier_outputs)} attempts) ---
 
 {verifier_blocks}
-
+{_evidence_corpus_block(inp)}
 Now decide. Return JSON matching the AdjudicatorOutput schema."""

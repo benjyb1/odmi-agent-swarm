@@ -47,6 +47,7 @@ from agents.tools import answer_shapes
 from agents.models import (
     AdjudicatorInput,
     AdjudicatorOutput,
+    EvidenceItem,
     ResearcherInput,
     ResearcherOutput,
     VerifierFeedback,
@@ -239,6 +240,7 @@ def _build_researcher_input(
     country_code: str,
     feedback: Optional[VerifierFeedback] = None,
     previous_search_queries: Optional[List[str]] = None,
+    prior_evidence: Optional[List[EvidenceItem]] = None,
 ) -> ResearcherInput:
     q = _load_question(question_id)
     meta = COUNTRIES.get(country_code.upper())
@@ -264,6 +266,7 @@ def _build_researcher_input(
         answer_shape=shape.shape,
         allowed_answers=list(shape.allowed_answers),
         previous_search_queries=list(previous_search_queries or []),
+        prior_evidence=list(prior_evidence or []),
     )
 
 
@@ -566,11 +569,15 @@ def _save_final_row(
 def _find_resumable_researcher(
     question_id: str, country_code: str,
     *, max_age_minutes: int = 60,
+    experiment_id: Optional[str] = None,
+    condition_label: str = "baseline",
 ) -> Optional[dict]:
     """Look for a Researcher row from a recent incomplete subtrio.
 
     Returns the row dict (or None) for the most recent
     `phase2_researcher_runs` entry whose subtrio:
+      - belongs to the SAME experiment_id and condition_label as the
+        current run (so an arm never resumes another arm's work), and
       - never wrote a `phase2_final` row, and
       - is no longer in an active stage (orphaned, interrupted, or
         merely stale by more than `max_age_minutes`).
@@ -582,6 +589,15 @@ def _find_resumable_researcher(
     'researching' with no `phase2_final`. A fresh Researcher call is the
     right move for those pairs, so the finder ignores them and the
     coordinator runs the Researcher from scratch.
+
+    The experiment / condition scoping matters for paired experiments
+    such as EXP-7 (D39): baseline and chained run on the identical pair
+    set, often back to back, so an unscoped resume would let a chained
+    run inherit a baseline Researcher row (or vice versa) and silently
+    mix the arms. Matching on `experiment_id` and `condition_label`
+    keeps the comparison paired. Production runs carry a NULL
+    experiment_id and the 'baseline' condition, so they still resume only
+    other production rows, exactly as before.
 
     The freshness window protects us from reusing an answer that was
     correct yesterday but might have moved on.
@@ -603,6 +619,8 @@ def _find_resumable_researcher(
             JOIN subtrio_status s ON s.subtrio_id = r.pair_run_id
             LEFT JOIN phase2_final f ON f.pair_run_id = r.pair_run_id
             WHERE r.question_id = ? AND r.country_code = ?
+              AND r.experiment_id IS ?
+              AND r.condition_label IS ?
               AND r.retry_count = 0
               AND r.answer IS NOT NULL
               AND r.failure_mode IS NULL
@@ -614,7 +632,7 @@ def _find_resumable_researcher(
             ORDER BY r.id DESC
             LIMIT 1
             """,
-            (question_id, country_code, cutoff),
+            (question_id, country_code, experiment_id, condition_label, cutoff),
         ).fetchone()
     if row is None:
         return None
@@ -677,6 +695,83 @@ def _researcher_output_from_row(row: dict) -> ResearcherOutput:
         language_route_used=row["language_route_used"] or "native",
         notes=row["notes"],
     )
+
+
+# ============================================================
+# EXP-7: evidence accumulation across the retry loop (chained arm)
+# ============================================================
+#
+# These helpers are pure and offline. They turn a Researcher/Verifier run
+# into EvidenceItem records and merge them into a running corpus, de-duped
+# on (source_url, first 160 chars of snippet) so a page seen twice across
+# rounds is not double-counted. They are only ever called when the chained
+# arm is on; the baseline loop never touches them, so its prompts are
+# byte-identical. See `docs/EXPERIMENTS_CHAINING.md`.
+
+# Cap on the carried corpus so a long retry chain cannot blow up the prompt.
+MAX_EVIDENCE_ITEMS = 40
+
+
+def _evidence_from_researcher(result, round_index: int) -> List[EvidenceItem]:
+    """EvidenceItems for the snippets a Researcher run actually read."""
+    items: List[EvidenceItem] = []
+    for r in result.search_results:
+        if not r.snippet:
+            continue
+        items.append(EvidenceItem(
+            snippet=r.snippet,
+            source_url=str(r.url) if r.url else None,
+            origin="researcher",
+            round_index=round_index,
+        ))
+    return items
+
+
+def _evidence_from_verifier(result, round_index: int) -> List[EvidenceItem]:
+    """EvidenceItems for the Verifier's independent search and its
+    counter-evidence quote, the findings the baseline loop throws away."""
+    items: List[EvidenceItem] = []
+    for r in result.search_results:
+        if not r.snippet:
+            continue
+        items.append(EvidenceItem(
+            snippet=r.snippet,
+            source_url=str(r.url) if r.url else None,
+            origin="verifier",
+            round_index=round_index,
+        ))
+    o = result.output
+    if o is not None and o.counter_evidence_quote:
+        items.append(EvidenceItem(
+            snippet=o.counter_evidence_quote,
+            source_url=str(o.counter_source_url) if o.counter_source_url else None,
+            origin="verifier",
+            round_index=round_index,
+        ))
+    return items
+
+
+def _merge_evidence(
+    corpus: List[EvidenceItem],
+    new_items: List[EvidenceItem],
+    *,
+    max_items: int = MAX_EVIDENCE_ITEMS,
+) -> List[EvidenceItem]:
+    """Append new evidence to the corpus, de-duped and capped.
+
+    De-dup key is (source_url, snippet[:160]) so the same page resurfacing
+    on a later round does not pad the corpus. Returns a new list; the input
+    is not mutated.
+    """
+    merged = list(corpus)
+    seen = {(it.source_url, it.snippet[:160]) for it in merged}
+    for it in new_items:
+        key = (it.source_url, it.snippet[:160])
+        if key in seen:
+            continue
+        seen.add(key)
+        merged.append(it)
+    return merged[:max_items]
 
 
 def _is_abstention(answer: Optional[str]) -> bool:
@@ -745,6 +840,7 @@ def coordinate(
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: str = "baseline",
+    chained: bool = False,
     dry_run: bool = False,
     walkthrough: bool = False,
 ) -> tuple[str, Optional[ResearcherOutput]]:
@@ -761,6 +857,17 @@ def coordinate(
     one model across all attempts. `prompt_variant` ('full' or
     'compressed') selects the Researcher system prompt for the EXP-8
     `prompt-compressed` arm; the baseline 'full' prompt is untouched.
+
+    `chained` is the EXP-7 evidence-accumulation arm. When False (the
+    default, and what every production and EXP-8/9 baseline run uses) the
+    loop is byte-identical to the independent-retry behaviour: each retry is
+    a fresh shot carrying only the Verifier's verdict and a diverging query
+    (D33). When True, the Verifier's counter-evidence is fed back to the
+    Researcher, a corpus of every snippet found so far is carried across
+    rounds, and the Adjudicator synthesises over the whole corpus. The D37
+    commit-confidence floor and honest-abstention rules are unchanged in
+    both arms. See `docs/EXPERIMENTS_CHAINING.md`.
+
 
     Raises RateLimitedShutdown if any LLM call hits a 429; the caller
     (main()) catches it, marks the subtrio as interrupted_rate_limit,
@@ -811,6 +918,10 @@ def coordinate(
     # Accumulates every query the Researcher has tried across all
     # attempts so subsequent retries can diverge (Change 2).
     accumulated_search_queries: List[str] = []
+    # EXP-7 chained arm: the running evidence corpus across rounds. Stays
+    # empty when `chained` is off, so nothing is carried forward and the
+    # prompts match the baseline byte-for-byte.
+    evidence_corpus: List[EvidenceItem] = []
     cumulative_tokens_in = 0
     cumulative_tokens_out = 0
     cumulative_wall = 0
@@ -822,7 +933,10 @@ def coordinate(
     # Resume check: if a prior subtrio for this pair already wrote a
     # Researcher row (retry_count=0) and then died before finalising,
     # reuse that row instead of paying for a fresh Researcher call.
-    resumable = _find_resumable_researcher(question_id, country_code)
+    resumable = _find_resumable_researcher(
+        question_id, country_code,
+        experiment_id=experiment_id, condition_label=condition_label,
+    )
     if resumable:
         _mark_superseded(
             prior_subtrio_id=resumable["subtrio_id"],
@@ -852,6 +966,7 @@ def coordinate(
             r_inp = _build_researcher_input(
                 question_id, country_code, feedback,
                 previous_search_queries=accumulated_search_queries,
+                prior_evidence=evidence_corpus if chained else None,
             )
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,
@@ -874,6 +989,7 @@ def coordinate(
             r_inp = _build_researcher_input(
                 question_id, country_code, feedback,
                 previous_search_queries=accumulated_search_queries,
+                prior_evidence=evidence_corpus if chained else None,
             )
 
             def _r_step(e, p, _att=attempt):
@@ -940,6 +1056,14 @@ def coordinate(
 
             researcher_outputs.append(r_result.output)
             last_researcher_output = r_result.output
+            # EXP-7 chained arm: fold the snippets this Researcher run read
+            # into the running corpus so later rounds and the Adjudicator see
+            # them. No-op in the baseline arm.
+            if chained:
+                evidence_corpus = _merge_evidence(
+                    evidence_corpus,
+                    _evidence_from_researcher(r_result, retry_count),
+                )
             last_researcher_db_id = _save_researcher_row(
                 result=r_result, inp=r_inp,
                 run_id=run_id, pair_run_id=pair_run_id, retry_count=retry_count,
@@ -1046,6 +1170,15 @@ def coordinate(
             continue
 
         verifier_outputs.append(v_result.output)
+        # EXP-7 chained arm: the Verifier searches the web every round and
+        # often finds real counter-evidence; the baseline loop keeps only the
+        # verdict and bins the rest. Here we fold its independent snippets and
+        # counter-evidence into the corpus so they are not thrown away.
+        if chained:
+            evidence_corpus = _merge_evidence(
+                evidence_corpus,
+                _evidence_from_verifier(v_result, retry_count),
+            )
         _save_verifier_row(
             result=v_result, inp=v_inp,
             researcher_db_id=last_researcher_db_id,
@@ -1110,6 +1243,15 @@ def coordinate(
                 rejection_reason=_rejection_reason,
                 suggested_search_query=v_result.output.suggested_search_query,
                 failed_source_url=r_result.output.source_url,
+                # EXP-7 chained arm: hand the Verifier's own counter-evidence
+                # back to the Researcher, not just the verdict and a query.
+                # None in the baseline arm, so the feedback is unchanged.
+                counter_evidence_quote=(
+                    v_result.output.counter_evidence_quote if chained else None
+                ),
+                counter_source_url=(
+                    v_result.output.counter_source_url if chained else None
+                ),
             )
             print(f"  retry with feedback: {feedback.rejection_reason[:80]}",
                   flush=True)
@@ -1163,6 +1305,9 @@ def coordinate(
         verifier_outputs=real_verifier_outputs,
         answer_shape=r_inp.answer_shape,
         allowed_answers=list(r_inp.allowed_answers),
+        # EXP-7 chained arm: let the Adjudicator synthesise over the whole
+        # corpus. Empty in the baseline arm, so its prompt is unchanged.
+        evidence_corpus=evidence_corpus if chained else [],
     )
     adj_result = run_adjudicator(
         adj_inp,
@@ -1261,6 +1406,14 @@ def main() -> int:
                              "'disprove' vs 'approve'). Written to "
                              "phase2_researcher_runs and phase2_verifier_runs.")
     parser.add_argument(
+        "--chained", action="store_true",
+        help="EXP-7 evidence-accumulation arm (default off). Feed the "
+             "Verifier's counter-evidence back to the Researcher on retry, "
+             "carry a corpus of all snippets found so far across rounds, and "
+             "have the Adjudicator synthesise over the whole corpus. Off by "
+             "default, so production and the EXP-8/9 baseline are "
+             "byte-identical to the independent-retry loop.")
+    parser.add_argument(
         "--dry-run", action="store_true",
         help=(
             "Skip writes to subtrio_status, phase2_researcher_runs, "
@@ -1297,6 +1450,7 @@ def main() -> int:
             batch_id=batch_id,
             experiment_id=args.experiment_id,
             condition_label=args.condition_label,
+            chained=args.chained,
             dry_run=args.dry_run,
             walkthrough=args.walkthrough,
         )

@@ -22,7 +22,7 @@ from dashboard.lib import db, mode
 from dashboard.lib.currency import format_gbp
 from dashboard.lib.sidebar import page_header, render_session_widget
 from scripts.dispatch_subtrios import (
-    DEFAULT_SOFT_LIMIT_USD,
+    MAX_PAIRS_PER_DISPATCH,
     dispatch,
     estimate_pair_cost,
 )
@@ -180,8 +180,8 @@ def render_launcher() -> None:
             "Max retries", min_value=0, max_value=5, value=3, step=1,
         )
     with col_m:
-        soft_limit = st.session_state.get("soft_limit_usd", DEFAULT_SOFT_LIMIT_USD)
-        st.metric("Window soft limit", format_gbp(soft_limit))
+        _window_cost = float(db.rolling_window_summary().get("cost") or 0.0)
+        st.metric("Window spend (5h)", format_gbp(_window_cost))
 
     with st.expander("Experiment settings (optional)", expanded=False):
         st.caption(
@@ -219,7 +219,7 @@ def render_launcher() -> None:
         st.warning("Pick at least one question and one country.")
         return
 
-    # Pre-flight estimate
+    # Pre-flight estimate (informational only; nothing here blocks a run).
     try:
         est = estimate_pair_cost(
             researcher_model=researcher_model,
@@ -227,33 +227,18 @@ def render_launcher() -> None:
             adjudicator_model=adjudicator_model,
             strategy=strategy,
             n_pairs=n_pairs,
-            soft_limit_usd=soft_limit,
         )
     except Exception as exc:  # noqa: BLE001
         st.error(f"Pre-flight estimate failed: {exc}")
         return
 
-    if est.projected_total_usd > est.budget_remaining_usd:
-        st.error(
-            f"⚠ Pre-flight credit check: {n_pairs} subtrios projected at "
-            f"{format_gbp(est.projected_total_usd)} "
-            f"(fallback={est.fallback_level}, n={est.sample_size}). "
-            f"Budget remaining {format_gbp(est.budget_remaining_usd)}. "
-            f"**Will refuse to start unless you tick 'Force release'.**"
-        )
-    elif est.projected_total_usd > est.budget_remaining_usd * 0.85:
-        st.warning(
-            f"⚠ Projected cost {format_gbp(est.projected_total_usd)} is "
-            f">85% of {format_gbp(est.budget_remaining_usd)} remaining. "
-            f"Run may complete but will be close to the cap."
-        )
-    else:
-        st.info(
-            f"Pre-flight OK: ~{format_gbp(est.per_subtrio_usd, places=3)}"
-            f"/pair × {n_pairs} (uplift 1.2x, fallback={est.fallback_level})"
-            f" → projected {format_gbp(est.projected_total_usd)} of "
-            f"{format_gbp(est.budget_remaining_usd)} remaining."
-        )
+    st.info(
+        f"Pre-flight estimate: ~{format_gbp(est.per_subtrio_usd, places=3)}"
+        f"/pair × {n_pairs} (uplift 1.2x, fallback={est.fallback_level}, "
+        f"n={est.sample_size}) → projected "
+        f"{format_gbp(est.projected_total_usd)}. "
+        f"Window spend so far {format_gbp(est.rolling_window_cost_usd)} (5h)."
+    )
 
     # Ground-truth coverage check (per D22, superseded the hand-mark lock check).
     requested_keys = {(q, c) for q in questions for c in countries}
@@ -327,18 +312,26 @@ def render_launcher() -> None:
 
     n_effective = len(effective_pairs)
 
-    col_force, col_btn = st.columns([2, 1])
-    with col_force:
-        force = st.checkbox(
-            "Force release (bypass budget refusal)", value=False,
-            disabled=est.projected_total_usd <= est.budget_remaining_usd,
+    # Runaway guard (D41): a dispatch above the pair threshold is refused by
+    # the dispatcher unless explicitly allowed. Surface that here so the run
+    # doesn't silently no-op.
+    allow_large = False
+    if n_effective > MAX_PAIRS_PER_DISPATCH:
+        st.error(
+            f"⚠ {n_effective} pairs exceeds the {MAX_PAIRS_PER_DISPATCH}-pair "
+            f"runaway guard. This is usually a misspecified selection. The "
+            f"dispatcher will refuse unless you confirm."
         )
-    with col_btn:
-        clicked = st.button(
-            f"▶ Release {n_effective} subtrio(s)",
-            type="primary", use_container_width=True,
-            disabled=(n_effective == 0),
+        allow_large = st.checkbox(
+            "Allow this large run (override the runaway guard)", value=False,
         )
+
+    clicked = st.button(
+        f"▶ Release {n_effective} subtrio(s)",
+        type="primary", use_container_width=True,
+        disabled=(n_effective == 0
+                  or (n_effective > MAX_PAIRS_PER_DISPATCH and not allow_large)),
+    )
 
     if clicked:
         if mode.block_if_read_only():
@@ -351,19 +344,18 @@ def render_launcher() -> None:
             researcher_model=researcher_model, verifier_model=verifier_model,
             adjudicator_model=adjudicator_model,
             parallel=parallel, max_retries=max_retries,
-            soft_limit=soft_limit, force=force,
             provider=provider, max_results_per_query=max_results_per_query,
             num_queries=num_queries, experiment_id=experiment_id,
-            condition_label=condition_label,
+            condition_label=condition_label, allow_large=allow_large,
         )
 
 
 def _trigger_release(
     *, questions, countries, pair_filter, strategy,
     researcher_model, verifier_model, adjudicator_model,
-    parallel, max_retries, soft_limit, force,
+    parallel, max_retries,
     provider="auto", max_results_per_query=5, num_queries=0,
-    experiment_id="", condition_label="baseline",
+    experiment_id="", condition_label="baseline", allow_large=False,
 ) -> None:
     """Spawn dispatch_subtrios.py as a fire-and-forget subprocess.
 
@@ -383,10 +375,7 @@ def _trigger_release(
         "--parallel", str(parallel),
         "--max-retries", str(max_retries),
         "--batch-id", batch_id,
-        "--soft-limit-usd", str(soft_limit),
     ]
-    if force:
-        cmd.append("--force")
     if provider and provider != "auto":
         cmd += ["--provider", provider]
     cmd += ["--max-results-per-query", str(max_results_per_query)]
@@ -395,6 +384,8 @@ def _trigger_release(
     if experiment_id:
         cmd += ["--experiment-id", experiment_id,
                 "--condition-label", condition_label or "baseline"]
+    if allow_large:
+        cmd.append("--allow-large")
 
     # Fire-and-forget; capture stdout to a log file.
     logs_dir = REPO_ROOT / "dashboard" / "logs"

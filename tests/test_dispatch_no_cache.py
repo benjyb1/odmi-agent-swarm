@@ -229,8 +229,7 @@ class TestDispatchWiring:
             ds, "estimate_pair_cost",
             lambda **kw: ds.CostEstimate(
                 per_subtrio_usd=0.01, projected_total_usd=0.01,
-                rolling_window_cost_usd=0.0, soft_limit_usd=5.0,
-                budget_remaining_usd=5.0, fallback_level="cold_start",
+                rolling_window_cost_usd=0.0, fallback_level="cold_start",
                 sample_size=0,
             ),
         )
@@ -262,8 +261,7 @@ class TestDispatchWiring:
             ds, "estimate_pair_cost",
             lambda **kw: ds.CostEstimate(
                 per_subtrio_usd=0.01, projected_total_usd=0.01,
-                rolling_window_cost_usd=0.0, soft_limit_usd=5.0,
-                budget_remaining_usd=5.0, fallback_level="cold_start",
+                rolling_window_cost_usd=0.0, fallback_level="cold_start",
                 sample_size=0,
             ),
         )
