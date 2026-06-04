@@ -314,6 +314,83 @@ def build_candidates(limit: Optional[int] = None):
     return cands
 
 
+def _smoke_limit(cands, limit):
+    """Keep a mix across strata for a smoke run (same rule as build_candidates)."""
+    by_stratum = defaultdict(list)
+    for c in cands:
+        by_stratum[c.stratum].append(c)
+    smoke = []
+    while len(smoke) < limit and any(by_stratum.values()):
+        for s in ("NAT-fail", "NAT-pass", "INJ-fail"):
+            if by_stratum[s]:
+                smoke.append(by_stratum[s].pop(0))
+                if len(smoke) >= limit:
+                    break
+    return smoke
+
+
+def load_frozen_candidates(limit: Optional[int] = None):
+    """Load the frozen EXP-6a dataset from `exp6_candidates` (the snapshot-pinned
+    set built by scripts/build_exp6_candidates.py), joining each candidate to its
+    pinned `phase2_researcher_runs` row for the evidence. This is the default
+    source: unlike the live `build_candidates`, it cannot shift under a concurrent
+    dispatch, so the four arms judge a genuinely fixed set."""
+    qmeta, gold, cname, _rows = _load_world()
+    with connect() as conn:
+        conn.row_factory = sqlite3.Row
+        crows = [dict(r) for r in conn.execute(
+            "select * from exp6_candidates where experiment_id = ? order by cand_id",
+            (EXPERIMENT_ID,),
+        )]
+        runrows = {}
+        if crows:
+            ids = ",".join(str(int(c["source_row_id"])) for c in crows)
+            runrows = {r["id"]: dict(r) for r in conn.execute(
+                f"select * from phase2_researcher_runs where id in ({ids})")}
+    cands = []
+    for c in crows:
+        row = runrows.get(c["source_row_id"])
+        if row is None:
+            print(f"  ! frozen candidate {c['cand_id']} pins missing row "
+                  f"{c['source_row_id']}; skipping")
+            continue
+        cands.append(Candidate(
+            cand_id=c["cand_id"], stratum=c["stratum"], role=c["role"],
+            gold_label=c["gold_label"], question_id=c["question_id"],
+            country_code=c["country_code"],
+            country_name=cname.get(c["country_code"], c["country_code"]),
+            dimension=c["dimension"], answer_shape=c["answer_shape"] or "binary",
+            allowed_answers=json.loads(c["allowed_answers"]) if c["allowed_answers"] else ["yes", "no"],
+            researcher_answer=c["researcher_answer"], gold_response=c["gold_response"],
+            source_row_id=c["source_row_id"], injected=bool(c["injected"]), row=row,
+        ))
+    if limit:
+        cands = _smoke_limit(cands, limit)
+    return cands
+
+
+def _resolve_candidates(limit: Optional[int] = None, source: str = "auto"):
+    """Pick the candidate source. Default prefers the frozen EXP-6a snapshot
+    (`exp6_candidates`) and only falls back to the live builder if it is empty.
+    `--live` forces the legacy live builder."""
+    if source != "live":
+        n = 0
+        with connect() as conn:
+            try:
+                n = conn.execute(
+                    "select count(*) from exp6_candidates where experiment_id = ?",
+                    (EXPERIMENT_ID,)).fetchone()[0]
+            except sqlite3.OperationalError:
+                n = 0
+        if n > 0:
+            print(f"Loading {n} frozen candidates from exp6_candidates (EXP-6a "
+                  f"snapshot). Pass --live to rebuild from the DB instead.")
+            return load_frozen_candidates(limit=limit)
+        print("exp6_candidates is empty for this experiment; falling back to the "
+              "live builder. Run scripts/build_exp6_candidates.py to freeze EXP-6a.")
+    return build_candidates(limit=limit)
+
+
 # ============================================================
 # Reconstruct ResearcherOutput from a row (tolerant)
 # ============================================================
@@ -503,8 +580,8 @@ def _register_experiment(n_cands: int, counts: dict):
 # Run
 # ============================================================
 
-def run(limit: Optional[int] = None):
-    cands = build_candidates(limit=limit)
+def run(limit: Optional[int] = None, source: str = "auto"):
+    cands = _resolve_candidates(limit=limit, source=source)
     counts = Counter((c.stratum, c.gold_label) for c in cands)
     ccounts = Counter(c.country_code for c in cands)
     dcounts = Counter(c.dimension for c in cands)
@@ -774,11 +851,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None, help="smoke run: cap candidates")
     ap.add_argument("--analyse-only", default=None, help="re-analyse an existing JSONL")
+    ap.add_argument("--live", action="store_true",
+                    help="rebuild candidates live from the DB instead of the frozen "
+                         "EXP-6a snapshot (exp6_candidates)")
     args = ap.parse_args()
     if args.analyse_only:
         analyse(args.analyse_only)
     else:
-        run(limit=args.limit)
+        run(limit=args.limit, source="live" if args.live else "auto")
 
 
 if __name__ == "__main__":

@@ -8,6 +8,43 @@ Entries newest first.
 
 ---
 
+## 2026-06-04 — Session 22: EXP-6 dataset (6a/6b split, frozen candidate table)
+
+Split EXP-6 into 6a (build the dataset) and 6b (run the four-arm judge), so the
+candidate set is frozen before it is judged. This also closes the snapshot hole
+that caused today's EXP-6 / Malta-v2 collision: the old `build_candidates` read
+`phase2_researcher_runs` live with "latest id wins", so a concurrent dispatch could
+shift the set mid-run.
+
+The frozen dataset lives in a new `exp6_candidates` table, one row per candidate,
+each pinning the `phase2_researcher_runs.id` it came from. Composition (medium
+target ~120): all committed, non-abstention MT (primary) and NL (secondary)
+Researcher answers, labelled should_pass / should_fail vs ODMI gold, plus 35
+injected label-flips minted from existing FR/EE correct binary runs (wrong by
+construction, robustness only, never folded into the primary J). Abstentions
+(`inconclusive` / `not_applicable`), no-gold pairs and no-run pairs are excluded;
+latest id wins so a finished v2 re-run is the one frozen.
+
+Built: `scripts/build_nl_eval_pairs.py` (52 NL pairs, 26 `no` / 26 `yes`,
+dimension-stratified, seed 20260603, the NL counterpart to the Malta builder);
+`scripts/build_exp6_candidates.py` (the freeze, idempotent per experiment_id);
+the `exp6_candidates` schema; `load_frozen_candidates` + a `--live` escape in
+`evaluation/verifier_strategies.py` so 6b reads the frozen table by default; and
+`docs/EXPERIMENTS_EXP6_RUNBOOK.md`, the page to hand an agent for "fill out the
+database for EXP-6a". Validated against this worktree's DB: 76 candidates so far
+(MT 40 = 13 fail / 27 pass, 35 FR/EE injected, NL pending its dispatch), evidence
+rows join cleanly, the freeze is idempotent.
+
+Two sizing amendments fixed before the run (logged in `EXPERIMENTS_VERIFIER.md`):
+keep all natural candidates rather than matching NAT-pass down (free specificity
+power), and source injected flips from FR/EE so they are additive and need no new
+dispatch. Honest limitation unchanged: natural should_fail lands around 23 even
+with NL, so the primary J carries wide Wilson intervals and the ranking is
+directional. Next: Benjy dispatches the NL worklist (the long step), re-runs the
+freeze, then EXP-6b judges the frozen set.
+
+---
+
 ## 2026-06-04 — Session 21: concurrency is linear, not a hazard (D42)
 
 A knowledge correction, no code. Orchestrating agents kept refusing to run things
