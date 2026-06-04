@@ -998,6 +998,47 @@ def _list_column(
         row_y += item_h
 
 
+def phd_slide_title(prs: Presentation) -> None:
+    blank = prs.slide_layouts[6]
+    slide = prs.slides.add_slide(blank)
+    add_filled_rect(slide, 0, 0, prs.slide_width, prs.slide_height, fill=DARK)
+    add_filled_rect(slide, 0, Inches(2.0), Inches(0.6), Inches(2.0), fill=TEAL)
+
+    eyebrow = add_textbox(slide, Inches(1.0), Inches(1.2), Inches(8.5), Inches(0.4))
+    set_text(
+        eyebrow.text_frame,
+        "MSc ADVANCED COMPUTING · PhD SEMINAR · FOR DISCUSSION",
+        size=10, bold=True, colour=TEAL_BRIGHT,
+    )
+
+    title = add_textbox(slide, Inches(1.0), Inches(1.65), Inches(8.5), Inches(2.2))
+    tf = title.text_frame
+    tf.clear()
+    for i, line in enumerate(["Agentic AI for Open", "Data Maturity", "Assessment"]):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        run = p.add_run()
+        run.text = line
+        run.font.name = FONT
+        run.font.size = Pt(40)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+
+    sub = add_textbox(slide, Inches(1.0), Inches(4.0), Inches(8.5), Inches(0.6))
+    set_text(
+        sub.text_frame,
+        "Method, experiments, and the open questions I want your view on",
+        size=14, colour=PALE,
+    )
+
+    today = datetime.now().strftime("%d %B %Y")
+    foot = add_textbox(slide, Inches(1.0), Inches(5.0), Inches(8.5), Inches(0.4))
+    set_text(
+        foot.text_frame,
+        f"Benjy Bream  ·  King's College London  ·  {today}",
+        size=11, colour=WHITE,
+    )
+
+
 def phd_slide_system(prs: Presentation, stats: dict) -> None:
     slide = new_slide(prs)
     header(slide, "An adversarial swarm, scored against ODMI's own answers",
@@ -1058,7 +1099,7 @@ def phd_slide_system(prs: Presentation, stats: dict) -> None:
         accent=TEAL,
     )
 
-    page_footer(slide, prs, 1, 5)
+    page_footer(slide, prs, 2, 6)
 
 
 def phd_slide_impartiality(prs: Presentation) -> None:
@@ -1099,7 +1140,7 @@ def phd_slide_impartiality(prs: Presentation) -> None:
                   "promoted to primary; France barred as a primary set.",
              accent=DANGER)
 
-    page_footer(slide, prs, 2, 5)
+    page_footer(slide, prs, 3, 6)
 
 
 def phd_slide_experiments(prs: Presentation) -> None:
@@ -1142,7 +1183,7 @@ def phd_slide_experiments(prs: Presentation) -> None:
                   "search and Claude headroom.",
              accent=MUTED)
 
-    page_footer(slide, prs, 3, 5)
+    page_footer(slide, prs, 4, 6)
 
 
 def phd_slide_failure_modes(prs: Presentation) -> None:
@@ -1187,7 +1228,7 @@ def phd_slide_failure_modes(prs: Presentation) -> None:
                  header_label="STILL OPEN", header_fill=WARNING,
                  items=open_, bullet=WARNING)
 
-    page_footer(slide, prs, 4, 5)
+    page_footer(slide, prs, 5, 6)
 
 
 def phd_slide_open_questions(prs: Presentation) -> None:
@@ -1235,7 +1276,7 @@ def phd_slide_open_questions(prs: Presentation) -> None:
                  header_label="QUESTIONS FOR THE ROOM", header_fill=NAVY,
                  items=questions, bullet=TEAL_BRIGHT)
 
-    page_footer(slide, prs, 5, 5)
+    page_footer(slide, prs, 6, 6)
 
 
 def build_phd_deck(stats: dict) -> Presentation:
@@ -1243,6 +1284,7 @@ def build_phd_deck(stats: dict) -> Presentation:
     prs.slide_width = Inches(10)
     prs.slide_height = Inches(5.625)
 
+    phd_slide_title(prs)
     phd_slide_system(prs, stats)
     phd_slide_impartiality(prs)
     phd_slide_experiments(prs)
