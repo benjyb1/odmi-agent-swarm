@@ -41,6 +41,17 @@ from agents.models import LLMUsage
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(_REPO_ROOT / ".env", override=True)
 
+# Strip a blank ANTHROPIC_AUTH_TOKEN. A shell launched from the Claude desktop
+# app exports ANTHROPIC_AUTH_TOKEN="" into the environment. The .env override
+# above does not clear it because .env never names that key, so the Anthropic
+# SDK then sends an empty bearer header ("Authorization: Bearer ") which h11
+# rejects as an illegal header value, surfacing as APIConnectionError that looks
+# exactly like a dead proxy or an exhausted quota. We authenticate with the
+# x-api-key from .env, so a blank auth token is never wanted; drop it. A genuine
+# non-empty token (if token auth is ever used) is left untouched.
+if os.environ.get("ANTHROPIC_AUTH_TOKEN", "").strip() == "":
+    os.environ.pop("ANTHROPIC_AUTH_TOKEN", None)
+
 
 # Anthropic published pricing in USD per million tokens for cost
 # arithmetic (Q9). Numbers are intentionally hard-coded here so the
