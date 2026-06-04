@@ -26,7 +26,7 @@ import os
 import re
 import sqlite3
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, TypeVar
 
@@ -70,9 +70,17 @@ DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 def _make_client() -> anthropic.Anthropic:
+    # max_retries above the SDK default of 2. The CLIProxyAPI front end drops
+    # connections under concurrency (APIConnectionError), so a parallel run of
+    # several coordinators, or a parallel EXP-6, would otherwise crash on a
+    # transient blip. The SDK retries APIConnectionError / 5xx / 429 with
+    # exponential backoff and only raises after exhausting these, so a momentary
+    # drop now recovers while a sustained 429 still surfaces as RateLimitError
+    # and trips the D41 shutdown unchanged.
     return anthropic.Anthropic(
         api_key=os.environ["ANTHROPIC_API_KEY"],
         base_url=os.environ["ANTHROPIC_BASE_URL"],
+        max_retries=8,
     )
 
 
@@ -104,7 +112,12 @@ def _log_claude_usage(
                     estimated_cost_usd, rate_limited, context, subtrio_id)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                    # Naive UTC ISO + "Z" to match existing rows byte for
+                    # byte; utcnow() is deprecated, so build an aware UTC
+                    # time and drop the offset before formatting.
+                    datetime.now(timezone.utc)
+                    .replace(tzinfo=None)
+                    .isoformat(timespec="seconds") + "Z",
                     model,
                     input_tokens,
                     output_tokens,

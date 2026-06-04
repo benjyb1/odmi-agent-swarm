@@ -319,10 +319,12 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 
 def cmd_run_pair(args: argparse.Namespace) -> int:
+    # run_coordinator.py takes question_id and country_code as positional
+    # arguments, in that order; it defines no --question-id / --country flags.
     cmd = [
         "uv", "run", "python", str(REPO_ROOT / "scripts" / "run_coordinator.py"),
-        "--question-id", args.question_id,
-        "--country", args.country,
+        args.question_id,
+        args.country,
     ]
     if args.strategy:
         cmd += ["--strategy", args.strategy]

@@ -150,13 +150,16 @@ def _metrics(g: pd.DataFrame) -> pd.Series:
     n_match = (g["match_status"] == "match").sum()
     n_near = (g["match_status"] == "near_match").sum()
     n_differ = (g["match_status"] == "differ").sum()
+    n_abstained = (g["match_status"] == "abstained").sum()
     n_agent_failure = (g["terminal_status"] == "agent_failure").sum()
     n_adj = int(g["adjudicator_involved"].sum())
     n_rejected = int(g["had_rejection"].sum())
 
     # D28: informative now includes near_match. `match %` is exact;
-    # `within-band %` counts near-misses as success.
-    informative = n_match + n_near + n_differ
+    # `within-band %` counts near-misses as success. D35/D37: abstentions
+    # stay in the denominator (a failure to answer), reported on their own
+    # as `abstain %`.
+    informative = n_match + n_near + n_differ + n_abstained
 
     return pd.Series({
         "n": n,
@@ -164,6 +167,9 @@ def _metrics(g: pd.DataFrame) -> pd.Series:
         "within-band %": (
             100.0 * (n_match + n_near) / informative
             if informative else float("nan")
+        ),
+        "abstain %": (
+            100.0 * n_abstained / informative if informative else float("nan")
         ),
         "complete %": 100.0 * (n - n_agent_failure) / n,
         "rejection %": 100.0 * n_rejected / n,

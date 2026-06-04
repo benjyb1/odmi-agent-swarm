@@ -249,12 +249,29 @@ def load_pairs(conn, country: str = "MT", experiment_id: Optional[str] = None) -
     gold = {r["question_id"]: (r["response"] or "")
             for r in conn.execute("select question_id,response from ground_truth where country_code=?", (country,))}
 
-    where = "where country_code=?"
-    args = [country]
+    # Canonical row per (question, country). The dispatch can write more than one
+    # phase2_final row per pair (a stale agent_failure superseded by a real
+    # finalisation, or two concurrent re-runs of the same pair), so counting every
+    # row double-counts questions and corrupts the negative-gold denominator the
+    # floor sweep depends on. Mirror the dashboard's rule verbatim
+    # (dashboard/lib/db.py match matrix): keep the highest-id (latest) row per
+    # pair, answer-blind. Main runs are experiment_id IS NULL (D27
+    # MAIN_RUNS_FILTER); a specific experiment is selected explicitly.
     if experiment_id is not None:
-        where += " and experiment_id=?"
-        args.append(experiment_id)
-    finals = [dict(r) for r in conn.execute(f"select * from phase2_final {where}", args)]
+        exp_filter, exp_args = "experiment_id = ?", [experiment_id]
+    else:
+        exp_filter, exp_args = "experiment_id IS NULL", []
+    finals = [dict(r) for r in conn.execute(
+        f"""
+        WITH ranked AS (
+            SELECT *, ROW_NUMBER() OVER (
+                PARTITION BY question_id, country_code ORDER BY id DESC
+            ) AS _canon_rn
+            FROM phase2_final
+            WHERE country_code = ? AND {exp_filter}
+        )
+        SELECT * FROM ranked WHERE _canon_rn = 1
+        """, [country, *exp_args])]
 
     # group the stage rows by pair_run_id
     rruns, vruns, adjs = defaultdict(list), defaultdict(list), {}

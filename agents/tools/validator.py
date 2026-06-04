@@ -88,8 +88,11 @@ def trust_score(url: str, *, country_code: str) -> float:
 
     try:
         parsed = urlparse(url)
-        host = parsed.hostname or ""
-        host = host.lower().lstrip("www.")
+        host = (parsed.hostname or "").lower()
+        # Strip the literal "www." prefix only; lstrip() would eat any
+        # leading w/./a/. characters (e.g. wales.gov.uk -> ales.gov.uk).
+        if host.startswith("www."):
+            host = host[4:]
     except Exception:  # noqa: BLE001
         return 0.0
 

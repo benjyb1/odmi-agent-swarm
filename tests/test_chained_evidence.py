@@ -290,6 +290,17 @@ def test_merge_evidence_dedupes_on_url_and_snippet():
     assert snippets == {"same", "fresh"}
 
 
+def test_merge_evidence_keeps_distinct_snippets_sharing_a_prefix():
+    # Two passages from one page that share a long opening (a cookie
+    # banner, a nav header) must not collide on a prefix key and drop
+    # real evidence. The de-dup key is the full snippet.
+    shared = "Accept cookies on this site. " * 8  # well over 160 chars
+    corpus = [_evidence(snippet=shared + "first fact", url="https://a")]
+    new = [_evidence(snippet=shared + "second fact", url="https://a")]
+    merged = _merge_evidence(corpus, new)
+    assert len(merged) == 2
+
+
 def test_merge_evidence_does_not_mutate_input():
     corpus = [_evidence(snippet="one", url="https://a")]
     _merge_evidence(corpus, [_evidence(snippet="two", url="https://b")])

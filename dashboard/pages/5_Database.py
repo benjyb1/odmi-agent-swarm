@@ -53,7 +53,11 @@ n_covered = int((grid["swarm_runs"] > 0).sum())
 n_match = int((grid["match_status"] == "match").sum())
 n_near = int((grid["match_status"] == "near_match").sum())
 n_differ = int((grid["match_status"] == "differ").sum())
-denom = n_match + n_near + n_differ
+n_abstained = int((grid["match_status"] == "abstained").sum())
+# Abstentions stay in the denominator: an abstention is a failure to
+# answer, so it counts against accuracy, but it is held apart from differ
+# so the abstention rate can be read on its own.
+denom = n_match + n_near + n_differ + n_abstained
 accuracy = (n_match / denom) if denom > 0 else None
 within_one = ((n_match + n_near) / denom) if denom > 0 else None
 
@@ -69,6 +73,11 @@ k3.metric("Match / Near / Differ", f"{n_match} / {n_near} / {n_differ}")
 k4.metric(
     "Exact accuracy",
     f"{accuracy:.0%}" if accuracy is not None else "—",
+    delta=(
+        f"{n_abstained} abstained ({n_abstained / denom:.0%})"
+        if denom > 0 and n_abstained > 0 else None
+    ),
+    delta_color="off",
 )
 k5.metric(
     "Within one band",
@@ -111,6 +120,7 @@ with f3:
             "Matches ODMI",
             "Near match (adjacent band)",
             "Differs from ODMI",
+            "Abstained",
         ],
         key="db_coverage",
     )
@@ -136,6 +146,8 @@ elif coverage_filter == "Near match (adjacent band)":
     filtered = filtered[filtered["match_status"] == "near_match"]
 elif coverage_filter == "Differs from ODMI":
     filtered = filtered[filtered["match_status"] == "differ"]
+elif coverage_filter == "Abstained":
+    filtered = filtered[filtered["match_status"] == "abstained"]
 
 if text_filter:
     needle = text_filter.lower()

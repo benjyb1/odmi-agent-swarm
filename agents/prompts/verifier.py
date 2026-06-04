@@ -462,7 +462,7 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         version=_DISPROVE_VERSION,
         system=_DISPROVE_SYSTEM,
         description=(
-            "Verifier disprove V1: default sceptical stance. "
+            "Verifier disprove V3: default sceptical stance. "
             "Asks what is wrong with the claim before considering acceptance."
         ),
     ),
@@ -471,7 +471,7 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         version=_NEGATION_VERSION,
         system=_NEGATION_SYSTEM,
         description=(
-            "Verifier negation V1: logical inversion. "
+            "Verifier negation V3: logical inversion. "
             "Searches explicitly for evidence the answer is the opposite."
         ),
     ),
@@ -480,7 +480,7 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         version=_STEELMAN_VERSION,
         system=_STEELMAN_SYSTEM,
         description=(
-            "Verifier steelman V1: two-step reasoning. "
+            "Verifier steelman V3: two-step reasoning. "
             "Articulates the strongest case for the claim, then attacks it."
         ),
     ),
@@ -489,7 +489,7 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         version=_BLIND_VERSION,
         system=_BLIND_SYSTEM,
         description=(
-            "Verifier blind V1: answer-blind. "
+            "Verifier blind V3: answer-blind. "
             "Model forms its own answer; Python compares against the Researcher."
         ),
     ),

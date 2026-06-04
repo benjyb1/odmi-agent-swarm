@@ -17,6 +17,7 @@ import time
 from typing import Callable, Iterator, Optional
 
 from rdflib import BNode, Graph, URIRef
+from rdflib.compare import to_canonical_graph
 from rdflib.namespace import RDF
 
 from agents.tools.catalogue._fetch import fetch_bytes
@@ -106,6 +107,21 @@ def _normalise_dataset(graph: Graph, dataset: URIRef) -> HarvestedDataset:
     )
 
 
+def _canonical_turtle_bytes(page: Graph) -> bytes:
+    """Serialise a page deterministically so the snapshot hash reproduces.
+
+    rdflib's Turtle writer is non-deterministic (blank-node ids and triple
+    order vary run to run), so hashing its output makes content_sha256
+    irreproducible. Canonicalise the blank nodes, emit N-Triples (which is
+    valid Turtle, so the replay path still parses it as Turtle), and sort
+    the lines for a stable byte sequence.
+    """
+    canon = to_canonical_graph(page)
+    nt = canon.serialize(format="nt")
+    lines = sorted(line for line in nt.splitlines() if line.strip())
+    return ("\n".join(lines) + "\n").encode("utf-8")
+
+
 def _split_page(page: Graph) -> list[HarvestedDataset]:
     out: list[HarvestedDataset] = []
     for ds in page.subjects(RDF.type, DCAT_DATASET):
@@ -154,8 +170,9 @@ def harvest(
             break
 
         if on_raw_page is not None:
-            # Cache as Turtle so replay is single-format.
-            on_raw_page(page_idx, page.serialize(format="turtle").encode("utf-8"))
+            # Cache as canonical, sorted N-Triples (valid Turtle) so replay
+            # stays single-format and the snapshot hash is reproducible.
+            on_raw_page(page_idx, _canonical_turtle_bytes(page))
 
         for ds in datasets:
             yield ds

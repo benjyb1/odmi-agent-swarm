@@ -3,6 +3,8 @@ graph synthesis (catalogue tool, D30)."""
 
 from __future__ import annotations
 
+import hashlib
+
 from agents.tools.answer_shapes import QuestionShape
 from agents.tools.catalogue import metrics, shacl, synthesise
 from agents.tools.catalogue.adapters import dcat_rdf, estonia_json
@@ -76,6 +78,135 @@ def test_dcat_rdf_conformance_runs_on_real_graph():
     r = metrics.metric_q16_mandatory_conformance(datasets, shape)
     assert r.denominator == 2
     assert r.numerator == 1
+
+
+# Turtle page with a blank node, the classic source of non-deterministic
+# serialisation. Harvesting it twice must yield the same content hash.
+_TURTLE_WITH_BNODE = """
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+<https://data.gouv.fr/dataset/x> a dcat:Dataset ;
+    dct:title "X" ;
+    dct:publisher [ dct:title "Some Agency" ] ;
+    dcat:distribution [ a dcat:Distribution ;
+        dct:format <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+        dcat:accessURL <https://data.gouv.fr/files/x.csv> ] .
+"""
+
+
+def _portal_config_for_ttl():
+    from agents.tools.catalogue.registry import PortalConfig
+
+    return PortalConfig(
+        country_code="ZZ",
+        country_name="Testland",
+        portal_base="https://example.test",
+        stack="dcat",
+        harvest_route="dcat_rdf",
+        pagination="hydra",
+        page_size=100,
+        request_delay_s=0.0,
+        licence_field="dct:license",
+        dcat_catalog_url="https://example.test/catalog.ttl?page={page}&size={page_size}",
+    )
+
+
+def _harvest_content_hash(raw_page: bytes) -> str:
+    """Run the dcat_rdf harvest over a fixed page and hash the sink payloads
+    exactly as harvest.harvest_country does (sha256 over the raw page bytes)."""
+    config = _portal_config_for_ttl()
+    hasher = hashlib.sha256()
+    calls = {"n": 0}
+
+    def _fetcher(url: str) -> bytes:
+        # First page returns the fixture; subsequent pages are empty so the
+        # Hydra loop terminates.
+        calls["n"] += 1
+        return raw_page if calls["n"] == 1 else b""
+
+    def _sink(idx: int, payload: bytes) -> None:
+        hasher.update(payload)
+
+    list(dcat_rdf.harvest(config, fetcher=_fetcher, on_raw_page=_sink))
+    return hasher.hexdigest()
+
+
+# Same triples as _TURTLE_WITH_BNODE but with explicitly-labelled blank
+# nodes under different names. rdflib's Turtle writer renumbers blank nodes
+# per run, so hashing its raw output is not reproducible across harvests
+# that see logically-identical graphs with different bnode labels. The
+# canonical serialisation must hash these two inputs identically.
+_TURTLE_WITH_BNODE_RELABELLED = """
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+<https://data.gouv.fr/dataset/x> a dcat:Dataset ;
+    dct:title "X" ;
+    dct:publisher _:pub99 ;
+    dcat:distribution _:dist42 .
+
+_:pub99 dct:title "Some Agency" .
+
+_:dist42 a dcat:Distribution ;
+    dct:format <http://publications.europa.eu/resource/authority/file-type/CSV> ;
+    dcat:accessURL <https://data.gouv.fr/files/x.csv> .
+"""
+
+
+def test_dcat_rdf_content_hash_is_reproducible():
+    raw = _TURTLE_WITH_BNODE.encode("utf-8")
+    h1 = _harvest_content_hash(raw)
+    h2 = _harvest_content_hash(raw)
+    assert h1 == h2
+    assert h1  # non-empty
+
+
+def test_dcat_rdf_content_hash_invariant_to_blank_node_labels():
+    """Two byte-different inputs that carry the same triples (only blank-node
+    labels differ) must produce the same content hash. The plain Turtle
+    serialisation does not guarantee this; the canonical one does."""
+    h1 = _harvest_content_hash(_TURTLE_WITH_BNODE.encode("utf-8"))
+    h2 = _harvest_content_hash(_TURTLE_WITH_BNODE_RELABELLED.encode("utf-8"))
+    assert h1 == h2
+
+
+def test_dcat_rdf_cached_payload_is_canonical_not_turtle():
+    """The page cached for hashing must be the canonical, sorted N-Triples
+    form, not rdflib's Turtle writer output. rdflib Turtle is not a stable
+    contract across versions/runs (blank-node ids, triple order), so the
+    snapshot hash would not reproduce. Pin the canonical bytes here."""
+    from rdflib import Graph
+    from rdflib.compare import to_canonical_graph
+
+    config = _portal_config_for_ttl()
+    raw = _TURTLE_WITH_BNODE.encode("utf-8")
+    calls = {"n": 0}
+    captured: list[bytes] = []
+
+    def _fetcher(url: str) -> bytes:
+        calls["n"] += 1
+        return raw if calls["n"] == 1 else b""
+
+    def _sink(idx: int, payload: bytes) -> None:
+        captured.append(payload)
+
+    list(dcat_rdf.harvest(config, fetcher=_fetcher, on_raw_page=_sink))
+    assert len(captured) == 1
+
+    # Expected canonical form: sorted N-Triples of the canonicalised graph.
+    page = Graph()
+    page.parse(data=raw, format="turtle")
+    canon = to_canonical_graph(page)
+    expected_lines = sorted(
+        line for line in canon.serialize(format="nt").splitlines() if line.strip()
+    )
+    expected = ("\n".join(expected_lines) + "\n").encode("utf-8")
+    assert captured[0] == expected
+
+    # And it must still replay as Turtle (N-Triples is valid Turtle).
+    replayed = dcat_rdf.normalise_page(captured[0])
+    assert any(d.identifier == "https://data.gouv.fr/dataset/x" for d in replayed)
 
 
 def test_estonia_normalise_detail():

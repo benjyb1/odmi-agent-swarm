@@ -66,6 +66,9 @@ def _normalise_host(host: str | None) -> str:
     if not host:
         return ""
     host = host.lower().strip()
+    # Strip a trailing-dot FQDN ("data.europa.eu." -> "data.europa.eu")
+    # so a trailing dot cannot bypass the deny-list.
+    host = host.rstrip(".")
     if host.startswith("www."):
         host = host[4:]
     return host

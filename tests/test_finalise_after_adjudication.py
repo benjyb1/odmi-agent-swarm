@@ -195,3 +195,36 @@ def test_above_floor_commit_is_kept():
     status, chosen = helper(adj, [last_r])
 
     assert chosen.answer == "no", "an above-floor commit is unchanged"
+
+
+# ---------------------------------------------------------------------------
+# Case 9: a too-short evidence quote must not crash the pair. Evidence is a
+# URL plus a quoted passage; a bare token like "yes" is below the
+# ResearcherOutput min_length (10) and would otherwise raise a
+# ValidationError after the adjudication has already been paid for. It is
+# treated as no quote.
+# ---------------------------------------------------------------------------
+
+def test_short_evidence_quote_falls_back_not_crash():
+    helper = _import_helper()
+    adj = _make_adj_output(verdict="researcher_correct", adj_answer="yes",
+                           evidence_quote="yes")
+    last_r = _make_researcher_output(answer="yes")
+
+    status, chosen = helper(adj, [last_r])
+
+    assert status == "accepted_by_adjudicator"
+    assert chosen.answer == "yes"
+    assert len(chosen.evidence_quote) >= 10
+    assert "did not provide quote" in chosen.evidence_quote
+
+
+def test_empty_evidence_quote_falls_back():
+    helper = _import_helper()
+    adj = _make_adj_output(verdict="researcher_correct", adj_answer="yes",
+                           evidence_quote="")
+    last_r = _make_researcher_output(answer="yes")
+
+    _, chosen = helper(adj, [last_r])
+
+    assert "did not provide quote" in chosen.evidence_quote

@@ -309,17 +309,23 @@ def kpi_tiles() -> None:
     if accuracy["accuracy"] is not None:
         acc_value = f"{accuracy['accuracy']:.0%}"
         n_near = accuracy.get("n_near_match", 0)
+        n_abstained = accuracy.get("n_abstained", 0)
         within = accuracy.get("accuracy_within_one_band")
+        abstain_rate = accuracy.get("abstention_rate")
+        abstain_text = (
+            f" {n_abstained} abstained ({abstain_rate:.0%})."
+            if n_abstained > 0 and abstain_rate is not None else ""
+        )
         if n_near > 0 and within is not None:
             acc_caption = (
                 f"{accuracy['n_match']} match · {n_near} near · "
                 f"{accuracy['n_differ']} differ. "
-                f"Within one band: {within:.0%}."
+                f"Within one band: {within:.0%}.{abstain_text}"
             )
         else:
             acc_caption = (
                 f"{accuracy['n_match']} match / "
-                f"{accuracy['n_differ']} differ vs ODMI 2025."
+                f"{accuracy['n_differ']} differ vs ODMI 2025.{abstain_text}"
             )
     else:
         acc_value = "—"
@@ -435,9 +441,11 @@ def country_outcomes_chart() -> None:
                         "Matches ODMI",
                         "Near match (adjacent band)",
                         "Differs from ODMI",
+                        "Abstained",
                         "No ground truth",
                     ],
-                    range=["#10B981", "#D69E2E", "#EF4444", "#475569"],
+                    range=["#10B981", "#D69E2E", "#EF4444",
+                           "#64748B", "#475569"],
                 ),
                 legend=alt.Legend(
                     orient="bottom", labelFontSize=12, titleFontSize=11,
@@ -458,10 +466,12 @@ def country_outcomes_chart() -> None:
     n_match = int(df[df["outcome"] == "Matches ODMI"]["n"].sum())
     n_near = int(df[df["outcome"] == "Near match (adjacent band)"]["n"].sum())
     n_differ = int(df[df["outcome"] == "Differs from ODMI"]["n"].sum())
-    denom = n_match + n_near + n_differ
+    n_abstained = int(df[df["outcome"] == "Abstained"]["n"].sum())
+    denom = n_match + n_near + n_differ + n_abstained
     pct_match = (n_match / denom) if denom > 0 else 0
     within = ((n_match + n_near) / denom) if denom > 0 else 0
     near_text = f", {n_near} near" if n_near > 0 else ""
+    abstain_text = f", {n_abstained} abstained" if n_abstained > 0 else ""
     band_text = (
         f' Within one band: <strong style="color:#5EEAD4;">{within:.0%}</strong>.'
         if n_near > 0 else ""
@@ -472,7 +482,7 @@ def country_outcomes_chart() -> None:
         f'finalised pairs across {len(country_order)} '
         f'country/countries. Exact accuracy vs ODMI 2025: '
         f'<strong style="color:#5EEAD4;">{pct_match:.0%}</strong> '
-        f'({n_match} match{near_text}, {n_differ} differ).{band_text} '
+        f'({n_match} match{near_text}, {n_differ} differ{abstain_text}).{band_text} '
         f'ODMI assessments are one cycle old, so a real-world change '
         f'since 2025 looks like a swarm error here.'
         f'</div>'

@@ -8,6 +8,77 @@ Entries newest first.
 
 ---
 
+## 2026-06-04 — Session 21: Codebase-wide bug hunt and fix batch
+
+Ran a six-way parallel bug hunt over the whole tree (orchestration, the three
+agents, shared tools, dashboard/SQL, evaluation harnesses, branch/test health)
+after a fortnight of concurrent-branch merges. Fixed fourteen confirmed findings;
+left three by choice; flagged two for a human glance.
+
+What broke, ranked.
+
+- **Abstentions were counted as plain wrong answers in the dashboard.** D35/D37
+  made `inconclusive` an honest abstention, but `_MATCH_STATUS_SQL` let it fall
+  through to `differ`. It now gets its own `abstained` status. Per the decision
+  taken this session, an abstention is still a failure to answer, so it stays in
+  the accuracy denominator against accuracy (accuracy is unchanged, 0.645 on the
+  current main DB), but the abstention rate is now a metric of its own
+  (`accuracy_summary` returns `n_abstained` / `abstention_rate`; surfaced on Home,
+  Results, Database, Analytics). 57 of 211 answerable pairs (27%) are abstentions.
+- **The Coordinator resume path crashed.** On a resume, attempt 0 bound `r_inp`
+  but never `r_result`, so the first `r_result.output` use raised
+  `UnboundLocalError` and the pair died before the Verifier. The resume branch now
+  wraps the loaded output in a `ResearcherRunResult` (no usage objects, so no
+  double-charge) and folds the prior queries into the divergence accumulator. Known
+  limit kept: the resumed run carries no snippets, so the Verifier re-fetches for
+  the quote check rather than using the D34 stored-snippet path.
+- **`trust_score` corrupted hostnames** with `lstrip("www.")` (strips a character
+  set, so `wales.gov.uk` became `ales.gov.uk`). Now strips the literal prefix.
+- **Deny-list trailing-dot bypass:** `data.europa.eu.` slipped past all five
+  leakage layers. `_normalise_host` now strips trailing dots.
+- **Bare `yes` falsely matched a count_band gold** (`yes` vs `yes, >9`). The
+  `yes...` prefix match is now gated to binary questions; this drops one false
+  match on the current DB (n_match 137 to 136).
+- **Adjudicator finalisation could crash** on a sub-`min_length` evidence quote;
+  a too-short quote is now treated as no quote.
+- **near_match adjacency** no longer treats sentinel labels (`not applicable`,
+  `i don't know`, the abstention/other escape hatches) as adjacent bands.
+- **Cherry-picked the stranded `loving-mendel` code:** the canonical-row dedup in
+  `chaining_analysis.py` and `malta_failure_audit.py` (EXP-7/EXP-10 were
+  double-counting duplicate `phase2_final` rows), the EXP-6 `--workers` parallelism
+  in `verifier_strategies.py`, the `max_retries=8` concurrency cushion in
+  `llm.py`, and their two test files. Main had not touched these files since the
+  merge-base, so they applied cleanly. The branch's `data/odmi.db` and
+  `EXPERIMENTS.md` still diverge and need manual reconciliation (data, not logic).
+- Smaller fixes: catalogue DCAT-RDF snapshot hash made reproducible (canonical
+  N-Triples, not non-deterministic Turtle); DIY search now falls through to Brave
+  when DIY returns empty, not only when it raises; `cleanup_subtrios` reap guards
+  against PID reuse with a `ps` cmdline check; `harness.py run-pair` passes
+  positional args the coordinator actually accepts; Verifier strategy descriptions
+  corrected V1 to V3; chained-evidence dedup keys on the full snippet not a
+  160-char prefix; `datetime.utcnow()` deprecation cleared in `llm.py`,
+  `run_coordinator.py`, `cleanup_subtrios.py`.
+
+Left by choice: the dashboard model-default write is not read-only gated (single
+user, no public writers); Holm step-down monotonicity and the even-n median label
+in the stats helpers; the `ground_truth` join has no `cycle_year` filter (fine
+until a second cycle loads).
+
+Flagged for a human glance, not auto-fixed: (1) Q2's `allowed_answers` leads with
+a stray `"1"` that looks like a load artefact and shifts every band index by one;
+fix the loader, not the row by hand. (2) EXP-1's "decided" denominator counts a
+pair as decided even when one of the two position-swapped orientations judged
+`both_fail`; the prose says both_fail is excluded. It is a disclosure/methodology
+call, not a code bug (strict exclusion moves the headline from 49/55 = 89% to
+42/45 = 93%, so it strengthens DIY either way). (3) A separate bug surfaced during
+the hunt: the per-country trusted lists load empty because the JSON files key on
+`trusted_domains` but `validator._load_country_list` reads `trusted`, so those
+domains score 0.6 via the heuristic instead of 1.0.
+
+Tests: 523 passed, 13 skipped (was 496/13). Dashboard AppTests pass.
+
+---
+
 ## 2026-06-03 — Session 20f: Malta baseline dispatch (done, 60/60)
 
 Picked up the shared prerequisite for EXP-6/7/8/9: the canonical Malta pair set

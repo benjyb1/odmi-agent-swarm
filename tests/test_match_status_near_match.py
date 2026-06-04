@@ -137,23 +137,55 @@ def test_binary_disagreement_stays_differ(db):
     assert _status(db) == [("P17", "differ")]
 
 
-def test_inconclusive_never_near_match(db):
-    # `inconclusive` is not in any band's allowed_answers, so it
-    # cannot be adjacent to anything. It stays as differ.
+def test_inconclusive_is_abstained_not_near_match(db):
+    # `inconclusive` is an honest abstention (D35/D37). It gets its own
+    # `abstained` status, never near_match and never differ, so the
+    # abstention rate can be read on its own. It is still counted against
+    # accuracy by accuracy_summary.
     _insert_question(
         db, "Q12", "percentage_band",
         [">90%", "71-90%", "51-70%", "31-50%", "10-30%", "<10%"],
     )
     _insert_pair(db, "Q12", "inconclusive", "71-90%")
-    assert _status(db) == [("Q12", "differ")]
+    assert _status(db) == [("Q12", "abstained")]
 
 
-def test_yes_variant_swarm_matches_yes_prefix(db):
-    # ODMI ground truth often carries 'yes, with X' style responses.
-    # A swarm 'yes' should match those.
+def test_yes_variant_swarm_matches_yes_prefix_on_binary(db):
+    # ODMI ground truth often carries 'yes, with X' style responses on
+    # binary questions. A swarm 'yes' should match those.
     _insert_question(db, "P25", "binary", ["yes", "no"])
     _insert_pair(db, "P25", "yes", "yes, with monitoring")
     assert _status(db) == [("P25", "match")]
+
+
+def test_bare_yes_does_not_match_count_band_gold(db):
+    # On a count_band question a bare `yes` is under-specified: it must
+    # not score an exact match against a richer gold like `yes, >9`.
+    _insert_question(
+        db, "P29", "count_band",
+        ["no", "yes, 1-2", "yes, 3-5", "yes, >9"],
+    )
+    _insert_pair(db, "P29", "yes", "yes, >9")
+    assert _status(db) == [("P29", "differ")]
+
+
+def test_sentinel_label_is_not_an_adjacent_band(db):
+    # `not applicable` sits at the end of some ordinal allowed_answers
+    # lists but is not a band step. A swarm `none...` against a gold of
+    # `not applicable` must be differ, not a spurious near_match.
+    _insert_question(
+        db, "P16", "ordinal_magnitude",
+        [
+            "all public bodies",
+            "the majority of public bodies",
+            "approximately half of the public bodies",
+            "few public bodies",
+            "none of the public bodies",
+            "not applicable",
+        ],
+    )
+    _insert_pair(db, "P16", "none of the public bodies", "not applicable")
+    assert _status(db) == [("P16", "differ")]
 
 
 def test_case_insensitive_match(db):

@@ -78,6 +78,20 @@ def test_legitimate_urls_pass(url: str) -> None:
     assert blocked_reason(url) is None
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        # A trailing-dot FQDN must not bypass the deny-list.
+        "https://data.europa.eu./x",
+        "https://data.europa.eu.../x",
+        "https://www.data.europa.eu./y",
+    ],
+)
+def test_trailing_dot_fqdn_still_blocked(url: str) -> None:
+    assert is_blocked(url), f"expected blocked despite trailing dot: {url}"
+    assert blocked_reason(url) is not None
+
+
 def test_empty_and_malformed() -> None:
     assert is_blocked("") is False
     assert is_blocked("not a url") is False

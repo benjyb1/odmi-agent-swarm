@@ -503,7 +503,7 @@ def _register_experiment(n_cands: int, counts: dict):
 # Run
 # ============================================================
 
-def run(limit: Optional[int] = None):
+def run(limit: Optional[int] = None, workers: int = 1):
     cands = build_candidates(limit=limit)
     counts = Counter((c.stratum, c.gold_label) for c in cands)
     ccounts = Counter(c.country_code for c in cands)
@@ -550,37 +550,66 @@ def run(limit: Optional[int] = None):
         }) + "\n")
         fh.flush()
 
-    for i, cand in enumerate(cands, 1):
-        if cand.cand_id in done_ids:
-            continue
+    pending = [(i, cand) for i, cand in enumerate(cands, 1)
+               if cand.cand_id not in done_ids]
+
+    def _process(i: int, cand: Candidate):
+        """All work for one candidate: freeze evidence once, run the four
+        strategies over it. Independent per candidate, so safe to run in a
+        thread pool. Returns the record dict, or None to skip (and be retried
+        on the next resume)."""
         ro = _researcher_output(cand.row, cand.researcher_answer)
         if ro is None:
             print(f"[{i}/{len(cands)}] SKIP {cand.cand_id} (bad researcher output)")
-            continue
-        print(f"[{i}/{len(cands)}] {cand.cand_id} [{cand.stratum}] "
-              f"gold={cand.gold_label} answer={cand.researcher_answer!r}")
-        frozen = _freeze_evidence(cand, ro)
-        rec = {
-            "_record": "candidate", "cand_id": cand.cand_id, "stratum": cand.stratum,
-            "role": cand.role,
-            "gold_label": cand.gold_label, "question_id": cand.question_id,
-            "country_code": cand.country_code, "dimension": cand.dimension,
-            "answer_shape": cand.answer_shape, "researcher_answer": cand.researcher_answer,
-            "gold_response": cand.gold_response, "injected": cand.injected,
-            "source_row_id": cand.source_row_id,
-            "substring_result": frozen["substring_result"],
-            "n_independent_snippets": len(frozen["independent_snippets"]),
-            "verdicts": {},
-        }
-        for strategy in STRATEGIES:
-            res = _run_strategy(cand, ro, frozen, strategy)
-            rec["verdicts"][strategy] = res
-            mark = "?" if res["verdict"] is None else (
-                "OK " if (res["verdict"] == ("fail" if cand.gold_label == "should_fail" else "pass")) else "XX ")
-            print(f"      {strategy:20s} -> {str(res['verdict']):4s} "
-                  f"ans={str(res['verifier_answer'])[:14]:14s} {mark}")
-        fh.write(json.dumps(rec) + "\n")
-        fh.flush()
+            return None
+        try:
+            print(f"[{i}/{len(cands)}] START {cand.cand_id} [{cand.stratum}] "
+                  f"gold={cand.gold_label} answer={cand.researcher_answer!r}")
+            frozen = _freeze_evidence(cand, ro)
+            rec = {
+                "_record": "candidate", "cand_id": cand.cand_id, "stratum": cand.stratum,
+                "role": cand.role,
+                "gold_label": cand.gold_label, "question_id": cand.question_id,
+                "country_code": cand.country_code, "dimension": cand.dimension,
+                "answer_shape": cand.answer_shape, "researcher_answer": cand.researcher_answer,
+                "gold_response": cand.gold_response, "injected": cand.injected,
+                "source_row_id": cand.source_row_id,
+                "substring_result": frozen["substring_result"],
+                "n_independent_snippets": len(frozen["independent_snippets"]),
+                "verdicts": {},
+            }
+            for strategy in STRATEGIES:
+                res = _run_strategy(cand, ro, frozen, strategy)
+                rec["verdicts"][strategy] = res
+                mark = "?" if res["verdict"] is None else (
+                    "OK " if (res["verdict"] == ("fail" if cand.gold_label == "should_fail" else "pass")) else "XX ")
+                print(f"      {cand.cand_id} {strategy:18s} -> {str(res['verdict']):4s} "
+                      f"ans={str(res['verifier_answer'])[:14]:14s} {mark}")
+            return rec
+        except Exception as e:  # noqa: BLE001 - one bad candidate must not kill the run
+            print(f"[{i}/{len(cands)}] ERROR {cand.cand_id}: {e!r} (will retry on resume)")
+            return None
+
+    import threading
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    write_lock = threading.Lock()
+
+    def _emit(rec):
+        if rec is None:
+            return
+        with write_lock:
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+
+    if workers <= 1:
+        for i, cand in pending:
+            _emit(_process(i, cand))
+    else:
+        print(f"Running {len(pending)} candidates with {workers} parallel workers.")
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            futs = [ex.submit(_process, i, cand) for i, cand in pending]
+            for fut in as_completed(futs):
+                _emit(fut.result())
 
     fh.close()
     print(f"\nWrote {out_path}")
@@ -773,12 +802,15 @@ def analyse(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None, help="smoke run: cap candidates")
+    ap.add_argument("--workers", type=int, default=1,
+                    help="parallel candidate workers (each does 4 strategy calls). "
+                         "Resilient to proxy connection blips via the SDK retry bump.")
     ap.add_argument("--analyse-only", default=None, help="re-analyse an existing JSONL")
     args = ap.parse_args()
     if args.analyse_only:
         analyse(args.analyse_only)
     else:
-        run(limit=args.limit)
+        run(limit=args.limit, workers=args.workers)
 
 
 if __name__ == "__main__":

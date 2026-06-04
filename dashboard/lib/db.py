@@ -121,10 +121,24 @@ _MATCH_STATUS_SQL = """
         THEN 'no_ground_truth'
       WHEN f.final_answer IS NULL OR TRIM(f.final_answer) = ''
         THEN 'no_swarm_answer'
+      -- D35/D37: `inconclusive` is an honest abstention, not a label.
+      -- It is held in its own bucket so the abstention rate can be
+      -- reported separately, but it is still a failure to answer, so
+      -- accuracy_summary counts it against accuracy (it never matches).
+      WHEN LOWER(TRIM(f.final_answer)) = 'inconclusive'
+        THEN 'abstained'
       WHEN LOWER(TRIM(f.final_answer)) = LOWER(TRIM(gt.response))
         THEN 'match'
+      -- A bare `yes` only fully matches a `yes...` gold on a binary
+      -- question. On a count_band gold like `yes, >9` a bare `yes`
+      -- is under-specified and must not score an exact match.
       WHEN LOWER(TRIM(f.final_answer)) = 'yes'
            AND (LOWER(TRIM(gt.response)) LIKE 'yes%')
+           AND EXISTS (
+             SELECT 1 FROM questions q
+             WHERE q.question_id = f.question_id
+               AND q.answer_shape = 'binary'
+           )
         THEN 'match'
       WHEN LOWER(TRIM(f.final_answer)) = 'no'
            AND LOWER(TRIM(gt.response)) = 'no'
@@ -133,7 +147,10 @@ _MATCH_STATUS_SQL = """
       -- near_match, not differ. The questions table carries the
       -- ordered list of labels per question; we look up the indices
       -- of the swarm and ODMI answers and check that they are one
-      -- step apart.
+      -- step apart. Sentinel labels (`not applicable`, `i don't know`
+      -- and the abstention/other escape hatches) are not band steps,
+      -- so they are excluded: they sit at the end of some allowed_answers
+      -- lists and would otherwise read as adjacent to a real band.
       WHEN EXISTS (
         SELECT 1
         FROM questions q,
@@ -146,6 +163,10 @@ _MATCH_STATUS_SQL = """
           AND ABS(ja_swarm.key - ja_gt.key) = 1
           AND LOWER(TRIM(ja_swarm.value)) = LOWER(TRIM(f.final_answer))
           AND LOWER(TRIM(ja_gt.value)) = LOWER(TRIM(gt.response))
+          AND LOWER(TRIM(ja_swarm.value)) NOT IN
+                ('not applicable', 'i don''t know', 'inconclusive', 'other')
+          AND LOWER(TRIM(ja_gt.value)) NOT IN
+                ('not applicable', 'i don''t know', 'inconclusive', 'other')
       )
         THEN 'near_match'
       ELSE 'differ'
@@ -325,6 +346,7 @@ def country_outcome_counts() -> pd.DataFrame:
                  WHEN 'match' THEN 'Matches ODMI'
                  WHEN 'near_match' THEN 'Near match (adjacent band)'
                  WHEN 'differ' THEN 'Differs from ODMI'
+                 WHEN 'abstained' THEN 'Abstained'
                  ELSE 'No ground truth'
                END AS outcome,
                COUNT(*) AS n
@@ -338,13 +360,17 @@ def country_outcome_counts() -> pd.DataFrame:
 def accuracy_summary() -> dict:
     """Overall accuracy of the swarm against ODMI ground truth.
 
-    Returns {n_finalised, n_match, n_near_match, n_differ, n_no_truth,
-    accuracy, accuracy_within_one_band}.
+    Returns {n_finalised, n_match, n_near_match, n_differ, n_abstained,
+    n_no_truth, accuracy, accuracy_within_one_band, abstention_rate}.
 
-    `accuracy` is exact matches / (matches + near_matches + differs).
+    `accuracy` is exact matches / (matches + near_matches + differs +
+    abstentions). An abstention (`inconclusive`) is a failure to answer,
+    so it is counted in the denominator against accuracy, never as a
+    correct answer. `abstention_rate` reports those abstentions as their
+    own metric: abstentions / (the same answerable denominator).
     `accuracy_within_one_band` counts a near_match as correct,
     representing how often the swarm's band is at most one step off
-    ODMI's answer. Both exclude pairs without a ground-truth row.
+    ODMI's answer. All three exclude pairs without a ground-truth row.
     """
     with _conn() as conn:
         row = conn.execute(
@@ -356,6 +382,8 @@ def accuracy_summary() -> dict:
                            THEN 1 ELSE 0 END) AS n_near_match,
                   SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'differ'
                            THEN 1 ELSE 0 END) AS n_differ,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'abstained'
+                           THEN 1 ELSE 0 END) AS n_abstained,
                   SUM(CASE WHEN ({_MATCH_STATUS_SQL}) IN
                            ('no_ground_truth', 'no_swarm_answer')
                            THEN 1 ELSE 0 END) AS n_no_truth
@@ -369,20 +397,24 @@ def accuracy_summary() -> dict:
     n_match = int(row["n_match"] or 0)
     n_near_match = int(row["n_near_match"] or 0)
     n_differ = int(row["n_differ"] or 0)
+    n_abstained = int(row["n_abstained"] or 0)
     n_no_truth = int(row["n_no_truth"] or 0)
-    denom = n_match + n_near_match + n_differ
+    denom = n_match + n_near_match + n_differ + n_abstained
     accuracy = (n_match / denom) if denom > 0 else None
     accuracy_within_one_band = (
         (n_match + n_near_match) / denom if denom > 0 else None
     )
+    abstention_rate = (n_abstained / denom) if denom > 0 else None
     return {
         "n_finalised": n_finalised,
         "n_match": n_match,
         "n_near_match": n_near_match,
         "n_differ": n_differ,
+        "n_abstained": n_abstained,
         "n_no_truth": n_no_truth,
         "accuracy": accuracy,
         "accuracy_within_one_band": accuracy_within_one_band,
+        "abstention_rate": abstention_rate,
     }
 
 

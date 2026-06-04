@@ -100,6 +100,38 @@ def test_auto_falls_through_diy_to_brave(monkeypatch):
     assert records[2]["ok"] is True
 
 
+def test_auto_empty_diy_falls_through_to_brave(monkeypatch):
+    """An empty DIY result (no error) must still fall through to Brave."""
+    monkeypatch.setattr("agents.tools.search._TAVILY_QUOTA_EXHAUSTED", False)
+    monkeypatch.setattr(
+        "agents.tools.search._tavily_search",
+        lambda q, **k: (_ for _ in ()).throw(RuntimeError("quota exhausted")),
+    )
+    monkeypatch.setattr(
+        "agents.tools.search_diy.diy_search",
+        lambda q, **k: [],  # DIY succeeds but returns nothing
+    )
+    monkeypatch.setattr(
+        "agents.tools.search._brave_search",
+        lambda q, **k: _brave_result(q, **k),
+    )
+    monkeypatch.setattr(
+        "agents.tools.search._PROVIDER_USAGE_COUNTERS",
+        {"tavily": 0, "diy": 0, "brave": 0},
+    )
+    records: list[dict] = []
+    out = search("test", provider="auto", on_call=records.append)
+    assert out and all(r.provider == "brave" for r in out)
+    # tavily (fail), diy (ok but empty), brave (ok).
+    assert [r["provider"] for r in records] == ["tavily", "diy", "brave"]
+    assert records[1]["ok"] is True and records[1]["results"] == 0
+    assert records[2]["ok"] is True
+    # DIY counted exactly once; not double-counted by the fall-through.
+    from agents.tools.search import _PROVIDER_USAGE_COUNTERS
+    assert _PROVIDER_USAGE_COUNTERS["diy"] == 1
+    assert _PROVIDER_USAGE_COUNTERS["brave"] == 1
+
+
 # ---------------------------------------------------------------------------
 # provider="tavily"
 # ---------------------------------------------------------------------------

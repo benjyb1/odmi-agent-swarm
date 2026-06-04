@@ -73,6 +73,7 @@ _MATCH_BADGE = {
     "match": ("🟢 Matches ODMI", "#38A169"),
     "near_match": ("🟡 Adjacent band (D28)", "#D69E2E"),
     "differ": ("🔴 Differs from ODMI", "#C53030"),
+    "abstained": ("⚪ Abstained (inconclusive)", "#64748B"),
     "no_ground_truth": ("⚪ No ODMI record", "#718096"),
     "no_swarm_answer": ("⚪ Swarm had no answer", "#718096"),
 }
@@ -270,26 +271,39 @@ def render_cards_tab() -> None:
     n_match = int((cards["match_status"] == "match").sum())
     n_near = int((cards["match_status"] == "near_match").sum())
     n_differ = int((cards["match_status"] == "differ").sum())
+    n_abstained = int((cards["match_status"] == "abstained").sum())
     n_no_gt = int(cards["match_status"].isin(
         ["no_ground_truth", "no_swarm_answer"]
     ).sum())
-    denom = n_match + n_near + n_differ
+    # An abstention is a failure to answer, so it stays in the
+    # denominator against accuracy; it is reported on its own below.
+    denom = n_match + n_near + n_differ + n_abstained
     accuracy = (n_match / denom) if denom > 0 else 0.0
     within_one_band = ((n_match + n_near) / denom) if denom > 0 else 0.0
+    abstention_rate = (n_abstained / denom) if denom > 0 else 0.0
     k1, k2, k3, k4, k5 = st.columns(5)
     k1.metric("Pairs finalised", n_total)
     k2.metric("Match ODMI", n_match)
-    k3.metric("Near (D28)", n_near, help=(
-        "Swarm answer one band off ODMI's, on the three ordered "
-        "shapes (percentage / ordinal / count)."
-    ))
-    k4.metric("Differ", n_differ)
+    k3.metric("Differ", n_differ)
+    k4.metric(
+        "Abstained",
+        n_abstained,
+        delta=f"{abstention_rate:.0%}" if denom > 0 else None,
+        delta_color="off",
+        help=(
+            "Swarm returned `inconclusive` (D35/D37): an honest "
+            "abstention. Counted against accuracy, reported here on "
+            "its own. Near (D28): swarm one band off ODMI's, "
+            f"{n_near} pairs."
+        ),
+    )
     k5.metric(
         "Within one band",
         f"{within_one_band:.0%}" if denom > 0 else "—",
         help=(
-            "(matches + near matches) / (matches + near + differs). "
-            f"Exact accuracy alone: {accuracy:.0%}."
+            "(matches + near matches) / (matches + near + differs + "
+            f"abstentions). Exact accuracy alone: {accuracy:.0%}. "
+            f"Near matches: {n_near}."
         ) if denom > 0 else "—",
     )
     st.caption(
@@ -323,6 +337,7 @@ def render_cards_tab() -> None:
                 "match": "Matches",
                 "near_match": "Near (adjacent band)",
                 "differ": "Differs",
+                "abstained": "Abstained",
                 "no_ground_truth": "No ground truth",
                 "no_swarm_answer": "No swarm answer",
             }.get(s, s),

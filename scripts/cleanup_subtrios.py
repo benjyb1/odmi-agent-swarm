@@ -14,8 +14,9 @@ from __future__ import annotations
 import argparse
 import os
 import signal
+import subprocess
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -30,12 +31,38 @@ ACTIVE_STAGES = (
 
 
 def _now_iso() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    return (
+        datetime.now(timezone.utc)
+        .replace(tzinfo=None)
+        .isoformat(timespec="seconds") + "Z"
+    )
+
+
+def _pid_is_coordinator(pid: int, subtrio_id: str) -> bool:
+    """Confirm `pid` is the coordinator process for this subtrio.
+
+    Guards against PID reuse: between the status row being written and the
+    reaper running, the recorded PID could have been recycled by an
+    unrelated process. We only signal a process whose command line is the
+    coordinator running this exact subtrio. `-ww` stops `ps` truncating the
+    command, so the subtrio UUID is always visible. Mirrors the same check
+    in dashboard/lib/db.py.
+    """
+    try:
+        out = subprocess.run(
+            ["ps", "-ww", "-p", str(pid), "-o", "command="],
+            capture_output=True, text=True, timeout=3,
+        ).stdout
+    except Exception:  # noqa: BLE001
+        return False
+    return "run_coordinator" in out and subtrio_id in out
 
 
 def reap(age_minutes: int = 10, *, dry_run: bool = False) -> list[dict]:
-    cutoff = (datetime.utcnow() - timedelta(minutes=age_minutes))\
-        .isoformat(timespec="seconds") + "Z"
+    cutoff = (
+        datetime.now(timezone.utc).replace(tzinfo=None)
+        - timedelta(minutes=age_minutes)
+    ).isoformat(timespec="seconds") + "Z"
 
     with connect() as conn:
         conn.row_factory = lambda c, r: dict(
@@ -59,9 +86,11 @@ def reap(age_minutes: int = 10, *, dry_run: bool = False) -> list[dict]:
     now = _now_iso()
     with connect() as conn:
         for r in rows:
-            # Best-effort PID kill.
+            # Best-effort PID kill. Only signal a PID that still looks like
+            # the coordinator this row started; a recycled PID belonging to
+            # an unrelated process must not be touched.
             pid = r.get("process_pid")
-            if pid:
+            if pid and _pid_is_coordinator(pid, r["subtrio_id"]):
                 try:
                     os.kill(pid, signal.SIGTERM)
                 except ProcessLookupError:

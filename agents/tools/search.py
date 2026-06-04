@@ -310,6 +310,8 @@ def search(
                 raise
 
     # First fallback: the DIY pipeline (Serper SERP + trafilatura, D29).
+    # A DIY call that raises OR returns no results both fall through to
+    # Brave as a last resort; an empty list is treated as "no answer here".
     t0 = time.perf_counter()
     try:
         from agents.tools.search_diy import diy_search  # local import
@@ -317,8 +319,11 @@ def search(
             query, max_results=max_results, include_domains=include_domains,
         )
         _PROVIDER_USAGE_COUNTERS["diy"] += 1
-        _emit("diy", t0, results, ok=True, error=None)
-        return _scrub_blocked(results)
+        scrubbed = _scrub_blocked(results)
+        _emit("diy", t0, scrubbed, ok=True, error=None)
+        if scrubbed:
+            return scrubbed
+        # empty result set: fall through to Brave
     except Exception as exc:  # noqa: BLE001
         _emit("diy", t0, [], ok=False, error=str(exc)[:200])
         # fall through to Brave as a last resort

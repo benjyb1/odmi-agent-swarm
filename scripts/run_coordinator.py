@@ -34,7 +34,7 @@ import sqlite3
 import sys
 import time
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List, Optional
 
@@ -127,7 +127,11 @@ def _print_step(prefix: str, event: str, payload: dict) -> None:
 # ============================================================
 
 def _iso_now() -> str:
-    return datetime.utcnow().isoformat(timespec="seconds") + "Z"
+    return (
+        datetime.now(timezone.utc)
+        .replace(tzinfo=None)
+        .isoformat(timespec="seconds") + "Z"
+    )
 
 
 def _upsert_subtrio_status(
@@ -315,13 +319,18 @@ def _finalise_after_adjudication(
     if (not _is_abstention(adj_answer)
             and (adj_conf or 0.0) < COMMIT_CONFIDENCE_FLOOR):
         adj_answer = "inconclusive"
+    # Evidence is a URL plus a quoted passage. A bare token like "yes" is
+    # not evidence, and anything under the ResearcherOutput min_length (10)
+    # would raise a ValidationError and crash the pair after the
+    # adjudication has already been paid for. Treat a missing or too-short
+    # quote as no quote.
+    adj_quote = (adj_output.chosen_evidence_quote or "").strip()
+    if len(adj_quote) < 10:
+        adj_quote = "(adjudicator did not provide quote)"
     chosen = ResearcherOutput(
         answer=adj_answer,
         answer_explanation=adj_output.adjudicator_reasoning[:300],
-        evidence_quote=(
-            adj_output.chosen_evidence_quote
-            or "(adjudicator did not provide quote)"
-        ),
+        evidence_quote=adj_quote,
         source_url=str(
             adj_output.chosen_source_url or last_researcher_output.source_url
         ),
@@ -616,7 +625,8 @@ def _find_resumable_researcher(
     correct yesterday but might have moved on.
     """
     cutoff = (
-        datetime.utcnow() - timedelta(minutes=max_age_minutes)
+        datetime.now(timezone.utc).replace(tzinfo=None)
+        - timedelta(minutes=max_age_minutes)
     ).isoformat(timespec="seconds") + "Z"
     with connect() as conn:
         row = conn.execute(
@@ -772,14 +782,16 @@ def _merge_evidence(
 ) -> List[EvidenceItem]:
     """Append new evidence to the corpus, de-duped and capped.
 
-    De-dup key is (source_url, snippet[:160]) so the same page resurfacing
-    on a later round does not pad the corpus. Returns a new list; the input
-    is not mutated.
+    De-dup key is (source_url, full snippet) so the same page resurfacing
+    on a later round does not pad the corpus. The full snippet is used, not
+    a prefix: two distinct passages from one page that share an opening
+    (a cookie banner, a nav header) must not collide and drop real
+    evidence. Returns a new list; the input is not mutated.
     """
     merged = list(corpus)
-    seen = {(it.source_url, it.snippet[:160]) for it in merged}
+    seen = {(it.source_url, it.snippet) for it in merged}
     for it in new_items:
-        key = (it.source_url, it.snippet[:160])
+        key = (it.source_url, it.snippet)
         if key in seen:
             continue
         seen.add(key)
@@ -991,6 +1003,25 @@ def coordinate(
                     f"{resumable['subtrio_id'][:8]}"
                 ),
             )
+            # Wrap the resumed output in a ResearcherRunResult so the rest
+            # of the loop is uniform. No usage objects, because the resumed
+            # call was already paid for under the prior subtrio (its cost
+            # stays in claude_usage_log there), so cumulative_* are zero and
+            # nothing is double-charged. The snippets are not persisted on
+            # the researcher row, so search_results is empty: a resumed
+            # Verifier falls back to a live re-fetch for the quote check
+            # rather than the D34 stored-snippet path. The queries are
+            # folded into the divergence accumulator so any retry varies.
+            r_result = ResearcherRunResult(
+                output=last_researcher_output,
+                failure_mode=None,
+                query_gen_usage=None,
+                main_usage=None,
+                search_queries_used=last_researcher_output.search_queries_used,
+                fetched_urls=last_researcher_output.fetched_urls,
+                search_results=[],
+            )
+            accumulated_search_queries.extend(r_result.search_queries_used)
         else:
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,
