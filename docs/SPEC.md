@@ -1470,10 +1470,41 @@ without re-introducing the friction D40 removed.
 
 ---
 
+### D42: Concurrency consumes the shared budget linearly (a correction)
+
+**Date:** 2026-06-04. Corrects `EXPERIMENTS_PROTOCOL.md` section 10. Follows D40,
+D41.
+
+Orchestrating agents had been treating concurrent runs as a throughput hazard and
+sequencing work "so it does not contend on one quota". That reasoning is wrong and
+is now corrected in the protocol. All Claude calls draw on one Max budget through
+the proxy, and concurrent calls consume it **additively**, exactly as expected.
+There is no super-linear penalty and no per-call slowdown: below the limit,
+concurrency overlaps request latency and finishes sooner; at the limit, total time
+is budget-bound whether the work runs in sequence or together, so concurrency is
+neutral, never worse. The proxy strips every `anthropic-ratelimit-*` header
+(Session 9 probe, `scripts/probe_ratelimit.py`), so capacity is unobservable here,
+and D40 already removed the cost soft limit as a guessed, unmeasurable figure. Soft
+-limit and usage-limit anxiety about running two things at once is not supported by
+anything measured on this project.
+
+The real reason to keep two arms of one experiment apart is **data isolation, not
+the rate limit**: a shared resume path must not reuse one arm's Researcher rows for
+the other. The 2026-06-04 EXP-6 / Malta-`v2` collision (a live verifier-strategy
+run rebuilding its candidate set off Malta rows a sibling agent was concurrently
+rewriting) was exactly this, a data-state problem with no rate-limit component.
+Sequencing arms is therefore a cleanliness choice keyed on
+`experiment_id` + `condition_label` scoping, not a budget necessity. Rewrote
+`EXPERIMENTS_PROTOCOL.md` section 10 and the `EXPERIMENTS_CHAINING.md` section 10
+note accordingly; no code change.
+
+---
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-04 (concurrency correction) | D42 added, follows D40/D41. Fact-checked and corrected the recurring claim that concurrent runs must be sequenced because they "contend on one quota". They do not: concurrent Claude calls consume the one shared Max budget additively (linearly), with no super-linear penalty and no per-call slowdown; below the limit concurrency overlaps latency and finishes sooner, at the limit total time is budget-bound either way. The proxy strips all `anthropic-ratelimit-*` headers (Session 9 probe) so capacity is unobservable, and D40 already removed the soft limit as unmeasurable. The genuine reason to isolate two experiment arms is data-state cross-contamination (the resume path reusing one arm's Researcher rows), shown live by the 2026-06-04 EXP-6 / Malta-`v2` candidate-set collision, not the rate limit. Rewrote `EXPERIMENTS_PROTOCOL.md` section 10 (heading "Execution and concurrency") and the `EXPERIMENTS_CHAINING.md` section 10 note; no code change. |
 | 2026-06-03 (answerability split) | Added a per-question answerability tag so results are reported separately by how an answer can be sourced, never excluded. `scripts/build_answerability.py` writes `data/questions/answerability.json`: `catalogue` (the 9 D30-computable questions, authoritative from `agents.tools.catalogue.compute.COMPUTABLE_QUESTIONS`), `self_report` (questionnaire-only internal practice, matched by a transparent keyword rule, reviewable first-pass), `web` (the rest). Split: 119 web / 9 catalogue / 15 self_report. On the Malta baseline the split is the point: web questions reach 79% committed accuracy (30/38), self_report only 40% (2/5) with 7 of 12 abstaining; catalogue questions are percentage-band so none fall in the binary Malta set. The keyword rule is a first pass for review (it missed PT15/PT28/PT45 and the `surveys?` pattern is broad); refine the generator, not the JSON by hand. WAF/CAPTCHA investigation recorded under the Malta entry and the `head_ok` / Playwright-hardening commits: data.gov.mt HTML clears via Playwright (hardened with anti-automation launch args + a Cloudflare-challenge settle), but portal.data.gov.mt walls its uData API even through a cleared browser, so the clean-API route that works for the other five D30 countries is unavailable for MT. |
 | 2026-06-03 (abstain floor) | Extended the D37 commit-confidence floor (0.65) to the Adjudicator's terminal answer in `_finalise_after_adjudication`. Before this the floor only gated the in-loop Verifier-pass path, so at retry exhaustion the Adjudicator could finalise a sub-floor label, which on sparse evidence is usually a defensive `no` (and occasionally a weak `yes` false positive). A sub-0.65 Adjudicator commit is now downgraded to an honest `inconclusive` abstention: under the floor the swarm abstains rather than guessing `no`. On the Malta baseline this would convert the four 0.45-confidence commits (Q10, Q11, Q6 false-negative `no`s and the PT29 false-positive `yes`) into abstentions. Behaviour change for future runs; the committed Malta data predates it. New `tests/test_finalise_after_adjudication.py` cases (sub-floor downgrade, above-floor kept); 496 non-live passing. |
 | 2026-06-03 (Malta dispatch, done) | Malta baseline swarm dispatch completed, the shared prerequisite for EXP-6/7/8/9 (protocol section 9 item 9). Canonical 60-pair set (`data/questions/malta_eval_pairs.json`, 30 `no` / 30 `yes`, seed 20260603) was already committed; verified no-gold coverage (all 30 present) and dimension balance. Dispatched the remaining pairs in four passes (provider auto, `condition_label` baseline, no `experiment_id`, batch `malta_baseline`): all 60 finalised, 43 committed yes/no plus 17 honest `inconclusive` abstentions (D37). Balance-aware (R4): 32/43 committed accuracy, no-gold recall (TNR) 0.87 with 3 false positives of 23 committed (I7, I8-b, PT29), yes-gold recall (TPR) 0.60, Youden's J 0.47, mean commit confidence 0.58; zero data-leakage; batch cost ~$4.98. Three faults found and fixed, none quota: a fresh worktree had no `.env` and the desktop app injected an empty `ANTHROPIC_AUTH_TOKEN`, making every LLM call a misleading `APIConnectionError` (`agents/tools/llm.py` drops a blank token at import); `_find_resumable_researcher` resumed from failed / `inconclusive` Researcher rows, stranding 11 pairs at 'researching' (`scripts/run_coordinator.py` now resumes only clean committed results); and `head_ok` reported Cloudflare-protected data.gov.mt as `url_unreachable`, which it now clears with a Playwright render on a WAF 403/429/503 (`agents/tools/fetch.py`), recovering the last two pairs I8-d and PT12 to `inconclusive`. The first pass also hit a genuine Claude 429 `model_cooldown` near the end and stopped cleanly. New Malta DB rows committed on this branch; 446 tests pass. SPEC current-status, `EXPERIMENTS.md`, `EXPERIMENTS_PROTOCOL.md` section 9 item 9, and `EXPERIMENTS_VERIFIER.md` updated. Failure-mode taxonomy drafted for EXP-10 (retrieval ceiling dominant; the data.gov.mt WAF block now mitigated). |

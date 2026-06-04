@@ -8,6 +8,45 @@ Entries newest first.
 
 ---
 
+## 2026-06-04 — Session 21: concurrency is linear, not a hazard (D42)
+
+A knowledge correction, no code. Orchestrating agents kept refusing to run things
+at the same time, citing rate limits, soft limits and usage limits, and the
+protocol had the same fear written into it: `EXPERIMENTS_PROTOCOL.md` section 10
+said conditions "run in sequence within an experiment" because "firing six at once
+would just contend on one quota", and `EXPERIMENTS_CHAINING.md` cited it. Went
+through the protocol and fact-checked the claim.
+
+The shared-budget part is true: every call goes through one Claude Max budget via
+the proxy. The inference drawn from it was false. Concurrent calls consume that one
+budget **additively**, exactly as you would expect, with no super-linear penalty
+and no per-call slowdown. Below the limit, concurrency overlaps request latency and
+finishes sooner; at the limit, total time is bounded by the budget whether the work
+runs serially or together, so concurrency is neutral, never worse. There is no
+regime where serialising independent work is faster. The repo already half-knew
+this: the Session 9 probe (`scripts/probe_ratelimit.py`) found the proxy strips
+every `anthropic-ratelimit-*` header, so Max capacity is unobservable through this
+path, and D40 removed the cost soft limit because the figure never tracked real
+capacity. The "quota wall" misdiagnosis recorded under Session 20f is the same
+pattern: an environment bug read as an exhausted limit.
+
+What the fear should have been pointing at is **data isolation**, not throughput.
+Two arms of one experiment are kept apart so a shared resume path does not reuse
+one arm's Researcher rows for the other. The live EXP-6 / Malta-`v2` collision this
+session is the clean example: a verifier-strategy run rebuilds its candidate set
+from `phase2_researcher_runs` with "latest id wins", while a sibling agent rewrites
+those same Malta rows under `malta_baseline_v2`, so EXP-6's frozen candidate set
+mixes pre- and post-WAF evidence. That is a correctness problem with no rate-limit
+component, and sequencing for "quota" reasons would not have caught it while
+sequencing for resume-scope reasons does.
+
+Rewrote `EXPERIMENTS_PROTOCOL.md` section 10 (now "Execution and concurrency") and
+the `EXPERIMENTS_CHAINING.md` section 10 note, recorded D42 in `SPEC.md` with a
+change-log row. Next: this is a documentation and habit fix, so the test is whether
+future windows stop serialising independent analysis by reflex.
+
+---
+
 ## 2026-06-03 — Session 20f: Malta baseline dispatch (done, 60/60)
 
 Picked up the shared prerequisite for EXP-6/7/8/9: the canonical Malta pair set

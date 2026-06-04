@@ -602,15 +602,43 @@ items, all gated on search quota:
     `--adjudicator-model` cover all four EXP-9 arms. Tested in
     `tests/test_model_threading.py`.
 
-## 10. Execution and the parallelism constraint
+## 10. Execution and concurrency
 
 Every swarm dispatch (EXP-2, EXP-3) and every judge call (EXP-1, 3, 4, 5) draws
-on the **same** Claude rate limit; the cross-family calls draw on one Gemini key.
-Parallel agents therefore help orchestration, not raw throughput: firing six at
-once would just contend on one quota. The plan is one orchestrating agent per
-experiment, conditions that share quota run in sequence within an experiment, and
-only the genuinely independent analysis runs concurrently. This is stated so the
-"parallel" framing is not mistaken for a speed claim.
+on the **same** Claude Max budget through the CLIProxyAPI proxy; the cross-family
+calls draw on a separate provider key. What the shared budget does and does not
+imply:
+
+- **Consumption is additive, and that is the whole of it.** N concurrent calls
+  draw the budget down N times faster than one call. There is no super-linear
+  penalty, no per-call slowdown from running calls together, and no interference
+  beyond spending one pool. An earlier draft of this section claimed parallel
+  agents "just contend on one quota" and help orchestration but not throughput;
+  that was wrong and is corrected here.
+- **Concurrency does not slow anything down.** Below the rate limit (the normal
+  case, since we rarely saturate it) concurrent calls overlap their latency and
+  finish sooner, a real wall-clock gain. At the limit, total completion is bounded
+  by the budget whether the calls run in sequence or together, so concurrency is
+  neutral, never worse. There is no regime in which running independent work
+  serially is faster.
+- **We cannot read the limit through this path anyway.** The proxy strips every
+  `anthropic-ratelimit-*` header (Session 9 probe, `scripts/probe_ratelimit.py`),
+  so Max's remaining capacity is unobservable here, and D40 removed the cost soft
+  limit for the same reason: it never tracked real capacity. The only thing that
+  could cause true contention is a hard *parallel-request* cap at the proxy or
+  API, which is separate from the usage budget and has not been observed to bind
+  at the concurrency we run. Soft-limit and usage-limit anxiety about running two
+  things at once is not supported by anything measured on this project.
+
+When two arms of one experiment are kept apart, the reason is **data isolation,
+not the rate limit**: the resume path must not reuse one arm's Researcher rows for
+the other (`_find_resumable_researcher`, scoped by `experiment_id` +
+`condition_label`), and per-arm cost attribution stays clean. Once that scoping is
+in place and caching is off, the arms could in principle run concurrently without
+cross-contamination; sequencing them is a deliberate cleanliness choice, not a
+budget necessity. The plan is therefore one orchestrating agent per experiment for
+clean attribution and resume isolation, with independent analysis free to run
+alongside. The "parallel" framing carries no speed penalty.
 
 Order of execution: the section 9 requirements first; then EXP-1 (refresh, which
 also re-validates the harness changes) and EXP-2a; EXP-2b and EXP-3's LT/IS
