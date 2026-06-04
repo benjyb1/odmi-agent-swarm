@@ -10,7 +10,7 @@ run) · `running` · `done`.
 
 | ID | Experiment | Status | Scope | Result (short) |
 |---|---|---|---|---|
-| EXP-1 | DIY vs Tavily, adjudicated (refreshed) | done | FR, 90 pairs | DIY wins 89% of 55 decided pairs (49/6/1), Wilson CI [78,95], p<1e-4; leads all 3 dimensions |
+| EXP-1 | DIY vs Tavily, adjudicated (refreshed) | done | FR, 90 pairs | DIY wins 89% of 55 decided pairs (49/6/1), Wilson CI [78,95], p<1e-4; 42/45 = 93% [82,98] under strict both-orientation exclusion; leads all 3 dimensions |
 | EXP-2a | Search-knob cost vs quality | queued | FR subset | pending |
 | EXP-2b | Search-knob cost vs quality | planned | low-resource countries | pending |
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
@@ -38,6 +38,15 @@ the DIY win share is 89% (Wilson 95% CI [78%, 95%]), exact sign test p < 1e-4
 against parity. DIY leads every dimension (Impact 13/2, Policy 12/2, Portal
 24/2). This supersedes the n=18 pilot below and clears the pre-registered
 non-inferiority margin decisively.
+
+"Decided" here means the combined two-orientation verdict is diy or tavily (a
+non-zero DIY-signed score over the two position-swapped judgements). A
+single-orientation `both_fail` scores zero and so is overridden when the other
+orientation is decisive; it is not excluded. This affects 10 of the 55 decided
+pairs. As a pre-registered sensitivity check, requiring both orientations to be
+decisive (dropping those 10) gives 42/45 = 93% (Wilson [82%, 98%]): the
+direction and significance are unchanged, so the disclosure is for
+completeness, not because the result is fragile.
 
 Caveats (honest): position consistency 81%; the answer-blind robustness check
 agrees with the answer-given verdict on only 67% of the 27-pair subsample (9

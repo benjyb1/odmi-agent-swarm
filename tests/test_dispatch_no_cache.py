@@ -103,6 +103,16 @@ def mock_layers(monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 
 class TestCacheReadDisable:
+    @pytest.fixture(autouse=True)
+    def _isolate_cache_db(self, monkeypatch, tmp_path):
+        """Point the cache at a throwaway DB. Without this the put/get
+        calls below write serp/fetch/snippet rows into the real
+        data/odmi.db (the cache tables share that file), polluting the
+        committed data record."""
+        monkeypatch.setattr(sc, "_DB_PATH", tmp_path / "test_cache_toggle.db")
+        monkeypatch.setattr(sc, "_TABLES_ENSURED", False)
+        monkeypatch.setattr(sc, "_READ_DISABLED", False)
+
     def test_serp_get_returns_none_when_reads_disabled(self) -> None:
         """A populated SERP entry must read as a miss once reads are disabled."""
         from agents.tools.search import SearchResult

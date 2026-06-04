@@ -14,10 +14,21 @@ swarm's finalised pairs:
   4. combine into one verdict (diy / tavily / tie / both_fail).
 
 Primary endpoint (EXP-1, pre-registration section 5): the DIY win share of
-DECIDED head-to-heads (ties and both_fail excluded), reported as a point
-estimate with a Wilson 95% confidence interval and an exact binomial sign test
-against 0.5. Ties are never counted as DIY successes. The full four-way
-distribution and the per-dimension spread are reported alongside.
+DECIDED head-to-heads, reported as a point estimate with a Wilson 95%
+confidence interval and an exact binomial sign test against 0.5. Ties are
+never counted as DIY successes.
+
+What "decided" means here, stated precisely: a pair is decided when its
+COMBINED two-orientation verdict (see ``combine_orientations``) is diy or
+tavily, i.e. the DIY-signed score over the two position-swapped judgements is
+non-zero. A single-orientation ``both_fail`` does NOT exclude a pair: it
+scores zero, so it is overridden when the other orientation is decisive. Only
+a both-orientation ``both_fail`` and a pure diy/tavily position flip (which
+nets to a tie) are excluded. On the frozen EXP-1 run this lenient rule gives
+49/55 = 89% [78, 95]. As a sensitivity check, requiring BOTH orientations to
+be decisive (dropping the 10 pairs where one orientation was ``both_fail``)
+gives 42/45 = 93% [82, 98]: the conclusion is unchanged either way. The full
+four-way distribution and the per-dimension spread are reported alongside.
 
 Robustness on a seeded 30% subsample (section 4): an answer-blind re-judge
 (leakage control) and, where the Gemini key authenticates, a cross-family
@@ -157,8 +168,11 @@ def combine_orientations(o1: Frame, o2: Frame) -> dict:
 
     Pure both_fail in both orientations => both_fail. Otherwise sum a
     DIY-signed score: positive => diy, negative => tavily, zero => tie.
-    A diy/tavily disagreement (pure position flip) nets to a tie and is
-    flagged inconsistent.
+    Note that a single-orientation both_fail scores zero, so a pair where
+    one orientation is both_fail and the other is decisive resolves to that
+    decisive side (the both_fail does not veto it). A diy/tavily
+    disagreement (pure position flip) nets to a tie and is flagged
+    inconsistent.
     """
     if o1 == "both_fail" and o2 == "both_fail":
         return {"verdict": "both_fail", "consistent": True}
@@ -197,9 +211,12 @@ def decided_stats(
 ) -> dict:
     """Primary E2 statistic: DIY win share of STRICTLY DECIDED head-to-heads.
 
-    The denominator is ``diy_wins + tavily_wins`` only. Ties and both_fail are
-    excluded (they are reported as raw counts, never folded into a "not worse"
-    numerator, per pre-registration section 5). Pure, so it is unit-testable.
+    The denominator is ``diy_wins + tavily_wins`` only, counting the COMBINED
+    two-orientation verdict (see ``combine_orientations``). A combined tie and
+    a combined both_fail are excluded; a single-orientation both_fail that was
+    overridden by a decisive other orientation is NOT excluded (it lands in
+    diy_wins or tavily_wins). See the module docstring for the strict-exclusion
+    sensitivity check. Pure, so it is unit-testable.
 
     Returns the strictly-decided count, the DIY win share, its Wilson
     ``confidence`` interval, and the exact two-sided binomial sign-test p-value

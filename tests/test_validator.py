@@ -45,3 +45,16 @@ def test_blocked_url_scores_zero():
 
 def test_plain_domain_scores_floor():
     assert trust_score("https://example.com/page", country_code="FR") == 0.3
+
+
+def test_country_json_trusted_domains_key_is_loaded():
+    """The per-country files key the list under "trusted_domains". Reading
+    the wrong key returned [] and dropped every national domain to the 0.6
+    heuristic. data.gouv.fr is the FR national portal and must score 1.0."""
+    assert trust_score("https://data.gouv.fr/dataset/x", country_code="FR") == 1.0
+
+
+def test_country_json_www_national_domain_is_trusted():
+    assert trust_score(
+        "https://www.data.gouv.fr/dataset/x", country_code="FR"
+    ) == 1.0

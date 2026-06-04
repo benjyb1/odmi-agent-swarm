@@ -55,7 +55,12 @@ def _load_country_list(country_code: str) -> list[str]:
     if file.exists():
         try:
             data = json.loads(file.read_text())
-            return [d.lower() for d in data.get("trusted", [])]
+            # The per-country files key the list under "trusted_domains";
+            # "trusted" is accepted as a legacy fallback. Reading the wrong
+            # key silently returned an empty list, so every national
+            # authoritative domain scored 0.6 by heuristic instead of 1.0.
+            domains = data.get("trusted_domains", data.get("trusted", []))
+            return [d.lower() for d in domains]
         except (json.JSONDecodeError, OSError):
             pass
     return [d.lower() for d in _DEFAULT_TRUSTED.get(country_code, [])]
