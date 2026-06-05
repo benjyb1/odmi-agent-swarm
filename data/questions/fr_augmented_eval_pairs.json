@@ -15,24 +15,24 @@
       "yes": 29
     },
     "by_dimension": {
-      "Impact": 16,
-      "Policy": 17,
-      "Portal": 17,
-      "Quality": 10
+      "Impact": 13,
+      "Policy": 14,
+      "Portal": 27,
+      "Quality": 6
     },
     "flipped_by_dimension": {
-      "Impact": 8,
-      "Policy": 9,
-      "Portal": 8,
-      "Quality": 5
+      "Impact": 6,
+      "Policy": 7,
+      "Portal": 14,
+      "Quality": 3
     }
   },
   "pairs": [
     {
-      "question_id": "I1",
+      "question_id": "I15",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 83,
+      "source_row_id": 171,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -40,10 +40,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "I12",
+      "question_id": "I20",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 75,
+      "source_row_id": 51,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -51,10 +51,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "I18",
+      "question_id": "I22",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 69,
+      "source_row_id": 45,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -62,10 +62,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "I21",
+      "question_id": "I25",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 165,
+      "source_row_id": 32,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -73,10 +73,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "I27",
+      "question_id": "I3",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 27,
+      "source_row_id": 159,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -84,32 +84,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "I31",
+      "question_id": "I4",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 44,
-      "original_answer": "yes",
-      "researcher_answer": "no",
-      "flipped": true,
-      "gold_response": "yes",
-      "gold_label": "should_fail"
-    },
-    {
-      "question_id": "I7",
-      "country_code": "FR",
-      "dimension": "Impact",
-      "source_row_id": 168,
-      "original_answer": "yes",
-      "researcher_answer": "no",
-      "flipped": true,
-      "gold_response": "yes",
-      "gold_label": "should_fail"
-    },
-    {
-      "question_id": "I9",
-      "country_code": "FR",
-      "dimension": "Impact",
-      "source_row_id": 103,
+      "source_row_id": 166,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -128,10 +106,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "P11",
+      "question_id": "P12",
       "country_code": "FR",
       "dimension": "Policy",
-      "source_row_id": 110,
+      "source_row_id": 117,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -161,10 +139,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "P25",
+      "question_id": "P23",
       "country_code": "FR",
       "dimension": "Policy",
-      "source_row_id": 190,
+      "source_row_id": 184,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -172,10 +150,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "P27",
+      "question_id": "P4",
       "country_code": "FR",
       "dimension": "Policy",
-      "source_row_id": 125,
+      "source_row_id": 138,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -183,10 +161,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "P3",
+      "question_id": "P7",
       "country_code": "FR",
       "dimension": "Policy",
-      "source_row_id": 131,
+      "source_row_id": 189,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -194,32 +172,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "P5",
-      "country_code": "FR",
-      "dimension": "Policy",
-      "source_row_id": 199,
-      "original_answer": "yes",
-      "researcher_answer": "no",
-      "flipped": true,
-      "gold_response": "yes",
-      "gold_label": "should_fail"
-    },
-    {
-      "question_id": "P9",
-      "country_code": "FR",
-      "dimension": "Policy",
-      "source_row_id": 198,
-      "original_answer": "yes",
-      "researcher_answer": "no",
-      "flipped": true,
-      "gold_response": "yes",
-      "gold_label": "should_fail"
-    },
-    {
-      "question_id": "PT17",
+      "question_id": "PT1",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 207,
+      "source_row_id": 25,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -227,10 +183,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "PT19",
+      "question_id": "PT13",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 210,
+      "source_row_id": 215,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -238,10 +194,32 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "PT22",
+      "question_id": "PT16",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 219,
+      "source_row_id": 206,
+      "original_answer": "yes",
+      "researcher_answer": "no",
+      "flipped": true,
+      "gold_response": "yes",
+      "gold_label": "should_fail"
+    },
+    {
+      "question_id": "PT18",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 209,
+      "original_answer": "yes",
+      "researcher_answer": "no",
+      "flipped": true,
+      "gold_response": "yes",
+      "gold_label": "should_fail"
+    },
+    {
+      "question_id": "PT23",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 220,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -260,10 +238,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "PT38",
+      "question_id": "PT29",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 247,
+      "source_row_id": 227,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -271,10 +249,43 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "PT40",
+      "question_id": "PT30",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 261,
+      "source_row_id": 230,
+      "original_answer": "yes",
+      "researcher_answer": "no",
+      "flipped": true,
+      "gold_response": "yes",
+      "gold_label": "should_fail"
+    },
+    {
+      "question_id": "PT34",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 238,
+      "original_answer": "yes",
+      "researcher_answer": "no",
+      "flipped": true,
+      "gold_response": "yes, or all public sector data providers already publish data",
+      "gold_label": "should_fail"
+    },
+    {
+      "question_id": "PT39",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 259,
+      "original_answer": "yes",
+      "researcher_answer": "no",
+      "flipped": true,
+      "gold_response": "yes",
+      "gold_label": "should_fail"
+    },
+    {
+      "question_id": "PT42",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 253,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -293,10 +304,21 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "PT6",
+      "question_id": "PT7",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 31,
+      "source_row_id": 270,
+      "original_answer": "yes",
+      "researcher_answer": "no",
+      "flipped": true,
+      "gold_response": "yes",
+      "gold_label": "should_fail"
+    },
+    {
+      "question_id": "PT9",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 266,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -326,10 +348,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "Q23",
+      "question_id": "Q24",
       "country_code": "FR",
       "dimension": "Quality",
-      "source_row_id": 298,
+      "source_row_id": 300,
       "original_answer": "yes",
       "researcher_answer": "no",
       "flipped": true,
@@ -337,32 +359,10 @@
       "gold_label": "should_fail"
     },
     {
-      "question_id": "Q5",
-      "country_code": "FR",
-      "dimension": "Quality",
-      "source_row_id": 62,
-      "original_answer": "yes",
-      "researcher_answer": "no",
-      "flipped": true,
-      "gold_response": "yes",
-      "gold_label": "should_fail"
-    },
-    {
-      "question_id": "Q8",
-      "country_code": "FR",
-      "dimension": "Quality",
-      "source_row_id": 147,
-      "original_answer": "yes",
-      "researcher_answer": "no",
-      "flipped": true,
-      "gold_response": "yes",
-      "gold_label": "should_fail"
-    },
-    {
-      "question_id": "I11",
+      "question_id": "I1",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 76,
+      "source_row_id": 83,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -370,10 +370,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "I13",
+      "question_id": "I18",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 81,
+      "source_row_id": 69,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -381,10 +381,21 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "I2",
+      "question_id": "I21",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 82,
+      "source_row_id": 165,
+      "original_answer": "yes",
+      "researcher_answer": "yes",
+      "flipped": false,
+      "gold_response": "yes",
+      "gold_label": "should_pass"
+    },
+    {
+      "question_id": "I23",
+      "country_code": "FR",
+      "dimension": "Impact",
+      "source_row_id": 48,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -403,10 +414,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "I3",
+      "question_id": "I30",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 159,
+      "source_row_id": 22,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -414,10 +425,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "I6",
+      "question_id": "I7",
       "country_code": "FR",
       "dimension": "Impact",
-      "source_row_id": 87,
+      "source_row_id": 168,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -425,32 +436,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "I8-a",
-      "country_code": "FR",
-      "dimension": "Impact",
-      "source_row_id": 169,
-      "original_answer": "yes",
-      "researcher_answer": "yes",
-      "flipped": false,
-      "gold_response": "yes",
-      "gold_label": "should_pass"
-    },
-    {
-      "question_id": "I9-a",
-      "country_code": "FR",
-      "dimension": "Impact",
-      "source_row_id": 153,
-      "original_answer": "yes",
-      "researcher_answer": "yes",
-      "flipped": false,
-      "gold_response": "yes",
-      "gold_label": "should_pass"
-    },
-    {
-      "question_id": "P10-a",
+      "question_id": "P11",
       "country_code": "FR",
       "dimension": "Policy",
-      "source_row_id": 108,
+      "source_row_id": 110,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -469,10 +458,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "P2",
+      "question_id": "P19",
       "country_code": "FR",
       "dimension": "Policy",
-      "source_row_id": 12,
+      "source_row_id": 155,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -491,17 +480,6 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "P26-b",
-      "country_code": "FR",
-      "dimension": "Policy",
-      "source_row_id": 193,
-      "original_answer": "yes",
-      "researcher_answer": "yes",
-      "flipped": false,
-      "gold_response": "yes",
-      "gold_label": "should_pass"
-    },
-    {
       "question_id": "P28",
       "country_code": "FR",
       "dimension": "Policy",
@@ -513,10 +491,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "P4",
+      "question_id": "P5",
       "country_code": "FR",
       "dimension": "Policy",
-      "source_row_id": 141,
+      "source_row_id": 199,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -524,10 +502,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "P8",
+      "question_id": "P9",
       "country_code": "FR",
       "dimension": "Policy",
-      "source_row_id": 142,
+      "source_row_id": 198,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -535,10 +513,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "PT13",
+      "question_id": "PT11",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 215,
+      "source_row_id": 201,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -546,10 +524,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "PT18",
+      "question_id": "PT15",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 209,
+      "source_row_id": 205,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -557,10 +535,21 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "PT21",
+      "question_id": "PT17",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 218,
+      "source_row_id": 207,
+      "original_answer": "yes",
+      "researcher_answer": "yes",
+      "flipped": false,
+      "gold_response": "yes",
+      "gold_label": "should_pass"
+    },
+    {
+      "question_id": "PT22",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 219,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -579,6 +568,39 @@
       "gold_label": "should_pass"
     },
     {
+      "question_id": "PT27",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 233,
+      "original_answer": "yes",
+      "researcher_answer": "yes",
+      "flipped": false,
+      "gold_response": "yes",
+      "gold_label": "should_pass"
+    },
+    {
+      "question_id": "PT3",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 26,
+      "original_answer": "yes",
+      "researcher_answer": "yes",
+      "flipped": false,
+      "gold_response": "yes",
+      "gold_label": "should_pass"
+    },
+    {
+      "question_id": "PT31",
+      "country_code": "FR",
+      "dimension": "Portal",
+      "source_row_id": 245,
+      "original_answer": "yes",
+      "researcher_answer": "yes",
+      "flipped": false,
+      "gold_response": "yes",
+      "gold_label": "should_pass"
+    },
+    {
       "question_id": "PT36",
       "country_code": "FR",
       "dimension": "Portal",
@@ -590,10 +612,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "PT39",
+      "question_id": "PT40",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 259,
+      "source_row_id": 261,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -623,10 +645,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "PT7",
+      "question_id": "PT8",
       "country_code": "FR",
       "dimension": "Portal",
-      "source_row_id": 270,
+      "source_row_id": 268,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,
@@ -656,32 +678,10 @@
       "gold_label": "should_pass"
     },
     {
-      "question_id": "Q24",
+      "question_id": "Q8",
       "country_code": "FR",
       "dimension": "Quality",
-      "source_row_id": 300,
-      "original_answer": "yes",
-      "researcher_answer": "yes",
-      "flipped": false,
-      "gold_response": "yes",
-      "gold_label": "should_pass"
-    },
-    {
-      "question_id": "Q7",
-      "country_code": "FR",
-      "dimension": "Quality",
-      "source_row_id": 146,
-      "original_answer": "yes",
-      "researcher_answer": "yes",
-      "flipped": false,
-      "gold_response": "yes",
-      "gold_label": "should_pass"
-    },
-    {
-      "question_id": "Q9",
-      "country_code": "FR",
-      "dimension": "Quality",
-      "source_row_id": 150,
+      "source_row_id": 147,
       "original_answer": "yes",
       "researcher_answer": "yes",
       "flipped": false,

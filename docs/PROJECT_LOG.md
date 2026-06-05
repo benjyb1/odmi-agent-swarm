@@ -8,6 +8,40 @@ Entries newest first.
 
 ---
 
+## 2026-06-06 — Session 23: EXP-6 fairness audit; blocked on a free SERP backend
+
+Set out to run the EXP-6 four-arm judge end to end. A pre-run fairness audit caught
+two confounds before any headline number was produced, and the run is now blocked on
+search budget, not on the apparatus.
+
+**Audit findings.** (1) Data leakage: 42 candidates cited the deny-listed answer-key
+domains (`data.europa.eu`, incl. ODMI factsheet PDFs), all legacy pre-deny-list runs;
+the primary Malta arm was clean, the hits were on NL secondary (2) and FR robustness.
+(2) Double-counted pairs: 13 pairs (7 on primary MT) appeared in BOTH classes because
+the Malta/NL double-dispatch produced two different answers per pair, breaking the
+independence the J / Wilson / McNemar stats assume. (3) The frozen-evidence search was
+silently varying: with Serper and Tavily both exhausted, `provider=auto` had fallen
+back to Brave, so the candidate data was a provider patchwork (diy 251 / brave 136 /
+tavily 61 / none 176 rows) — an uncontrolled variable in a single-variable experiment.
+
+**Fixes (committed).** Deny-list filter on candidate construction
+(`_evidence_blocked`); one canonical candidate per pair (dedupe by (qid,cc), latest
+clean row), restoring the documented per-pair framing; the search provider pinned to
+one backend with a loud preflight abort (`check_serper_credits`,
+`_assert_serper_available`) so it can never silently fall back again. Post-audit clean
+set: MT 13/13, NL 19/19, robustness 28/28, FR augmented 30/30.
+
+**The blocker.** Serper (sole DIY SERP provider) is out of credits, Tavily exhausted,
+Brave ruled out, budget £0 against ~100k+ project searches. Only the SERP step of DIY
+costs money; fetch + trafilatura + snippet-pick + cache are free. Benjy deferred the
+free-backend choice (self-hosted SearXNG vs DuckDuckGo `ddgs`) to next session. Until
+then EXP-6 is paused; the mixed-provenance data must be regenerated uniformly on the
+chosen backend before the judge runs. Tracked in memory `project_serp_backend_blocker`
+and the SPEC EXP-6 block. No Youden's J was computed; doing so on the confounded data
+would have been the wrong call.
+
+---
+
 ## 2026-06-05 — Session 22: EXP-6 secondary (NL) and robustness (FR) datasets
 
 Built out the two EXP-6 strata that were still empty so the four-arm judge run has

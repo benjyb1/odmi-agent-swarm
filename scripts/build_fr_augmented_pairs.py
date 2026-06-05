@@ -55,6 +55,24 @@ TARGET = 60          # total candidates
 FLIP_FRACTION = 0.5  # half flipped to should_fail
 
 
+def _evidence_blocked(row: dict) -> bool:
+    """True if the Researcher row cited/fetched/read a deny-listed URL (D24).
+    Excludes leaked legacy rows from the injection pool."""
+    from agents.tools.blocked_domains import is_blocked
+    urls = [row.get("source_url") or ""]
+    try:
+        urls += [u for u in json.loads(row.get("fetched_urls") or "[]")]
+    except Exception:
+        pass
+    try:
+        for s in json.loads(row.get("search_snippets") or "[]"):
+            if isinstance(s, dict):
+                urls.append(s.get("url") or "")
+    except Exception:
+        pass
+    return any(u and is_blocked(u) for u in urls)
+
+
 def _is_should_pass(answer: str, gold: str) -> bool:
     """Mirror _MATCH_STATUS_SQL / verifier_strategies._label for the pass case."""
     a = (answer or "").strip().lower()
@@ -90,15 +108,19 @@ def main() -> None:
     ]
     conn.close()
 
-    # Distinct candidate -> representative row (latest id wins).
+    # Fairness guards: drop deny-listed (leaked) rows, then dedupe by
+    # question_id keeping the latest clean row, so the injection pool is one
+    # canonical clean candidate per FR question (no leaked answer-key evidence,
+    # no double-dispatch contradictions).
+    rows = [r for r in rows if not _evidence_blocked(r)]
     distinct = {}
     for r in rows:
-        key = (r["question_id"], (r["answer"] or "").strip().lower())
-        distinct[key] = r
+        distinct[r["question_id"]] = r
 
     # Build the should_pass binary pool, grouped by dimension.
     by_dim: dict[str, list] = defaultdict(list)
-    for (qid, ans), r in distinct.items():
+    for qid, r in distinct.items():
+        ans = (r["answer"] or "").strip().lower()
         shape, dim = qmeta.get(qid, ("binary", None))
         if shape != "binary":
             continue

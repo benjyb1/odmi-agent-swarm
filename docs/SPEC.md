@@ -1158,15 +1158,29 @@ Status (detail in `docs/EXPERIMENTS.md`):
   stalling at the search step under repeated machine restarts.
 - **EXP-4/EXP-5** (Brave, then the four-provider A/B): one judge run yields both;
   interrupted near 882 of ~1080 verdicts, resumable from the cache.
-- **EXP-6** (verifier strategy discrimination): designed and partially run (3/89);
-  retargeted to Malta-primary under R4. Both data prerequisites are now done: the
-  Malta baseline (60/60, see below) and the NL secondary dispatch (52/52,
-  `data/questions/nl_eval_pairs.json`, batch `nl_baseline`, 2026-06-05; 51 committed
-  / 1 abstention, yes-bias mirror of Malta). The harness builds primary 48 +
-  secondary 48 (24/24) + robustness 82, and the FR augmented 50%-flip set is
-  committed (`data/questions/fr_augmented_eval_pairs.json`, 30/30, consumed via
-  `--fr-augmented`) so France has a class-balanced robustness arm. Only the four-arm
-  judge run remains.
+- **EXP-6** (verifier strategy discrimination): apparatus and datasets built, but
+  **BLOCKED on a free SERP backend** (see blocker below). Retargeted to
+  Malta-primary under R4. Datasets exist: Malta baseline (60/60), NL secondary
+  (52/52, `nl_eval_pairs.json`, batch `nl_baseline`), FR augmented 50%-flip set
+  (`fr_augmented_eval_pairs.json`, 30/30, via `--fr-augmented`). A 2026-06-06 audit
+  hardened the harness for fairness: a deny-list filter (drops candidates whose
+  evidence cited the answer-key domains, the D22/D24 leakage risk), one canonical
+  candidate per pair (the double-dispatch had put the same pair in both classes,
+  breaking the stats' independence), and a single held-constant search provider
+  with a loud preflight abort (`_assert_serper_available`) so the backend can never
+  silently vary again. Post-audit clean set: primary MT 13/13, secondary NL 19/19,
+  robustness 28/28 + FR augmented 30/30.
+
+  **BLOCKER (defer-to-next-session, 2026-06-06): no free SERP backend.** Serper (the
+  sole DIY search provider) is out of credits, Tavily is exhausted, Brave is ruled
+  out, and the project budget is £0 against ~100k+ searches. The candidate set is
+  also mixed-provenance (diy 251 / brave 136 / tavily 61 / none 176 rows), so for a
+  watertight single-variable experiment it must be regenerated uniformly on one
+  provider. Only the SERP step of the DIY pipeline costs money; fetch + trafilatura
+  + snippet-pick + cache are free. **Decision owed next session:** wire a free SERP
+  backend into DIY (self-hosted SearXNG, or DuckDuckGo via `ddgs`), hold it
+  constant, re-validate it EXP-1-style, then regenerate the EXP-6 set on it and run
+  the four-arm judge. Tracked in the memory `project_serp_backend_blocker`.
 - **EXP-7** (retry chaining): code built behind `--chained` (default off, baseline
   byte-identical) and pre-registered (`EXPERIMENTS_CHAINING.md`, Malta primary);
   unblocked now the Malta baseline is done, run pending quota.
