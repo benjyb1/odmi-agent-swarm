@@ -16,7 +16,7 @@ run) · `running` · `done`.
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
-| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (Malta dispatch done) | primary Malta natural errors, NL secondary, FR + injected robustness | unblocked; Malta baseline finalised 60/60 (43 committed, 17 abstentions); the natural-error pool for the should_fail arm is now populated; FR/injected partial superseded |
+| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (Malta + NL dispatches done) | primary Malta natural errors, NL secondary, FR + injected robustness | unblocked; Malta baseline 60/60 (43 committed, 17 abstentions) and NL secondary 52/52 (51 committed, 1 abstention) both finalised; harness now builds primary 48 + secondary 48 (24/24) + robustness 82; FR augmented 50%-flip set committed (30/30); the four-arm judge run is the only remaining step |
 | EXP-7 | Retry chaining: accumulate evidence across the loop | code built, pre-registered | Malta primary (no-gold-rich), NL secondary | chained arm built behind `--chained` (default off, baseline byte-identical), pre-registered (`EXPERIMENTS_CHAINING.md`); unblocked now the Malta baseline is done (60/60), reuses the same pair list; run pending quota |
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
 | EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
@@ -186,8 +186,44 @@ Cloudflare-protected data.gov.mt as `url_unreachable`, killing answers grounded
 there, which it now clears with a Playwright render on a WAF 403/429/503 (fixed in
 `agents/tools/fetch.py`), recovering the final two pairs.
 
-Result: pending (apparatus and Malta natural-error set both ready; the four-arm
-judge run has not been executed).
+NL dispatch (done 2026-06-05, secondary stratum): the canonical NL pair set is
+frozen and committed at `data/questions/nl_eval_pairs.json` (52 pairs, 26 `no` / 26
+`yes`, seed 20260603, built by `scripts/build_nl_eval_pairs.py` mirroring the Malta
+rule; no NL-specific count is laid down in the protocol, so the balanced
+all-minority-plus-matched-majority rule is reused). The baseline dispatch (provider
+auto, batch `nl_baseline`, no `experiment_id`) finalised all 52: 51 committed plus 1
+`inconclusive`. Class-level the NL swarm is strongly `yes`-biased, the inverse of
+Malta's `no`-bias: yes-gold recall 25/26 but no-gold recall only 7/25, so the
+minority `no` class supplies a large natural should_fail pool. The harness now
+builds the secondary stratum at 48 candidates, balanced 24 should_fail / 24
+should_pass. Dispatched unattended by `scripts/run_nl_dispatch.py`, which dispatches
+only not-yet-finalised pairs each round, so cooldowns resume cleanly and no
+duplicate `phase2_final` rows are created (the Malta double-dispatch hazard, below).
+
+FR augmented robustness set (done 2026-06-05): France's binary gold is ~99% `yes`
+(121 `yes` / 1 `no`), so J cannot take hold on the natural FR arm. The fix is
+injection: `scripts/build_fr_augmented_pairs.py` draws 60 correct FR binary
+candidates and flips half the labels (yes<->no, wrong by construction), giving a
+class-balanced set (30 should_pass / 30 should_fail, answers ~half yes / half no),
+committed at `data/questions/fr_augmented_eval_pairs.json` (seed 20260603, each
+record pointing at a real Researcher row so the frozen evidence replays). The
+injection removes the ODMI-staleness confound. The harness consumes it via
+`--fr-augmented` (robustness arm only, written to its own JSONL; the default
+seeded run is byte-identical).
+
+Malta phase2_final dedup (pending approval): Malta was dispatched twice under the
+baseline condition (batches exp6_malta then malta_baseline) and run_coordinator has
+no skip-if-finalised guard, so 12 pairs carry duplicate `phase2_final` rows: 5 stale
+NULL-answer failed finalisations, 5 exact-agreeing copies, and 2 genuine committed
+disagreements (PT29 inconclusive/yes, Q6 yes/no). The de-duplicated content already
+matches the documented 43/17/32 headline, so this is hygiene not a correctness
+change. `scripts/dedupe_malta_finals.py` keeps the highest-id non-NULL row per pair
+(PT29 -> committed `yes`, the recorded no-gold false positive; Q6 -> `no`, the later
+canonical run), backs the DB up, and is dry-run verified to leave 60 distinct rows
+with the headline unchanged. Not yet applied (a DB row-deletion needs Benjy's go).
+
+Result: pending (apparatus, Malta primary natural-error set, NL secondary set, and
+FR augmented robustness set all ready; the four-arm judge run has not been executed).
 
 ## EXP-8: Cost-side optimisations, Family 1 (planned)
 

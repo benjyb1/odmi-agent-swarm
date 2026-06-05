@@ -8,6 +8,58 @@ Entries newest first.
 
 ---
 
+## 2026-06-05 — Session 22: EXP-6 secondary (NL) and robustness (FR) datasets
+
+Built out the two EXP-6 strata that were still empty so the four-arm judge run has
+all its data ready.
+
+**NL secondary dispatch.** No NL-specific count is laid down in the protocol, so the
+pair set reuses the Malta rule (`scripts/build_nl_eval_pairs.py`): all 26 binary
+`no`-gold questions plus a size-matched dimension-stratified `yes`-gold draw, seed
+20260603, giving 52 pairs (26/26). NL has a real minority class (binary gold ~95
+`yes` / ~26 `no`), so unlike France a false positive can occur and J is defined.
+Dispatched unattended with `scripts/run_nl_dispatch.py`, which recomputes the
+not-yet-finalised pairs each round and dispatches only those, so a rate-limit
+cooldown resumes cleanly and (the Malta hazard below) no duplicate `phase2_final`
+rows are created. Finalised 52/52: 51 committed, 1 abstention. The class split is the
+headline finding: yes-gold recall 25/26 but no-gold recall only 7/25, a `yes`-bias
+that is the exact inverse of Malta's `no`-bias (TPR 0.60 / TNR 0.87). The harness now
+builds the secondary stratum at 48 candidates, balanced 24 should_fail / 24
+should_pass.
+
+**FR augmented robustness set.** France is the worked base-rate problem: ~99%-yes
+binary gold, so natural errors barely exist and J cannot take hold. Fixed by
+injection (`scripts/build_fr_augmented_pairs.py`): 60 correct FR binary candidates
+drawn round-robin across dimensions, half the labels flipped (yes<->no, wrong by
+construction), giving a class-balanced set (30 should_pass / 30 should_fail, answers
+~half yes / half no) committed at `data/questions/fr_augmented_eval_pairs.json`. Each
+record points at a real Researcher row, so the four-arm judge replays the identical
+frozen evidence. Consumed via a new `--fr-augmented` flag on
+`evaluation/verifier_strategies.py`; the default seeded run stays byte-identical.
+
+**Pre-flight fix.** This worktree had no `.env`, the same fault that broke the start
+of the Malta run (the desktop app injects an empty `ANTHROPIC_AUTH_TOKEN` and the
+absent base-url override sends calls to the real API). Copied the `.env` in
+(gitignored) and smoke-tested a live structured LLM call plus a full single-pair NL
+coordinator pass before launching the batch.
+
+**Malta hygiene (flagged, not applied).** Validating Malta turned up 13 duplicate
+`phase2_final` rows across 12 pairs: Malta was dispatched twice under the baseline
+condition and `run_coordinator` has no skip-if-finalised guard, so the second batch
+re-finalised pairs the first had done. Most are stale NULL-answer failed
+finalisations; two are genuine committed disagreements (PT29 inconclusive/yes, Q6
+yes/no). The de-duplicated content already matches the documented 43/17/32 headline,
+so it is hygiene not a correctness change. `scripts/dedupe_malta_finals.py` (backup +
+dry-run verified) keeps the highest-id non-NULL row per pair and leaves 60 distinct
+rows; PT29 resolves to the recorded no-gold false positive `yes`, Q6 to the later
+canonical `no`. Not applied: a destructive row-deletion on the shared DB is left for
+Benjy to run with `--apply`.
+
+Next: the EXP-6 four-arm judge run (primary MT, secondary NL, robustness FR/EE +
+injected), then EXP-7/8/9 over the same Malta + NL sets.
+
+---
+
 ## 2026-06-04 — Session 21: Codebase-wide bug hunt and fix batch
 
 Ran a six-way parallel bug hunt over the whole tree (orchestration, the three

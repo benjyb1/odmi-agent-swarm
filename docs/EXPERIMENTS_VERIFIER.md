@@ -204,3 +204,13 @@ is executed; it has not been run yet.
   as the primary** and retained only as robustness-arm data, not deleted. Harness
   strata updated in `evaluation/verifier_strategies.py` to match. Primary J is not
   computable until the Malta dispatch lands (pending search quota).
+- 2026-06-05: **secondary and robustness strata landed.** The NL secondary dispatch
+  is done (`data/questions/nl_eval_pairs.json`, 52 pairs 26/26, batch `nl_baseline`,
+  finalised 52/52: 51 committed, 1 abstention; yes-gold recall 25/26 vs no-gold
+  recall 7/25, a `yes`-bias that is the mirror of Malta's `no`-bias). The harness
+  now builds primary (MT) 48, secondary (NL) 48 balanced 24/24, and robustness
+  (FR/EE + injection) 82. The FR augmented 50%-flip robustness set is committed
+  (`data/questions/fr_augmented_eval_pairs.json`, 30 should_pass / 30 should_fail,
+  seed 20260603), consumed via `--fr-augmented`; it gives France a class-balanced
+  arm on which J is defined despite the ~99%-yes natural gold, with the
+  ODMI-staleness confound removed. Only the four-arm judge run remains.

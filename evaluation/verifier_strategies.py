@@ -315,6 +315,64 @@ def build_candidates(limit: Optional[int] = None):
 
 
 # ============================================================
+# FR augmented robustness set (50% label-flip injection)
+# ============================================================
+
+FR_AUGMENTED_FILE = REPO_ROOT / "data" / "questions" / "fr_augmented_eval_pairs.json"
+
+
+def build_fr_augmented_candidates(path: Optional[Path] = None) -> list[Candidate]:
+    """Load the committed, class-balanced FR robustness set built by
+    scripts/build_fr_augmented_pairs.py and turn each frozen record into a
+    Candidate the harness can judge.
+
+    The file is the reproducible artefact (seed 20260603, 30 should_pass / 30
+    flipped should_fail). Each record points at a real phase2_researcher_runs row
+    by source_row_id, so the four-arm judge replays the identical frozen evidence
+    the production Researcher saw, exactly as the on-the-fly INJ stratum does.
+    Everything here is role='robustness': it is never folded into the Malta
+    primary J (EXP-6 design, section 3).
+    """
+    path = Path(path) if path else FR_AUGMENTED_FILE
+    doc = json.loads(path.read_text())
+    qmeta, gold, cname, _ = _load_world()
+    with connect() as conn:
+        conn.row_factory = sqlite3.Row
+        rowmap = {}
+        for rec in doc["pairs"]:
+            r = conn.execute(
+                "select * from phase2_researcher_runs where id=?",
+                (rec["source_row_id"],),
+            ).fetchone()
+            if r:
+                rowmap[rec["source_row_id"]] = dict(r)
+
+    cands: list[Candidate] = []
+    for rec in doc["pairs"]:
+        qid, cc = rec["question_id"], rec["country_code"]
+        meta = qmeta.get(qid)
+        row = rowmap.get(rec["source_row_id"])
+        if not meta or row is None:
+            print(f"   ! FR-aug skip {qid}/{cc}: "
+                  f"{'no question meta' if not meta else 'source row missing'}")
+            continue
+        flipped = bool(rec["flipped"])
+        cands.append(Candidate(
+            cand_id=f"FRAUG::{qid}::{cc}::{'flip' if flipped else 'keep'}",
+            stratum="INJ-fail" if flipped else "NAT-pass",
+            role="robustness",
+            gold_label=rec["gold_label"],
+            question_id=qid, country_code=cc, country_name=cname.get(cc, cc),
+            dimension=meta["dim"], answer_shape=meta["shape"],
+            allowed_answers=meta["allowed"],
+            researcher_answer=rec["researcher_answer"],
+            gold_response=rec.get("gold_response") or gold.get((qid, cc), ""),
+            source_row_id=rec["source_row_id"], injected=flipped, row=row,
+        ))
+    return cands
+
+
+# ============================================================
 # Reconstruct ResearcherOutput from a row (tolerant)
 # ============================================================
 
@@ -503,8 +561,9 @@ def _register_experiment(n_cands: int, counts: dict):
 # Run
 # ============================================================
 
-def run(limit: Optional[int] = None, workers: int = 1):
-    cands = build_candidates(limit=limit)
+def run(limit: Optional[int] = None, workers: int = 1,
+        cands_override: Optional[list] = None, out_name: Optional[str] = None):
+    cands = cands_override if cands_override is not None else build_candidates(limit=limit)
     counts = Counter((c.stratum, c.gold_label) for c in cands)
     ccounts = Counter(c.country_code for c in cands)
     dcounts = Counter(c.dimension for c in cands)
@@ -521,7 +580,7 @@ def run(limit: Optional[int] = None, workers: int = 1):
     _register_experiment(len(cands), {f"{k[0]}/{k[1]}": v for k, v in counts.items()})
 
     RESULTS_DIR.mkdir(exist_ok=True)
-    out_path = RESULTS_DIR / f"verifier_strategies_{EXPERIMENT_ID}.jsonl"
+    out_path = RESULTS_DIR / (out_name or f"verifier_strategies_{EXPERIMENT_ID}.jsonl")
 
     # ---- Resume support: never overwrite a partial run. ----
     done_ids: set[str] = set()
@@ -806,9 +865,19 @@ def main():
                     help="parallel candidate workers (each does 4 strategy calls). "
                          "Resilient to proxy connection blips via the SDK retry bump.")
     ap.add_argument("--analyse-only", default=None, help="re-analyse an existing JSONL")
+    ap.add_argument("--fr-augmented", nargs="?", const=str(FR_AUGMENTED_FILE),
+                    default=None,
+                    help="Run the four-arm judge over the committed, class-balanced "
+                         "FR robustness set (data/questions/fr_augmented_eval_pairs.json) "
+                         "instead of the default seeded draw. Robustness arm only, "
+                         "written to its own JSONL; the primary run is untouched.")
     args = ap.parse_args()
     if args.analyse_only:
         analyse(args.analyse_only)
+    elif args.fr_augmented:
+        cands = build_fr_augmented_candidates(Path(args.fr_augmented))
+        run(workers=args.workers, cands_override=cands,
+            out_name="verifier_strategies_fr_augmented.jsonl")
     else:
         run(limit=args.limit, workers=args.workers)
 

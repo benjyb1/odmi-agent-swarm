@@ -1159,9 +1159,14 @@ Status (detail in `docs/EXPERIMENTS.md`):
 - **EXP-4/EXP-5** (Brave, then the four-provider A/B): one judge run yields both;
   interrupted near 882 of ~1080 verdicts, resumable from the cache.
 - **EXP-6** (verifier strategy discrimination): designed and partially run (3/89);
-  retargeted to Malta-primary under R4. Its binding prerequisite, the Malta
-  baseline dispatch, is now done (see below); the four-arm judge run is not yet
-  executed.
+  retargeted to Malta-primary under R4. Both data prerequisites are now done: the
+  Malta baseline (60/60, see below) and the NL secondary dispatch (52/52,
+  `data/questions/nl_eval_pairs.json`, batch `nl_baseline`, 2026-06-05; 51 committed
+  / 1 abstention, yes-bias mirror of Malta). The harness builds primary 48 +
+  secondary 48 (24/24) + robustness 82, and the FR augmented 50%-flip set is
+  committed (`data/questions/fr_augmented_eval_pairs.json`, 30/30, consumed via
+  `--fr-augmented`) so France has a class-balanced robustness arm. Only the four-arm
+  judge run remains.
 - **EXP-7** (retry chaining): code built behind `--chained` (default off, baseline
   byte-identical) and pre-registered (`EXPERIMENTS_CHAINING.md`, Malta primary);
   unblocked now the Malta baseline is done, run pending quota.

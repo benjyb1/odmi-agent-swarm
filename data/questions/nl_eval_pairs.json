@@ -1,0 +1,334 @@
+{
+  "description": "Canonical Netherlands evaluation pair set for EXP-6 (secondary stratum; R2/R3/R4, mirrors the Malta rule).",
+  "seed": 20260603,
+  "country_code": "NL",
+  "answer_shape": "binary",
+  "selection_rule": "All NL binary `no`-gold questions (minority class, not sampled), plus a dimension-stratified, size-matched sample of `yes`-gold binary questions drawn round-robin across Policy/Portal/Impact/Quality with RNG seed 20260603. Golds not exactly yes/no are excluded.",
+  "counts": {
+    "total": 52,
+    "by_class": {
+      "no": 26,
+      "yes": 26
+    },
+    "by_dimension": {
+      "Impact": 14,
+      "Policy": 13,
+      "Portal": 16,
+      "Quality": 9
+    }
+  },
+  "pairs": [
+    {
+      "question_id": "I12",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I17",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I22",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I27",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I3",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I8-b",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I8-d",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I9-b",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P10-a",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P10-b",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P5",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P6",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P7",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P9",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT16",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT21",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT24",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT25",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT27",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT39",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT4",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT42",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT6",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q20",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q23",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q4",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "I2",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I23",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I5",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I6",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I7",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I8",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P15",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P17",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P23",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P24",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P28",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P4",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P8",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT13",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT17",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT23",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT34",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT38",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT40",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT9",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q1",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q14",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q24",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q5",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q6",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q9",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    }
+  ]
+}
