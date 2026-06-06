@@ -20,19 +20,45 @@ Usage:
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 from scripts.dispatch_subtrios import dispatch
 
 REPO = Path(__file__).resolve().parent.parent
 QSET = REPO / "data" / "questions" / "exp6_question_set.json"
+DB = REPO / "data" / "odmi.db"
+
+
+def _already_finalised() -> set[tuple[str, str]]:
+    """(question_id, country_code) pairs that already have a phase2_final row.
+
+    The dispatcher has no skip-if-finalised guard and the resume path only
+    rescues pairs that died before finalising, so re-running a finalised pair
+    would duplicate it and waste credits. We exclude them here to make the
+    launcher idempotent: re-run as often as you like, only the unfinished
+    pairs (and orphaned/interrupted ones, which the coordinator resumes) run.
+    """
+    conn = sqlite3.connect(DB)
+    done = {(q, c) for q, c in conn.execute(
+        "select distinct question_id, country_code from phase2_final "
+        "where country_code in ('NL','FR')")}
+    conn.close()
+    return done
 
 
 def main() -> None:
     qids = [q["question_id"] for q in json.loads(QSET.read_text())["questions"]]
-    pairs = [(q, "NL") for q in qids] + [(q, "FR") for q in qids]
-    print(f"dispatching {len(pairs)} pairs ({len(qids)} NL + {len(qids)} FR) "
+    all_pairs = [(q, "NL") for q in qids] + [(q, "FR") for q in qids]
+
+    done = _already_finalised()
+    pairs = [p for p in all_pairs if p not in done]
+    print(f"{len(done)} pairs already finalised (skipped); "
+          f"dispatching {len(pairs)} of {len(all_pairs)} remaining "
           f"on pinned DIY, cold cache")
+    if not pairs:
+        print("nothing to dispatch — all pairs finalised.")
+        return
 
     result = dispatch(
         pairs=pairs,
