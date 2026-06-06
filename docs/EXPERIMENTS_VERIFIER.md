@@ -204,3 +204,27 @@ is executed; it has not been run yet.
   as the primary** and retained only as robustness-arm data, not deleted. Harness
   strata updated in `evaluation/verifier_strategies.py` to match. Primary J is not
   computable until the Malta dispatch lands (pending search quota).
+- 2026-06-06: **redesign to NL-primary + FR-injected, provider-clean, before the
+  judge run.** Two changes, both predating the judge run.
+  (1) *Provider.* The old MT/NL/FR pools were generated under `provider="auto"`
+  (the D36 Tavily->DIY->Brave silent fallback), so the searcher varied within and
+  across strata (MT diy+brave with 15 mixed pairs; FR brave+tavily, no diy; NL
+  absent). The arms are re-dispatched on pinned `--provider diy` (Serper, no
+  fallback) with cold cache (`--no-cache`); the old auto-provider MT/NL/FR
+  `phase2_*` rows are purged (DB backed up to `data/odmi.db.bak-pre-exp6-purge`).
+  (2) *Country/scope.* **Malta is dropped entirely.** The R4 "English official ->
+  no language confound" claim was oversold: ~half of Malta's open-data estate is
+  in low-resource Maltese. The natural arm moves to the **Netherlands** (Dutch is
+  high-resource, so a poor result is the pipeline's doing not the language
+  channel; 26 no-gold binary, R4-viable at 21% no-share). France stays as the
+  **injected** arm (high yes-share gives many correct binary answers to flip; the
+  flips remove the ODMI-staleness confound). EE dropped too.
+  Both arms draw from one shared seeded selection
+  `data/questions/exp6_question_set.json`: **71 binary, non-self-report questions,
+  19 each Policy/Portal/Impact + 14 Quality** (Quality's catalogue ceiling),
+  RNG seed 20260603. Harness: `PRIMARY_COUNTRIES=["NL"]`,
+  `SECONDARY_COUNTRIES=[]`, `ROBUSTNESS_COUNTRIES=["FR"]`, `INJ_TARGET=71`.
+  Dispatch: 142 pairs (71 NL + 71 FR) via `scripts/dispatch_exp6_clean.py`.
+  Selected candidate IDs are written to the results JSONL after the dispatch, so
+  the draw stays reproducible and not post hoc. Supersedes the earlier
+  Malta-primary plan from the same day.
