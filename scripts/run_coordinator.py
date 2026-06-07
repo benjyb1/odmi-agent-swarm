@@ -943,12 +943,6 @@ def coordinate(
     # Accumulates every query the Researcher has tried across all
     # attempts so subsequent retries can diverge (Change 2).
     accumulated_search_queries: List[str] = []
-    # Accumulates every source URL the Researcher has already fetched. Fed
-    # back on an abstention retry as procedural "already checked here, look
-    # elsewhere" guidance. This is the Researcher's OWN search history, not
-    # the Verifier's evidence, so it steers exploration without anchoring the
-    # Researcher to a verdict (keeps Researcher/Verifier independent).
-    accumulated_fetched_urls: List[str] = []
     # EXP-7 chained arm: the running evidence corpus across rounds. Stays
     # empty when `chained` is off, so nothing is carried forward and the
     # prompts match the baseline byte-for-byte.
@@ -1028,9 +1022,6 @@ def coordinate(
                 search_results=[],
             )
             accumulated_search_queries.extend(r_result.search_queries_used)
-            accumulated_fetched_urls.extend(
-                str(u) for u in (r_result.fetched_urls or [])
-            )
         else:
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,
@@ -1069,12 +1060,6 @@ def coordinate(
             )
             # Accumulate the queries used so the next attempt can diverge.
             accumulated_search_queries.extend(r_result.search_queries_used)
-            # Accumulate the sources fetched so an abstention retry can be
-            # told "already checked here, look elsewhere" (procedural, not
-            # evidential — keeps the Researcher independent of the Verifier).
-            accumulated_fetched_urls.extend(
-                str(u) for u in (r_result.fetched_urls or [])
-            )
             cumulative_tokens_in += r_result.cumulative_input_tokens
             cumulative_tokens_out += r_result.cumulative_output_tokens
             cumulative_wall += r_result.cumulative_wall_clock_ms
@@ -1132,39 +1117,22 @@ def coordinate(
                   f"£{(r_result.cumulative_cost_usd or 0) * 0.79:.4f}", flush=True)
 
         # An `inconclusive` answer is an abstention, not a result. Do not
-        # let it terminate the loop, and do NOT run the Verifier on it: there
-        # is no claim to verify, and (more importantly) feeding the Verifier's
-        # evidence back to the Researcher would anchor the Researcher to the
-        # Verifier's view and destroy their independence. Instead we retry
-        # with *procedural exhaustion state* drawn from the Researcher's own
-        # prior attempts — the queries it already ran and the sources it
-        # already checked — so the next attempt is steered onto new ground and
-        # is more likely to find the evidence than the first. This is "where
-        # you already looked", never "what the answer is". Normal 3-retry
-        # budget. On the final attempt fall through so the Verifier still runs
-        # (feeding the Adjudicator) but the accept-guard refuses to accept it.
+        # let it run the Verifier or terminate the loop. Retry (the
+        # accumulated queries already diverge the search) with an
+        # abstention note, until the retry budget is spent. On the final
+        # attempt fall through so the Verifier still runs (feeding the
+        # Adjudicator) but the accept-guard below refuses to accept it.
         if _is_abstention(r_result.output.answer) and attempt < max_retries:
-            _tried_q = "; ".join(dict.fromkeys(
-                q for q in accumulated_search_queries if q)) or "(none recorded)"
-            _checked = "; ".join(dict.fromkeys(
-                u for u in accumulated_fetched_urls if u)) or "(none recorded)"
             feedback = VerifierFeedback(
                 rejection_reason=(
-                    "The Researcher returned `inconclusive`, an abstention, "
-                    "not an answer. Make this attempt more productive than the "
-                    "last by not repeating exhausted ground. Searches already "
-                    f"run without success: {_tried_q}. Sources already checked "
-                    f"that did not contain the answer: {_checked}. Search "
-                    "DIFFERENT sources and angles (e.g. the national open-data "
-                    "portal, official government pages, sector reports, news) "
-                    "and commit to a label from the allowed set only if the "
-                    "evidence directly supports one. Reason from the sources "
-                    "yourself; do not defer to any prior verdict."
+                    "The Researcher returned `inconclusive`, which is an "
+                    "abstention, not an answer. Search differently and commit "
+                    "to a label from the allowed set if the evidence supports "
+                    "one."
                 ),
             )
-            print(f"  R{attempt+1} inconclusive -> abstention, retrying with "
-                  f"exhaustion guidance ({len(set(accumulated_fetched_urls))} "
-                  f"sources already checked)", flush=True)
+            print(f"  R{attempt+1} inconclusive -> abstention, retrying",
+                  flush=True)
             continue
 
         # --- Verifier stage ---
