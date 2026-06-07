@@ -114,7 +114,15 @@ def main():
     a = ap.parse_args()
     cands = json.loads(DATA.read_text())["candidates"]
     if a.limit:
-        cands = cands[:a.limit]
+        # balanced, seeded subsample so a small --limit has both classes
+        import random
+        fails = [c for c in cands if c["gold_label"] == "should_fail"]
+        passes = [c for c in cands if c["gold_label"] == "should_pass"]
+        rng = random.Random(20260607)
+        rng.shuffle(fails); rng.shuffle(passes)
+        half = a.limit // 2
+        cands = fails[:half] + passes[:a.limit - half]
+        rng.shuffle(cands)
     if a.demo:
         demo(cands)
     else:
