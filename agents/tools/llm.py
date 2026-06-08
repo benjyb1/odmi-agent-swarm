@@ -36,6 +36,7 @@ from pydantic import BaseModel
 
 from agents.errors import RateLimitedShutdown
 from agents.models import LLMUsage
+from agents.tools.mistral_provider import call_mistral_structured, is_mistral_model
 
 # Load env once at import. Override the shell so stale globals do not win.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -214,6 +215,26 @@ def call_for_structured(
     """
     if model is None:
         model = DEFAULT_MODEL
+
+    # Cross-family path (EXP-9): a Mistral model id routes to Mistral's own
+    # endpoint instead of CLIProxyAPI. Same (parsed, LLMUsage) contract, so every
+    # caller threading a per-agent override (Researcher / Verifier / Adjudicator)
+    # works unchanged. Mistral calls are off the Claude budget, so no
+    # claude_usage_log row is written; the returned usage carries the real
+    # Mistral cost. See agents/tools/mistral_provider.py.
+    if is_mistral_model(model):
+        return call_mistral_structured(
+            system=system,
+            user_message=user_message,
+            output_schema=output_schema,
+            model=model,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            timeout_s=timeout_s,
+            condition_label=condition_label,
+            prompt_version_id=prompt_version_id,
+        )
+
     client = _make_client()
     schema = output_schema.model_json_schema()
     schema_text = json.dumps(schema, indent=2)

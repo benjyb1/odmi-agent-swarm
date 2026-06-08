@@ -8,6 +8,53 @@ Entries newest first.
 
 ---
 
+## 2026-06-08 — Session 22: Mistral cross-family provider for EXP-9
+
+Question from the cost angle: Claude burns Max-subscription tokens, a scarce
+shared resource. If a cheaper or open-weight family held accuracy, far more
+pairs could be computed. The risk is that it tanks accuracy. That is measurable,
+not a guess, because every pair joins to ODMI ground truth.
+
+Built the path to test it. A model id starting `mistral` passed to any agent now
+routes through `agents/tools/mistral_provider.py` instead of CLIProxyAPI, via a
+single branch in `agents/tools/llm.py:call_for_structured`. The per-agent model
+flags already threaded end-to-end (EXP-9 work, 2026-06-03), so no coordinator or
+agent change was needed: `--researcher-model mistral-large-latest` etc. just
+work, and mixed trios (cheap Researcher, Claude Adjudicator) fall out for free.
+
+Design points worth recording.
+
+- Mistral is called directly against its OpenAI-compatible endpoint, off the
+  Claude Max budget, so no `claude_usage_log` row is written. The returned
+  `LLMUsage` still carries tokens and a cost.
+- That cost is the real Mistral list price, not the arithmetic-equivalent Claude
+  figure the Claude path records. The whole point is a cost comparison, so the
+  receipt must carry the real number. `model_version` names the provider on every
+  row, so the two cost bases are never silently summed.
+- Free-tier pacing (~1 req/s) and 429 backoff mirror the proven
+  `search_adjudicator_mistral.py` judge. A spent hard quota raises after the
+  retries and reports as a failed pair rather than stalling.
+- Structured output is the open-model risk. The one-retry stricter-prompt loop
+  and code-fence tolerance match the Claude path; a model that cannot return
+  schema-valid JSON after two attempts raises `StructuredOutputError`, the same
+  failure the Coordinator already handles, so it is separable in the logs from a
+  reasoning miss.
+
+Tooling: `scripts/check_mistral.py` (auth probe + a real structured call through
+the swarm path before dispatching), `evaluation/claude_vs_mistral.py` (paired
+accuracy + modelled cost + disagreement table against ground truth, reusing the
+dashboard's `_MATCH_STATUS_SQL` so classification cannot drift), runbook in
+`docs/EXP_MISTRAL_RUNBOOK.md`. Eight new unit tests, all green; full suite 533
+passed.
+
+Baseline anchor for the comparison, from the current main DB: 208 Claude
+main-run pairs, 63% exact match, 26% abstained, $0.099 modelled per pair.
+
+Next: add `MISTRAL_API_KEY` to `.env`, smoke-test, dispatch the Mistral arm over
+the Malta pair set, read the delta.
+
+---
+
 ## 2026-06-04 — Session 21: Codebase-wide bug hunt and fix batch
 
 Ran a six-way parallel bug hunt over the whole tree (orchestration, the three

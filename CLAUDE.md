@@ -217,3 +217,10 @@ partial (3/89). EXP-7 (retry chaining): the chained arm is built behind
 `--chained` (default off, so production and the EXP-8/9 baseline are
 byte-identical) and pre-registered (D39, `docs/EXPERIMENTS_CHAINING.md`,
 Malta primary); the run is gated only on the Malta dispatch and Claude quota.
+EXP-9 cross-family arm built (2026-06-08): a `mistral`-prefixed model id passed
+to any agent routes through `agents/tools/mistral_provider.py` (one branch in
+`call_for_structured`), called directly off the Claude budget with the real
+Mistral list price as the pair cost. `scripts/check_mistral.py` smoke-tests a
+key, `evaluation/claude_vs_mistral.py` reads the paired accuracy/cost delta vs
+ground truth, runbook in `docs/EXP_MISTRAL_RUNBOOK.md`. Gated on a
+`MISTRAL_API_KEY` and a Mistral dispatch over the Malta pair set.

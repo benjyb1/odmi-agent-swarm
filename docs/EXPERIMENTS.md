@@ -19,7 +19,7 @@ run) · `running` · `done`.
 | EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (Malta dispatch done) | primary Malta natural errors, NL secondary, FR + injected robustness | unblocked; Malta baseline finalised 60/60 (43 committed, 17 abstentions); the natural-error pool for the should_fail arm is now populated; FR/injected partial superseded |
 | EXP-7 | Retry chaining: accumulate evidence across the loop | code built, pre-registered | Malta primary (no-gold-rich), NL secondary | chained arm built behind `--chained` (default off, baseline byte-identical), pre-registered (`EXPERIMENTS_CHAINING.md`); unblocked now the Malta baseline is done (60/60), reuses the same pair list; run pending quota |
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
-| EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
+| EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered, plus cross-family Mistral arm; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs runnable; Mistral path built (`mistral_provider.py`), gated on a `MISTRAL_API_KEY` |
 | EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | unblocked; 60 finalised Malta pairs available (batches exp6_malta + malta_baseline), failure taxonomy drafted (search-empty, resume-orphan, abstention, conservative-FN, FP); floor sweep is free |
 
 ---
@@ -222,6 +222,21 @@ threading is built (2026-06-03): `--researcher-model` / `--verifier-model` /
 did), and the served version ID is written to `claude_usage_log`. All four arms
 are runnable. The Malta baseline dispatch is now done (60/60 over the committed
 pair list), so the condition-tagged runs can proceed over the same set.
+
+Cross-family extension (2026-06-08): the in-family arms (Haiku/Sonnet/Opus) are
+joined by a Mistral arm motivated by cost. Claude runs on the Max subscription,
+so the live argument for a non-Claude model is throughput and reproducibility,
+not marginal price; the question is whether a cheap or open-weight family holds
+accuracy. A Mistral model id passed to any agent now routes through
+`agents/tools/mistral_provider.py` (one branch in `call_for_structured`), called
+directly against Mistral's endpoint, off the Claude budget, with the real Mistral
+list price recorded as the pair cost. Smoke-test with `scripts/check_mistral.py`,
+dispatch with `--{researcher,verifier,adjudicator}-model mistral-large-latest
+--experiment-id exp9_mistral`, read out with `evaluation/claude_vs_mistral.py`.
+Full steps in `docs/EXP_MISTRAL_RUNBOOK.md`. Mixed trios (cheap Researcher,
+Claude Adjudicator) are runnable from the same flags and test which role most
+needs the stronger model. Gated only on a key in `MISTRAL_API_KEY` and a Mistral
+dispatch over the Malta pair set.
 
 Result: pending.
 
