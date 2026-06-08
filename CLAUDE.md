@@ -17,6 +17,11 @@ At the start of every session, read these in order:
    narrative, supervision log, weekly observations. Fetch via the Notion MCP if
    asked about anything not in the repo.
 
+When the task is hardening the swarm, improving robustness, or "attacking the
+failure modes" (anything about false positives, wrong answers slipping through,
+or the verification gaps), read `docs/FAILURE_MODES.md` first. It is the 34-mode
+register with the structural attack list and a suggested attack order.
+
 ## Quality standards
 
 This is a dissertation, not a hackathon. Every artefact must hold up to an
@@ -70,6 +75,7 @@ data/
   odmi.db           # SQLite. Schema in scripts/setup_sqlite.py.
 docs/
   SPEC.md           # Living spec. Updated every session.
+  FAILURE_MODES.md  # False-positive register (FM-01..FM-34). The attack list.
   METHODOLOGY.md    # Locked methodology: ODMI ground truth, evaluation plan.
   PROJECT_LOG.md    # Session-by-session technical log.
   REPORT_PRELIM.md  # Preliminary report (due 22 May 2026).
