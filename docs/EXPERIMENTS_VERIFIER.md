@@ -202,5 +202,6 @@ is executed; it has not been run yet.
   predates the full run. The earlier partial run on the France/injected set
   (committed at 3 of 89, extended to ~40 of 89 in working state) is **superseded
   as the primary** and retained only as robustness-arm data, not deleted. Harness
-  strata updated in `evaluation/verifier_strategies.py` to match. Primary J is not
-  computable until the Malta dispatch lands (pending search quota).
+  strata updated in `evaluation/verifier_strategies.py` to match. The Malta
+  dispatch has landed (60/60), but EXP-6 is dropped this round (2026-06-09), so
+  the four-arm judge run and primary J were not executed.

@@ -1164,13 +1164,18 @@ Status (detail in `docs/EXPERIMENTS.md`):
   stalling at the search step under repeated machine restarts.
 - **EXP-4/EXP-5** (Brave, then the four-provider A/B): one judge run yields both;
   interrupted near 882 of ~1080 verdicts, resumable from the cache.
-- **EXP-6** (verifier strategy discrimination): designed and partially run (3/89);
-  retargeted to Malta-primary under R4. Its binding prerequisite, the Malta
-  baseline dispatch, is now done (see below); the four-arm judge run is not yet
-  executed.
-- **EXP-7** (retry chaining): code built behind `--chained` (default off, baseline
-  byte-identical) and pre-registered (`EXPERIMENTS_CHAINING.md`, Malta primary);
-  unblocked now the Malta baseline is done, run pending quota.
+- **EXP-6** (verifier strategy discrimination): dropped this round (2026-06-09).
+  Designed and partially run (3/89), retargeted to Malta-primary under R4;
+  apparatus and the partial stay in the repo so it can be revived, but the
+  four-arm judge run is not a priority for the current pass.
+- **EXP-7** (retry chaining): reframed (2026-06-09) from a confirmatory "does
+  chaining help" experiment to a chaining-optimisation target. The `--chained`
+  code (default off, baseline byte-identical) and the `EXPERIMENTS_CHAINING.md`
+  pre-registration stay as the starting point.
+- **EXP-9** (model variants): running (2026-06-09). Five arms over the Malta 60
+  via `scripts/run_exp9_model_variants.sh` (haiku / sonnet / opus-4.6 / tiered /
+  a cross-family Mistral arm), one variable, every other knob pinned. No longer
+  quota-gated (20x plan); see the EXP-9 section in `EXPERIMENTS.md`.
 
 **Malta baseline dispatch (2026-06-03, done; 60/60).** The shared prerequisite for
 EXP-6/7/8/9. The canonical pair set is frozen and committed at

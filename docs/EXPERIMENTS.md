@@ -197,9 +197,10 @@ set, and models fixed and varies one cost knob at a time: `baseline`,
 balance-aware accuracy against the Malta majority baseline (R4) and cost per pair
 with retries counted (R9). Run on Malta primary, Netherlands secondary.
 
-Prerequisite: the Malta Researcher dispatch (search-quota gated), a committed
-`prompt-compressed` prompt version, and the `model-fallback` escalation path.
-The apparatus is built (2026-06-03): the compressed Researcher prompt
+Prerequisite: the Malta dispatch is done (not quota-gated; 20x plan), so what
+remains is a committed `prompt-compressed` prompt version and the
+`model-fallback` escalation path. EXP-8 is not in the current pass (EXP-9 is the
+running model experiment). The apparatus is built (2026-06-03): the compressed Researcher prompt
 (`--prompt-variant compressed`, its own `prompt_versions` row, baseline
 untouched), the `model-fallback` escalation (`--researcher-escalation-model` /
 `--verifier-escalation-model`), and the cold-cache switch (`--no-cache`) for the
@@ -327,9 +328,9 @@ recovery indistinguishable from majority-class guessing, the D35 / D37 / R4
 lesson). The lower-resource `no`-heavy countries (BA, MK, ME, BG, IS) are deferred
 to a follow-on so a poor result there is not blamed on language.
 
-Prerequisite: the Malta dispatch (search-quota gated, shared with EXP-6/8/9; the
-`no`-gold candidates do not exist in the DB yet) and Claude headroom. The run is
-gated only on those two; the code and pre-registration are done.
+Prerequisite: the Malta dispatch is done (60/60, shared with EXP-6/8/9), so the
+`no`-gold candidates now exist and the run is no longer quota-gated (20x plan).
+The code and pre-registration are done.
 
 Status: code built and committed (flag-gated, default off), pre-registered. Run
 not started, pending the Malta dispatch and quota.
