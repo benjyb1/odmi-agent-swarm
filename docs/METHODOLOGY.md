@@ -45,7 +45,9 @@ human process for a controlled baseline country?
 them? *(Reframed at D22 from the original rubric-tier formulation.)*
 
 **RQ3.** How does answer quality vary across language and portal-maturity
-regimes when the same system is run on a stratified six-country sample?
+regimes when the same system is run on a stratified nine-country sample? *(The
+sample is the 3×3 maturity × language-resource matrix fixed in SPEC D42,
+replacing the earlier six-country sketch.)*
 
 **RQ4.** What categories of ODMI question are systematically beyond the reach
 of agentic LLMs as currently constituted, and what reformulations would bring
@@ -227,10 +229,25 @@ The 2024 cycle is held back as an independent external-validity set
 (extracted from the 2024 PDFs only after the pipeline is finalised
 on 2025). Prompt and retrieval tuning never touch 2024 evidence.
 
+### Evaluation sample and hold-out (per D42)
+
+The primary sample is a nine-country 3×3 matrix, ODMI maturity (high / mid / low)
+crossed with language-resource level (high / mid / low), one country per cell:
+FR / SK / EE (high maturity), DE / HU / SI (mid), SE / RO / MT (low). The nine are
+held out from development. The default pipeline is tuned only on development
+countries drawn from the 27 outside the matrix (plus France, the in-sample legacy
+sandbox), then frozen by commit before the nine are run for the headline numbers.
+Pre-registered between-condition experiments (Verifier strategies, cost-side
+conditions, model variants) may run on the nine because they compare arms against
+a reported baseline; the default pipeline is never iteratively tuned against the
+nine countries' results. Full rule, the matrix table, and the recorded wrinkles
+(France's cell is in-sample and base-rate-degenerate; one-country cells are noisy)
+are in SPEC D42.
+
 ### Stage 1: retrospective benchmark (2025)
 
 Run the swarm on (question, country) pairs from the 2025 ODMI cycle for
-the Phase B six-country set. Compare each swarm `final_answer` against
+the nine-country held-out matrix (D42). Compare each swarm `final_answer` against
 the `response` column on the corresponding `ground_truth` row. The match
 SQL lives in `dashboard/lib/db.py:_MATCH_STATUS_SQL` and classifies each
 pair as `match`, `differ`, `no_ground_truth`, or `no_swarm_answer`.
