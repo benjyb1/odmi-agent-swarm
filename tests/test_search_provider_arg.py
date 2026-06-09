@@ -1,12 +1,14 @@
 """Tests for the provider kwarg added to search() and search_many().
 
-Behaviour contract:
-- provider="auto" (default) is a Tavily → DIY → Brave fallback chain (D36):
-  Tavily first, DIY when Tavily's quota fails, Brave only if DIY also fails.
-- provider="tavily" calls Tavily only; if Tavily raises, the error propagates
-  (no Brave fallback). This is the conservative choice for explicit-provider
-  callers: they opted in deliberately and silence would hide failures.
-- provider="brave" calls Brave only; Tavily is never touched.
+Behaviour contract (D43 supersedes the D36 fallback chain):
+- provider="auto" (default) is DIY only. On the 20x plan DIY is the sole
+  production provider; "auto" is an alias for "diy" so no call site can
+  silently fall back to Tavily or Brave. A DIY error propagates; an empty DIY
+  result is returned empty (there is no second provider to try).
+- provider="diy" is identical to "auto".
+- provider="tavily" / "brave" call that provider only and remain in the code
+  solely to reproduce the EXP-1 provider comparison; they are never used in
+  production. If the provider raises, the error propagates (no fallback).
 
 search_many() mirrors the kwarg and plumbs it to each per-query search() call.
 """
@@ -30,90 +32,75 @@ def _brave_result(query: str = "q", **_kwargs) -> list[SearchResult]:
 # provider="auto"
 # ---------------------------------------------------------------------------
 
-def test_provider_auto_keeps_existing_chain(monkeypatch):
-    """provider='auto' (default) must preserve Tavily-first behaviour."""
-    monkeypatch.setattr(
-        "agents.tools.search._tavily_search",
-        lambda q, **k: _tavily_result(q, **k),
-    )
-    out = search("test", provider="auto")
-    assert len(out) > 0
-    assert all(r.provider == "tavily" for r in out)
-
-
-def test_provider_default_is_auto(monkeypatch):
-    """Omitting provider must behave identically to provider='auto'."""
-    monkeypatch.setattr(
-        "agents.tools.search._tavily_search",
-        lambda q, **k: _tavily_result(q, **k),
-    )
-    out_default = search("test")
-    out_auto = search("test", provider="auto")
-    assert [r.url for r in out_default] == [r.url for r in out_auto]
-
-
 def _diy_result(query: str = "q", **_kwargs) -> list[SearchResult]:
     return [SearchResult(title="d", url="https://diy.example", snippet="s",
                          score=0.9, provider="diy")]
 
 
-def test_auto_falls_back_to_diy_when_tavily_quota_fails(monkeypatch):
-    """D36: when Tavily hits its quota, auto falls back to DIY, not Brave."""
-    monkeypatch.setattr("agents.tools.search._TAVILY_QUOTA_EXHAUSTED", False)
+def test_provider_auto_is_diy_only(monkeypatch):
+    """D43: provider='auto' routes to DIY, never Tavily or Brave."""
     monkeypatch.setattr(
         "agents.tools.search._tavily_search",
-        lambda q, **k: (_ for _ in ()).throw(RuntimeError("quota exhausted")),
+        lambda q, **k: pytest.fail("Tavily must never be called under D43 auto"),
+    )
+    monkeypatch.setattr(
+        "agents.tools.search._brave_search",
+        lambda q, **k: pytest.fail("Brave must never be called under D43 auto"),
     )
     monkeypatch.setattr(
         "agents.tools.search_diy.diy_search",
         lambda q, **k: _diy_result(q, **k),
     )
-    monkeypatch.setattr(
-        "agents.tools.search._brave_search",
-        lambda q, **k: pytest.fail("Brave must not be called while DIY succeeds"),
-    )
-    out = search("test", provider="auto")
+    records: list[dict] = []
+    out = search("test", provider="auto", on_call=records.append)
     assert out and all(r.provider == "diy" for r in out)
+    # Exactly one provider attempt, and it is DIY.
+    assert [r["provider"] for r in records] == ["diy"]
 
 
-def test_auto_falls_through_diy_to_brave(monkeypatch):
-    """D36: Brave is the last resort, reached only when both Tavily and DIY fail."""
-    monkeypatch.setattr("agents.tools.search._TAVILY_QUOTA_EXHAUSTED", False)
+def test_provider_default_is_diy_only(monkeypatch):
+    """Omitting provider must behave identically to provider='auto' (= DIY)."""
     monkeypatch.setattr(
         "agents.tools.search._tavily_search",
-        lambda q, **k: (_ for _ in ()).throw(RuntimeError("quota exhausted")),
+        lambda q, **k: pytest.fail("Tavily must never be called by default"),
     )
+    monkeypatch.setattr(
+        "agents.tools.search_diy.diy_search",
+        lambda q, **k: _diy_result(q, **k),
+    )
+    out_default = search("test")
+    out_auto = search("test", provider="auto")
+    assert [r.url for r in out_default] == [r.url for r in out_auto]
+    assert all(r.provider == "diy" for r in out_default)
+
+
+def test_auto_diy_error_propagates_no_brave(monkeypatch):
+    """D43: a DIY failure under auto propagates; Brave is never a fallback."""
     monkeypatch.setattr(
         "agents.tools.search_diy.diy_search",
         lambda q, **k: (_ for _ in ()).throw(RuntimeError("diy down")),
     )
     monkeypatch.setattr(
         "agents.tools.search._brave_search",
-        lambda q, **k: _brave_result(q, **k),
+        lambda q, **k: pytest.fail("Brave must not be a fallback under D43"),
     )
     records: list[dict] = []
-    out = search("test", provider="auto", on_call=records.append)
-    assert out and all(r.provider == "brave" for r in out)
-    # One telemetry record per attempt: tavily (fail), diy (fail), brave (ok).
-    assert [r["provider"] for r in records] == ["tavily", "diy", "brave"]
-    assert records[0]["ok"] is False and records[1]["ok"] is False
-    assert records[2]["ok"] is True
+    with pytest.raises(RuntimeError, match="diy down"):
+        search("test", provider="auto", on_call=records.append)
+    # One telemetry record: diy (fail). No second provider attempted.
+    assert [r["provider"] for r in records] == ["diy"]
+    assert records[0]["ok"] is False
 
 
-def test_auto_empty_diy_falls_through_to_brave(monkeypatch):
-    """An empty DIY result (no error) must still fall through to Brave."""
-    monkeypatch.setattr("agents.tools.search._TAVILY_QUOTA_EXHAUSTED", False)
-    monkeypatch.setattr(
-        "agents.tools.search._tavily_search",
-        lambda q, **k: (_ for _ in ()).throw(RuntimeError("quota exhausted")),
-    )
+def test_auto_empty_diy_returns_empty_no_brave(monkeypatch):
+    """D43: an empty DIY result is returned empty; no Brave fall-through."""
     monkeypatch.setattr(
         "agents.tools.search_diy.diy_search",
         lambda q, **k: [],  # DIY succeeds but returns nothing
     )
     monkeypatch.setattr(
         "agents.tools.search._brave_search",
-        lambda q, **k: _brave_result(q, **k),
+        lambda q, **k: pytest.fail("Brave must not be reached on empty DIY"),
     )
     monkeypatch.setattr(
         "agents.tools.search._PROVIDER_USAGE_COUNTERS",
@@ -121,15 +108,24 @@ def test_auto_empty_diy_falls_through_to_brave(monkeypatch):
     )
     records: list[dict] = []
     out = search("test", provider="auto", on_call=records.append)
-    assert out and all(r.provider == "brave" for r in out)
-    # tavily (fail), diy (ok but empty), brave (ok).
-    assert [r["provider"] for r in records] == ["tavily", "diy", "brave"]
-    assert records[1]["ok"] is True and records[1]["results"] == 0
-    assert records[2]["ok"] is True
-    # DIY counted exactly once; not double-counted by the fall-through.
+    assert out == []
+    assert [r["provider"] for r in records] == ["diy"]
+    assert records[0]["ok"] is True and records[0]["results"] == 0
     from agents.tools.search import _PROVIDER_USAGE_COUNTERS
     assert _PROVIDER_USAGE_COUNTERS["diy"] == 1
-    assert _PROVIDER_USAGE_COUNTERS["brave"] == 1
+    assert _PROVIDER_USAGE_COUNTERS["brave"] == 0
+
+
+def test_auto_propagates_blocker_shutdown(monkeypatch):
+    """D43: a BlockerShutdown from the 30s DIY ceiling rides straight out."""
+    from agents.errors import BlockerShutdown
+
+    def _raise_blocker(q, **k):
+        raise BlockerShutdown("DIY fetch stage exceeded 30s")
+
+    monkeypatch.setattr("agents.tools.search_diy.diy_search", _raise_blocker)
+    with pytest.raises(BlockerShutdown):
+        search("test", provider="auto")
 
 
 # ---------------------------------------------------------------------------

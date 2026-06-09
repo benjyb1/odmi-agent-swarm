@@ -296,3 +296,41 @@ def test_diy_fetch_cache_hit_skips_fetch_html(mock_layers, monkeypatch):
     second_count = len(fetch_html_calls)
     # No new fetch_html calls on the second run
     assert second_count == first_count
+
+
+# ---------------------------------------------------------------------------
+# 30s fetch-stage ceiling (D43)
+# ---------------------------------------------------------------------------
+
+def test_fetch_stage_deadline_raises_blocker(monkeypatch, tmp_path):
+    """A fetch stage that blows the wall-clock ceiling raises BlockerShutdown.
+
+    Stands in for a Cloudflare/WAF challenge or a hanging portal: the run must
+    stop loudly rather than wait the full per-fetch timeout out and carry on.
+    """
+    import time as _time
+    import agents.tools.search_cache as cache_mod
+    import agents.tools.search_diy as diy
+    from agents.errors import BlockerShutdown
+    from agents.tools.fetch import FetchResult
+
+    monkeypatch.setattr(cache_mod, "_DB_PATH", tmp_path / "deadline.db")
+    monkeypatch.setattr(cache_mod, "_TABLES_ENSURED", False)
+    monkeypatch.setattr(cache_mod, "_READ_DISABLED", False)
+    # Tight ceiling so the test is fast; production is DIY_FETCH_DEADLINE_S=30.
+    monkeypatch.setattr(diy, "DIY_FETCH_DEADLINE_S", 0.3)
+
+    monkeypatch.setattr(diy, "serper_search", lambda q, **k: [
+        SearchResult(title="A", url="https://slow.example", snippet="s",
+                     score=1.0, provider="serper"),
+    ])
+
+    def slow_fetch_html(url, **kw):
+        _time.sleep(2.0)  # far exceeds the 0.3s ceiling
+        return FetchResult(url=url, backend="httpx", status_code=200,
+                           content="x", truncated=False, failure_mode=None)
+
+    monkeypatch.setattr(diy, "fetch_html", slow_fetch_html)
+
+    with pytest.raises(BlockerShutdown):
+        diy.diy_search("q", max_results=3)

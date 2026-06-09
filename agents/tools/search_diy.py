@@ -12,9 +12,12 @@ from the result list entirely. Result length never exceeds max_results.
 """
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import (
+    ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout,
+)
 from typing import List, Optional
 
+from agents.errors import BlockerShutdown
 from agents.tools.search import SearchResult
 from agents.tools.search_serper import serper_search
 from agents.tools.blocked_domains import is_blocked
@@ -26,6 +29,17 @@ from agents.tools.snippet_picker import (
 from agents.tools import search_cache as cache
 
 FETCH_PARALLELISM = 5
+
+# Wall-clock ceiling on the DIY network fetch/extract stage, per query (D43).
+# DIY is the sole provider on the 20x plan and should be fast; the SERP is a
+# second or two and every fetch is itself timeout-bounded, so the parallel
+# fetch stage clearing within 30s is the normal case. Exceeding it means a
+# real blocker (Cloudflare/WAF challenge, hanging portal, network fault), so
+# we stop the whole run loudly via BlockerShutdown rather than carry on. The
+# ceiling covers only the network stage where blockers live; the Claude
+# snippet-picker that follows is metered Claude latency, not a blocker, so it
+# is deliberately outside the window.
+DIY_FETCH_DEADLINE_S = 30.0
 
 
 def _fetch_and_clean(url: str) -> str:
@@ -91,9 +105,22 @@ def diy_search(
         return r, clean
 
     fetched: list[tuple[SearchResult, str]] = []
-    with ThreadPoolExecutor(max_workers=FETCH_PARALLELISM) as pool:
-        for fut in as_completed(pool.submit(_fetch, r) for r in serp):
+    pool = ThreadPoolExecutor(max_workers=FETCH_PARALLELISM)
+    try:
+        futures = [pool.submit(_fetch, r) for r in serp]
+        # as_completed's own timeout enforces the stage deadline. We avoid the
+        # `with` context manager because its __exit__ would block on the hung
+        # fetch we are trying to escape; shutdown(wait=False) abandons it (the
+        # per-fetch httpx/Playwright timeouts bound it) and we stop now.
+        for fut in as_completed(futures, timeout=DIY_FETCH_DEADLINE_S):
             fetched.append(fut.result())
+    except FuturesTimeout:
+        pool.shutdown(wait=False, cancel_futures=True)
+        raise BlockerShutdown(
+            f"DIY fetch stage exceeded {DIY_FETCH_DEADLINE_S:.0f}s for query "
+            f"{query!r} - likely a Cloudflare/WAF challenge or network blocker"
+        )
+    pool.shutdown(wait=True)
 
     # 3. Snippet pick (cached). Text is already clean main content.
     out: List[SearchResult] = []

@@ -184,16 +184,14 @@ def search(
 
     `provider` controls which search backend is used:
 
-    - ``"auto"`` (default) — Tavily first; if Tavily's quota is
-      exhausted or raises a rate/quota/credit error, falls back to the
-      DIY pipeline (Serper SERP + trafilatura, per D29); only if DIY
-      also fails does it drop to Brave as a last resort.
-    - ``"tavily"`` — Tavily only. If Tavily raises for any reason the
-      error propagates immediately; no fallback. Use this when you need
-      deterministic provider selection (e.g. A/B experiments where a
-      fallback must not silently substitute).
-    - ``"diy"`` — DIY pipeline only.
-    - ``"brave"`` — Brave only. Tavily is never called.
+    - ``"auto"`` (default) — DIY only (D43). On the 20x plan DIY is the
+      sole production provider; ``"auto"`` is an alias for ``"diy"`` so no
+      call site can silently fall back to Tavily or Brave. Errors
+      propagate; there is no second provider to substitute.
+    - ``"diy"`` — DIY pipeline only. Identical behaviour to ``"auto"``.
+    - ``"tavily"`` — Tavily only. Retained for reproducing the EXP-1
+      provider comparison; never used in production (D43).
+    - ``"brave"`` — Brave only. Retained for the same reason (D43).
 
     `topic` is Tavily-specific; the other providers ignore it.
     `include_domains` works on all three (Brave gets it via `site:`
@@ -282,63 +280,23 @@ def search(
             raise
 
     # ------------------------------------------------------------------
-    # provider == "auto" — Tavily → DIY → Brave fallback chain
+    # provider == "auto" — DIY only (D43). Tavily and Brave are retired
+    # from production; "auto" is an alias for "diy" so no call site can
+    # silently fall back to a paid provider. Errors propagate untouched
+    # (a BlockerShutdown from the 30s fetch ceiling rides straight out).
     # ------------------------------------------------------------------
-
-    if not _TAVILY_QUOTA_EXHAUSTED:
-        t0 = time.perf_counter()
-        try:
-            results = _tavily_search(
-                query,
-                max_results=max_results,
-                topic=topic,
-                include_domains=include_domains,
-            )
-            _PROVIDER_USAGE_COUNTERS["tavily"] += 1
-            _emit("tavily", t0, results, ok=True, error=None)
-            return _scrub_blocked(results)
-        except UsageLimitExceededError as exc:
-            _TAVILY_QUOTA_EXHAUSTED = True
-            _emit("tavily", t0, [], ok=False, error=f"quota:{exc}"[:200])
-            # fall through to DIY
-        except Exception as exc:  # noqa: BLE001
-            msg = str(exc).lower()
-            _emit("tavily", t0, [], ok=False, error=str(exc)[:200])
-            if "rate" in msg or "quota" in msg or "limit" in msg or "credit" in msg:
-                _TAVILY_QUOTA_EXHAUSTED = True
-            else:
-                raise
-
-    # First fallback: the DIY pipeline (Serper SERP + trafilatura, D29).
-    # A DIY call that raises OR returns no results both fall through to
-    # Brave as a last resort; an empty list is treated as "no answer here".
+    from agents.tools.search_diy import diy_search  # local import
     t0 = time.perf_counter()
     try:
-        from agents.tools.search_diy import diy_search  # local import
         results = diy_search(
             query, max_results=max_results, include_domains=include_domains,
         )
         _PROVIDER_USAGE_COUNTERS["diy"] += 1
         scrubbed = _scrub_blocked(results)
         _emit("diy", t0, scrubbed, ok=True, error=None)
-        if scrubbed:
-            return scrubbed
-        # empty result set: fall through to Brave
+        return scrubbed
     except Exception as exc:  # noqa: BLE001
         _emit("diy", t0, [], ok=False, error=str(exc)[:200])
-        # fall through to Brave as a last resort
-
-    # Last resort: Brave.
-    t0 = time.perf_counter()
-    try:
-        results = _brave_search(
-            query, max_results=max_results, include_domains=include_domains,
-        )
-        _PROVIDER_USAGE_COUNTERS["brave"] += 1
-        _emit("brave", t0, results, ok=True, error=None)
-        return _scrub_blocked(results)
-    except Exception as exc:
-        _emit("brave", t0, [], ok=False, error=str(exc)[:200])
         raise
 
 
