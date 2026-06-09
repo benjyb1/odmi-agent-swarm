@@ -30,15 +30,25 @@ from agents.tools import search_cache as cache
 
 FETCH_PARALLELISM = 5
 
+# Per-URL fetch timeouts inside the DIY pipeline (D43). Deliberately tighter
+# than the module defaults in agents/tools/fetch.py (httpx 15s, Playwright 30s):
+# their sum, 45s, exceeds the stage ceiling below, so a single URL falling back
+# to a slow render would trip the blocker on its own. Bounding the per-URL worst
+# case to httpx + render = 26s keeps the legitimate path comfortably under the
+# 30s ceiling, which is the point: a normal DIY fetch is fast, so a stage that
+# blows 30s genuinely means something is broken (a Cloudflare/WAF challenge that
+# will not settle, a hanging portal, a network fault), not just a heavy page.
+DIY_HTTPX_TIMEOUT_S = 10.0
+DIY_RENDER_TIMEOUT_S = 16.0
+
 # Wall-clock ceiling on the DIY network fetch/extract stage, per query (D43).
-# DIY is the sole provider on the 20x plan and should be fast; the SERP is a
-# second or two and every fetch is itself timeout-bounded, so the parallel
-# fetch stage clearing within 30s is the normal case. Exceeding it means a
-# real blocker (Cloudflare/WAF challenge, hanging portal, network fault), so
-# we stop the whole run loudly via BlockerShutdown rather than carry on. The
-# ceiling covers only the network stage where blockers live; the Claude
-# snippet-picker that follows is metered Claude latency, not a blocker, so it
-# is deliberately outside the window.
+# DIY is the sole provider on the 20x plan and must be fast. With the per-URL
+# timeouts above, the parallel fetch stage clears well within 30s in the normal
+# case. Exceeding it is treated as a real blocker, not a slow page: we stop the
+# whole run loudly via BlockerShutdown so a human pauses and fixes the cause.
+# The ceiling covers only the network stage where blockers live; the Claude
+# snippet-picker that follows is metered Claude latency, not a blocker, so it is
+# deliberately outside the window.
 DIY_FETCH_DEADLINE_S = 30.0
 
 
@@ -53,10 +63,10 @@ def _fetch_and_clean(url: str) -> str:
     Returns "" when the page cannot be fetched or yields no extractable
     content; the caller drops such URLs.
     """
-    result = fetch_html(url)
+    result = fetch_html(url, timeout_s=DIY_HTTPX_TIMEOUT_S)
     if (result.failure_mode in ("empty_after_strip", "timeout")
             or not result.content):
-        result = fetch_rendered_html(url)
+        result = fetch_rendered_html(url, timeout_s=DIY_RENDER_TIMEOUT_S)
     if result.failure_mode is not None or not result.content:
         return ""
     return extract_text(result.content, url=url, is_html=True)

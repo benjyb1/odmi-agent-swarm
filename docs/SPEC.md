@@ -1096,7 +1096,9 @@ synthesised routes tends high; Q21 is authoritative only on RDF routes) are in
 
 ### D36: search auto-fallback is Tavily → DIY → Brave
 
-**Date:** 2026-06-03.
+**Date:** 2026-06-03. **Superseded by D43 (2026-06-09):** the fallback chain is
+retired. `provider="auto"` is now DIY only; Tavily and Brave are never used in
+production. The description below is kept for the audit trail.
 
 The `provider="auto"` chain in `agents/tools/search.py` now falls back through
 the DIY pipeline before Brave. The order is: Tavily first; on a quota / rate /
@@ -1483,6 +1485,18 @@ sketch in D7. Wealth is dropped as an axis; language-resource takes its place,
 because RQ3 is about whether the swarm degrades on lower-resource languages, and
 wealth was never doing independent work.
 
+> **Do not run the matrix yet (2026-06-09).** The language-resource axis is a
+> placeholder. The tiers below are a hand-assigned proxy, not measured. Before
+> this matrix drives any headline run, the language-resource level must be fixed
+> empirically: an actual measurement of how well the swarm's model reads and
+> reasons over each country's language (a per-country Claude language-competence
+> score, the open question Q4 below). Until that score exists the matrix is a
+> design sketch for discussion only, and the cell assignments may move. SK / SI
+> / SE are wired into `run_coordinator.py` so the codes exist, but that is
+> plumbing, not a green light. Development still happens on countries outside
+> the matrix (Norway is the current dev sweep), so this gate blocks nothing in
+> the meantime.
+
 | | High-resource lang | Mid-resource lang | Low-resource lang |
 |---|---|---|---|
 | **High maturity** | FR (100.0) | SK (95.4) | EE (94.0) |
@@ -1532,6 +1546,52 @@ condition is "production" before the held-out run.
 `run_coordinator.py` only carries language codes for FR / DE / NL / RO / HU / EE /
 MT, so SK, SI, and SE need their official-language codes added (sk, sl, sv) before
 dispatch. NL leaves the sample (it shared the mid / high cell with DE).
+
+### D43: DIY is the sole search provider; a 30s fetch-stage blocker stops the run
+
+**Date:** 2026-06-09. Supersedes D36; retires the D20/D40/D41 cost-scarcity framing.
+
+Two linked changes, both following the move to the Claude Max 20x plan.
+
+**Plan change.** The subscription is now the 20x plan, so Claude headroom is no
+longer a practical constraint on a dissertation-scale run. Experiment status
+lines that read "gated on quota" or "pending quota" are retired; the only real
+ceiling left is Claude's own 429, which already shuts down cleanly and
+resumably (D20 layer 3, kept). D40 already removed the guessed cost soft limit;
+D41's runaway circuit breakers stay because they guard against a misconfigured
+experiment, not against cost.
+
+**DIY only.** `provider="auto"` in `agents/tools/search.py` is now an alias for
+`"diy"`. Tavily and Brave are never called in production. EXP-1 settled that DIY
+is not worse than Tavily on the web-answerable pairs (it wins 89% of the decided
+FR pairs), so there is no reason to spend on a paid provider or to let a silent
+fallback substitute one mid-run and confound a result. The explicit `tavily`,
+`brave`, and `serper_raw` modes remain in the code but only to reproduce the
+EXP-1 comparison; nothing in production reaches them. Telemetry (D26) is
+unaffected and now records `diy` for every production search.
+
+**30s fetch-stage blocker.** With one provider and no fallback, a slow search is
+a signal, not something to paper over. The DIY network fetch stage (SERP →
+fetch → trafilatura, in `agents/tools/search_diy.py`) now carries a 30s
+wall-clock ceiling per query (`DIY_FETCH_DEADLINE_S`). The ceiling covers only
+the network stage, where blockers live; the Claude snippet-picker that follows
+is metered Claude latency, not a blocker, so it sits outside the window.
+Exceeding the ceiling raises `BlockerShutdown`. That exception subclasses
+`BaseException`, not `Exception`, so the `except Exception` handlers throughout
+the DIY pipeline and the agents cannot absorb it; it propagates to the
+Coordinator's `main()`, which flushes partial state, marks the subtrio
+`interrupted_blocker`, and exits with `EXIT_CODE_BLOCKER` (43). The dispatcher
+treats 43 as a global stop, tearing the whole batch down exactly as it does for
+a 429. The intent is deliberate: a DIY fetch over 30s means a real blocker (a
+Cloudflare or WAF challenge, a hanging portal, a network fault) that a human
+must clear, so the run stops loudly rather than limping on or guessing from thin
+evidence. The stop is resumable: fix the blocker and re-dispatch, and the
+not-done set is recomputed.
+
+New / changed tests: the four D36 auto-fallback tests in
+`test_search_provider_arg.py` rewritten to the DIY-only contract, a
+blocker-propagation test there, and a direct fetch-stage-deadline test in
+`test_search_diy.py`. 526 passing.
 
 ---
 
