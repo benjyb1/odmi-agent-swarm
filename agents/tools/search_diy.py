@@ -30,16 +30,21 @@ from agents.tools import search_cache as cache
 
 FETCH_PARALLELISM = 5
 
-# Per-URL fetch timeouts inside the DIY pipeline (D43). Deliberately tighter
-# than the module defaults in agents/tools/fetch.py (httpx 15s, Playwright 30s):
-# their sum, 45s, exceeds the stage ceiling below, so a single URL falling back
-# to a slow render would trip the blocker on its own. Bounding the per-URL worst
-# case to httpx + render = 26s keeps the legitimate path comfortably under the
-# 30s ceiling, which is the point: a normal DIY fetch is fast, so a stage that
-# blows 30s genuinely means something is broken (a Cloudflare/WAF challenge that
-# will not settle, a hanging portal, a network fault), not just a heavy page.
-DIY_HTTPX_TIMEOUT_S = 10.0
-DIY_RENDER_TIMEOUT_S = 16.0
+# Per-URL fetch timeouts inside the DIY pipeline (D43). Deliberately tighter than
+# the module defaults in agents/tools/fetch.py (httpx 15s, Playwright 30s). The
+# worst case for one URL is httpx, THEN a browser launch, THEN the render goto;
+# the launch sits outside the goto timeout and balloons under concurrency, so the
+# real per-URL cost is httpx + launch + render, not just the two timeouts. With
+# httpx 8s + render 13s and a few seconds of launch the worst case is ~24s,
+# leaving headroom under the 30s stage ceiling even when several coordinators
+# launch browsers at once. A Cloudflare/WAF challenge that needs ~25s to settle
+# therefore fails fast (the render times out and the URL is dropped) instead of
+# dragging the stage to 30s. That is the point: a normal DIY fetch is fast, so a
+# stage that blows 30s means something is genuinely broken, not just a heavy page.
+# (Tightened from 10s/16s on 2026-06-09 after the EXP-9 haiku arm tripped the
+# ceiling on a data.gov.mt Quality fetch under contention with the Norway sweep.)
+DIY_HTTPX_TIMEOUT_S = 8.0
+DIY_RENDER_TIMEOUT_S = 13.0
 
 # Wall-clock ceiling on the DIY network fetch/extract stage, per query (D43).
 # DIY is the sole provider on the 20x plan and must be fast. With the per-URL
