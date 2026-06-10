@@ -47,8 +47,18 @@ VerifierStrategy = Literal[
     "verifier-negation",
     "verifier-steelman",
     "verifier-blind",
+    # EXP-11 tristate arms. Additive: production runs the four above; the
+    # two below are exercised only by evaluation/verifier_redesign.py and
+    # write no phase2_verifier_runs rows, so the DB CHECK is untouched.
+    "verifier-tristate",
+    "verifier-tristate-probes",
 ]
 VerifierVerdict = Literal["pass", "fail"]
+# EXP-11 P1: a verdict that separates "found counter-evidence" (refute)
+# from "searched, found nothing decisive" (inconclusive) from "found
+# corroboration" (confirm). Only the extremes carry a consequence, and
+# only when their quote clears the deterministic gate.
+TristateVerdict = Literal["refute", "inconclusive", "confirm"]
 SubstringCheckResult = Literal["pass", "fail", "not_attempted"]
 AdjudicatorVerdict = Literal[
     "researcher_correct",
@@ -249,6 +259,79 @@ class VerifierOutput(BaseModel):
                 raise ValueError(
                     "counter_evidence_quote or counter_source_url is required "
                     "when verdict='fail'"
+                )
+        return self
+
+
+# ============================================================
+# EXP-11 tristate verifier (P1/P2). Additive: evaluation-only.
+# ============================================================
+
+
+class ProbeFinding(BaseModel):
+    """One confirmation-probe result the tristate-probes verifier reports
+    for an absence claim. `found` is the model's judgement that the probe
+    surfaced the positive thing (the feature, API, instrument); `quote`
+    is the supporting passage when found."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    query: str
+    found: bool
+    quote: Optional[str] = None
+
+
+class VerifierOutputTristate(BaseModel):
+    """Tristate verdict output (EXP-11 P1).
+
+    Mirrors VerifierOutput but replaces the binary verdict with
+    refute / inconclusive / confirm. The required-field rules encode the
+    burden of proof: a refute must carry counter-evidence, a confirm must
+    carry corroboration. `inconclusive` is the unpenalised default and
+    needs nothing. The deterministic gate (the harness, not this model)
+    later downgrades a refute or confirm whose quote does not verify.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    verdict: TristateVerdict
+    verifier_answer: str = Field(..., min_length=1, max_length=200)
+    verifier_confidence: float = Field(..., ge=0.0, le=1.0)
+
+    substring_check_result: SubstringCheckResult
+    substring_check_notes: Optional[str] = None
+
+    independent_search_queries: List[str] = Field(default_factory=list)
+    independent_evidence_snippets: List[str] = Field(default_factory=list)
+
+    # refute fields
+    rejection_reason: Optional[str] = None
+    counter_evidence_quote: Optional[str] = None
+    counter_source_url: Optional[AnyHttpUrl] = None
+    suggested_search_query: Optional[str] = None
+
+    # confirm fields
+    corroborating_quote: Optional[str] = None
+    corroborating_url: Optional[AnyHttpUrl] = None
+
+    # absence protocol (tristate-probes only)
+    probe_findings: Optional[List[ProbeFinding]] = None
+
+    @model_validator(mode="after")
+    def _enforce_verdict_fields(self) -> "VerifierOutputTristate":
+        if self.verdict == "refute":
+            if not self.rejection_reason:
+                raise ValueError("rejection_reason is required when verdict='refute'")
+            if not self.counter_evidence_quote and not self.counter_source_url:
+                raise ValueError(
+                    "counter_evidence_quote or counter_source_url is required "
+                    "when verdict='refute'"
+                )
+        if self.verdict == "confirm":
+            if not self.corroborating_quote and not self.corroborating_url:
+                raise ValueError(
+                    "corroborating_quote or corroborating_url is required "
+                    "when verdict='confirm'"
                 )
         return self
 
