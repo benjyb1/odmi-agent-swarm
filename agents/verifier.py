@@ -554,6 +554,37 @@ def run_verifier(
             f"verifier_answer {output.verifier_answer!r} not in allowed set"
         )
 
+    # ----- Hard grounding gate: a failed substring check is fabrication -----
+    # The substring check is deterministic, so its consequence must be too.
+    # A quote absent from the snippets the Researcher actually read is
+    # fabrication or misquotation; we reject it structurally rather than
+    # leaving it to the strategy LLM's discretion (the LLM could rationalise
+    # a pass when the answer happens to look correct). This mirrors the blind
+    # and catalogue-recompute hard overrides and enforces the project's
+    # no-hallucination standard in code, not in a prompt.
+    if sub_result == "fail" and output.verdict == "pass":
+        notes_parts.append(
+            "substring check failed (quote not in the snippets the Researcher "
+            "read) — verdict overridden to fail (hard grounding gate)"
+        )
+        output = output.model_copy(update={
+            "verdict": "fail",
+            "rejection_reason": (
+                "Evidence quote not found in the snippets the Researcher read; "
+                "treated as fabrication or misquotation. "
+                + (output.rejection_reason or "")
+            ).strip(),
+            "counter_evidence_quote": (
+                output.counter_evidence_quote
+                or sub_notes
+                or "grounding check failed: cited quote absent from sources read"
+            ),
+            "suggested_search_query": (
+                output.suggested_search_query
+                or (queries[0] if queries else None)
+            ),
+        })
+
     # ----- Strategy D post-processing: compare answers -----
     # For blind strategy, the model returned its own answer without
     # seeing the Researcher's. If they differ, override verdict to fail.

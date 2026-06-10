@@ -81,14 +81,18 @@ STRATEGIES = [
     "verifier-steelman",
     "verifier-blind",
 ]
-# Country roles, per the R4 base-rate rule. Primary is a base-rate-balanced,
-# well-resourced-language country (Malta: English official, ~30 no-gold binary
-# questions); secondary is a second balanced country; robustness carries the
-# legacy France/Estonia natural errors and is the source of the injected flips.
-PRIMARY_COUNTRIES = ["MT"]
-SECONDARY_COUNTRIES = ["NL"]
-ROBUSTNESS_COUNTRIES = ["FR", "EE"]
-INJ_TARGET = 20
+# Country roles. 2026-06-06 redesign (Benjy): Malta dropped entirely. The
+# natural arm is the Netherlands (Dutch is high-resource, so a poor result is
+# not a language artefact; 26 no-gold binary questions, R4-viable at 21%
+# no-share). France is the injected/robustness arm (high yes-share, so plenty of
+# correct binary answers to flip; the flips remove the ODMI-staleness confound).
+# Both arms draw from the shared seeded question selection
+# data/questions/exp6_question_set.json (71 binary, no self-report, 19 each
+# Policy/Portal/Impact + 14 Quality). EE and Malta removed.
+PRIMARY_COUNTRIES = ["NL"]
+SECONDARY_COUNTRIES = []
+ROBUSTNESS_COUNTRIES = ["FR"]
+INJ_TARGET = 71
 EXPERIMENT_ID = "verifier_strategy_disc_v1"
 
 

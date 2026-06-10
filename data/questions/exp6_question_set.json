@@ -1,0 +1,305 @@
+{
+  "description": "EXP-6 shared question selection (NL natural arm + FR injected arm). Binary, no self-report, dimension-stratified, seeded.",
+  "seed": 20260603,
+  "answer_shape": "binary",
+  "selection_rule": "All non-self-report binary Quality questions (14, the catalogue ceiling), plus a seeded sample of 19 each from non-self-report binary Policy/Portal/Impact, RNG seed 20260603. Self-report questions excluded per scripts/build_answerability.py.",
+  "target_per_dimension": {
+    "Policy": 19,
+    "Portal": 19,
+    "Impact": 19,
+    "Quality": 14
+  },
+  "achieved_per_dimension": {
+    "Policy": 19,
+    "Portal": 19,
+    "Impact": 19,
+    "Quality": 14
+  },
+  "total": 71,
+  "questions": [
+    {
+      "question_id": "P1",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P10-a",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P10-b",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P11",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P12",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P15",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P17",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P19",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P2",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P23",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P24",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P27",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P28",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P3",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P4",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P5",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P6",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P7",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P9",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT10",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT11",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT13",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT14",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT15",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT19",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT21",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT26",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT27",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT28",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT3",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT30",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT31",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT33",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT38",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT41",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT45",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT7",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT8",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "I10",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I11",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I15",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I17",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I19",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I21",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I23",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I24",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I25",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I26",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I29",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I3",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I31",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I5",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I8",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I8-a",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I9",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I9-b",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I9-c",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "Q1",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q10",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q11",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q14",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q15",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q19",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q20",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q23",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q24",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q4",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q5",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q6",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q8",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q9",
+      "dimension": "Quality"
+    }
+  ]
+}
