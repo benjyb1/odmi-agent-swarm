@@ -1630,10 +1630,99 @@ note accordingly; no code change.
 
 ---
 
+### D46: Portal discovery replaces hand-authored catalogue registries
+
+**Date:** 2026-06-10. Extends D30 (catalogue tool); D24 (leakage) is the
+binding constraint throughout. Numbered D46 because D44 is merged and D45
+is claimed by the in-flight `audit-fix-batch` branch.
+
+**Problem.** The D30 catalogue route fires only for countries with a
+`data/catalogue/portals/<CC>.json` registry, and only six existed, all
+hand-authored. Norway scored low on Quality purely because `NO.json` did
+not exist while data.norge.no published DCAT-AP-NO throughout. The
+answerable-share analysis prices the gap at ~6.4 points of accuracy
+ceiling per country (83.0% without a registry vs 89.4% with). Hand-
+authoring 36 registries and re-verifying them each cycle does not scale.
+
+**Design.** A discovery pipeline (`agents/tools/catalogue/discovery/`)
+turns a committed seed URL into a verified registry:
+
+1. *Seeds.* `data/catalogue/portal_seeds.json`: one entry per assessed
+   country with `portal_base`, optional `alternates` and `hints` (the FDK
+   search service for NO, the EntryScape SPARQL host for SE), and a
+   mandatory `source` annotation. Compiled without consulting the EU
+   aggregator; the loader refuses deny-listed entries.
+2. *Fingerprinting.* `probes.py` recognises CKAN (`package_search`, both
+   standard and `/data`-prefixed), uData (`/api/1/datasets/`), paged
+   DCAT-AP feeds (`catalog.{ttl,xml,rdf}` and the uData site catalogue),
+   SPARQL (`ASK {?s a dcat:Dataset}` with sparql-results content
+   negotiation), piveau hub-search, OpenDataSoft, data.json, and the
+   hint-driven FDK pattern. A probe miss is any HTTP or parse failure; a
+   deny-list refusal always propagates (leakage is never read as a miss).
+3. *Verification.* `verify.py` harvests one page through the real adapter
+   per candidate route (preference: dcat_rdf, sparql_rdf, ckan_json,
+   udata_json, piveau_json, fdk_rdf) and auto-detects the known caveats:
+   the HU/RO pattern (RDF feed omits `dct:license`; a licensed JSON route
+   wins and the omission is recorded), the FDK pattern (no
+   `dcat:downloadURL`, Q21 reads ~0% faithfully), JSON-synthesised
+   conformance, no licence metadata on any route, and the data.gov.cy
+   producer bug (`dcat:Distribution` used as a predicate, named in the
+   rejection).
+4. *Emission.* `emit.py` writes the same registry shape as the
+   hand-authored six plus `discovery_method`, `discovery_evidence`, a
+   machine-readable `caveats` list and an auto-fetched robots.txt
+   summary. Every URL in the outgoing payload is re-checked against the
+   deny-list; an existing registry is never overwritten without force.
+5. *Fallback.* A country with no verified route keeps the web-search
+   path; the report records `needs_new_adapter` (stack recognised, no
+   adapter) or `failed` (with the rejection evidence), never a silent
+   low score.
+
+**Leakage controls.** All discovery traffic flows through
+`catalogue/_fetch.py`, which now also re-checks the redirect chain and
+final URL (a portal 30x-ing to data.europa.eu surfaces as
+`BlockedEndpointError`, not data). The seed loader, prober and emitter
+each re-check the deny-list independently. Tests pin every layer
+(`test_catalogue_fetch_guard.py`, `test_portal_discovery_*.py`).
+
+**Experiment (2026-06-10, frozen probe code, one-page samples, no full
+harvests).** Across all 36 assessed countries: 14 verified working routes
+(CH, EL, FI, FR, HU, IE, LU, LV, ME, NL, PT, RS, SI, UA), 5 recognised
+stacks without an adapter (AT piveau; CZ, HR, SE sparql; NO fdk), 17
+failed (custom SPA stacks with no public catalogue API: AL, BA, BE, DK,
+ES, IT, LT, PL, SK; WAF or IP blocks: BG, MK, MT, RO, EE; the CY
+malformed feed; IS retired its CKAN into island.is; DE govdata
+unreachable from this network at probe time). The prober re-found the
+hand-authored FR, HU and NL routes unchanged, including HU's
+RDF-omits-licence fallback, which validates the fingerprinting against
+known ground truth. Two new adapters were then built in response:
+`sparql_rdf` (one paged CONSTRUCT, dataset UNION distribution triples;
+verified live on CZ, HR, SE) and `piveau_json` (hub-search pages;
+verified live on AT), converting four of the five flagged countries; the
+FDK adapter for NO already exists on the parallel Norway branch.
+Registry coverage goes from 6 hand-authored to 21 countries on this
+branch (15 discovered, the hand-authored six untouched; 22 once the
+Norway branch merges), raising each newly covered country's ceiling by
+~6.4 points. Per-country outcomes are
+in `evaluation/results/discovery_report.json` and the table in
+`docs/PORTAL_DISCOVERY.md`.
+
+**Limits.** A one-page sample can misread an order-biased feed, so the
+sample statistics are verification signals, not metric values. WAF and IP
+blocks are environment-dependent (EE's hand registry hit the same wall).
+piveau portals can federate EU-scope datasets; data.gv.at's index is all
+countryData today, and any federating piveau portal needs a scope filter
+before metrics run. The registries discovery emits are receipts, not
+guarantees: each cycle re-runs discovery and re-verifies before a
+harvest, which is the point of automating it.
+
+---
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-10 (portal discovery) | D46 added, extends D30 under the D24 constraint. New `agents/tools/catalogue/discovery/` package (seeds / probes / verify / emit / run): a committed 36-country seed file with per-entry source annotations, stack fingerprinting (CKAN incl. `/data` prefix, uData, paged DCAT-AP feeds, SPARQL with results-JSON content negotiation, piveau, OpenDataSoft, data.json, hint-driven FDK), one-page sample verification with caveat auto-detection (HU/RO rdf-omits-licence fallback, FDK missing downloadURL, JSON-synthesised conformance, the data.gov.cy class-as-predicate producer bug), and registry emission in the hand-authored shape plus `discovery_method` / `discovery_evidence` / `caveats` / auto robots.txt summary. D24 hardened: the catalogue fetch layer refuses redirect chains landing on deny-listed hosts; seed loader, prober and emitter re-check the deny-list independently. 36-country experiment (one-page samples, no full harvests): 14 verified, 5 stack-recognised-no-adapter, 17 failed (SPA stacks, WAFs, one malformed feed, one retired portal); FR / HU / NL re-discovered identically to their hand-authored registries, validating the prober. Two adapters built in response: `sparql_rdf` (CZ, HR, SE; one paged CONSTRUCT after the three-level shape timed out live) and `piveau_json` (AT). Registry coverage 6 -> 21 countries on this branch (+NO at merge), each newly covered country's open-web ceiling +~6.4 points (83.0% -> 89.4%, `evaluation/discovery_ceiling.py`). New tests: fetch guard, probes, verify, emit, seeds, run, both adapters, ceiling lift. Docs: `docs/PORTAL_DISCOVERY.md`. |
 | 2026-06-08 (false-positive register) | `docs/FAILURE_MODES.md` created: the exhaustive register of ways the swarm can commit a wrong answer while presenting it as confident, distinct from the operational deferrals in `KNOWN_GAPS.md`. Built from a five-pass code audit (Researcher, Verifier, Adjudicator, coordinator finalisation, deterministic gates, catalogue path). 34 failure modes (FM-01..FM-34) under a three-way cut: Caught (deterministic backbone we trust), LLM-only (deciding evidence is in the context window, accepted as prompt-tunable), and Structural (prompting cannot fix; the attack list). The structural set clusters as missing context (FM-02/05/09/34), loose deterministic gates (FM-10/11/13/17), answer-key leakage on allowed domains (FM-14), correlated or skipped adversary (FM-19/20/21/23/33), uncalibrated confidence (FM-22/26/27), and the catalogue path's non-independent recompute (FM-28..32). Indexed from the "Where to look for what" table and from `CLAUDE.md`. The with/without-Verifier ablation and four-strategy head-to-head are the experiments that would quantify which modes the Verifier actually closes. No code change this session; analysis artefact only. |
 | 2026-06-09 (eval matrix) | D42 added, amends D7's Phase B sample. Evaluation sample fixed as a nine-country 3×3 maturity × language-resource matrix, one country per cell: FR / SK / EE (high maturity), DE / HU / SI (mid), SE / RO / MT (low), across high / mid / low-resource language tiers. Wealth dropped as an axis in favour of language-resource (RQ3). The nine are held out: the default pipeline is tuned only on development countries from the 27 outside the matrix (plus France, the legacy in-sample sandbox), then frozen by commit before the headline run. Pre-registered between-condition experiments (Verifier strategies EXP-6, cost-side Family 1, model variants Family 3) are permitted on the nine because they compare arms against a reported baseline; iterative optimisation of the default pipeline against these countries is not. Recorded wrinkles: France's cell is in-sample and base-rate-degenerate (report it as the dev point), and one-country cells are noisy so cell-level claims stay cautious. SK / SI / SE need language codes (sk / sl / sv) added to `run_coordinator.py` before dispatch; NL leaves the sample (shared the mid / high cell with DE). METHODOLOGY RQ3 and Section 6 updated to match. No code or data changed in this entry. |
 | 2026-06-04 (bug-fix batch) | Codebase-wide bug hunt after the concurrent-branch merges; fourteen confirmed findings fixed, three left by choice, three flagged for a human glance. Headline correctness fixes, all in the evaluation path: (1) abstentions (`inconclusive`) were silently classified `differ` in `_MATCH_STATUS_SQL` and counted as wrong; they now have their own `abstained` status. Decision this session: an abstention is a failure to answer, so it stays in the accuracy denominator (accuracy unchanged, 0.645), but `accuracy_summary` now also returns `n_abstained` and `abstention_rate` (0.27 on current main), surfaced across Home/Results/Database/Analytics. (2) A bare `yes` falsely scored an exact match against a count_band gold like `yes, >9`; the `yes...` prefix match is now gated to binary questions (drops n_match 137 to 136). (3) near_match adjacency no longer treats sentinel labels (`not applicable`, `i don't know`, abstention/other) as adjacent bands. Crash/safety fixes: the Coordinator resume path raised `UnboundLocalError` (never bound `r_result`) and is now made uniform via a synthesised `ResearcherRunResult`; the Adjudicator could crash finalisation on a sub-`min_length` evidence quote (now falls back); `trust_score` corrupted hostnames with `lstrip("www.")`; the leakage deny-list was bypassable with a trailing-dot FQDN (`data.europa.eu.`). Stranded `loving-mendel` code cherry-picked: the canonical-row dedup that EXP-7/EXP-10 need (they were double-counting duplicate `phase2_final` rows), the EXP-6 `--workers` parallelism, the `max_retries=8` proxy-resilience cushion, and two test files. Smaller: reproducible DCAT-RDF snapshot hash, DIY-empty falls through to Brave, `cleanup_subtrios` PID-reuse guard, `harness.py run-pair` positional args, Verifier strategy descriptions V1 to V3, chained-evidence dedup on full snippet, `datetime.utcnow()` deprecation cleared. Left by choice: model-default write not read-only gated (single user), Holm step-down / even-n median labels, no `cycle_year` join filter. Flagged: Q2's `allowed_answers` leads with a stray `"1"` (loader artefact, shifts band indices); EXP-1's "decided" denominator includes per-orientation `both_fail` against the "excluded" prose (disclosure call, strengthens DIY either way, 89% to 93% under strict exclusion); per-country trusted lists load empty because the JSON key is `trusted_domains` but `validator._load_country_list` reads `trusted`. Tests: 523 passing (was 496), 13 skipped. |

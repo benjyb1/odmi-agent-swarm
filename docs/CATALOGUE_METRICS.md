@@ -102,7 +102,10 @@ instruction. Proposed interpretations:
 
 ## Per-country harvest routes
 
-See `data/catalogue/portals/<CC>.json` for verified endpoints. Summary:
+See `data/catalogue/portals/<CC>.json` for verified endpoints. The six
+rows above the line are hand-authored (D30); the rest were emitted by the
+portal-discovery tool (D46, `docs/PORTAL_DISCOVERY.md`), with the caveats
+auto-detected from a verification sample. Summary:
 
 | CC | Route | Conformance (Q16-18) source |
 |---|---|---|
@@ -112,6 +115,26 @@ See `data/catalogue/portals/<CC>.json` for verified endpoints. Summary:
 | HU | CKAN JSON (RDF feed omits dct:license) | DCAT-AP RDF synthesised from JSON |
 | NL | CKAN JSON (no national RDF) | DCAT-AP RDF synthesised from JSON |
 | EE | custom JSON (no national RDF) | DCAT-AP RDF synthesised from JSON |
+| AT | piveau hub-search JSON | DCAT-AP RDF synthesised from JSON |
+| CH | DCAT-AP RDF (`catalog.ttl`) | native RDF |
+| CZ | SPARQL (paged CONSTRUCT) | native RDF (dataset + distribution levels) |
+| EL | DCAT-AP RDF (`catalog.ttl`) | native RDF |
+| FI | CKAN JSON | DCAT-AP RDF synthesised from JSON |
+| HR | SPARQL (paged CONSTRUCT; no licence metadata) | native RDF (dataset + distribution levels) |
+| IE | CKAN JSON (RDF feed omits dct:license, the HU pattern) | DCAT-AP RDF synthesised from JSON |
+| LU | DCAT-AP RDF (udata site catalogue, the FR pattern) | native RDF |
+| LV | CKAN JSON | DCAT-AP RDF synthesised from JSON |
+| ME | CKAN JSON (RDF feed omits dct:license) | DCAT-AP RDF synthesised from JSON |
+| PT | DCAT-AP RDF (udata site catalogue) | native RDF |
+| RS | uData JSON (RDF feed omits dct:license) | DCAT-AP RDF synthesised from JSON |
+| SE | SPARQL on admin.dataportal.se (no downloadURL in graph) | native RDF (dataset + distribution levels) |
+| SI | CKAN JSON (no licence metadata on any route) | DCAT-AP RDF synthesised from JSON |
+| UA | CKAN JSON (RDF feed omits dct:license) | DCAT-AP RDF synthesised from JSON |
+
+The SPARQL route pulls dataset and distribution triples only (the paged
+CONSTRUCT does not follow publisher or contact sub-nodes), so Q16/Q17/Q18
+on CZ/HR/SE read those two levels of the portal's own graph; treat
+recommended-class usage that depends on deeper nodes as a lower bound.
 
 ## Per-route reliability and caveats
 

@@ -8,6 +8,54 @@ Entries newest first.
 
 ---
 
+## 2026-06-10 — Session 24: portal discovery (D46); SPARQL and piveau adapters
+
+Built the portal-discovery tool so the D30 catalogue route no longer depends on
+hand-authored registries, ran the 36-country experiment, and built two adapters
+the experiment showed were worth having. All TDD; roughly 70 new offline tests.
+
+**The tool.** `agents/tools/catalogue/discovery/`: a committed seed file of 36
+national portal URLs (each annotated with how it was found, never via the EU
+aggregator), stack-fingerprinting probes, one-page sample verification through
+the real adapters with caveat auto-detection, and registry emission in the
+hand-authored shape plus provenance fields. Leakage (D24) is enforced at every
+layer; the fetch layer now also re-checks redirect chains, closing the "clean
+URL 302s onto data.europa.eu" hole.
+
+**The experiment.** On the pre-adapter code: 14 of 36 countries verified, 5
+recognised stacks with no adapter, 17 failed with evidence (SPA stacks, WAFs,
+one malformed feed, one retired portal). FR / HU / NL re-discovered their
+hand-authored routes exactly, including HU's licence fallback, which is the
+validation the prober needed. The failures are findings: data.gov.cy links
+distributions with `dcat:Distribution` as a predicate (a producer bug that
+hides every distribution from any spec-conformant reader), and Iceland's CKAN
+is gone, folded into island.is as static content.
+
+**Adapters built in response.** `sparql_rdf` (CZ, HR, SE): one paged CONSTRUCT
+per page, dataset triples UNION distribution triples bounded by an inlined
+ordered subquery; the obvious three-level OPTIONAL shape timed out live on
+data.gov.cz, the union shape returns a 20-dataset page in 0.3 s. `piveau_json`
+(AT): data.gv.at relaunched on the data.europa.eu software family, nationally
+hosted; hub-search pages carry full distribution metadata and the portal's
+dataScope facet is all countryData, so no EU-scope filtering is needed there.
+Norway's `fdk_rdf` already exists on the parallel branch.
+
+**Lessons.** (1) A probe that works in isolation can still be broken in the
+pipeline: `probe_all` injects shared fetchers, so the first SPARQL fix (a
+private default) never executed in the real path; the regression test now pins
+the injected path. (2) Long background runs die when the laptop sleeps; the
+36-country run was killed at 4, 9 and 32 of 36 before being restructured into
+six per-chunk-reported pieces merged afterwards. (3) The licence_share=8% LU
+sample is the udata order-bias seen on FR in D30; sample stats verify routes,
+they do not measure metrics.
+
+**State.** Registry coverage 6 -> 21 countries on this branch. SPEC D46,
+`docs/PORTAL_DISCOVERY.md`, route table in `docs/CATALOGUE_METRICS.md`. Next:
+full harvests + catalogue metrics for the newly covered countries, and the
+piveau/SPARQL routes through `compute` on a Phase B-style validation.
+
+---
+
 ## 2026-06-06 — Session 23: EXP-6 fairness audit; blocked on a free SERP backend
 
 Set out to run the EXP-6 four-arm judge end to end. A pre-run fairness audit caught

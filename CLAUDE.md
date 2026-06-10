@@ -228,3 +228,19 @@ remains. EXP-7 (retry chaining): the chained arm is built behind
 `--chained` (default off, so production and the EXP-8/9 baseline are
 byte-identical) and pre-registered (D39, `docs/EXPERIMENTS_CHAINING.md`,
 Malta primary); the run is gated only on the Malta dispatch and Claude quota.
+D46 (2026-06-10): portal discovery replaces hand-authored catalogue
+registries. `agents/tools/catalogue/discovery/` probes each country's
+national portal from a committed, annotated seed list (never via the EU
+aggregator), verifies a one-page sample through the real adapters,
+auto-detects the known caveats (rdf-omits-licence, missing downloadURL,
+synthesised conformance, the data.gov.cy class-as-predicate bug) and
+emits `data/catalogue/portals/<CC>.json` with provenance; D24 enforced
+at every layer including a new redirect-chain guard in the catalogue
+fetch. The 36-country experiment: 14 verified, 5 stack-recognised-
+without-adapter, 17 honest fails (SPA stacks, WAFs, one malformed feed,
+one retired portal); FR/HU/NL re-discovered identically to their
+hand-authored registries, validating the prober. New `sparql_rdf` (CZ,
+HR, SE) and `piveau_json` (AT) adapters convert four of the five
+flagged countries; registry coverage 6 -> 21 (+NO at merge), about +6.4
+points of accuracy ceiling per newly covered country
+(`evaluation/discovery_ceiling.py`). See `docs/PORTAL_DISCOVERY.md`.
