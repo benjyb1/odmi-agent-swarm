@@ -1,0 +1,232 @@
+{
+  "_provenance": "Seed list of national open-data portal base URLs for the 36 ODMI-assessed countries. Compiled 2026-06-10 from public knowledge of each country's own e-government portal domain (the portals' own branding, national administration domains and public portal directories such as dataportals.org). The EU aggregator (data.europa.eu and related Publications Office domains) was not consulted at any point, per SPEC D24. A seed URL is a starting hypothesis only: the discovery prober (agents/tools/catalogue/discovery/) verifies each one live against the portal's own API and records the matched signature in the emitted registry. Entries for DE/EE/FR/HU/NL/RO mirror the portal_base already verified in their hand-authored registries. 'alternates' are fallback hypotheses probed when the primary fails.",
+  "seeds": [
+    {
+      "country_code": "AL",
+      "country_name": "Albania",
+      "portal_base": "https://opendata.gov.al",
+      "source": "Albania's national open data portal on the gov.al second-level domain, operated by the National Agency for Information Society (AKSHI); domain known from the agency's public materials."
+    },
+    {
+      "country_code": "AT",
+      "country_name": "Austria",
+      "portal_base": "https://www.data.gv.at",
+      "source": "Austria's national portal data.gv.at, operated by the Federal Ministry / BRZ; long-established CKAN portal on the gv.at government domain."
+    },
+    {
+      "country_code": "BA",
+      "country_name": "Bosnia and Herzegovina",
+      "portal_base": "https://odp.iddeea.gov.ba",
+      "alternates": ["https://opendata.ba"],
+      "source": "Open data portal operated by IDDEEA (Agency for Identification Documents, Registers and Data Exchange) on the gov.ba domain; alternate is the civil-society portal sometimes cited as national."
+    },
+    {
+      "country_code": "BE",
+      "country_name": "Belgium",
+      "portal_base": "https://data.gov.be",
+      "source": "Belgium's federal portal data.gov.be, operated by BOSA; the national aggregation point for federal and regional catalogues."
+    },
+    {
+      "country_code": "BG",
+      "country_name": "Bulgaria",
+      "portal_base": "https://data.egov.bg",
+      "source": "Bulgaria's national portal on the egov.bg e-government domain, successor to opendata.government.bg."
+    },
+    {
+      "country_code": "CH",
+      "country_name": "Switzerland",
+      "portal_base": "https://opendata.swiss",
+      "source": "Switzerland's national portal opendata.swiss, operated by the Federal Statistical Office; a CKAN portal on its own well-known TLD."
+    },
+    {
+      "country_code": "CY",
+      "country_name": "Cyprus",
+      "portal_base": "https://www.data.gov.cy",
+      "source": "Cyprus's national portal data.gov.cy on the gov.cy government domain, operated by the Department of IT Services."
+    },
+    {
+      "country_code": "CZ",
+      "country_name": "Czechia",
+      "portal_base": "https://data.gov.cz",
+      "source": "Czechia's national catalogue data.gov.cz (NKOD), operated by the Digital and Information Agency; publishes DCAT-AP with a public SPARQL endpoint."
+    },
+    {
+      "country_code": "DE",
+      "country_name": "Germany",
+      "portal_base": "https://ckan.govdata.de",
+      "alternates": ["https://www.govdata.de"],
+      "source": "GovData, Germany's national portal; the CKAN backend host is taken from the hand-authored DE registry verified 2026-06-02."
+    },
+    {
+      "country_code": "DK",
+      "country_name": "Denmark",
+      "portal_base": "https://www.opendata.dk",
+      "alternates": ["https://datavejviser.dk"],
+      "source": "Denmark's open data portal opendata.dk (municipal/national CKAN); alternate is Datavejviser, the newer national data catalogue run by the Agency for Digital Government."
+    },
+    {
+      "country_code": "EE",
+      "country_name": "Estonia",
+      "portal_base": "https://andmed.eesti.ee",
+      "source": "Estonia's national portal (Teabevarav) on the eesti.ee state domain; portal_base taken from the hand-authored EE registry verified 2026-06-02."
+    },
+    {
+      "country_code": "EL",
+      "country_name": "Greece",
+      "portal_base": "https://data.gov.gr",
+      "alternates": ["https://geodata.gov.gr"],
+      "source": "Greece's national portal data.gov.gr on the gov.gr government domain, operated by the Ministry of Digital Governance."
+    },
+    {
+      "country_code": "ES",
+      "country_name": "Spain",
+      "portal_base": "https://datos.gob.es",
+      "source": "Spain's national portal datos.gob.es on the gob.es government domain, run by red.es and the public administration."
+    },
+    {
+      "country_code": "FI",
+      "country_name": "Finland",
+      "portal_base": "https://www.avoindata.fi",
+      "source": "Finland's national portal avoindata.fi ('open data' in Finnish), operated by the Digital and Population Data Services Agency (DVV); a CKAN portal."
+    },
+    {
+      "country_code": "FR",
+      "country_name": "France",
+      "portal_base": "https://www.data.gouv.fr",
+      "source": "France's national portal data.gouv.fr on the gouv.fr government domain, operated by Etalab/DINUM; portal_base matches the hand-authored FR registry verified 2026-06-02."
+    },
+    {
+      "country_code": "HR",
+      "country_name": "Croatia",
+      "portal_base": "https://data.gov.hr",
+      "source": "Croatia's national portal data.gov.hr on the gov.hr government domain, operated by the Central State Office for the Development of the Digital Society."
+    },
+    {
+      "country_code": "HU",
+      "country_name": "Hungary",
+      "portal_base": "https://kozadatportal.hu",
+      "source": "Hungary's Nemzeti Kozadat Portal; portal_base taken from the hand-authored HU registry verified 2026-06-02 (data.gov.hu is dead; opendata.hu is an unrelated NGO portal)."
+    },
+    {
+      "country_code": "IE",
+      "country_name": "Ireland",
+      "portal_base": "https://data.gov.ie",
+      "source": "Ireland's national portal data.gov.ie on the gov.ie government domain, operated by the Department of Public Expenditure; a CKAN portal."
+    },
+    {
+      "country_code": "IS",
+      "country_name": "Iceland",
+      "portal_base": "https://opingogn.is",
+      "alternates": ["https://island.is"],
+      "source": "Iceland's open data portal opingogn.is ('open data' in Icelandic), a CKAN portal linked from the state portal island.is."
+    },
+    {
+      "country_code": "IT",
+      "country_name": "Italy",
+      "portal_base": "https://www.dati.gov.it",
+      "source": "Italy's national portal dati.gov.it on the gov.it government domain, operated by AgID/Dipartimento per la trasformazione digitale."
+    },
+    {
+      "country_code": "LT",
+      "country_name": "Lithuania",
+      "portal_base": "https://data.gov.lt",
+      "source": "Lithuania's national portal data.gov.lt on the gov.lt government domain, operated by the State Data Agency."
+    },
+    {
+      "country_code": "LU",
+      "country_name": "Luxembourg",
+      "portal_base": "https://data.public.lu",
+      "source": "Luxembourg's national portal data.public.lu on the public.lu state domain; a uData portal (the same software as data.gouv.fr)."
+    },
+    {
+      "country_code": "LV",
+      "country_name": "Latvia",
+      "portal_base": "https://data.gov.lv",
+      "source": "Latvia's national portal data.gov.lv on the gov.lv government domain, operated by VARAM; a CKAN portal."
+    },
+    {
+      "country_code": "ME",
+      "country_name": "Montenegro",
+      "portal_base": "https://data.gov.me",
+      "source": "Montenegro's open data portal data.gov.me on the gov.me government domain, operated by the Ministry of Public Administration."
+    },
+    {
+      "country_code": "MK",
+      "country_name": "North Macedonia",
+      "portal_base": "https://data.gov.mk",
+      "source": "North Macedonia's open data portal data.gov.mk on the gov.mk government domain, operated by the Ministry of Information Society and Administration."
+    },
+    {
+      "country_code": "MT",
+      "country_name": "Malta",
+      "portal_base": "https://open.data.gov.mt",
+      "alternates": ["https://data.gov.mt"],
+      "source": "Malta's open data portal under data.gov.mt on the gov.mt government domain, operated by MITA; both host variants probed."
+    },
+    {
+      "country_code": "NL",
+      "country_name": "Netherlands",
+      "portal_base": "https://data.overheid.nl",
+      "source": "The Netherlands' national portal data.overheid.nl on the overheid.nl state domain; portal_base matches the hand-authored NL registry verified 2026-06-02."
+    },
+    {
+      "country_code": "NO",
+      "country_name": "Norway",
+      "portal_base": "https://data.norge.no",
+      "hints": {
+        "fdk_search_api": "https://search.api.fellesdatakatalog.digdir.no/search/datasets",
+        "fdk_dataset_detail_url": "https://fellesdatakatalog.digdir.no/datasets/{id}"
+      },
+      "source": "Norway's national portal data.norge.no (Felles datakatalog), operated by Digdir. The FDK hint endpoints are the portal's own public search service and per-dataset RDF host, identified from the portal's public API documentation during the NO route work (2026-06-10)."
+    },
+    {
+      "country_code": "PL",
+      "country_name": "Poland",
+      "portal_base": "https://dane.gov.pl",
+      "source": "Poland's national portal dane.gov.pl ('data' in Polish) on the gov.pl government domain, operated by the Chancellery of the Prime Minister."
+    },
+    {
+      "country_code": "PT",
+      "country_name": "Portugal",
+      "portal_base": "https://dados.gov.pt",
+      "source": "Portugal's national portal dados.gov.pt on the gov.pt government domain, operated by AMA; a uData portal."
+    },
+    {
+      "country_code": "RO",
+      "country_name": "Romania",
+      "portal_base": "https://data.gov.ro",
+      "source": "Romania's national portal data.gov.ro on the gov.ro government domain; portal_base matches the hand-authored RO registry verified 2026-06-02."
+    },
+    {
+      "country_code": "RS",
+      "country_name": "Serbia",
+      "portal_base": "https://data.gov.rs",
+      "source": "Serbia's national portal data.gov.rs on the gov.rs government domain, operated by the Office for IT and eGovernment."
+    },
+    {
+      "country_code": "SE",
+      "country_name": "Sweden",
+      "portal_base": "https://www.dataportal.se",
+      "source": "Sweden's national portal dataportal.se, operated by the Agency for Digital Government (Digg); an EntryScape-based catalogue."
+    },
+    {
+      "country_code": "SI",
+      "country_name": "Slovenia",
+      "portal_base": "https://podatki.gov.si",
+      "source": "Slovenia's national portal podatki.gov.si ('data' in Slovene) on the gov.si government domain, operated by the Ministry of Digital Transformation; a CKAN portal."
+    },
+    {
+      "country_code": "SK",
+      "country_name": "Slovakia",
+      "portal_base": "https://data.gov.sk",
+      "alternates": ["https://data.slovensko.sk"],
+      "source": "Slovakia's national portal data.gov.sk on the gov.sk government domain, operated by MIRRI; the alternate is the newer slovensko.sk platform the portal is migrating to."
+    },
+    {
+      "country_code": "UA",
+      "country_name": "Ukraine",
+      "portal_base": "https://data.gov.ua",
+      "source": "Ukraine's national portal data.gov.ua on the gov.ua government domain, operated by the Ministry of Digital Transformation."
+    }
+  ]
+}
