@@ -261,7 +261,7 @@ def probe_sparql(
     base: str,
     *,
     hints: Optional[dict] = None,
-    fetch_json: Optional[JsonFetcher] = None,
+    fetch_bytes: BytesFetcher = _fetch.fetch_bytes,
 ) -> Optional[ProbeEvidence]:
     """A SPARQL endpoint that answers ASK {?s a dcat:Dataset} with true.
 
@@ -269,21 +269,15 @@ def probe_sparql(
     EntryScape puts it on admin.dataportal.se), so a seed hint
     `sparql_endpoint` overrides the default `{base}/sparql` guess.
 
-    The default fetcher negotiates `application/sparql-results+json`:
-    Virtuoso endpoints (data.gov.cz) answer 406 to a plain
-    `Accept: application/json`."""
-    if fetch_json is None:
-        def fetch_json(url: str) -> dict:
-            raw = _fetch.fetch_bytes(
-                url, accept="application/sparql-results+json"
-            )
-            return json.loads(raw)
-
+    Uses the bytes fetcher so the Accept header can negotiate
+    `application/sparql-results+json`: Virtuoso endpoints (data.gov.cz)
+    answer 406 to a plain `Accept: application/json`."""
     endpoint = (hints or {}).get("sparql_endpoint") or f"{base}/sparql"
     url = f"{endpoint}?query={quote(_SPARQL_ASK)}&format=json"
 
     def attempt():
-        payload = fetch_json(url)
+        raw = fetch_bytes(url, accept="application/sparql-results+json")
+        payload = json.loads(raw)
         if not isinstance(payload, dict) or payload.get("boolean") is not True:
             return None
         return ProbeEvidence(
@@ -368,7 +362,7 @@ def probe_all(
         lambda: probe_opendatasoft(base, fetch_json=fetch_json),
         lambda: probe_piveau(base, fetch_json=fetch_json),
         lambda: probe_datajson(base, fetch_json=fetch_json),
-        lambda: probe_sparql(base, hints=hints, fetch_json=fetch_json),
+        lambda: probe_sparql(base, hints=hints, fetch_bytes=fetch_bytes),
     ]
     found: list[ProbeEvidence] = []
     for i, attempt in enumerate(attempts):

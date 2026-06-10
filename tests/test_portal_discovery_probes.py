@@ -203,10 +203,10 @@ def test_probe_datajson_reports_no_route():
 
 
 def test_probe_sparql_reports_no_route():
-    fetch = _json_stub({
-        "https://portal.example/sparql": {"head": {}, "boolean": True}
+    fetch = _bytes_stub({
+        "https://portal.example/sparql": b'{"head": {}, "boolean": true}'
     })
-    ev = probes.probe_sparql("https://portal.example", fetch_json=fetch)
+    ev = probes.probe_sparql("https://portal.example", fetch_bytes=fetch)
     assert ev is not None
     assert ev.stack == "sparql"
     assert ev.route is None
@@ -235,35 +235,53 @@ def test_probe_piveau_rejects_other_json():
 
 
 def test_probe_sparql_rejects_false_ask():
-    fetch = _json_stub({
-        "https://portal.example/sparql": {"head": {}, "boolean": False}
+    fetch = _bytes_stub({
+        "https://portal.example/sparql": b'{"head": {}, "boolean": false}'
     })
-    assert probes.probe_sparql("https://portal.example", fetch_json=fetch) is None
+    assert probes.probe_sparql("https://portal.example", fetch_bytes=fetch) is None
 
 
-def test_probe_sparql_default_fetcher_sends_sparql_accept(monkeypatch):
+def test_probe_sparql_sends_sparql_accept():
     # Virtuoso (data.gov.cz) answers 406 to Accept: application/json; the
-    # default fetcher must negotiate application/sparql-results+json.
+    # probe must negotiate application/sparql-results+json.
     seen: dict = {}
 
     def fake_fetch_bytes(url, *, accept=None, **kw):
         seen["accept"] = accept
         return b'{"head": {}, "boolean": true}'
 
-    monkeypatch.setattr(probes._fetch, "fetch_bytes", fake_fetch_bytes)
-    ev = probes.probe_sparql("https://portal.example")
+    ev = probes.probe_sparql("https://portal.example", fetch_bytes=fake_fetch_bytes)
     assert ev is not None
     assert seen["accept"] == "application/sparql-results+json"
 
 
+def test_probe_all_detects_sparql_through_the_injected_bytes_fetcher():
+    # Regression for the CZ miss: probe_all passes its own fetchers down,
+    # so the SPARQL probe must work through the shared bytes fetcher, not
+    # a private default that only engages when nothing is injected.
+    def fetch_bytes(url, *, accept=None, **kw):
+        if url.startswith("https://portal.example/sparql"):
+            assert accept == "application/sparql-results+json"
+            return b'{"head": {}, "boolean": true}'
+        raise _http_404(url)
+
+    found = probes.probe_all(
+        "https://portal.example",
+        fetch_json=_json_stub({}),
+        fetch_bytes=fetch_bytes,
+        delay_s=0,
+    )
+    assert "sparql" in {e.stack for e in found}
+
+
 def test_probe_sparql_uses_hint_endpoint_on_other_host():
-    fetch = _json_stub({
-        "https://admin.portal.example/sparql": {"head": {}, "boolean": True}
+    fetch = _bytes_stub({
+        "https://admin.portal.example/sparql": b'{"head": {}, "boolean": true}'
     })
     ev = probes.probe_sparql(
         "https://portal.example",
         hints={"sparql_endpoint": "https://admin.portal.example/sparql"},
-        fetch_json=fetch,
+        fetch_bytes=fetch,
     )
     assert ev is not None
     assert ev.stack == "sparql"
