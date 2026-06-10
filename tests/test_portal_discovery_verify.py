@@ -196,6 +196,33 @@ def test_empty_sample_fails_verification_and_falls_through():
     assert any(r.route == "dcat_rdf" for r in out.rejected)
 
 
+def test_class_as_predicate_feed_is_diagnosed():
+    # The data.gov.cy producer bug: datasets point at distributions with
+    # the CLASS name (dcat:Distribution) as the predicate, so the
+    # normaliser sees none. The rejection must name the malformation.
+    from rdflib import Graph
+
+    ttl = """
+    @prefix dcat: <http://www.w3.org/ns/dcat#> .
+    <https://p.example/ds/1> a dcat:Dataset ;
+        dcat:Distribution <https://p.example/res/1> .
+    """
+
+    def sampler(route, config):
+        g = Graph()
+        g.parse(data=ttl, format="turtle")
+        return [_ds() for _ in range(3)] and [
+            HarvestedDataset(identifier="d", graph=g) for _ in range(3)
+        ]
+
+    out = choose_and_verify(
+        "XX", "Testland", "https://p.example", [_RDF_EV], sampler=sampler
+    )
+    assert out.status == "failed"
+    reason = " ".join(r.reason for r in out.rejected)
+    assert "dcat:Distribution used as a predicate" in reason
+
+
 def test_sample_without_distributions_is_rejected():
     def sampler(route, config):
         return [_ds(licences=["cc-by"]) for _ in range(5)]

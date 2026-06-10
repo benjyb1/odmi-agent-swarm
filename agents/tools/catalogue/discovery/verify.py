@@ -145,6 +145,19 @@ def build_candidate_config(
     )
 
 
+def _has_class_as_predicate(sample: list[HarvestedDataset]) -> bool:
+    """True when dataset graphs carry `dcat:Distribution` (the class) as a
+    predicate: a producer bug that hides every distribution from any
+    spec-conformant reader, ours included."""
+    from rdflib import URIRef
+
+    wrong = URIRef("http://www.w3.org/ns/dcat#Distribution")
+    for d in sample:
+        if d.graph is not None and (None, wrong, None) in d.graph:
+            return True
+    return False
+
+
 def _verify_one(
     route: str,
     evidence: ProbeEvidence,
@@ -159,9 +172,13 @@ def _verify_one(
     if stats.n_datasets < _MIN_SAMPLE:
         return None, RejectedRoute(route, "sample harvest yielded no datasets")
     if stats.with_distributions == 0:
-        return None, RejectedRoute(
-            route, "sample has no distributions; the distribution metrics cannot run"
-        )
+        reason = "sample has no distributions; the distribution metrics cannot run"
+        if _has_class_as_predicate(sample):
+            reason += (
+                " (malformed feed: dcat:Distribution used as a predicate, the"
+                " class-as-property producer bug seen on data.gov.cy)"
+            )
+        return None, RejectedRoute(route, reason)
     caveats: list[str] = []
     if route in ("ckan_json", "udata_json", "estonia_json"):
         caveats.append("conformance_synthesised_from_json")
