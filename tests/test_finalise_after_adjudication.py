@@ -112,38 +112,43 @@ def test_neither_uses_adjudicator_answer():
 
 
 # ---------------------------------------------------------------------------
-# Case 4: escalate_human — must return the last researcher output unchanged.
+# Case 4: escalate_human — answer downgrades to inconclusive (D37 abstain floor).
 # ---------------------------------------------------------------------------
 
-def test_escalate_human_returns_last_researcher_output():
+def test_escalate_human_writes_inconclusive():
+    """The Adjudicator could not pick a winner. Don't finalise the last
+    Researcher's sub-floor guess as a real commit; abstain honestly. The
+    terminal status still flags human review.
+    """
     helper = _import_helper()
-    # AdjudicatorOutput.escalate_human does not set adjudicator_answer.
     adj = AdjudicatorOutput(
         adjudicator_verdict="escalate_human",
         adjudicator_answer=None,
         adjudicator_confidence=0.0,
         adjudicator_reasoning="B" * 55,
     )
-    last_r = _make_researcher_output(answer="inconclusive")
+    last_r = _make_researcher_output(answer="no")  # a sub-floor R3 guess
 
     status, chosen = helper(adj, [last_r])
 
     assert status == "escalated_adjudicator"
-    assert chosen is last_r
+    assert chosen.answer == "inconclusive"
+    # Source URL / evidence carry over so the audit trail stays intact.
+    assert str(chosen.source_url) == str(last_r.source_url)
 
 
 # ---------------------------------------------------------------------------
-# Case 5: adj_output is None — must return the last researcher output.
+# Case 5: adj_output is None — same abstain behaviour, the agent failed.
 # ---------------------------------------------------------------------------
 
-def test_none_output_returns_last_researcher_output():
+def test_none_output_writes_inconclusive():
     helper = _import_helper()
     last_r = _make_researcher_output(answer="yes")
 
     status, chosen = helper(None, [last_r])
 
     assert status == "escalated_adjudicator"
-    assert chosen is last_r
+    assert chosen.answer == "inconclusive"
 
 
 # ---------------------------------------------------------------------------
