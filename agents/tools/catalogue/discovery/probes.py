@@ -16,6 +16,7 @@ FDK on this branch) reports `route=None`: the country is then flagged
 
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass, field
 from typing import Callable, Optional
@@ -260,13 +261,24 @@ def probe_sparql(
     base: str,
     *,
     hints: Optional[dict] = None,
-    fetch_json: JsonFetcher = _fetch.fetch_json,
+    fetch_json: Optional[JsonFetcher] = None,
 ) -> Optional[ProbeEvidence]:
     """A SPARQL endpoint that answers ASK {?s a dcat:Dataset} with true.
 
     Some portals host the endpoint on a sibling domain (Sweden's
     EntryScape puts it on admin.dataportal.se), so a seed hint
-    `sparql_endpoint` overrides the default `{base}/sparql` guess."""
+    `sparql_endpoint` overrides the default `{base}/sparql` guess.
+
+    The default fetcher negotiates `application/sparql-results+json`:
+    Virtuoso endpoints (data.gov.cz) answer 406 to a plain
+    `Accept: application/json`."""
+    if fetch_json is None:
+        def fetch_json(url: str) -> dict:
+            raw = _fetch.fetch_bytes(
+                url, accept="application/sparql-results+json"
+            )
+            return json.loads(raw)
+
     endpoint = (hints or {}).get("sparql_endpoint") or f"{base}/sparql"
     url = f"{endpoint}?query={quote(_SPARQL_ASK)}&format=json"
 

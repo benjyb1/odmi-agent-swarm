@@ -241,6 +241,21 @@ def test_probe_sparql_rejects_false_ask():
     assert probes.probe_sparql("https://portal.example", fetch_json=fetch) is None
 
 
+def test_probe_sparql_default_fetcher_sends_sparql_accept(monkeypatch):
+    # Virtuoso (data.gov.cz) answers 406 to Accept: application/json; the
+    # default fetcher must negotiate application/sparql-results+json.
+    seen: dict = {}
+
+    def fake_fetch_bytes(url, *, accept=None, **kw):
+        seen["accept"] = accept
+        return b'{"head": {}, "boolean": true}'
+
+    monkeypatch.setattr(probes._fetch, "fetch_bytes", fake_fetch_bytes)
+    ev = probes.probe_sparql("https://portal.example")
+    assert ev is not None
+    assert seen["accept"] == "application/sparql-results+json"
+
+
 def test_probe_sparql_uses_hint_endpoint_on_other_host():
     fetch = _json_stub({
         "https://admin.portal.example/sparql": {"head": {}, "boolean": True}
