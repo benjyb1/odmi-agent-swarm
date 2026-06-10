@@ -246,8 +246,12 @@ Result: the finalised pairs in the phase2 tables plus an analysis JSONL under
    or vice versa; production (NULL experiment, `baseline`) resumes only its own
    rows, unchanged. Covered by `tests/test_resume_arm_scoping.py` (5 cases).
 
-Both arms draw on the same Claude rate limit, so they run in sequence within the
-experiment, not in parallel (the `EXPERIMENTS_PROTOCOL.md` section 10 constraint).
+The two arms are kept apart for **data isolation, not the rate limit**: the resume
+path is scoped by `experiment_id` + `condition_label` (requirement 3) so a chained
+run cannot inherit a baseline Researcher row, and per-arm cost attribution stays
+clean. The shared Claude Max budget is consumed linearly whether the arms overlap
+or not, so running them in sequence is a cleanliness choice, not a throughput one
+(`EXPERIMENTS_PROTOCOL.md` section 10).
 
 ## Change log
 

@@ -191,6 +191,21 @@ is executed; it has not been run yet.
 
 ## Change log
 
+- 2026-06-04: **split into EXP-6a (build the dataset) and EXP-6b (run the four-arm
+  judge)**, with the candidate set frozen into a pinned `exp6_candidates` table
+  before it is judged. This closes the snapshot hole: the old live `build_candidates`
+  read `phase2_researcher_runs` with "latest id wins" on every run, so a concurrent
+  dispatch could shift the set mid-judge (the EXP-6 / Malta-v2 collision). EXP-6b now
+  reads the frozen table by default (`--live` keeps the old builder for debugging).
+  Two sizing amendments, fixed before the run: (i) **all** natural MT+NL candidates
+  are kept rather than matching NAT-pass down to NAT-fail, buying free specificity
+  power at the cost of a larger but still ~120-candidate set; (ii) injected flips are
+  minted from existing FR/EE correct binary runs (no new dispatch) to a default
+  target of 35, an additive robustness stratum never folded into the primary J. New:
+  `scripts/build_nl_eval_pairs.py` (52 NL pairs, 26 `no` / 26 `yes`),
+  `scripts/build_exp6_candidates.py` (the freeze), the `exp6_candidates` table, the
+  `load_frozen_candidates` path in the harness, and `docs/EXPERIMENTS_EXP6_RUNBOOK.md`.
+  EXP-6a is built; the NL dispatch (the long step) and the EXP-6b judge run are pending.
 - 2026-06-03: created. Pre-registers EXP-6 (four-arm Verifier strategy
   signal-detection, frozen evidence, J primary). No run yet at commit time.
 - 2026-06-03 (later): **retargeted to Malta** under the new universal base-rate

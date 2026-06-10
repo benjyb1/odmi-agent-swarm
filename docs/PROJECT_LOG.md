@@ -162,6 +162,79 @@ the hunt: the per-country trusted lists load empty because the JSON files key on
 domains score 0.6 via the heuristic instead of 1.0.
 
 Tests: 523 passed, 13 skipped (was 496/13). Dashboard AppTests pass.
+## 2026-06-04 — Session 22: EXP-6 dataset (6a/6b split, frozen candidate table)
+
+Split EXP-6 into 6a (build the dataset) and 6b (run the four-arm judge), so the
+candidate set is frozen before it is judged. This also closes the snapshot hole
+that caused today's EXP-6 / Malta-v2 collision: the old `build_candidates` read
+`phase2_researcher_runs` live with "latest id wins", so a concurrent dispatch could
+shift the set mid-run.
+
+The frozen dataset lives in a new `exp6_candidates` table, one row per candidate,
+each pinning the `phase2_researcher_runs.id` it came from. Composition (medium
+target ~120): all committed, non-abstention MT (primary) and NL (secondary)
+Researcher answers, labelled should_pass / should_fail vs ODMI gold, plus 35
+injected label-flips minted from existing FR/EE correct binary runs (wrong by
+construction, robustness only, never folded into the primary J). Abstentions
+(`inconclusive` / `not_applicable`), no-gold pairs and no-run pairs are excluded;
+latest id wins so a finished v2 re-run is the one frozen.
+
+Built: `scripts/build_nl_eval_pairs.py` (52 NL pairs, 26 `no` / 26 `yes`,
+dimension-stratified, seed 20260603, the NL counterpart to the Malta builder);
+`scripts/build_exp6_candidates.py` (the freeze, idempotent per experiment_id);
+the `exp6_candidates` schema; `load_frozen_candidates` + a `--live` escape in
+`evaluation/verifier_strategies.py` so 6b reads the frozen table by default; and
+`docs/EXPERIMENTS_EXP6_RUNBOOK.md`, the page to hand an agent for "fill out the
+database for EXP-6a". Validated against this worktree's DB: 76 candidates so far
+(MT 40 = 13 fail / 27 pass, 35 FR/EE injected, NL pending its dispatch), evidence
+rows join cleanly, the freeze is idempotent.
+
+Two sizing amendments fixed before the run (logged in `EXPERIMENTS_VERIFIER.md`):
+keep all natural candidates rather than matching NAT-pass down (free specificity
+power), and source injected flips from FR/EE so they are additive and need no new
+dispatch. Honest limitation unchanged: natural should_fail lands around 23 even
+with NL, so the primary J carries wide Wilson intervals and the ranking is
+directional. Next: Benjy dispatches the NL worklist (the long step), re-runs the
+freeze, then EXP-6b judges the frozen set.
+
+---
+
+## 2026-06-04 — Session 21: concurrency is linear, not a hazard (D42)
+
+A knowledge correction, no code. Orchestrating agents kept refusing to run things
+at the same time, citing rate limits, soft limits and usage limits, and the
+protocol had the same fear written into it: `EXPERIMENTS_PROTOCOL.md` section 10
+said conditions "run in sequence within an experiment" because "firing six at once
+would just contend on one quota", and `EXPERIMENTS_CHAINING.md` cited it. Went
+through the protocol and fact-checked the claim.
+
+The shared-budget part is true: every call goes through one Claude Max budget via
+the proxy. The inference drawn from it was false. Concurrent calls consume that one
+budget **additively**, exactly as you would expect, with no super-linear penalty
+and no per-call slowdown. Below the limit, concurrency overlaps request latency and
+finishes sooner; at the limit, total time is bounded by the budget whether the work
+runs serially or together, so concurrency is neutral, never worse. There is no
+regime where serialising independent work is faster. The repo already half-knew
+this: the Session 9 probe (`scripts/probe_ratelimit.py`) found the proxy strips
+every `anthropic-ratelimit-*` header, so Max capacity is unobservable through this
+path, and D40 removed the cost soft limit because the figure never tracked real
+capacity. The "quota wall" misdiagnosis recorded under Session 20f is the same
+pattern: an environment bug read as an exhausted limit.
+
+What the fear should have been pointing at is **data isolation**, not throughput.
+Two arms of one experiment are kept apart so a shared resume path does not reuse
+one arm's Researcher rows for the other. The live EXP-6 / Malta-`v2` collision this
+session is the clean example: a verifier-strategy run rebuilds its candidate set
+from `phase2_researcher_runs` with "latest id wins", while a sibling agent rewrites
+those same Malta rows under `malta_baseline_v2`, so EXP-6's frozen candidate set
+mixes pre- and post-WAF evidence. That is a correctness problem with no rate-limit
+component, and sequencing for "quota" reasons would not have caught it while
+sequencing for resume-scope reasons does.
+
+Rewrote `EXPERIMENTS_PROTOCOL.md` section 10 (now "Execution and concurrency") and
+the `EXPERIMENTS_CHAINING.md` section 10 note, recorded D42 in `SPEC.md` with a
+change-log row. Next: this is a documentation and habit fix, so the test is whether
+future windows stop serialising independent analysis by reflex.
 
 ---
 
