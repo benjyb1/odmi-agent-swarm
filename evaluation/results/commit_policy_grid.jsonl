@@ -1,0 +1,8 @@
+{"country": "MT", "ceiling": 0.65, "n_pairs": 91, "committed": 18, "committed_correct": 16, "committed_wrong": 2, "deferred": 0, "deferred_correct": 0, "deferred_wrong": 0, "deferred_rate": 0.0}
+{"country": "MT", "ceiling": 0.7, "n_pairs": 91, "committed": 11, "committed_correct": 9, "committed_wrong": 2, "deferred": 7, "deferred_correct": 7, "deferred_wrong": 0, "deferred_rate": 0.3889}
+{"country": "MT", "ceiling": 0.75, "n_pairs": 91, "committed": 11, "committed_correct": 9, "committed_wrong": 2, "deferred": 7, "deferred_correct": 7, "deferred_wrong": 0, "deferred_rate": 0.3889}
+{"country": "MT", "ceiling": 0.8, "n_pairs": 91, "committed": 10, "committed_correct": 8, "committed_wrong": 2, "deferred": 8, "deferred_correct": 8, "deferred_wrong": 0, "deferred_rate": 0.4444}
+{"country": "NO", "ceiling": 0.65, "n_pairs": 145, "committed": 92, "committed_correct": 83, "committed_wrong": 9, "deferred": 0, "deferred_correct": 0, "deferred_wrong": 0, "deferred_rate": 0.0}
+{"country": "NO", "ceiling": 0.7, "n_pairs": 145, "committed": 89, "committed_correct": 82, "committed_wrong": 7, "deferred": 3, "deferred_correct": 1, "deferred_wrong": 2, "deferred_rate": 0.0326}
+{"country": "NO", "ceiling": 0.75, "n_pairs": 145, "committed": 88, "committed_correct": 81, "committed_wrong": 7, "deferred": 4, "deferred_correct": 2, "deferred_wrong": 2, "deferred_rate": 0.0435}
+{"country": "NO", "ceiling": 0.8, "n_pairs": 145, "committed": 87, "committed_correct": 81, "committed_wrong": 6, "deferred": 5, "deferred_correct": 2, "deferred_wrong": 3, "deferred_rate": 0.0543}

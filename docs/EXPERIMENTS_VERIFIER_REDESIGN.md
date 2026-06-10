@@ -226,18 +226,25 @@ commit is the binding pre-registration for stages 1 and 2.
 
 ---
 
-## 5. FROZEN KNOBS (fill at the end of stage 0, then commit)
+## 5. FROZEN KNOBS (frozen at the stage 0 gate)
 
 ```
-FROZEN 2026-MM-DD by <agent/session>, commit <sha of the freeze commit>
+FROZEN 2026-06-10 (this commit). Stage 0 replays run; values fixed before
+any stage 1 LLM call.
 
-ABSENCE_CEILING        = TBD   # from S0.2; {0.70, 0.75, 0.80}, ties to 0.75
-RECEIPTS_N             = TBD   # from S0.3; {2, 3, 4}
+ABSENCE_CEILING        = 0.65  # == FLOOR, i.e. NO special ceiling. S0.2
+                               # showed a higher ceiling is net-negative on
+                               # dev (see below). P3 lock 3 is DROPPED.
+RECEIPTS_N             = 2     # per the S0.3 rule, but lock 1 is PARKED, not
+                               # shipped: at N=2 it flags ~nothing (queries
+                               # already name the country); only the deferred
+                               # subject-term matcher would have teeth.
 UPLIFT_U               = 0.00  # fixed for stage 1; 0.10 is the stage 2
                                # candidate, armed only if confirm-precision
                                # >= 0.85 on DEV in stage 1 (n_confirm >= 20,
                                # else the uplift decision defers to stage 2)
-MATCHER                = v2 for all arms; v1 recorded per candidate
+MATCHER                = v2 (SHIPPED to production this commit); v1 recorded
+                         per candidate in stage 1
 PROVIDER               = diy (Serper), --no-cache, never auto
 MODEL                  = wrapper default (Sonnet), identical across arms
 SEED                   = 20260610 (any stratified draw in this experiment)
@@ -247,6 +254,62 @@ CANDIDATE_FILE         = evaluation/results/exp11_candidates.json (frozen
 
 Selection and confirmatory rules are already fixed in 6.7 and are part of
 the freeze.
+
+### Stage 0 results (2026-06-10)
+
+Three offline replays, all read-only, JSONL in `evaluation/results/`.
+
+**S0.1 matcher v2 -> SHIP (done, wired into `agents/verifier.py:139`).**
+`evaluation/replay_substring_v2.py` over 639 researcher quotes and 306
+verifier counter-quotes. On the researcher path (the gate that ships) v2
+rejects nothing v1 passed, and newly admits 8 quotes v1 was wrongly failing,
+all within-snippet ellipsis elisions (4 on correct answers, rescued from a
+false hard fail; 4 faithful-but-wrong, which the verdict logic handles), zero
+cross-snippet splices. On the verifier path v2 catches 1 junction-stitch
+splice (`cross_snippet_only`) that v1 waved through, on a correct answer.
+Two cases hand-audited against raw snippets (PT4 MT: fragments at offsets 0
+and 413 of one snippet, a real elision; PT41 NO: a quote in no single snippet
+but present across the join, a true splice). Ship rule met: every flip
+explainable, no v2 pass admits a quote absent from every individual snippet
+(true by construction). 13 new unit tests in `tests/test_substring_v2.py`,
+the 4 pinned gate tests still pass.
+
+**S0.2 absence ceiling -> DROP (freeze at floor).**
+`evaluation/replay_commit_policy.py`, (pair, attempt) grain, MT+NO. Raising
+the absence ceiling is net-negative: on Malta a 0.70 ceiling defers 7 of 8
+absence commits and all 7 are CORRECT (zero wrong caught), because Malta's
+correct `no` answers commit in the 0.65-0.70 band; the 2 Malta committed-wrong
+are not even absence-class. Norway has only 5 absence commits, so the lever
+barely moves (committed-wrong 9 -> 7 at a cost of 1-2 correct). No ceiling
+clears the 5-point deferral bar on both countries. Conclusion: the blanket
+confidence ceiling destroys correct absence answers to catch almost no wrong
+ones. Absence precision must come from the corroboration route (P2,
+`absence_corroborated`), measured live in stage 1, not from a confidence
+ceiling.
+
+**S0.3 absence receipts -> PARK lock 1 as specified.**
+`evaluation/replay_absence_receipts.py`, 122 absence answers (MT 78, NO 44).
+Every Malta absence answer carries exactly 3 country/portal-targeted queries
+(the country is in the search template), so the country-naming check is
+near-inert: N=2 flags 1.6% of correct and 0% of wrong (catches nothing); N=3
+discriminates (wrong 23% vs correct 11%) but breaches the 10%-correct bar.
+RECEIPTS_N is frozen at 2 per the rule, but lock 1 is not wired into stage 2:
+"did you search the country" is always yes, so the under-search signal needs
+the deferred subject-term matcher to be worth anything.
+
+**P6 audit -> confirmed.** `verifier_confidence` is written to the DB,
+printed in one log line, and shown to the Adjudicator as prose. No
+`if`/`>=`/threshold branches on it anywhere in `scripts/run_coordinator.py`
+or the adjudicator. It gates nothing today; under the redesign it stays as
+stored telemetry. No experiment needed.
+
+**Net effect on the stage 1 design.** P4 is now production. P3 collapses to
+the corroboration route alone (the ceiling and the receipts lock are both
+parked on dev evidence), which sharpens the stage 1 question: does the P2
+confirmation channel earn its place, given that neither static absence lock
+survived contact with the data? Arms and endpoints in section 6 are
+unchanged; the absence-policy simulation in 6.7 now compares the corroborated
+route against the floor alone, not against a ceiling.
 
 ---
 
@@ -675,3 +738,12 @@ Built by this experiment:
 
 - 2026-06-10: created. Design draft; becomes binding at the section 5
   freeze commit. No stage has run.
+- 2026-06-10: **stage 0 run and gate passed; this commit is the binding
+  pre-registration for stages 1 and 2.** Built `substring.contains_v2` +
+  `tests/test_substring_v2.py` (13 tests), `evaluation/_replay_common.py`,
+  and the three replay scripts. Results in section 5: P4 matcher v2 shipped
+  to production (`agents/verifier.py:139`); ABSENCE_CEILING dropped (frozen at
+  the 0.65 floor, S0.2 showed it net-negative on dev); RECEIPTS_N frozen at 2
+  but lock 1 parked (S0.3, near-inert as specified); P6 confirmed inert. The
+  knobs are frozen. Next: stage 1 prerequisites (tristate build + the NL
+  pinned dispatch), which need quota and are not started.

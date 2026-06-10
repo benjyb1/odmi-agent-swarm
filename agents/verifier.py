@@ -159,17 +159,27 @@ def _run_substring_check(
     snippet path.
     """
     # --- Snippet path (preferred when snippets are available) ---
+    # P4 (EXP-11, shipped 2026-06-10): match per snippet with the
+    # ellipsis-aware v2 matcher rather than against a joined corpus. v1
+    # let a quote stitched across the junction of two snippets pass
+    # (the "\n\n" join collapsed under normalisation) and wrongly failed
+    # legitimate within-snippet elisions. The S0.1 replay over every
+    # stored run confirmed v2 rejects nothing v1 passed on this path,
+    # admits only within-snippet elisions, and catches cross-snippet
+    # splices. See docs/EXPERIMENTS_VERIFIER_REDESIGN.md S0.1.
     if researcher_snippets:
-        corpus = "\n\n".join(s for s in researcher_snippets if s)
-        if substring.contains(corpus, evidence_quote):
+        match = substring.contains_v2(researcher_snippets, evidence_quote)
+        if match.matched:
             return (
                 "pass",
-                "matched against the snippets the Researcher read",
+                f"matched against snippet {match.snippet_index} the "
+                f"Researcher read ({match.n_fragments} fragment(s))",
                 None,
             )
         return (
             "fail",
-            "quote not present in the snippets the Researcher read",
+            f"quote not present in any single snippet the Researcher "
+            f"read (v2 reason: {match.reason})",
             None,
         )
 
