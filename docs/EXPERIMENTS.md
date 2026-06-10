@@ -21,6 +21,7 @@ run) · `running` · `done`.
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
 | EXP-9 | Model variants (Family 3) | running (2026-06-09) | Haiku / Sonnet / Opus / tiered / Mistral; MT primary, NL secondary | dispatching all five arms over the Malta 60 via `scripts/run_exp9_model_variants.sh`, knobs pinned (provider diy, cold cache, disprove, 5 results, 3 retries, full prompt, unchained), only the model varies. Mistral-large-latest added as a cross-family arm. Caveat: overlaps the Norway dev sweep, so the latency endpoint may be contention-inflated; token-cost and accuracy unaffected. |
 | EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | unblocked; 60 finalised Malta pairs available (batches exp6_malta + malta_baseline), failure taxonomy drafted (search-empty, resume-orphan, abstention, conservative-FN, FP); floor sweep is free |
+| EXP-11 | Verifier redesign: tristate verdict, gated extremes, absence policy | planned | stage 0 free replays (knob freeze); stage 1 classifier ladder, MT+NO dev / NL confirmatory / FR-augmented robustness; stage 2 end-to-end paired dispatch on SE | pre-registration and runbook in `EXPERIMENTS_VERIFIER_REDESIGN.md`; proposals and diagnosis in `VERIFIER_REDESIGN.md`; takes over the parked EXP-6 question as a package-vs-incumbent test; the NL pinned dispatch is its prerequisite; stage 0 interacts with EXP-10 Phase B (floor sweep), coordinate before freezing knobs |
 
 ---
 
@@ -275,6 +276,31 @@ balanced (R4) is what makes the false-positive check meaningful.
 
 Harness: `evaluation/malta_failure_audit.py` (to build). Phase A runs incrementally
 on whatever Malta pairs exist; the floor sweep needs no quota. Tavily-independent.
+
+Result: pending.
+
+## EXP-11: Verifier redesign evaluation (planned)
+
+Pre-registered and operationalised in `docs/EXPERIMENTS_VERIFIER_REDESIGN.md`,
+which is written so a fresh agent can run the whole programme from that file
+alone. The proposals under test (tristate verdict with deterministically gated
+extremes, symmetric burden via confirmation probes, absence commit policy,
+quote-integrity matcher v2, band recompute, confidence demotion) and the Malta
+diagnosis behind them are in `docs/VERIFIER_REDESIGN.md`.
+
+Three gated stages: stage 0 is free offline replays that ship the matcher fix
+and freeze the policy knobs; stage 1 is a frozen-evidence classifier ladder
+(arms: disprove incumbent, tristate, tristate+probes, blind; gating applied as
+analysis columns) selecting on MT+NO dev strata and confirming once on NL,
+with the FR augmented flips as robustness; stage 2 is an end-to-end paired
+dispatch on Sweden (untouched, no-share 0.22) deciding D45. Primary endpoint
+Youden's J (refute binarised as fail); McNemar exact, Holm over the dev
+ladder; adoption rules fixed before any run.
+
+Interaction note: EXP-10 Phase B sweeps the D37 floor on the same stored
+confidences that EXP-11 stage 0 uses to freeze the absence ceiling. Whichever
+runs second inherits the other's adopted value; do not run the two knob
+decisions independently.
 
 Result: pending.
 

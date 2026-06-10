@@ -304,11 +304,18 @@ categories themselves (a final-attempt `refute` adjudicates; the Adjudicator
 input gains the verified/unverified flag per attempt,
 `agents/prompts/adjudicator.py:151`), not by a confidence threshold.
 
-## 10. Measurement: EXP-10, on the EXP-6 apparatus
+## 10. Measurement: EXP-11, on the EXP-6 apparatus
+
+Superseded in detail by `docs/EXPERIMENTS_VERIFIER_REDESIGN.md` (2026-06-10),
+the operational pre-registration and runbook for the staged programme
+(stage 0 offline replays and knob freeze, stage 1 classifier ladder, stage 2
+end-to-end dispatch). That file is the authority on arms, endpoints, and
+adoption rules; this section stays as the design rationale. Numbered EXP-11
+because EXP-10 is the Malta failure-mode audit.
 
 The EXP-6 harness (`evaluation/verifier_strategies.py`) already implements
 frozen-evidence paired arms, Youden's J, MCC, balanced accuracy, Wilson CIs,
-and Holm-corrected exact McNemar (`:788`, `:864`). EXP-10 reuses it with
+and Holm-corrected exact McNemar (`:788`, `:864`). EXP-11 reuses it with
 these amendments, pre-registered in a new `docs/EXPERIMENTS_VERIFIER_REDESIGN.md`
 before any run, registry id `verifier_tristate_v1` (D27).
 
