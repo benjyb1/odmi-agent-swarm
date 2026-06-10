@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" font-family="-apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#374151"/>
+    </marker>
+    <marker id="arrowAmber" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#b45309"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#15803d"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="720" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="64" y="52" font-size="30" font-weight="700" fill="#111827">Agency at the swarm level, fixed pipelines inside</text>
+
+  <!-- Legend -->
+  <g transform="translate(64,74)">
+    <rect x="0" y="0" width="22" height="16" rx="3" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="30" y="13" font-size="15" fill="#374151">LLM call</text>
+    <rect x="140" y="0" width="22" height="16" rx="3" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="170" y="13" font-size="15" fill="#374151">deterministic Python</text>
+  </g>
+
+  <!-- ===================== PANEL A: THE SWARM ===================== -->
+  <text x="64" y="150" font-size="15" font-weight="700" fill="#6b7280" letter-spacing="1">THE SWARM</text>
+
+  <!-- retry arc (Adjudicator -> Researcher) -->
+  <path d="M 745,170 C 745,134 200,134 200,170" fill="none" stroke="#374151" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="472" y="126" font-size="14" fill="#374151" text-anchor="middle">retry: force diverging queries</text>
+
+  <!-- swarm boxes -->
+  <g font-size="17" font-weight="600" fill="#111827" text-anchor="middle">
+    <rect x="100" y="170" width="200" height="58" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="200" y="205">Researcher</text>
+
+    <rect x="380" y="170" width="190" height="58" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="475" y="205">Verifier</text>
+
+    <rect x="650" y="170" width="190" height="58" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="745" y="205">Adjudicator</text>
+
+    <rect x="920" y="170" width="190" height="58" rx="8" fill="#dcfce7" stroke="#15803d" stroke-width="1.5"/>
+    <text x="1015" y="198" fill="#14532d">Commit</text>
+    <text x="1015" y="216" font-size="12" font-weight="400" fill="#15803d">conf &#8805; 0.65</text>
+  </g>
+
+  <!-- swarm arrows -->
+  <g stroke="#374151" stroke-width="2" fill="none">
+    <line x1="300" y1="199" x2="372" y2="199" marker-end="url(#arrow)"/>
+    <line x1="570" y1="199" x2="642" y2="199" marker-end="url(#arrow)"/>
+    <line x1="840" y1="199" x2="912" y2="199" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- abstain exit -->
+  <line x1="745" y1="228" x2="745" y2="266" stroke="#b45309" stroke-width="2" marker-end="url(#arrowAmber)"/>
+  <rect x="600" y="266" width="290" height="40" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+  <text x="745" y="291" font-size="15" font-weight="600" fill="#92400e" text-anchor="middle">Abstain: inconclusive / conf &lt; 0.65</text>
+
+  <!-- expand connector -->
+  <path d="M 200,228 L 200,360" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3 4"/>
+  <path d="M 1110,228 L 1110,360" fill="none" stroke="#9ca3af" stroke-width="1.5" stroke-dasharray="3 4"/>
+
+  <!-- divider -->
+  <line x1="64" y1="370" x2="1216" y2="370" stroke="#e5e7eb" stroke-width="1.5"/>
+
+  <!-- ===================== PANEL B: FIXED PIPELINE ===================== -->
+  <text x="64" y="408" font-size="15" font-weight="700" fill="#6b7280" letter-spacing="1">A FIXED PIPELINE: THE MODEL NEVER CHOOSES WHAT TO DO NEXT</text>
+
+  <!-- pipeline boxes -->
+  <g text-anchor="middle">
+    <!-- 1 catalogue -->
+    <rect x="80" y="432" width="200" height="72" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="180" y="462" font-size="16" font-weight="600" fill="#111827">Catalogue check</text>
+    <text x="180" y="484" font-size="12" fill="#6b7280">computable from</text>
+    <text x="180" y="499" font-size="12" fill="#6b7280">harvested metadata?</text>
+
+    <!-- 2 query gen (LLM) -->
+    <rect x="328" y="432" width="190" height="72" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="423" y="462" font-size="16" font-weight="600" fill="#1e3a8a">Query generation</text>
+    <text x="423" y="486" font-size="12" fill="#1d4ed8">small LLM call &#8594;</text>
+    <text x="423" y="501" font-size="12" fill="#1d4ed8">2&#8211;3 search queries</text>
+
+    <!-- 3 search (det) -->
+    <rect x="566" y="432" width="190" height="72" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="661" y="462" font-size="16" font-weight="600" fill="#111827">Search</text>
+    <text x="661" y="486" font-size="12" fill="#6b7280">trusted domains,</text>
+    <text x="661" y="501" font-size="12" fill="#6b7280">then wide fallback</text>
+
+    <!-- 4 reasoning (LLM) -->
+    <rect x="804" y="432" width="190" height="72" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="899" y="462" font-size="16" font-weight="600" fill="#1e3a8a">Reasoning call</text>
+    <text x="899" y="486" font-size="12" fill="#1d4ed8">one LLM call over</text>
+    <text x="899" y="501" font-size="12" fill="#1d4ed8">all snippets at once</text>
+
+    <!-- 5 validation (det) -->
+    <rect x="1042" y="432" width="174" height="72" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+    <text x="1129" y="462" font-size="16" font-weight="600" fill="#111827">Validation</text>
+    <text x="1129" y="486" font-size="12" fill="#6b7280">URL live, trusted,</text>
+    <text x="1129" y="501" font-size="12" fill="#6b7280">cited in snippets</text>
+  </g>
+
+  <!-- pipeline arrows -->
+  <g stroke="#374151" stroke-width="2" fill="none">
+    <line x1="280" y1="468" x2="320" y2="468" marker-end="url(#arrow)"/>
+    <line x1="518" y1="468" x2="558" y2="468" marker-end="url(#arrow)"/>
+    <line x1="756" y1="468" x2="798" y2="468" marker-end="url(#arrow)"/>
+    <line x1="994" y1="468" x2="1036" y2="468" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- catalogue short-circuit exit -->
+  <line x1="180" y1="504" x2="180" y2="556" stroke="#15803d" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <rect x="40" y="556" width="280" height="56" rx="8" fill="#dcfce7" stroke="#15803d" stroke-width="1.5"/>
+  <text x="180" y="580" font-size="14" font-weight="600" fill="#14532d" text-anchor="middle">Deterministic answer, conf 1.0</text>
+  <text x="180" y="600" font-size="13" fill="#15803d" text-anchor="middle">zero LLM tokens, agent bypassed</text>
+
+  <!-- footnote -->
+  <text x="380" y="585" font-size="15" fill="#374151">Two LLM calls per run, both single-shot. No interleaving.</text>
+  <text x="380" y="608" font-size="15" fill="#374151">The model reasons once over a fixed evidence bundle, then commits.</text>
+</svg>
