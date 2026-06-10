@@ -105,6 +105,12 @@ Rules:
   than guessing a label to break the tie. An honest 'inconclusive' is
   preferred over a low-confidence commit. Do not invent support for a
   label that the evidence does not provide.
+- Absence of evidence is not evidence of "no". Only answer a negative
+  label (such as 'no') when the evidence positively shows the thing is
+  absent or false (for example a portal page that states the feature
+  does not exist). If the agents simply failed to find evidence that
+  the thing is present, that is 'inconclusive', not 'no'. Never convert
+  "we could not find it" into "no".
 
 Read the full history below carefully. Pay particular attention to:
 - Whether the substring check passed for each Researcher claim.
