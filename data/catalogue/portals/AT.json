@@ -1,0 +1,24 @@
+{
+  "country_code": "AT",
+  "country_name": "Austria",
+  "portal_base": "https://www.data.gv.at",
+  "stack": "piveau",
+  "stack_version": null,
+  "harvest_route": "piveau_json",
+  "dcat_catalog_url": null,
+  "native_api_url": "https://www.data.gv.at/api/hub/search/search?filters=dataset&limit={page_size}&page={page}",
+  "pagination": "piveau_page",
+  "page_size": 100,
+  "request_delay_s": 1.0,
+  "total_datasets_hint": 70961,
+  "licence_field": "distribution",
+  "robots_note": "No robots.txt reachable at probe time. Throttle, descriptive UA.",
+  "verified_at": "2026-06-10",
+  "discovery_method": "auto",
+  "discovery_evidence": "https://www.data.gv.at/api/hub/search/search?filters=dataset&limit=1 -> piveau hub-search, count=70961",
+  "caveats": [
+    "conformance_synthesised_from_json",
+    "feed_omits_download_url"
+  ],
+  "notes": "Auto-discovered route (piveau): piveau hub-search, count=70961. Sample of 100 datasets: licence 100%, access-URL 100%, download-URL 0%, format 100%. Caveats: conformance_synthesised_from_json, feed_omits_download_url. data.europa.eu not used (D24)."
+}

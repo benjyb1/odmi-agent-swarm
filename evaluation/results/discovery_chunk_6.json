@@ -1,0 +1,145 @@
+[
+  {
+    "country_code": "RO",
+    "country_name": "Romania",
+    "portal_base": "https://data.gov.ro",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "RS",
+    "country_name": "Serbia",
+    "portal_base": "https://data.gov.rs",
+    "status": "verified",
+    "chosen": {
+      "route": "udata_json",
+      "evidence": {
+        "stack": "udata",
+        "endpoint": "https://data.gov.rs/api/1/datasets/?page_size=1",
+        "detail": "udata /api/1/datasets/ total=3437"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 1.0,
+        "with_distributions": 99,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 1.0,
+        "distribution_licence_share": 0.99
+      },
+      "caveats": [
+        "rdf_feed_omits_dct_license",
+        "conformance_synthesised_from_json"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "SE",
+    "country_name": "Sweden",
+    "portal_base": "https://www.dataportal.se",
+    "status": "verified",
+    "chosen": {
+      "route": "sparql_rdf",
+      "evidence": {
+        "stack": "sparql",
+        "endpoint": "https://admin.dataportal.se/sparql?query=ASK%20%7B%20%3Fs%20a%20%3Chttp%3A//www.w3.org/ns/dcat%23Dataset%3E%20%7D&format=json",
+        "detail": "SPARQL ASK dcat:Dataset returned true"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 1.0,
+        "with_distributions": 100,
+        "download_url_share": 0.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 1.0
+      },
+      "caveats": [
+        "feed_omits_download_url"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "SI",
+    "country_name": "Slovenia",
+    "portal_base": "https://podatki.gov.si",
+    "status": "verified",
+    "chosen": {
+      "route": "ckan_json",
+      "evidence": {
+        "stack": "ckan",
+        "endpoint": "https://podatki.gov.si/api/3/action/package_search?rows=1",
+        "detail": "package_search success=true, count=8878"
+      },
+      "stats": {
+        "n_datasets": 500,
+        "licence_share": 0.0,
+        "with_distributions": 499,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 0.0
+      },
+      "caveats": [
+        "conformance_synthesised_from_json",
+        "no_licence_metadata_on_any_route"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "SK",
+    "country_name": "Slovakia",
+    "portal_base": "https://data.gov.sk",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "UA",
+    "country_name": "Ukraine",
+    "portal_base": "https://data.gov.ua",
+    "status": "verified",
+    "chosen": {
+      "route": "ckan_json",
+      "evidence": {
+        "stack": "ckan",
+        "endpoint": "https://data.gov.ua/api/3/action/package_search?rows=1",
+        "detail": "package_search success=true, count=36804"
+      },
+      "stats": {
+        "n_datasets": 500,
+        "licence_share": 1.0,
+        "with_distributions": 500,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 0.998,
+        "dataset_licence_share": 1.0,
+        "distribution_licence_share": 0.0
+      },
+      "caveats": [
+        "rdf_feed_omits_dct_license",
+        "conformance_synthesised_from_json"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  }
+]

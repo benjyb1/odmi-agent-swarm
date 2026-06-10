@@ -1,0 +1,20 @@
+{
+  "country_code": "CZ",
+  "country_name": "Czechia",
+  "portal_base": "https://data.gov.cz",
+  "stack": "sparql",
+  "stack_version": null,
+  "harvest_route": "sparql_rdf",
+  "dcat_catalog_url": null,
+  "native_api_url": "https://data.gov.cz/sparql",
+  "pagination": "sparql_offset",
+  "page_size": 100,
+  "request_delay_s": 1.0,
+  "licence_field": "distribution",
+  "robots_note": "robots.txt: Disallow: /; Disallow: /; Disallow: /; Disallow: /; Disallow: /; Disallow: /. Throttle, descriptive UA.",
+  "verified_at": "2026-06-10",
+  "discovery_method": "auto",
+  "discovery_evidence": "https://data.gov.cz/sparql?query=ASK%20%7B%20%3Fs%20a%20%3Chttp%3A//www.w3.org/ns/dcat%23Dataset%3E%20%7D&format=json -> SPARQL ASK dcat:Dataset returned true",
+  "caveats": [],
+  "notes": "Auto-discovered route (sparql): SPARQL ASK dcat:Dataset returned true. Sample of 100 datasets: licence 98%, access-URL 100%, download-URL 94%, format 94%. data.europa.eu not used (D24)."
+}

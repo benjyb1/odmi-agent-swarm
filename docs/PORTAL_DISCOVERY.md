@@ -114,10 +114,69 @@ uv run python -m evaluation.discovery_ceiling \
 A discovery run samples one page per candidate route; it never performs a full
 harvest. Politeness: 1s between probes, 2s between countries.
 
-## Results (2026-06-10 run)
+## Results (2026-06-10)
 
-PENDING: filled from `evaluation/results/discovery_report.json` when the
-36-country run completes.
+Two stages, both with one-page samples and no full harvests.
+
+**Stage 1, the discovery experiment** (pre-adapter probe set, frozen
+code, all 36 seeds): 14 verified, 5 recognised stacks with no adapter
+(AT piveau; CZ, HR, SE sparql; NO fdk), 17 failed. The prober re-found
+the hand-authored FR, HU and NL routes exactly, including HU's
+rdf-omits-licence fallback, validating the fingerprinting against known
+ground truth. DE was unreachable from this network at probe time and
+re-verified once govdata.de came back.
+
+**Stage 2, adapters built in response**: `sparql_rdf` (CZ, HR, SE) and
+`piveau_json` (AT) convert four of the five flagged countries; NO's
+`fdk_rdf` adapter lands from its own branch. Final state, from the
+merged `evaluation/results/discovery_report.json`
+(`uv run python -m evaluation.discovery_table`):
+
+| CC | Portal | Outcome | Route | Notes |
+|---|---|---|---|---|
+| AT | data.gv.at | verified | piveau_json | relaunched on piveau; synthesised conformance, no downloadURL |
+| BE | data.gov.be | failed | - | custom Drupal site, no recognisable catalogue API |
+| BG | data.egov.bg | failed | - | WAF blocks this client outright (403 on every path) |
+| CH | opendata.swiss | verified | dcat_rdf | clean feed, 100% licensed sample |
+| CY | data.gov.cy | failed | - | malformed feed: dcat:Distribution used as a predicate at unresolvable URIs |
+| CZ | data.gov.cz | verified | sparql_rdf | 98% licensed sample |
+| DE | ckan.govdata.de | verified | dcat_rdf | hand-authored registry re-found; host intermittently unreachable |
+| DK | opendata.dk | failed | - | custom stack, no recognisable API |
+| EE | andmed.eesti.ee | failed | - | known IP-level 403 (matches the hand-authored registry's note) |
+| EL | data.gov.gr | verified | dcat_rdf | 96% licensed sample |
+| ES | datos.gob.es | failed | - | custom stack; no standard CKAN/feed signature answered |
+| FI | avoindata.fi | verified | ckan_json | |
+| FR | data.gouv.fr | verified | dcat_rdf | hand-authored registry re-found |
+| HR | data.gov.hr | verified | sparql_rdf | no licence metadata in the graph (caveat) |
+| HU | kozadatportal.hu | verified | ckan_json | hand-authored route re-found incl. licence fallback |
+| IE | data.gov.ie | verified | ckan_json | RDF feed omits dct:license (the HU pattern, auto-detected) |
+| IS | opingogn.is | failed | - | CKAN retired; redirects into island.is static content |
+| IT | dati.gov.it | failed | - | custom stack, no recognisable API |
+| LT | data.gov.lt | failed | - | custom stack (Spinta), no recognisable API |
+| LU | data.public.lu | verified | dcat_rdf | uData site catalogue, the FR pattern |
+| LV | data.gov.lv | verified | ckan_json | |
+| ME | data.gov.me | verified | ckan_json | RDF feed omits dct:license |
+| MK | data.gov.mk | failed | - | unreachable from this network |
+| MT | data.gov.mt | failed | - | WAF; portal.data.gov.mt 403s API traffic (known from the Malta dispatch) |
+| NL | data.overheid.nl | verified | ckan_json | hand-authored route re-found |
+| NO | data.norge.no | needs_new_adapter | (fdk_rdf) | adapter ready on the parallel Norway branch |
+| PL | dane.gov.pl | failed | - | custom stack, no recognisable API |
+| PT | dados.gov.pt | verified | dcat_rdf | uData site catalogue |
+| RO | data.gov.ro | failed | - | unreachable (known foreign-datacentre filtering / downtime; hand registry retained) |
+| RS | data.gov.rs | verified | udata_json | RDF feed omits dct:license |
+| SE | dataportal.se | verified | sparql_rdf | EntryScape SPARQL on admin host; no downloadURL in graph |
+| SI | podatki.gov.si | verified | ckan_json | no licence metadata on any route (caveat) |
+| SK | data.gov.sk | failed | - | migrating to data.slovensko.sk, an SPA with no public API yet |
+| UA | data.gov.ua | verified | ckan_json | RDF feed omits dct:license |
+| AL / BA | opendata.gov.al / odp.iddeea.gov.ba | failed | - | live sites, no recognisable catalogue API |
+
+Totals: **19 verified routes** (15 newly emitted registries + the four
+re-found hand-authored ones), 1 awaiting its adapter from another branch
+(NO), 16 with no deterministic route. Registry coverage went from 6 to 21
+countries on this branch (22 at the Norway merge). Per
+`evaluation/discovery_ceiling.py`, the 15 newly covered countries each
+gain ~6.3 to 6.7 points of open-web accuracy ceiling (mean +6.5,
+83.0% to 89.4%), levelling them with the hand-authored six.
 
 ## Limitations
 

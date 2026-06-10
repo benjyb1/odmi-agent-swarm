@@ -1,0 +1,20 @@
+{
+  "country_code": "PT",
+  "country_name": "Portugal",
+  "portal_base": "https://dados.gov.pt",
+  "stack": "dcat_feed",
+  "stack_version": null,
+  "harvest_route": "dcat_rdf",
+  "dcat_catalog_url": "https://dados.gov.pt/api/1/site/catalog.ttl?page={page}&page_size={page_size}",
+  "native_api_url": null,
+  "pagination": "hydra",
+  "page_size": 100,
+  "request_delay_s": 1.0,
+  "licence_field": "distribution",
+  "robots_note": "No robots.txt reachable at probe time. Throttle, descriptive UA.",
+  "verified_at": "2026-06-10",
+  "discovery_method": "auto",
+  "discovery_evidence": "https://dados.gov.pt/api/1/site/catalog.ttl?page=1&page_size=10 -> RDF feed parsed (turtle), 10 dcat:Dataset on page 1",
+  "caveats": [],
+  "notes": "Auto-discovered route (dcat_feed): RDF feed parsed (turtle), 10 dcat:Dataset on page 1. Sample of 100 datasets: licence 84%, access-URL 100%, download-URL 100%, format 100%. data.europa.eu not used (D24)."
+}

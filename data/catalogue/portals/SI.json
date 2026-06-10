@@ -12,7 +12,7 @@
   "request_delay_s": 1.0,
   "total_datasets_hint": 8878,
   "licence_field": "dataset",
-  "robots_note": "",
+  "robots_note": "robots.txt: Crawl-delay: 10; Disallow: /api/1/; Disallow: /api/2/; Disallow: /api/3/; Disallow: /api/action/. Throttle, descriptive UA.",
   "verified_at": "2026-06-10",
   "discovery_method": "auto",
   "discovery_evidence": "https://podatki.gov.si/api/3/action/package_search?rows=1 -> package_search success=true, count=8878",

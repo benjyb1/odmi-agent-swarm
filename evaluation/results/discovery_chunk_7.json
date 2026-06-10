@@ -1,0 +1,92 @@
+[
+  {
+    "country_code": "AT",
+    "country_name": "Austria",
+    "portal_base": "https://www.data.gv.at",
+    "status": "verified",
+    "chosen": {
+      "route": "piveau_json",
+      "evidence": {
+        "stack": "piveau",
+        "endpoint": "https://www.data.gv.at/api/hub/search/search?filters=dataset&limit=1",
+        "detail": "piveau hub-search, count=70961"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 1.0,
+        "with_distributions": 100,
+        "download_url_share": 0.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 1.0
+      },
+      "caveats": [
+        "conformance_synthesised_from_json",
+        "feed_omits_download_url"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "CZ",
+    "country_name": "Czechia",
+    "portal_base": "https://data.gov.cz",
+    "status": "verified",
+    "chosen": {
+      "route": "sparql_rdf",
+      "evidence": {
+        "stack": "sparql",
+        "endpoint": "https://data.gov.cz/sparql?query=ASK%20%7B%20%3Fs%20a%20%3Chttp%3A//www.w3.org/ns/dcat%23Dataset%3E%20%7D&format=json",
+        "detail": "SPARQL ASK dcat:Dataset returned true"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 0.98,
+        "with_distributions": 98,
+        "download_url_share": 0.9387755102040817,
+        "access_url_share": 1.0,
+        "format_share": 0.9387755102040817,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 0.98
+      },
+      "caveats": []
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "HR",
+    "country_name": "Croatia",
+    "portal_base": "https://data.gov.hr",
+    "status": "verified",
+    "chosen": {
+      "route": "sparql_rdf",
+      "evidence": {
+        "stack": "sparql",
+        "endpoint": "https://data.gov.hr/sparql?query=ASK%20%7B%20%3Fs%20a%20%3Chttp%3A//www.w3.org/ns/dcat%23Dataset%3E%20%7D&format=json",
+        "detail": "SPARQL ASK dcat:Dataset returned true"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 0.0,
+        "with_distributions": 100,
+        "download_url_share": 0.0,
+        "access_url_share": 0.99,
+        "format_share": 0.86,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 0.0
+      },
+      "caveats": [
+        "feed_omits_download_url",
+        "no_licence_metadata_on_any_route"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  }
+]

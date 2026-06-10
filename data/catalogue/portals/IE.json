@@ -12,7 +12,7 @@
   "request_delay_s": 1.0,
   "total_datasets_hint": 22251,
   "licence_field": "dataset",
-  "robots_note": "",
+  "robots_note": "robots.txt: Disallow: /api/; Disallow: */dataset/*?*api=; Disallow: */organization/*?*api=; Crawl-Delay: 10. Throttle, descriptive UA.",
   "verified_at": "2026-06-10",
   "discovery_method": "auto",
   "discovery_evidence": "https://data.gov.ie/api/3/action/package_search?rows=1 -> package_search success=true, count=22251",

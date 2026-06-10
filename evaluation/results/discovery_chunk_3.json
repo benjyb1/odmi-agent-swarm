@@ -1,0 +1,144 @@
+[
+  {
+    "country_code": "ES",
+    "country_name": "Spain",
+    "portal_base": "https://datos.gob.es",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "FI",
+    "country_name": "Finland",
+    "portal_base": "https://www.avoindata.fi",
+    "status": "verified",
+    "chosen": {
+      "route": "ckan_json",
+      "evidence": {
+        "stack": "ckan",
+        "endpoint": "https://www.avoindata.fi/data/api/3/action/package_search?rows=1",
+        "detail": "package_search success=true, count=2524, prefix '/data'"
+      },
+      "stats": {
+        "n_datasets": 500,
+        "licence_share": 1.0,
+        "with_distributions": 489,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 0.8343558282208589,
+        "dataset_licence_share": 1.0,
+        "distribution_licence_share": 0.0
+      },
+      "caveats": [
+        "conformance_synthesised_from_json"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "FR",
+    "country_name": "France",
+    "portal_base": "https://www.data.gouv.fr",
+    "status": "verified",
+    "chosen": {
+      "route": "dcat_rdf",
+      "evidence": {
+        "stack": "dcat_feed",
+        "endpoint": "https://www.data.gouv.fr/catalog.ttl?page=1",
+        "detail": "RDF feed parsed (turtle), 100 dcat:Dataset on page 1"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 0.62,
+        "with_distributions": 85,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 0.62
+      },
+      "caveats": []
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "HR",
+    "country_name": "Croatia",
+    "portal_base": "https://data.gov.hr",
+    "status": "needs_new_adapter",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [
+      "sparql"
+    ],
+    "error": null
+  },
+  {
+    "country_code": "HU",
+    "country_name": "Hungary",
+    "portal_base": "https://kozadatportal.hu",
+    "status": "verified",
+    "chosen": {
+      "route": "ckan_json",
+      "evidence": {
+        "stack": "ckan",
+        "endpoint": "https://kozadatportal.hu/api/3/action/package_search?rows=1",
+        "detail": "package_search success=true, count=2283"
+      },
+      "stats": {
+        "n_datasets": 500,
+        "licence_share": 1.0,
+        "with_distributions": 500,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 1.0,
+        "distribution_licence_share": 0.0
+      },
+      "caveats": [
+        "rdf_feed_omits_dct_license",
+        "conformance_synthesised_from_json"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "IE",
+    "country_name": "Ireland",
+    "portal_base": "https://data.gov.ie",
+    "status": "verified",
+    "chosen": {
+      "route": "ckan_json",
+      "evidence": {
+        "stack": "ckan",
+        "endpoint": "https://data.gov.ie/api/3/action/package_search?rows=1",
+        "detail": "package_search success=true, count=22251"
+      },
+      "stats": {
+        "n_datasets": 500,
+        "licence_share": 0.996,
+        "with_distributions": 498,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 0.9959839357429718,
+        "dataset_licence_share": 0.996,
+        "distribution_licence_share": 0.0
+      },
+      "caveats": [
+        "rdf_feed_omits_dct_license",
+        "conformance_synthesised_from_json"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  }
+]

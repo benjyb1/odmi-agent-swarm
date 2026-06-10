@@ -11,7 +11,7 @@
   "page_size": 100,
   "request_delay_s": 1.0,
   "licence_field": "distribution",
-  "robots_note": "",
+  "robots_note": "No robots.txt reachable at probe time. Throttle, descriptive UA.",
   "verified_at": "2026-06-10",
   "discovery_method": "auto",
   "discovery_evidence": "https://data.public.lu/catalog.rdf?page=1 -> RDF feed parsed (xml), 100 dcat:Dataset on page 1",

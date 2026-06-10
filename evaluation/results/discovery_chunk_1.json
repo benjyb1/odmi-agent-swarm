@@ -1,0 +1,82 @@
+[
+  {
+    "country_code": "AL",
+    "country_name": "Albania",
+    "portal_base": "https://opendata.gov.al",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "AT",
+    "country_name": "Austria",
+    "portal_base": "https://www.data.gv.at",
+    "status": "needs_new_adapter",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [
+      "piveau"
+    ],
+    "error": null
+  },
+  {
+    "country_code": "BA",
+    "country_name": "Bosnia and Herzegovina",
+    "portal_base": "https://odp.iddeea.gov.ba",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "BE",
+    "country_name": "Belgium",
+    "portal_base": "https://data.gov.be",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "BG",
+    "country_name": "Bulgaria",
+    "portal_base": "https://data.egov.bg",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "CH",
+    "country_name": "Switzerland",
+    "portal_base": "https://opendata.swiss",
+    "status": "verified",
+    "chosen": {
+      "route": "dcat_rdf",
+      "evidence": {
+        "stack": "dcat_feed",
+        "endpoint": "https://opendata.swiss/catalog.ttl?page=1",
+        "detail": "RDF feed parsed (turtle), 100 dcat:Dataset on page 1"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 1.0,
+        "with_distributions": 100,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 1.0
+      },
+      "caveats": []
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  }
+]

@@ -1,0 +1,121 @@
+[
+  {
+    "country_code": "IS",
+    "country_name": "Iceland",
+    "portal_base": "https://opingogn.is",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "IT",
+    "country_name": "Italy",
+    "portal_base": "https://www.dati.gov.it",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "LT",
+    "country_name": "Lithuania",
+    "portal_base": "https://data.gov.lt",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "LU",
+    "country_name": "Luxembourg",
+    "portal_base": "https://data.public.lu",
+    "status": "verified",
+    "chosen": {
+      "route": "dcat_rdf",
+      "evidence": {
+        "stack": "dcat_feed",
+        "endpoint": "https://data.public.lu/catalog.rdf?page=1",
+        "detail": "RDF feed parsed (xml), 100 dcat:Dataset on page 1"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 0.08,
+        "with_distributions": 100,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 0.08
+      },
+      "caveats": []
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "LV",
+    "country_name": "Latvia",
+    "portal_base": "https://data.gov.lv",
+    "status": "verified",
+    "chosen": {
+      "route": "ckan_json",
+      "evidence": {
+        "stack": "ckan",
+        "endpoint": "https://data.gov.lv/api/3/action/package_search?rows=1",
+        "detail": "package_search success=true, count=1531"
+      },
+      "stats": {
+        "n_datasets": 500,
+        "licence_share": 1.0,
+        "with_distributions": 500,
+        "download_url_share": 0.996,
+        "access_url_share": 0.996,
+        "format_share": 0.61,
+        "dataset_licence_share": 1.0,
+        "distribution_licence_share": 0.0
+      },
+      "caveats": [
+        "conformance_synthesised_from_json"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "ME",
+    "country_name": "Montenegro",
+    "portal_base": "https://data.gov.me",
+    "status": "verified",
+    "chosen": {
+      "route": "ckan_json",
+      "evidence": {
+        "stack": "ckan",
+        "endpoint": "https://data.gov.me/api/3/action/package_search?rows=1",
+        "detail": "package_search success=true, count=895"
+      },
+      "stats": {
+        "n_datasets": 500,
+        "licence_share": 0.974,
+        "with_distributions": 500,
+        "download_url_share": 0.974,
+        "access_url_share": 0.974,
+        "format_share": 0.986,
+        "dataset_licence_share": 0.974,
+        "distribution_licence_share": 0.0
+      },
+      "caveats": [
+        "rdf_feed_omits_dct_license",
+        "conformance_synthesised_from_json"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "country_code": "ME",
+  "country_name": "Montenegro",
+  "portal_base": "https://data.gov.me",
+  "stack": "ckan",
+  "stack_version": null,
+  "harvest_route": "ckan_json",
+  "dcat_catalog_url": null,
+  "native_api_url": "https://data.gov.me/api/3/action/package_search?rows={page_size}&start={start}",
+  "pagination": "ckan_offset",
+  "page_size": 500,
+  "request_delay_s": 1.0,
+  "total_datasets_hint": 895,
+  "licence_field": "dataset",
+  "robots_note": "robots.txt: Disallow: /api/; Crawl-Delay: 10. Throttle, descriptive UA.",
+  "verified_at": "2026-06-10",
+  "discovery_method": "auto",
+  "discovery_evidence": "https://data.gov.me/api/3/action/package_search?rows=1 -> package_search success=true, count=895",
+  "caveats": [
+    "rdf_feed_omits_dct_license",
+    "conformance_synthesised_from_json"
+  ],
+  "notes": "Auto-discovered route (ckan): package_search success=true, count=895. Sample of 500 datasets: licence 97%, access-URL 97%, download-URL 97%, format 99%. Caveats: rdf_feed_omits_dct_license, conformance_synthesised_from_json. data.europa.eu not used (D24)."
+}

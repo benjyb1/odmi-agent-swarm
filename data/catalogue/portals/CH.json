@@ -1,0 +1,20 @@
+{
+  "country_code": "CH",
+  "country_name": "Switzerland",
+  "portal_base": "https://opendata.swiss",
+  "stack": "dcat_feed",
+  "stack_version": null,
+  "harvest_route": "dcat_rdf",
+  "dcat_catalog_url": "https://opendata.swiss/catalog.ttl?page={page}",
+  "native_api_url": null,
+  "pagination": "hydra",
+  "page_size": 100,
+  "request_delay_s": 1.0,
+  "licence_field": "distribution",
+  "robots_note": "robots.txt present, no Disallow on the API paths used. Throttle, descriptive UA.",
+  "verified_at": "2026-06-10",
+  "discovery_method": "auto",
+  "discovery_evidence": "https://opendata.swiss/catalog.ttl?page=1 -> RDF feed parsed (turtle), 100 dcat:Dataset on page 1",
+  "caveats": [],
+  "notes": "Auto-discovered route (dcat_feed): RDF feed parsed (turtle), 100 dcat:Dataset on page 1. Sample of 100 datasets: licence 100%, access-URL 100%, download-URL 100%, format 100%. data.europa.eu not used (D24)."
+}

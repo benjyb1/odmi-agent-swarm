@@ -1,0 +1,23 @@
+{
+  "country_code": "LV",
+  "country_name": "Latvia",
+  "portal_base": "https://data.gov.lv",
+  "stack": "ckan",
+  "stack_version": null,
+  "harvest_route": "ckan_json",
+  "dcat_catalog_url": null,
+  "native_api_url": "https://data.gov.lv/api/3/action/package_search?rows={page_size}&start={start}",
+  "pagination": "ckan_offset",
+  "page_size": 500,
+  "request_delay_s": 1.0,
+  "total_datasets_hint": 1531,
+  "licence_field": "dataset",
+  "robots_note": "robots.txt present, no Disallow on the API paths used. Throttle, descriptive UA.",
+  "verified_at": "2026-06-10",
+  "discovery_method": "auto",
+  "discovery_evidence": "https://data.gov.lv/api/3/action/package_search?rows=1 -> package_search success=true, count=1531",
+  "caveats": [
+    "conformance_synthesised_from_json"
+  ],
+  "notes": "Auto-discovered route (ckan): package_search success=true, count=1531. Sample of 500 datasets: licence 100%, access-URL 100%, download-URL 100%, format 61%. Caveats: conformance_synthesised_from_json. data.europa.eu not used (D24)."
+}

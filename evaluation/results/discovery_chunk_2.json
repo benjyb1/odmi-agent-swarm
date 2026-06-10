@@ -1,0 +1,105 @@
+[
+  {
+    "country_code": "CY",
+    "country_name": "Cyprus",
+    "portal_base": "https://www.data.gov.cy",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [
+      {
+        "route": "dcat_rdf",
+        "reason": "sample has no distributions; the distribution metrics cannot run (malformed feed: dcat:Distribution used as a predicate, the class-as-property producer bug seen on data.gov.cy)"
+      }
+    ],
+    "new_stacks": [],
+    "error": "every routable candidate failed sample verification"
+  },
+  {
+    "country_code": "CZ",
+    "country_name": "Czechia",
+    "portal_base": "https://data.gov.cz",
+    "status": "needs_new_adapter",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [
+      "sparql"
+    ],
+    "error": null
+  },
+  {
+    "country_code": "DE",
+    "country_name": "Germany",
+    "portal_base": "https://ckan.govdata.de",
+    "status": "verified",
+    "chosen": {
+      "route": "dcat_rdf",
+      "evidence": {
+        "stack": "dcat_feed",
+        "endpoint": "https://ckan.govdata.de/catalog.ttl?page=1",
+        "detail": "RDF feed parsed (turtle), 100 dcat:Dataset on page 1"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 1.0,
+        "with_distributions": 100,
+        "download_url_share": 0.88,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 1.0
+      },
+      "caveats": []
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "DK",
+    "country_name": "Denmark",
+    "portal_base": "https://www.opendata.dk",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "EE",
+    "country_name": "Estonia",
+    "portal_base": "https://andmed.eesti.ee",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "EL",
+    "country_name": "Greece",
+    "portal_base": "https://data.gov.gr",
+    "status": "verified",
+    "chosen": {
+      "route": "dcat_rdf",
+      "evidence": {
+        "stack": "dcat_feed",
+        "endpoint": "https://data.gov.gr/catalog.ttl?page=1",
+        "detail": "RDF feed parsed (turtle), 50 dcat:Dataset on page 1"
+      },
+      "stats": {
+        "n_datasets": 50,
+        "licence_share": 0.96,
+        "with_distributions": 50,
+        "download_url_share": 0.96,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 0.96
+      },
+      "caveats": []
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  }
+]

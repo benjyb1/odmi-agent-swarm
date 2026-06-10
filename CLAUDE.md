@@ -241,6 +241,7 @@ without-adapter, 17 honest fails (SPA stacks, WAFs, one malformed feed,
 one retired portal); FR/HU/NL re-discovered identically to their
 hand-authored registries, validating the prober. New `sparql_rdf` (CZ,
 HR, SE) and `piveau_json` (AT) adapters convert four of the five
-flagged countries; registry coverage 6 -> 21 (+NO at merge), about +6.4
-points of accuracy ceiling per newly covered country
-(`evaluation/discovery_ceiling.py`). See `docs/PORTAL_DISCOVERY.md`.
+flagged countries; final state 19 verified routes, registry coverage
+6 -> 21 (+NO at merge), mean +6.5 points of accuracy ceiling per newly
+covered country (`evaluation/discovery_ceiling.py`). See
+`docs/PORTAL_DISCOVERY.md`.

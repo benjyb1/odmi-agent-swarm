@@ -1,0 +1,102 @@
+[
+  {
+    "country_code": "MK",
+    "country_name": "North Macedonia",
+    "portal_base": "https://data.gov.mk",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "MT",
+    "country_name": "Malta",
+    "portal_base": "https://open.data.gov.mt",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "NL",
+    "country_name": "Netherlands",
+    "portal_base": "https://data.overheid.nl",
+    "status": "verified",
+    "chosen": {
+      "route": "ckan_json",
+      "evidence": {
+        "stack": "ckan",
+        "endpoint": "https://data.overheid.nl/data/api/3/action/package_search?rows=1",
+        "detail": "package_search success=true, count=20715, prefix '/data'"
+      },
+      "stats": {
+        "n_datasets": 500,
+        "licence_share": 1.0,
+        "with_distributions": 495,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 1.0,
+        "distribution_licence_share": 0.99
+      },
+      "caveats": [
+        "conformance_synthesised_from_json"
+      ]
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  },
+  {
+    "country_code": "NO",
+    "country_name": "Norway",
+    "portal_base": "https://data.norge.no",
+    "status": "needs_new_adapter",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [
+      "fdk"
+    ],
+    "error": null
+  },
+  {
+    "country_code": "PL",
+    "country_name": "Poland",
+    "portal_base": "https://dane.gov.pl",
+    "status": "failed",
+    "chosen": null,
+    "rejected": [],
+    "new_stacks": [],
+    "error": "no stack fingerprint matched"
+  },
+  {
+    "country_code": "PT",
+    "country_name": "Portugal",
+    "portal_base": "https://dados.gov.pt",
+    "status": "verified",
+    "chosen": {
+      "route": "dcat_rdf",
+      "evidence": {
+        "stack": "dcat_feed",
+        "endpoint": "https://dados.gov.pt/api/1/site/catalog.ttl?page=1&page_size=10",
+        "detail": "RDF feed parsed (turtle), 10 dcat:Dataset on page 1"
+      },
+      "stats": {
+        "n_datasets": 100,
+        "licence_share": 0.84,
+        "with_distributions": 97,
+        "download_url_share": 1.0,
+        "access_url_share": 1.0,
+        "format_share": 1.0,
+        "dataset_licence_share": 0.0,
+        "distribution_licence_share": 0.84
+      },
+      "caveats": []
+    },
+    "rejected": [],
+    "new_stacks": [],
+    "error": null
+  }
+]
