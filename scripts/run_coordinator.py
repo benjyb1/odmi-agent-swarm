@@ -1106,7 +1106,18 @@ def coordinate(
                 # Researcher failed unrecoverably; treat as Verifier fail and retry
                 print(f"  Researcher failed: {r_result.failure_mode}", flush=True)
                 if attempt == max_retries:
-                    # Save what we can and bail.
+                    if researcher_outputs:
+                        # A prior attempt already produced an answer. Do not
+                        # throw the whole pair away as a crash just because the
+                        # final retry's search came back empty. Fall through to
+                        # the Adjudicator on the attempts we have, so the pair
+                        # resolves or abstains honestly rather than recording an
+                        # agent_failure (Norway PT15 / PT25 / Q21).
+                        print("  final retry failed; adjudicating on prior "
+                              "attempts", flush=True)
+                        break
+                    # No answer was produced on any attempt: a real
+                    # unrecoverable failure, keep agent_failure.
                     final_status = "agent_failure"
                     _upsert_subtrio_status(
                         subtrio_id=subtrio_id, batch_id=batch_id,
