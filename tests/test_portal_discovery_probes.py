@@ -212,11 +212,47 @@ def test_probe_sparql_reports_no_route():
     assert ev.route is None
 
 
+def test_probe_piveau_reports_no_route():
+    fetch = _json_stub({
+        "https://portal.example/api/hub/search/search?filters=dataset": {
+            "result": {"index": "dataset", "count": 70957, "facets": []}
+        }
+    })
+    ev = probes.probe_piveau("https://portal.example", fetch_json=fetch)
+    assert ev is not None
+    assert ev.stack == "piveau"
+    assert ev.route is None
+    assert ev.total_datasets == 70957
+
+
+def test_probe_piveau_rejects_other_json():
+    fetch = _json_stub({
+        "https://portal.example/api/hub/search/search?filters=dataset": {
+            "result": {"rows": []}
+        }
+    })
+    assert probes.probe_piveau("https://portal.example", fetch_json=fetch) is None
+
+
 def test_probe_sparql_rejects_false_ask():
     fetch = _json_stub({
         "https://portal.example/sparql": {"head": {}, "boolean": False}
     })
     assert probes.probe_sparql("https://portal.example", fetch_json=fetch) is None
+
+
+def test_probe_sparql_uses_hint_endpoint_on_other_host():
+    fetch = _json_stub({
+        "https://admin.portal.example/sparql": {"head": {}, "boolean": True}
+    })
+    ev = probes.probe_sparql(
+        "https://portal.example",
+        hints={"sparql_endpoint": "https://admin.portal.example/sparql"},
+        fetch_json=fetch,
+    )
+    assert ev is not None
+    assert ev.stack == "sparql"
+    assert "admin.portal.example" in ev.endpoint
 
 
 # ------------------------------------------------------------------

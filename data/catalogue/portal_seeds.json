@@ -207,7 +207,10 @@
       "country_code": "SE",
       "country_name": "Sweden",
       "portal_base": "https://www.dataportal.se",
-      "source": "Sweden's national portal dataportal.se, operated by the Agency for Digital Government (Digg); an EntryScape-based catalogue."
+      "hints": {
+        "sparql_endpoint": "https://admin.dataportal.se/sparql"
+      },
+      "source": "Sweden's national portal dataportal.se, operated by the Agency for Digital Government (Digg); an EntryScape-based catalogue. The SPARQL endpoint on the admin.dataportal.se sibling host follows the EntryScape convention and was confirmed live by a DCAT ASK query on 2026-06-10."
     },
     {
       "country_code": "SI",

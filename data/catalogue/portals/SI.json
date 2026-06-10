@@ -1,0 +1,24 @@
+{
+  "country_code": "SI",
+  "country_name": "Slovenia",
+  "portal_base": "https://podatki.gov.si",
+  "stack": "ckan",
+  "stack_version": null,
+  "harvest_route": "ckan_json",
+  "dcat_catalog_url": null,
+  "native_api_url": "https://podatki.gov.si/api/3/action/package_search?rows={page_size}&start={start}",
+  "pagination": "ckan_offset",
+  "page_size": 500,
+  "request_delay_s": 1.0,
+  "total_datasets_hint": 8878,
+  "licence_field": "dataset",
+  "robots_note": "",
+  "verified_at": "2026-06-10",
+  "discovery_method": "auto",
+  "discovery_evidence": "https://podatki.gov.si/api/3/action/package_search?rows=1 -> package_search success=true, count=8878",
+  "caveats": [
+    "conformance_synthesised_from_json",
+    "no_licence_metadata_on_any_route"
+  ],
+  "notes": "Auto-discovered route (ckan): package_search success=true, count=8878. Sample of 500 datasets: licence 0%, access-URL 100%, download-URL 100%, format 100%. Caveats: conformance_synthesised_from_json, no_licence_metadata_on_any_route. data.europa.eu not used (D24)."
+}

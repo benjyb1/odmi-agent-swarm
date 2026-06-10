@@ -227,11 +227,48 @@ def probe_datajson(
     return _safe(attempt)
 
 
-def probe_sparql(
+def probe_piveau(
     base: str, *, fetch_json: JsonFetcher = _fetch.fetch_json
 ) -> Optional[ProbeEvidence]:
-    """A SPARQL endpoint that answers ASK {?s a dcat:Dataset} with true."""
-    url = f"{base}/sparql?query={quote(_SPARQL_ASK)}&format=json"
+    """piveau hub-search (the data.europa.eu software family, nationally
+    hosted, e.g. data.gv.at since its relaunch): `result.count` over the
+    dataset index. National piveau hubs can federate EU-scope datasets,
+    so an eventual adapter must filter to the national scope."""
+    url = f"{base}/api/hub/search/search?filters=dataset&limit=1"
+
+    def attempt():
+        payload = fetch_json(url)
+        if not isinstance(payload, dict):
+            return None
+        result = payload.get("result")
+        if not isinstance(result, dict) or result.get("index") != "dataset":
+            return None
+        if "count" not in result:
+            return None
+        return ProbeEvidence(
+            stack="piveau",
+            route=None,  # no adapter yet
+            endpoint=url,
+            detail=f"piveau hub-search, count={result['count']}",
+            total_datasets=int(result["count"]),
+        )
+
+    return _safe(attempt)
+
+
+def probe_sparql(
+    base: str,
+    *,
+    hints: Optional[dict] = None,
+    fetch_json: JsonFetcher = _fetch.fetch_json,
+) -> Optional[ProbeEvidence]:
+    """A SPARQL endpoint that answers ASK {?s a dcat:Dataset} with true.
+
+    Some portals host the endpoint on a sibling domain (Sweden's
+    EntryScape puts it on admin.dataportal.se), so a seed hint
+    `sparql_endpoint` overrides the default `{base}/sparql` guess."""
+    endpoint = (hints or {}).get("sparql_endpoint") or f"{base}/sparql"
+    url = f"{endpoint}?query={quote(_SPARQL_ASK)}&format=json"
 
     def attempt():
         payload = fetch_json(url)
@@ -317,8 +354,9 @@ def probe_all(
         lambda: probe_udata(base, fetch_json=fetch_json),
         lambda: probe_fdk(base, hints=hints, post_json=post_json),
         lambda: probe_opendatasoft(base, fetch_json=fetch_json),
+        lambda: probe_piveau(base, fetch_json=fetch_json),
         lambda: probe_datajson(base, fetch_json=fetch_json),
-        lambda: probe_sparql(base, fetch_json=fetch_json),
+        lambda: probe_sparql(base, hints=hints, fetch_json=fetch_json),
     ]
     found: list[ProbeEvidence] = []
     for i, attempt in enumerate(attempts):

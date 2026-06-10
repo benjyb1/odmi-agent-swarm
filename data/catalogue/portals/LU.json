@@ -1,0 +1,20 @@
+{
+  "country_code": "LU",
+  "country_name": "Luxembourg",
+  "portal_base": "https://data.public.lu",
+  "stack": "dcat_feed",
+  "stack_version": null,
+  "harvest_route": "dcat_rdf",
+  "dcat_catalog_url": "https://data.public.lu/catalog.rdf?page={page}",
+  "native_api_url": null,
+  "pagination": "hydra",
+  "page_size": 100,
+  "request_delay_s": 1.0,
+  "licence_field": "distribution",
+  "robots_note": "",
+  "verified_at": "2026-06-10",
+  "discovery_method": "auto",
+  "discovery_evidence": "https://data.public.lu/catalog.rdf?page=1 -> RDF feed parsed (xml), 100 dcat:Dataset on page 1",
+  "caveats": [],
+  "notes": "Auto-discovered route (dcat_feed): RDF feed parsed (xml), 100 dcat:Dataset on page 1. Sample of 100 datasets: licence 8%, access-URL 100%, download-URL 100%, format 100%. data.europa.eu not used (D24)."
+}
