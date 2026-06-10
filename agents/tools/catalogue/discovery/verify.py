@@ -32,7 +32,10 @@ from agents.tools.catalogue.registry import PortalConfig
 # Preference order among routes the adapters can already serve. RDF
 # sources first (real graphs for the conformance metrics): a paged feed,
 # then a SPARQL endpoint, then the JSON fallbacks.
-_ROUTE_PREFERENCE = ("dcat_rdf", "sparql_rdf", "ckan_json", "udata_json", "fdk_rdf")
+_ROUTE_PREFERENCE = (
+    "dcat_rdf", "sparql_rdf", "ckan_json", "udata_json", "piveau_json",
+    "fdk_rdf",
+)
 
 # A verification sample must yield at least this many datasets.
 _MIN_SAMPLE = 1
@@ -182,7 +185,7 @@ def _verify_one(
             )
         return None, RejectedRoute(route, reason)
     caveats: list[str] = []
-    if route in ("ckan_json", "udata_json", "estonia_json"):
+    if route in ("ckan_json", "udata_json", "estonia_json", "piveau_json"):
         caveats.append("conformance_synthesised_from_json")
     if stats.download_url_share == 0.0:
         caveats.append("feed_omits_download_url")
@@ -294,6 +297,9 @@ def live_sampler(*, max_pages: int = 1) -> Sampler:
         if route == "sparql_rdf":
             from agents.tools.catalogue.adapters import sparql_rdf
             return list(sparql_rdf.harvest(cfg, max_pages=max_pages))
+        if route == "piveau_json":
+            from agents.tools.catalogue.adapters import piveau_json
+            return list(piveau_json.harvest(cfg, max_pages=max_pages))
         if route == "fdk_rdf":
             from agents.tools.catalogue.adapters import fdk_rdf  # type: ignore[attr-defined]
             return list(fdk_rdf.harvest(cfg, max_pages=max_pages))

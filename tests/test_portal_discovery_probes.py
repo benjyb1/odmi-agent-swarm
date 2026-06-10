@@ -214,7 +214,7 @@ def test_probe_sparql_reports_the_sparql_rdf_route():
     assert ev.config_fields["pagination"] == "sparql_offset"
 
 
-def test_probe_piveau_reports_no_route():
+def test_probe_piveau_reports_the_piveau_json_route():
     fetch = _json_stub({
         "https://portal.example/api/hub/search/search?filters=dataset": {
             "result": {"index": "dataset", "count": 70957, "facets": []}
@@ -223,8 +223,9 @@ def test_probe_piveau_reports_no_route():
     ev = probes.probe_piveau("https://portal.example", fetch_json=fetch)
     assert ev is not None
     assert ev.stack == "piveau"
-    assert ev.route is None
+    assert ev.route == "piveau_json"
     assert ev.total_datasets == 70957
+    assert "{page}" in ev.config_fields["native_api_url"]
 
 
 def test_probe_piveau_rejects_other_json():

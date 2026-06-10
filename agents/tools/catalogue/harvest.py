@@ -80,6 +80,13 @@ def _build_adapter_registry() -> dict[str, Adapter]:
         )
     except Exception:  # noqa: BLE001
         pass
+    try:
+        from agents.tools.catalogue.adapters import piveau_json
+        registry["piveau_json"] = Adapter(
+            piveau_json.harvest, piveau_json.normalise_page, "json"
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return registry
 
 

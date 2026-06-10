@@ -248,10 +248,18 @@ def probe_piveau(
             return None
         return ProbeEvidence(
             stack="piveau",
-            route=None,  # no adapter yet
+            route="piveau_json" if "piveau_json" in ROUTES else None,
             endpoint=url,
             detail=f"piveau hub-search, count={result['count']}",
             total_datasets=int(result["count"]),
+            config_fields={
+                "native_api_url": (
+                    f"{base}/api/hub/search/search"
+                    "?filters=dataset&limit={page_size}&page={page}"
+                ),
+                "pagination": "piveau_page",
+                "page_size": 100,
+            },
         )
 
     return _safe(attempt)
