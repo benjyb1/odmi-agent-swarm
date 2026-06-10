@@ -13,6 +13,7 @@ Output: docs/PROGRESS_SLIDES_<YYYY-MM-DD>.pptx
 
 from __future__ import annotations
 
+import argparse
 import sqlite3
 from datetime import datetime
 from pathlib import Path
@@ -959,6 +960,340 @@ def slide_next_steps(prs: Presentation) -> None:
 
 
 # ============================================================
+# PhD-seminar talk (5 slides, opinion-seeking)
+# ============================================================
+#
+# A separate, tight deck for the Monday PhD-student seminar. The
+# supervisor introduces the problem, so this opens on the system and
+# spends its weight on method and on the open questions we want the
+# room to argue. Numbers that are not in the live DB (EXP-1, the Malta
+# baseline, the catalogue recompute) are committed, documented results,
+# pinned here as constants with their source in docs/EXPERIMENTS.md.
+
+def _list_column(
+    slide, x, y, col_w, h_col, *,
+    header_label: str, header_fill: RGBColor,
+    items, bullet: RGBColor = TEAL,
+) -> None:
+    add_outlined_rect(slide, x, y, col_w, h_col, fill=SURFACE)
+    add_filled_rect(slide, x, y, col_w, Inches(0.45), fill=header_fill)
+    head_box = add_textbox(slide, x + Inches(0.25), y + Inches(0.1),
+                           col_w - Inches(0.5), Inches(0.3))
+    set_text(head_box.text_frame, header_label, size=11, bold=True, colour=WHITE)
+
+    item_h = (h_col - Inches(0.45) - Inches(0.2)) / len(items)
+    row_y = y + Inches(0.55)
+    for title, body in items:
+        num_x = x + Inches(0.2)
+        num_w = Inches(0.4)
+        t_box = add_textbox(slide, num_x + num_w + Inches(0.05), row_y,
+                            col_w - num_w - Inches(0.3), Inches(0.28))
+        set_text(t_box.text_frame, title, size=11, bold=True, colour=HEAD)
+        b_box = add_textbox(slide, num_x + num_w + Inches(0.05),
+                            row_y + Inches(0.28),
+                            col_w - num_w - Inches(0.3), item_h - Inches(0.32))
+        set_text(b_box.text_frame, body, size=10, colour=BODY)
+        add_filled_rect(slide, num_x, row_y + Inches(0.08),
+                        Inches(0.18), Inches(0.18), fill=bullet)
+        row_y += item_h
+
+
+def phd_slide_title(prs: Presentation) -> None:
+    blank = prs.slide_layouts[6]
+    slide = prs.slides.add_slide(blank)
+    add_filled_rect(slide, 0, 0, prs.slide_width, prs.slide_height, fill=DARK)
+    add_filled_rect(slide, 0, Inches(2.0), Inches(0.6), Inches(2.0), fill=TEAL)
+
+    eyebrow = add_textbox(slide, Inches(1.0), Inches(1.2), Inches(8.5), Inches(0.4))
+    set_text(
+        eyebrow.text_frame,
+        "MSc ADVANCED COMPUTING · PhD SEMINAR · FOR DISCUSSION",
+        size=10, bold=True, colour=TEAL_BRIGHT,
+    )
+
+    title = add_textbox(slide, Inches(1.0), Inches(1.65), Inches(8.5), Inches(2.2))
+    tf = title.text_frame
+    tf.clear()
+    for i, line in enumerate(["Agentic AI for Open", "Data Maturity", "Assessment"]):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        run = p.add_run()
+        run.text = line
+        run.font.name = FONT
+        run.font.size = Pt(40)
+        run.font.bold = True
+        run.font.color.rgb = WHITE
+
+    sub = add_textbox(slide, Inches(1.0), Inches(4.0), Inches(8.5), Inches(0.6))
+    set_text(
+        sub.text_frame,
+        "Method, experiments, and the open questions I want your view on",
+        size=14, colour=PALE,
+    )
+
+    today = datetime.now().strftime("%d %B %Y")
+    foot = add_textbox(slide, Inches(1.0), Inches(5.0), Inches(8.5), Inches(0.4))
+    set_text(
+        foot.text_frame,
+        f"Benjy Bream  ·  King's College London  ·  {today}",
+        size=11, colour=WHITE,
+    )
+
+
+def phd_slide_system(prs: Presentation, stats: dict) -> None:
+    slide = new_slide(prs)
+    header(slide, "An adversarial swarm, scored against ODMI's own answers",
+           eyebrow="System and honest status")
+
+    row_y = Inches(1.3)
+    row_h = Inches(1.4)
+    box_w = Inches(2.7)
+    gap = Inches(0.45)
+    x_start = (prs.slide_width - (3 * box_w + 2 * gap)) // 2
+
+    def agent_box(x, label, role, accent):
+        add_outlined_rect(slide, x, row_y, box_w, row_h)
+        add_filled_rect(slide, x, row_y, box_w, Inches(0.35), fill=accent)
+        lab = add_textbox(slide, x + Inches(0.2), row_y + Inches(0.05),
+                          box_w - Inches(0.4), Inches(0.27))
+        set_text(lab.text_frame, label, size=12, bold=True, colour=WHITE)
+        body = add_textbox(slide, x + Inches(0.2), row_y + Inches(0.5),
+                           box_w - Inches(0.4), row_h - Inches(0.6))
+        set_text(body.text_frame, role, size=10, colour=BODY)
+
+    x1 = x_start
+    x2 = x1 + box_w + gap
+    x3 = x2 + box_w + gap
+    agent_box(x1, "RESEARCHER",
+              "Searches, fetches, reasons. Returns answer + source URL "
+              "+ quoted passage + confidence.", TEAL)
+    agent_box(x2, "VERIFIER",
+              "Independent search, prompted to disprove. Returns pass / "
+              "fail with counter-evidence.", NAVY)
+    agent_box(x3, "ADJUDICATOR",
+              "Fires on retry exhaustion. Reads the full history, commits "
+              "above the 0.65 floor or abstains.", DANGER)
+
+    arrow_y = row_y + row_h // 2
+    for left, right in [(x1 + box_w, x2), (x2 + box_w, x3)]:
+        arrow = slide.shapes.add_shape(
+            MSO_SHAPE.RIGHT_ARROW,
+            left + Inches(0.05), arrow_y - Inches(0.12),
+            gap - Inches(0.1), Inches(0.24),
+        )
+        arrow.fill.solid()
+        arrow.fill.fore_color.rgb = MUTED
+        arrow.line.fill.background()
+
+    add_card(
+        slide, Inches(0.5), Inches(3.05), prs.slide_width - Inches(1.0),
+        Inches(1.65),
+        title="What is actually run, and what is not",
+        body="Plain Python state machine, Claude via CLIProxyAPI. Every "
+             "call logs model + prompt version + raw response + cost, so "
+             f"an examiner replays it from logs alone. Run and adjudicated: "
+             f"EXP-1 (DIY vs Tavily), the Malta base-rate baseline (60/60), "
+             f"and the independent catalogue recompute. Everything else is "
+             f"pre-registered and built, gated on search and Claude quota. "
+             f"{stats['n_finals']} pairs finalised, "
+             f"{stats['n_ground_truth']:,} ODMI ground-truth rows loaded.",
+        accent=TEAL,
+    )
+
+    page_footer(slide, prs, 2, 6)
+
+
+def phd_slide_impartiality(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "Keeping the evaluation honest",
+           eyebrow="Impartiality designed in, not asserted")
+
+    col_w = Inches(4.45)
+    gap = Inches(0.1)
+    x_l = Inches(0.5)
+    x_r = x_l + col_w + gap
+    y1 = Inches(1.25)
+    y2 = Inches(3.0)
+    h = Inches(1.6)
+
+    add_card(slide, x_l, y1, col_w, h,
+             title="Pre-registered before the data (R1)",
+             body="Each design is fixed in a dated git commit whose "
+                  "timestamp predates its result file. The run decides "
+                  "the answer, nothing else. No reverse-fitting.",
+             accent=TEAL)
+    add_card(slide, x_r, y1, col_w, h,
+             title="Blind, swapped, cross-checked judge (R5/R6)",
+             body="Evidence blinded and reduced to the bare domain, each "
+                  "pair judged twice with arms swapped at temperature 0. A "
+                  "second model family re-rates a seeded subsample.",
+             accent=NAVY)
+    add_card(slide, x_l, y2, col_w, h,
+             title="Deny-list, equal and pre-fetch (R10 / D24)",
+             body="ODMI publishes its own answers on data.europa.eu. That "
+                  "domain is blocked for every arm before retrieval, so no "
+                  "arm competes for a different set of usable sources.",
+             accent=TEAL_DARK)
+    add_card(slide, x_r, y2, col_w, h,
+             title="The base-rate rule (R4) — the France lesson",
+             body="France binary gold is 119 yes to 1 no, so 99% accuracy "
+                  "measures nothing. Balance-aware metrics, and Malta "
+                  "promoted to primary; France barred as a primary set.",
+             accent=DANGER)
+
+    page_footer(slide, prs, 3, 6)
+
+
+def phd_slide_experiments(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "Experiments: two real results, the rest queued",
+           eyebrow="Findings and apparatus")
+
+    col_w = Inches(4.45)
+    gap = Inches(0.1)
+    x_l = Inches(0.5)
+    x_r = x_l + col_w + gap
+    y1 = Inches(1.25)
+    h1 = Inches(1.95)
+
+    add_card(slide, x_l, y1, col_w, h1,
+             title="EXP-1 · DIY search beats Tavily (run)",
+             body="90 French pairs, blind position-swapped Opus judge. DIY "
+                  "wins 89% of the 55 decided pairs (Wilson [78, 95], "
+                  "p < 1e-4); 93% under strict exclusion. Cross-family "
+                  "Mistral re-judge: Krippendorff alpha 0.648, which rebuts "
+                  "the same-family self-preference worry.",
+             accent=SUCCESS)
+    add_card(slide, x_r, y1, col_w, h1,
+             title="Catalogue recompute · self-report ceiling (run)",
+             body="A deterministic DCAT-AP / SHACL tool recomputes the "
+                  "Quality questions independently of the deny-listed MQA. "
+                  "France self-reported >90% licence coverage; the "
+                  "independent recompute reads ~38%. The self-report "
+                  "ceiling, made measurable.",
+             accent=NAVY)
+
+    add_card(slide, Inches(0.5), Inches(3.45), prs.slide_width - Inches(1.0),
+             Inches(1.3),
+             title="Pre-registered, built, gated on quota",
+             body="Malta baseline finalised 60/60. EXP-6 verifier-strategy "
+                  "discrimination · EXP-7 retry chaining (flag-gated, "
+                  "default off) · EXP-8/9 cost and model-variant surface · "
+                  "EXP-10 Malta failure audit with a free confidence-floor "
+                  "sweep. Code and pre-registration done; runs pending "
+                  "search and Claude headroom.",
+             accent=MUTED)
+
+    page_footer(slide, prs, 4, 6)
+
+
+def phd_slide_failure_modes(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "Failure modes — fixed and still open",
+           eyebrow="What broke, what remains")
+
+    col_w = Inches(4.45)
+    gap = Inches(0.1)
+    x_l = Inches(0.5)
+    x_r = x_l + col_w + gap
+    y = Inches(1.25)
+    h_col = Inches(3.55)
+
+    fixed = [
+        ("WAF 403 on data.gov.mt",
+         "Cloudflare blocked head checks and killed valid answers. A "
+         "Playwright render now retries on 403 / 429 / 503."),
+        ("Resume stranded pairs",
+         "The resume path reused failed Researcher rows, leaving 11 pairs "
+         "stuck at 'researching'. Fixed in the coordinator."),
+        ("Silent auth failure",
+         "An empty auth token made every call fail as a misleading "
+         "connection error. Fixed in the LLM client."),
+    ]
+    open_ = [
+        ("Retrieval ceiling",
+         "Self-report and deny-listed Quality questions are not "
+         "answerable from the open web. The residual bottleneck."),
+        ("Recall asymmetry",
+         "Yes-gold recall 0.60 against no-gold 0.87: the swarm confirms a "
+         "'no' more readily than a 'yes' on sparse evidence."),
+        ("Thin-web countries",
+         "Low-resource languages and sparse results untested at scale; "
+         "language and difficulty are still confounded."),
+    ]
+
+    _list_column(slide, x_l, y, col_w, h_col,
+                 header_label="FIXED", header_fill=TEAL_DARK,
+                 items=fixed, bullet=SUCCESS)
+    _list_column(slide, x_r, y, col_w, h_col,
+                 header_label="STILL OPEN", header_fill=WARNING,
+                 items=open_, bullet=WARNING)
+
+    page_footer(slide, prs, 5, 6)
+
+
+def phd_slide_open_questions(prs: Presentation) -> None:
+    slide = new_slide(prs)
+    header(slide, "Where I want your opinion",
+           eyebrow="Next steps and open questions")
+
+    col_w = Inches(4.45)
+    gap = Inches(0.1)
+    x_l = Inches(0.5)
+    x_r = x_l + col_w + gap
+    y = Inches(1.25)
+    h_col = Inches(3.55)
+
+    next_steps = [
+        ("Freeze a held-out test stratum",
+         "Tune on a subset, report final accuracy on unseen countries "
+         "against the contemporaneous web."),
+        ("Run the pre-registered set",
+         "EXP-6 / 7 / 8 / 9 / 10 once quota resets; build the "
+         "accuracy-cost surface."),
+        ("Six-country sweep",
+         "Wealth x maturity matrix across all 143 questions, base-rate "
+         "checked per cell."),
+    ]
+    questions = [
+        ("What is the test set?",
+         "Validation is 2025 ODMI. Held-out countries, 2024 (stale 2026 "
+         "web), or matched leave-one-out pairs?"),
+        ("How to control for language?",
+         "Malta + Netherlands, France with injected inversions, or "
+         "matched country pairs differing only in language?"),
+        ("Is the 6-country matrix fair?",
+         "Or does wealth x maturity leave language and base rate "
+         "confounded?"),
+        ("Blindspots and missing experiments?",
+         "Verifier ablation, confidence calibration, a human-anchored "
+         "judge — what else am I not seeing?"),
+    ]
+
+    _list_column(slide, x_l, y, col_w, h_col,
+                 header_label="NEXT STEPS", header_fill=DARK,
+                 items=next_steps, bullet=TEAL)
+    _list_column(slide, x_r, y, col_w, h_col,
+                 header_label="QUESTIONS FOR THE ROOM", header_fill=NAVY,
+                 items=questions, bullet=TEAL_BRIGHT)
+
+    page_footer(slide, prs, 6, 6)
+
+
+def build_phd_deck(stats: dict) -> Presentation:
+    prs = Presentation()
+    prs.slide_width = Inches(10)
+    prs.slide_height = Inches(5.625)
+
+    phd_slide_title(prs)
+    phd_slide_system(prs, stats)
+    phd_slide_impartiality(prs)
+    phd_slide_experiments(prs)
+    phd_slide_failure_modes(prs)
+    phd_slide_open_questions(prs)
+    return prs
+
+
+# ============================================================
 # Main
 # ============================================================
 
@@ -979,16 +1314,28 @@ def build_deck(stats: dict) -> Presentation:
 
 
 def main() -> None:
-    stats = fetch_stats()
-    prs = build_deck(stats)
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = OUT_DIR / (
-        f"PROGRESS_SLIDES_{datetime.now().strftime('%Y-%m-%d')}.pptx"
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--phd", action="store_true",
+        help="Build the 5-slide PhD-seminar talk (opinion-seeking) instead "
+             "of the 8-slide supervisor briefing.",
     )
+    args = parser.parse_args()
+
+    stats = fetch_stats()
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now().strftime("%Y-%m-%d")
+    if args.phd:
+        prs = build_phd_deck(stats)
+        out_path = OUT_DIR / f"PHD_TALK_{stamp}.pptx"
+    else:
+        prs = build_deck(stats)
+        out_path = OUT_DIR / f"PROGRESS_SLIDES_{stamp}.pptx"
     prs.save(out_path)
     print(f"Wrote {out_path}")
     print(f"  Slides: {len(prs.slides)}")
-    print(f"  Finals on chart: {len(stats['country_outcomes'])} country/countries")
+    if not args.phd:
+        print(f"  Finals on chart: {len(stats['country_outcomes'])} country/countries")
 
 
 if __name__ == "__main__":
