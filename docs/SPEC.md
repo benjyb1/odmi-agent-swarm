@@ -16,7 +16,7 @@ questions across 36 countries in 20+ languages. Validated against 2024 ground
 truth and deployed against the 2026 cycle.
 
 **Supervisor:** TBC (see Notion supervision log).
-**Repo:** `/Users/benjyb/Desktop/Msc Project`.
+**Repo:** `/Users/benjyb/Desktop/MscProject`.
 **Notion master page:** `331acc75-be02-8163-9169-e327fed97055`.
 
 ---
