@@ -363,6 +363,14 @@ def _finalise_after_adjudication(
     adj_quote = (adj_output.chosen_evidence_quote or "").strip()
     if len(adj_quote) < 10:
         adj_quote = "(adjudicator did not provide quote)"
+    # D44: absence of evidence is not "no". If the Adjudicator committed a
+    # negative label with no supporting quote, it is treating a failure to
+    # find evidence as a negative. Abstain instead. (The prompt is the
+    # primary guard; this is the structural backstop.)
+    if (not _is_abstention(adj_answer)
+            and adj_answer.strip().lower() == "no"
+            and adj_quote == "(adjudicator did not provide quote)"):
+        adj_answer = "inconclusive"
     chosen = ResearcherOutput(
         answer=adj_answer,
         answer_explanation=adj_output.adjudicator_reasoning[:300],
