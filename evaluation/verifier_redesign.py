@@ -212,8 +212,11 @@ def freeze_evidence(cand: Candidate, ro: ResearcherOutput) -> dict:
             queries, _ = gen_fn(v_inp)
         except Exception:
             return [], []
-        results = search_many(queries, max_results_per_query=MAX_RESULTS_PER_QUERY,
-                              provider=PROVIDER)
+        try:
+            results = search_many(queries, max_results_per_query=MAX_RESULTS_PER_QUERY,
+                                  provider=PROVIDER)
+        except Exception:
+            return queries, []
         return queries, results
 
     adversarial_queries, adv_results = _gen_search(V.generate_adversarial_queries)
@@ -310,6 +313,28 @@ def run_arm(cand: Candidate, ro: ResearcherOutput, freeze: dict, arm,
 # ============================================================
 # Run loop (resumable)
 # ============================================================
+
+def _disable_render():
+    """Monkeypatch the DIY pipeline's Playwright fallback to a fast-fail.
+
+    The browser launch in fetch_rendered_html has no timeout and wedges
+    under 6-worker concurrency on Cloudflare-walled pages (data.gov.mt),
+    which hung the dev run. WAF pages now return empty fast instead of
+    hanging. Effect on evidence: a handful of WAF portal pages (almost all
+    Malta, and Malta is mostly already frozen) contribute no snippet to
+    the Verifier's INDEPENDENT search; the Researcher's own frozen
+    snippets and the substring gate are untouched. Documented in the
+    EXP-11 dev-run notes. See search_diy.py:33 on the launch-timeout gap.
+    """
+    import agents.tools.search_diy as sd
+    from agents.tools.fetch import FetchResult
+
+    def _noop_render(url, timeout_s=0.0, **kw):
+        return FetchResult(url=url, backend="playwright", status_code=0,
+                           content="", truncated=False,
+                           failure_mode="render_disabled")
+    sd.fetch_rendered_html = _noop_render
+
 
 def _register_prompts(arms) -> dict:
     """Register each arm strategy's prompt and return {strategy: prompt_id}.
@@ -626,6 +651,9 @@ def main():
     ap.add_argument("--analyse-only", type=str, default=None)
     ap.add_argument("--out", type=str, default=None)
     ap.add_argument("--workers", type=int, default=6)
+    ap.add_argument("--no-render", action="store_true", default=False,
+                    help="disable the Playwright WAF fallback (avoids the "
+                         "browser-launch hang under concurrency)")
     ap.add_argument("--no-cache", action="store_true", default=True)
     args = ap.parse_args()
 
@@ -634,6 +662,9 @@ def main():
         return
 
     search_cache.set_read_disabled(True)  # pinned cold cache (R9)
+    if args.no_render:
+        _disable_render()
+        print("Playwright render fallback DISABLED (WAF pages fail fast).")
     out_path = run(args.limit, args.with_blind, args.out, workers=args.workers)
     analyse(out_path)
 
