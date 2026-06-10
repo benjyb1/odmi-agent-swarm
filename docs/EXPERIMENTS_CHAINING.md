@@ -10,9 +10,11 @@ current independent-retry loop this experiment treats as its baseline.
 
 The chained code path is built and committed in the same change as this file but
 is gated behind a flag (`--chained`) that defaults off, so production and the
-EXP-8 / EXP-9 baseline are byte-identical to the pre-EXP-7 loop. No run has
-happened at commit time; the run waits on the Malta dispatch (search-quota gated)
-and Claude headroom.
+EXP-8 / EXP-9 baseline are byte-identical to the pre-EXP-7 loop. The Malta
+dispatch is now done and the run is no longer quota-gated (20x plan). As of
+2026-06-09 EXP-7 is reframed from a confirmatory "does chaining help" test to a
+chaining-optimisation target (see `EXPERIMENTS.md`); this pre-registration and
+the `--chained` code stand as the starting point.
 
 ---
 

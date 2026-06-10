@@ -98,6 +98,10 @@ dimensions are retained in `docs/METHODOLOGY.md` as historical context only.
 
 ### D7: Phased country rollout
 
+**Phase B sample superseded by D42.** The evaluation sample is now a nine-country
+3×3 maturity × language-resource matrix, held out from development. The original
+six-country 2×3 wealth × maturity sketch is kept below for the audit trail.
+
 - **Phase A:** France only (controlled baseline).
 - **Phase B:** Six countries across a 2×3 wealth × maturity matrix: France,
   Germany, Netherlands, Romania, Hungary, Estonia.
@@ -1092,7 +1096,9 @@ synthesised routes tends high; Q21 is authoritative only on RDF routes) are in
 
 ### D36: search auto-fallback is Tavily → DIY → Brave
 
-**Date:** 2026-06-03.
+**Date:** 2026-06-03. **Superseded by D43 (2026-06-09):** the fallback chain is
+retired. `provider="auto"` is now DIY only; Tavily and Brave are never used in
+production. The description below is kept for the audit trail.
 
 The `provider="auto"` chain in `agents/tools/search.py` now falls back through
 the DIY pipeline before Brave. The order is: Tavily first; on a quota / rate /
@@ -1158,13 +1164,18 @@ Status (detail in `docs/EXPERIMENTS.md`):
   stalling at the search step under repeated machine restarts.
 - **EXP-4/EXP-5** (Brave, then the four-provider A/B): one judge run yields both;
   interrupted near 882 of ~1080 verdicts, resumable from the cache.
-- **EXP-6** (verifier strategy discrimination): designed and partially run (3/89);
-  retargeted to Malta-primary under R4. Its binding prerequisite, the Malta
-  baseline dispatch, is now done (see below); the four-arm judge run is not yet
-  executed.
-- **EXP-7** (retry chaining): code built behind `--chained` (default off, baseline
-  byte-identical) and pre-registered (`EXPERIMENTS_CHAINING.md`, Malta primary);
-  unblocked now the Malta baseline is done, run pending quota.
+- **EXP-6** (verifier strategy discrimination): dropped this round (2026-06-09).
+  Designed and partially run (3/89), retargeted to Malta-primary under R4;
+  apparatus and the partial stay in the repo so it can be revived, but the
+  four-arm judge run is not a priority for the current pass.
+- **EXP-7** (retry chaining): reframed (2026-06-09) from a confirmatory "does
+  chaining help" experiment to a chaining-optimisation target. The `--chained`
+  code (default off, baseline byte-identical) and the `EXPERIMENTS_CHAINING.md`
+  pre-registration stay as the starting point.
+- **EXP-9** (model variants): running (2026-06-09). Five arms over the Malta 60
+  via `scripts/run_exp9_model_variants.sh` (haiku / sonnet / opus-4.6 / tiered /
+  a cross-family Mistral arm), one variable, every other knob pinned. No longer
+  quota-gated (20x plan); see the EXP-9 section in `EXPERIMENTS.md`.
 
 **Malta baseline dispatch (2026-06-03, done; 60/60).** The shared prerequisite for
 EXP-6/7/8/9. The canonical pair set is frozen and committed at
@@ -1468,12 +1479,132 @@ Rationale: the user's actual worry is "a rogue experiment eats the 5-hour token
 budget", not per-run cost. A high circuit breaker on the real units answers that
 without re-introducing the friction D40 removed.
 
+### D42: Nine-country held-out evaluation matrix (3×3 maturity × language-resource)
+
+**Date:** 2026-06-09. Amends D7's Phase B sample.
+
+The primary evaluation sample is nine countries arranged on a 3×3 grid: ODMI
+maturity (high / mid / low) crossed with language-resource level (high / mid /
+low), one country per cell. This replaces the six-country 2×3 wealth × maturity
+sketch in D7. Wealth is dropped as an axis; language-resource takes its place,
+because RQ3 is about whether the swarm degrades on lower-resource languages, and
+wealth was never doing independent work.
+
+> **Do not run the matrix yet (2026-06-09).** The language-resource axis is a
+> placeholder. The tiers below are a hand-assigned proxy, not measured. Before
+> this matrix drives any headline run, the language-resource level must be fixed
+> empirically: an actual measurement of how well the swarm's model reads and
+> reasons over each country's language (a per-country Claude language-competence
+> score, the open question Q4 below). Until that score exists the matrix is a
+> design sketch for discussion only, and the cell assignments may move. SK / SI
+> / SE are wired into `run_coordinator.py` so the codes exist, but that is
+> plumbing, not a green light. Development still happens on countries outside
+> the matrix (Norway is the current dev sweep), so this gate blocks nothing in
+> the meantime.
+
+| | High-resource lang | Mid-resource lang | Low-resource lang |
+|---|---|---|---|
+| **High maturity** | FR (100.0) | SK (95.4) | EE (94.0) |
+| **Mid maturity** | DE (87.6) | HU (78.0) | SI (91.2) |
+| **Low maturity** | SE (78.0) | RO (75.6) | MT (66.9) |
+
+Maturity is the country's overall ODMI score (sum of `awarded_score` /
+`max_score` across all 143 questions in `ground_truth`); the percentage is shown
+in each cell. Tiers are rank-thirds of the 36 countries. Language-resource is a
+declared proxy (DeepL support, speaker count, and a published low-resource
+taxonomy) rather than anything currently in the DB; it must be cited and given a
+per-country evidence note in the dissertation, not asserted.
+
+**Hold-out rule.** The nine are a locked evaluation set. The default ("production")
+pipeline is not tuned against their results. Free-form prompt and retrieval
+iteration aimed at raising accuracy happens on development countries drawn from
+the 27 outside the matrix (candidates: ES / IT high-resource, CZ / HR
+mid-resource, LV / LT low-resource), so iteration sees language and maturity
+variety without touching the eval set. The pipeline is frozen (prompt versions
+and knob settings committed; the commit SHA is the lock, same rule as the old D9
+hand-mark lock) before the nine are run for the headline numbers.
+
+**What is permitted on the nine.** Pre-registered between-condition experiments
+that report a baseline and compare arms: the Verifier-strategy comparison (EXP-6,
+Family 2), and on the same basis the cost-side conditions (Family 1) and model
+variants (Family 3). These compare arms on a fixed country rather than tuning the
+default pipeline to flatter a reported number, so they do not contaminate the
+held-out estimate.
+
+**What is forbidden.** Iterative optimisation of the default pipeline against the
+nine countries' results. The one tripwire to watch: an experiment-winning
+condition must not silently become the new default and then have the headline
+cross-country accuracy re-reported on the same nine without disclosure. Lock which
+condition is "production" before the held-out run.
+
+**Two wrinkles, recorded honestly.**
+
+1. France is both a matrix cell (high / high) and the legacy development sandbox
+   (D4). Its accuracy is therefore in-sample, and is uninformative anyway under
+   the base-rate rule (D38 R4: France binary gold is ~99% `yes`). Report France as
+   the development point; the other eight cells are the clean held-out estimate.
+2. Most cells hold one country, so a per-cell estimate is a single noisy point.
+   This is a limit of any nine-country design, not of holding out; optimising on
+   the set would hide the noise rather than remove it. Cell-level claims stay
+   cautious; the cross-cell trend is the load-bearing result.
+
+`run_coordinator.py` only carries language codes for FR / DE / NL / RO / HU / EE /
+MT, so SK, SI, and SE need their official-language codes added (sk, sl, sv) before
+dispatch. NL leaves the sample (it shared the mid / high cell with DE).
+
+### D43: DIY is the sole search provider; a 30s fetch-stage blocker stops the run
+
+**Date:** 2026-06-09. Supersedes D36; retires the D20/D40/D41 cost-scarcity framing.
+
+Two linked changes, both following the move to the Claude Max 20x plan.
+
+**Plan change.** The subscription is now the 20x plan, so Claude headroom is no
+longer a practical constraint on a dissertation-scale run. Experiment status
+lines that read "gated on quota" or "pending quota" are retired; the only real
+ceiling left is Claude's own 429, which already shuts down cleanly and
+resumably (D20 layer 3, kept). D40 already removed the guessed cost soft limit;
+D41's runaway circuit breakers stay because they guard against a misconfigured
+experiment, not against cost.
+
+**DIY only.** `provider="auto"` in `agents/tools/search.py` is now an alias for
+`"diy"`. Tavily and Brave are never called in production. EXP-1 settled that DIY
+is not worse than Tavily on the web-answerable pairs (it wins 89% of the decided
+FR pairs), so there is no reason to spend on a paid provider or to let a silent
+fallback substitute one mid-run and confound a result. The explicit `tavily`,
+`brave`, and `serper_raw` modes remain in the code but only to reproduce the
+EXP-1 comparison; nothing in production reaches them. Telemetry (D26) is
+unaffected and now records `diy` for every production search.
+
+**30s fetch-stage blocker.** With one provider and no fallback, a slow search is
+a signal, not something to paper over. The DIY network fetch stage (SERP →
+fetch → trafilatura, in `agents/tools/search_diy.py`) now carries a 30s
+wall-clock ceiling per query (`DIY_FETCH_DEADLINE_S`). The ceiling covers only
+the network stage, where blockers live; the Claude snippet-picker that follows
+is metered Claude latency, not a blocker, so it sits outside the window.
+Exceeding the ceiling raises `BlockerShutdown`. That exception subclasses
+`BaseException`, not `Exception`, so the `except Exception` handlers throughout
+the DIY pipeline and the agents cannot absorb it; it propagates to the
+Coordinator's `main()`, which flushes partial state, marks the subtrio
+`interrupted_blocker`, and exits with `EXIT_CODE_BLOCKER` (43). The dispatcher
+treats 43 as a global stop, tearing the whole batch down exactly as it does for
+a 429. The intent is deliberate: a DIY fetch over 30s means a real blocker (a
+Cloudflare or WAF challenge, a hanging portal, a network fault) that a human
+must clear, so the run stops loudly rather than limping on or guessing from thin
+evidence. The stop is resumable: fix the blocker and re-dispatch, and the
+not-done set is recomputed.
+
+New / changed tests: the four D36 auto-fallback tests in
+`test_search_provider_arg.py` rewritten to the DIY-only contract, a
+blocker-propagation test there, and a direct fetch-stage-deadline test in
+`test_search_diy.py`. 526 passing.
+
 ---
 
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-09 (eval matrix) | D42 added, amends D7's Phase B sample. Evaluation sample fixed as a nine-country 3×3 maturity × language-resource matrix, one country per cell: FR / SK / EE (high maturity), DE / HU / SI (mid), SE / RO / MT (low), across high / mid / low-resource language tiers. Wealth dropped as an axis in favour of language-resource (RQ3). The nine are held out: the default pipeline is tuned only on development countries from the 27 outside the matrix (plus France, the legacy in-sample sandbox), then frozen by commit before the headline run. Pre-registered between-condition experiments (Verifier strategies EXP-6, cost-side Family 1, model variants Family 3) are permitted on the nine because they compare arms against a reported baseline; iterative optimisation of the default pipeline against these countries is not. Recorded wrinkles: France's cell is in-sample and base-rate-degenerate (report it as the dev point), and one-country cells are noisy so cell-level claims stay cautious. SK / SI / SE need language codes (sk / sl / sv) added to `run_coordinator.py` before dispatch; NL leaves the sample (shared the mid / high cell with DE). METHODOLOGY RQ3 and Section 6 updated to match. No code or data changed in this entry. |
 | 2026-06-04 (bug-fix batch) | Codebase-wide bug hunt after the concurrent-branch merges; fourteen confirmed findings fixed, three left by choice, three flagged for a human glance. Headline correctness fixes, all in the evaluation path: (1) abstentions (`inconclusive`) were silently classified `differ` in `_MATCH_STATUS_SQL` and counted as wrong; they now have their own `abstained` status. Decision this session: an abstention is a failure to answer, so it stays in the accuracy denominator (accuracy unchanged, 0.645), but `accuracy_summary` now also returns `n_abstained` and `abstention_rate` (0.27 on current main), surfaced across Home/Results/Database/Analytics. (2) A bare `yes` falsely scored an exact match against a count_band gold like `yes, >9`; the `yes...` prefix match is now gated to binary questions (drops n_match 137 to 136). (3) near_match adjacency no longer treats sentinel labels (`not applicable`, `i don't know`, abstention/other) as adjacent bands. Crash/safety fixes: the Coordinator resume path raised `UnboundLocalError` (never bound `r_result`) and is now made uniform via a synthesised `ResearcherRunResult`; the Adjudicator could crash finalisation on a sub-`min_length` evidence quote (now falls back); `trust_score` corrupted hostnames with `lstrip("www.")`; the leakage deny-list was bypassable with a trailing-dot FQDN (`data.europa.eu.`). Stranded `loving-mendel` code cherry-picked: the canonical-row dedup that EXP-7/EXP-10 need (they were double-counting duplicate `phase2_final` rows), the EXP-6 `--workers` parallelism, the `max_retries=8` proxy-resilience cushion, and two test files. Smaller: reproducible DCAT-RDF snapshot hash, DIY-empty falls through to Brave, `cleanup_subtrios` PID-reuse guard, `harness.py run-pair` positional args, Verifier strategy descriptions V1 to V3, chained-evidence dedup on full snippet, `datetime.utcnow()` deprecation cleared. Left by choice: model-default write not read-only gated (single user), Holm step-down / even-n median labels, no `cycle_year` join filter. Flagged: Q2's `allowed_answers` leads with a stray `"1"` (loader artefact, shifts band indices); EXP-1's "decided" denominator includes per-orientation `both_fail` against the "excluded" prose (disclosure call, strengthens DIY either way, 89% to 93% under strict exclusion); per-country trusted lists load empty because the JSON key is `trusted_domains` but `validator._load_country_list` reads `trusted`. Tests: 523 passing (was 496), 13 skipped. |
 | 2026-06-03 (answerability split) | Added a per-question answerability tag so results are reported separately by how an answer can be sourced, never excluded. `scripts/build_answerability.py` writes `data/questions/answerability.json`: `catalogue` (the 9 D30-computable questions, authoritative from `agents.tools.catalogue.compute.COMPUTABLE_QUESTIONS`), `self_report` (questionnaire-only internal practice, matched by a transparent keyword rule, reviewable first-pass), `web` (the rest). Split: 119 web / 9 catalogue / 15 self_report. On the Malta baseline the split is the point: web questions reach 79% committed accuracy (30/38), self_report only 40% (2/5) with 7 of 12 abstaining; catalogue questions are percentage-band so none fall in the binary Malta set. The keyword rule is a first pass for review (it missed PT15/PT28/PT45 and the `surveys?` pattern is broad); refine the generator, not the JSON by hand. WAF/CAPTCHA investigation recorded under the Malta entry and the `head_ok` / Playwright-hardening commits: data.gov.mt HTML clears via Playwright (hardened with anti-automation launch args + a Cloudflare-challenge settle), but portal.data.gov.mt walls its uData API even through a cleared browser, so the clean-API route that works for the other five D30 countries is unavailable for MT. |
 | 2026-06-03 (abstain floor) | Extended the D37 commit-confidence floor (0.65) to the Adjudicator's terminal answer in `_finalise_after_adjudication`. Before this the floor only gated the in-loop Verifier-pass path, so at retry exhaustion the Adjudicator could finalise a sub-floor label, which on sparse evidence is usually a defensive `no` (and occasionally a weak `yes` false positive). A sub-0.65 Adjudicator commit is now downgraded to an honest `inconclusive` abstention: under the floor the swarm abstains rather than guessing `no`. On the Malta baseline this would convert the four 0.45-confidence commits (Q10, Q11, Q6 false-negative `no`s and the PT29 false-positive `yes`) into abstentions. Behaviour change for future runs; the committed Malta data predates it. New `tests/test_finalise_after_adjudication.py` cases (sub-floor downgrade, above-floor kept); 496 non-live passing. |

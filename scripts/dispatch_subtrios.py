@@ -36,7 +36,7 @@ from typing import Callable, List, Optional, Sequence
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from agents.errors import EXIT_CODE_RATE_LIMITED
+from agents.errors import EXIT_CODE_RATE_LIMITED, EXIT_CODE_BLOCKER
 from agents.tools.db import DB_PATH, connect
 from dashboard.lib.currency import format_gbp
 
@@ -184,6 +184,7 @@ class DispatchResult:
     batch_id: str
     jobs: List[SubtrioJob]
     rate_limited: bool = False
+    blocked: bool = False
     aborted_oversize: bool = False
     calls_capped: bool = False
     messages: List[str] = field(default_factory=list)
@@ -300,14 +301,15 @@ def dispatch(
     # The dispatch loop. Run with a semaphore equal to parallel_limit.
     sem = threading.Semaphore(parallel_limit)
     rate_limited = False
+    blocked = False
     calls_capped = False
     all_subtrio_ids = [j.subtrio_id for j in jobs]
 
     def spawn(job: SubtrioJob) -> None:
-        nonlocal rate_limited, calls_capped
+        nonlocal rate_limited, blocked, calls_capped
         sem.acquire()
         try:
-            if rate_limited or calls_capped:
+            if rate_limited or blocked or calls_capped:
                 return
 
             # Mid-flight runaway breaker (D41): stop spawning once this
@@ -373,12 +375,17 @@ def dispatch(
             if job.exit_code == EXIT_CODE_RATE_LIMITED:
                 log(f"!! RATE LIMIT on {job.question_id}/{job.country_code}")
                 rate_limited = True
+            elif job.exit_code == EXIT_CODE_BLOCKER:
+                # DIY fetch blocker (D43): stop the whole batch, same as a 429.
+                log(f"!! DIY BLOCKER (>30s fetch) on "
+                    f"{job.question_id}/{job.country_code} - stopping batch")
+                blocked = True
         finally:
             sem.release()
 
     threads: List[threading.Thread] = []
     for job in jobs:
-        if rate_limited or calls_capped:
+        if rate_limited or blocked or calls_capped:
             break
         t = threading.Thread(target=spawn, args=(job,))
         t.start()
@@ -390,8 +397,9 @@ def dispatch(
     for t in threads:
         t.join()
 
-    # If rate-limited, terminate any still-alive children just in case.
-    if rate_limited:
+    # If we hit a global stop (429 or DIY blocker), terminate any still-alive
+    # children just in case.
+    if rate_limited or blocked:
         for job in jobs:
             if job.process and job.process.poll() is None:
                 try:
@@ -405,6 +413,7 @@ def dispatch(
         batch_id=batch_id,
         jobs=jobs,
         rate_limited=rate_limited,
+        blocked=blocked,
         calls_capped=calls_capped,
         messages=[],
     )
@@ -662,11 +671,17 @@ def main() -> int:
     print(f"batch_id: {result.batch_id}")
     print(f"jobs: {len(result.jobs)}")
     print(f"rate_limited: {result.rate_limited}")
+    if result.blocked:
+        print(f"blocked (DIY fetch >30s): {result.blocked}")
     if result.aborted_oversize:
         print(f"aborted_oversize: {result.aborted_oversize}")
     if result.calls_capped:
         print(f"calls_capped: {result.calls_capped}")
-    return EXIT_CODE_RATE_LIMITED if result.rate_limited else 0
+    if result.rate_limited:
+        return EXIT_CODE_RATE_LIMITED
+    if result.blocked:
+        return EXIT_CODE_BLOCKER
+    return 0
 
 
 if __name__ == "__main__":

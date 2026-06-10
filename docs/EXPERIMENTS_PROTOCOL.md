@@ -431,12 +431,11 @@ in section 0, the part the methodology draft left open.
 - **Headline.** Each accuracy delta is set against the calls-per-pair delta. A
   lean arm that retries more and erases its own saving is reported as that result
   (the EXP-2 confound, R9).
-- **Prerequisite (pending quota).** Needs a Researcher dispatch on Malta (and
-  optionally NL); those pairs do not exist in the DB yet. The dispatch is gated on
-  search quota, the same constraint as the parked D28 Phase 3 re-dispatch and
-  EXP-6's retarget. Do not assume it has run. `prompt-compressed` also needs a
-  committed compressed prompt version, and `model-fallback` the escalation path;
-  both are pre-run requirements (section 9).
+- **Prerequisite.** The Malta dispatch is done (2026-06-03, 60/60), so the pairs
+  exist. No longer quota-gated (20x plan, DIY-only per D43). `prompt-compressed`
+  still needs a committed compressed prompt version and `model-fallback` the
+  escalation path; both are pre-run requirements (section 9). EXP-8 is not in the
+  current pass (EXP-9 is the running model experiment).
 
 ### EXP-9, model variants (Family 3)
 
@@ -455,13 +454,23 @@ in section 0, the part the methodology draft left open.
   | `model-sonnet` (baseline) | Sonnet | Sonnet | Sonnet |
   | `model-opus` | Opus | Opus | Opus |
   | `model-tiered` | Haiku | Sonnet | Opus |
+  | `model-mistral` | Mistral Large | Mistral Large | Mistral Large |
+
+  The `model-mistral` arm was added 2026-06-09, after the original four-arm
+  registration. It is a cross-family control: if a non-Claude model lands near
+  the Sonnet baseline, the result is carried by the pipeline design, not by
+  Claude specifically. The DIY snippet-picker stays on Claude for every arm, so
+  it is a pinned constant. Version IDs at run time: Haiku
+  `claude-haiku-4-5-20251001`, Sonnet `claude-sonnet-4-6`, Opus `claude-opus-4-6`
+  (the pre-registered Opus, confirmed served by the proxy), Mistral
+  `mistral-large-latest`.
 
 - **Endpoints.** E1 accuracy, balance-aware per R4(b) against the Malta majority
   baseline per R4(a); cost per pair per R9. The accuracy-cost surface (accuracy on
   one axis, cumulative cost on the other, one marker per condition, coloured by
   ODMI dimension) is the headline figure for the dissertation.
 - **Sample.** Malta primary, Netherlands secondary, per R4(c). Paired across the
-  four model conditions on the identical pair set (R2), stratified by dimension
+  five model conditions on the identical pair set (R2), stratified by dimension
   (R3). Shares the EXP-8 Malta dispatch where the pairs overlap.
 - **Statistics.** Per-condition balanced accuracy with Wilson 95% intervals (R8).
   The one confirmatory comparison is `model-tiered` vs `model-sonnet` (the
@@ -472,9 +481,10 @@ in section 0, the part the methodology draft left open.
 - **Honest framing.** "Model tier does not matter much on this regime, Haiku is
   enough" is as publishable a result as "only Opus reaches human-equivalent". A
   null is the finding (R12).
-- **Prerequisite (pending quota).** The same Malta dispatch as EXP-8, plus the
-  per-agent model-override threading committed and tested (section 9). Pending
-  search quota; do not assume it has run.
+- **Prerequisite (met; running 2026-06-09).** The Malta dispatch is done and the
+  per-agent model-override threading is committed and tested (section 9). Not
+  quota-gated (20x plan). The five arms dispatch via
+  `scripts/run_exp9_model_variants.sh`.
 
 ---
 
@@ -531,7 +541,8 @@ EXP-2a prompt's "did the swarm actually use DIY" sanity check. No experiment run
 until items 1 to 8 are committed and their tests pass.
 
 For the optimisation experiments (EXP-6 retarget, EXP-8, EXP-9), three further
-items, all gated on search quota:
+items. Item 9 (the Malta dispatch) is now done and these are no longer
+quota-gated (20x plan, DIY-only per D43):
 
 9. **Malta dispatch:** a Researcher run over Malta (target ~30 `no`-gold binary
    questions plus a matched ~30 `yes`-gold for the pass side, dimension-stratified),

@@ -16,10 +16,10 @@ run) · `running` · `done`.
 | EXP-3 | DIY vs Tavily, multilingual | planned | RO / EE / HU and other thin-web countries | pending |
 | EXP-4 | Brave head-to-head | planned | FR first | pending |
 | EXP-5 | Five-provider search A/B | planned | TBD (the parked June plan) | pending |
-| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | retargeted (Malta dispatch done) | primary Malta natural errors, NL secondary, FR + injected robustness | unblocked; Malta baseline finalised 60/60 (43 committed, 17 abstentions); the natural-error pool for the should_fail arm is now populated; FR/injected partial superseded |
-| EXP-7 | Retry chaining: accumulate evidence across the loop | code built, pre-registered | Malta primary (no-gold-rich), NL secondary | chained arm built behind `--chained` (default off, baseline byte-identical), pre-registered (`EXPERIMENTS_CHAINING.md`); unblocked now the Malta baseline is done (60/60), reuses the same pair list; run pending quota |
+| EXP-6 | Verifier strategy discrimination (4-arm signal detection) | dropped (this round, 2026-06-09) | primary Malta natural errors, NL secondary, FR + injected robustness | parked by decision; the four-arm verifier-strategy comparison is not a priority for the current pass. Apparatus and the partial run stay in the repo so it can be revived. Not run. |
+| EXP-7 | Retry chaining: accumulate evidence across the loop | reframed to optimisation (2026-06-09) | Malta primary (no-gold-rich), NL secondary | no longer a confirmatory "does chaining help" experiment. Chaining is taken as the approach; the work is to optimise it (corpus size, dedup, which counter-evidence feeds back). The `--chained` code and `EXPERIMENTS_CHAINING.md` pre-registration stay as the starting point. |
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
-| EXP-9 | Model variants (Family 3) | planned | Haiku / Sonnet / Opus / tiered; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
+| EXP-9 | Model variants (Family 3) | running (2026-06-09) | Haiku / Sonnet / Opus / tiered / Mistral; MT primary, NL secondary | dispatching all five arms over the Malta 60 via `scripts/run_exp9_model_variants.sh`, knobs pinned (provider diy, cold cache, disprove, 5 results, 3 retries, full prompt, unchained), only the model varies. Mistral-large-latest added as a cross-family arm. Caveat: overlaps the Norway dev sweep, so the latency endpoint may be contention-inflated; token-cost and accuracy unaffected. |
 | EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | unblocked; 60 finalised Malta pairs available (batches exp6_malta + malta_baseline), failure taxonomy drafted (search-empty, resume-orphan, abstention, conservative-FN, FP); floor sweep is free |
 
 ---
@@ -197,9 +197,10 @@ set, and models fixed and varies one cost knob at a time: `baseline`,
 balance-aware accuracy against the Malta majority baseline (R4) and cost per pair
 with retries counted (R9). Run on Malta primary, Netherlands secondary.
 
-Prerequisite: the Malta Researcher dispatch (search-quota gated), a committed
-`prompt-compressed` prompt version, and the `model-fallback` escalation path.
-The apparatus is built (2026-06-03): the compressed Researcher prompt
+Prerequisite: the Malta dispatch is done (not quota-gated; 20x plan), so what
+remains is a committed `prompt-compressed` prompt version and the
+`model-fallback` escalation path. EXP-8 is not in the current pass (EXP-9 is the
+running model experiment). The apparatus is built (2026-06-03): the compressed Researcher prompt
 (`--prompt-variant compressed`, its own `prompt_versions` row, baseline
 untouched), the `model-fallback` escalation (`--researcher-escalation-model` /
 `--verifier-escalation-model`), and the cold-cache switch (`--no-cache`) for the
@@ -208,22 +209,43 @@ committed pair list), so the condition-tagged runs can proceed over the same set
 
 Result: pending.
 
-## EXP-9: Model variants, Family 3 (planned)
+## EXP-9: Model variants, Family 3 (running)
 
 Pre-registered in `EXPERIMENTS_PROTOCOL.md` (section 7). Compares `model-haiku`,
-`model-sonnet` (baseline), `model-opus`, and `model-tiered` (Haiku draft, Sonnet
-verify, Opus adjudicate) on the same Malta pairs. The confirmatory comparison is
-tiered vs all-Sonnet on accuracy and cost; the accuracy-cost surface is the
-headline figure. Run on Malta primary, Netherlands secondary.
+`model-sonnet` (baseline), `model-opus`, `model-tiered` (Haiku draft, Sonnet
+verify, Opus adjudicate), and `model-mistral` on the same Malta pairs. The
+confirmatory comparison is tiered vs all-Sonnet on accuracy and cost; the
+accuracy-cost surface is the headline figure. Run on Malta primary, Netherlands
+secondary.
 
-Prerequisite: the Malta dispatch and per-agent model-override threading. The
-threading is built (2026-06-03): `--researcher-model` / `--verifier-model` /
-`--adjudicator-model` now all drive the LLM (previously only the Adjudicator
-did), and the served version ID is written to `claude_usage_log`. All four arms
-are runnable. The Malta baseline dispatch is now done (60/60 over the committed
-pair list), so the condition-tagged runs can proceed over the same set.
+**Mistral arm (added 2026-06-09).** A fifth, cross-family arm runs the whole
+swarm on `mistral-large-latest`. It tests how much of the accuracy is the
+pipeline versus Claude specifically: if Mistral lands near Sonnet, the design
+carries the result, not the model family. Enabled by a lean provider branch in
+`call_for_structured` (structured output is prompt-based JSON, so no separate
+agent stack was needed). The DIY snippet-picker stays on Claude for every arm,
+so it is a pinned constant, not part of the variant. Mistral is off the Claude
+budget; its cost is a real-money figure. Watch for a Mistral monthly-quota stop
+on this arm (it runs last, so the four Claude arms complete regardless).
 
-Result: pending.
+**Model ids.** Haiku `claude-haiku-4-5-20251001`, Sonnet `claude-sonnet-4-6`,
+Opus `claude-opus-4-6` (confirmed served by the proxy, matches the
+pre-registration; `claude-opus-4-8` is not served). Mistral
+`mistral-large-latest`.
+
+**Dispatch.** `scripts/run_exp9_model_variants.sh`, the five arms sequentially
+over the canonical Malta 60. One variable (the model); provider diy, cold cache,
+disprove, 5 results, 3 retries, full prompt, unchained all pinned. Each arm
+tagged `experiment_id=model_variants_mt` and a per-arm `condition_label`; the
+fresh dispatch writes new rows alongside the baseline (canonical-row dedup keeps
+the analysis honest).
+
+**Caveat (contention).** This run overlaps the Norway development sweep, so the
+wall-clock latency endpoint may be inflated by machine contention. The headline
+token-cost endpoint is token-based and unaffected; arms run sequentially under
+roughly constant background load, so the relative accuracy comparison holds.
+
+Result: pending (running 2026-06-09).
 
 ## EXP-10: Malta failure-mode audit + confidence-floor recovery (planned)
 
@@ -306,9 +328,9 @@ recovery indistinguishable from majority-class guessing, the D35 / D37 / R4
 lesson). The lower-resource `no`-heavy countries (BA, MK, ME, BG, IS) are deferred
 to a follow-on so a poor result there is not blamed on language.
 
-Prerequisite: the Malta dispatch (search-quota gated, shared with EXP-6/8/9; the
-`no`-gold candidates do not exist in the DB yet) and Claude headroom. The run is
-gated only on those two; the code and pre-registration are done.
+Prerequisite: the Malta dispatch is done (60/60, shared with EXP-6/8/9), so the
+`no`-gold candidates now exist and the run is no longer quota-gated (20x plan).
+The code and pre-registration are done.
 
 Status: code built and committed (flag-gated, default off), pre-registered. Run
 not started, pending the Malta dispatch and quota.

@@ -64,9 +64,57 @@ PRICING_USD_PER_M = {
     "claude-opus-4-5-20251101":   {"input": 15.0, "output": 75.0},
     "claude-haiku-4-5-20251001":  {"input": 1.0,  "output": 5.0},
     "claude-3-5-haiku-20241022":  {"input": 0.8,  "output": 4.0},
+    # Mistral (EXP-9 cross-family arm). Published Mistral Large rate, in USD per
+    # million tokens; off the Claude budget (D1), so this is a real-money figure
+    # for the cost endpoint rather than an arithmetic equivalent. Refresh
+    # deliberately if Mistral pricing moves.
+    "mistral-large-latest":       {"input": 2.0,  "output": 6.0},
 }
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
+
+
+def _is_mistral(model: str) -> bool:
+    """True for a Mistral model id, which routes off CLIProxyAPI (EXP-9)."""
+    return model.lower().startswith("mistral")
+
+
+def _mistral_structured_call(
+    *,
+    model: str,
+    system: str,
+    user_text: str,
+    max_tokens: int,
+    temperature: float,
+    timeout_s: float,
+) -> tuple[str, str, int, int]:
+    """One Mistral chat-completions call. Returns (served_model, raw_text, in, out).
+
+    Reuses the cross-family judge's HTTP client (rate-limit pacing, 429 retry,
+    bearer auth). Structured output here is prompt-based JSON, identical to the
+    Claude path, so `response_format=json_object` plus the schema already in the
+    system prompt is all that differs. The swarm's snippet-picker stays on
+    Claude for every arm, so it is a pinned constant, not part of the variant.
+    """
+    from agents.tools.search_adjudicator_mistral import _post_chat_completion
+    body = _post_chat_completion(
+        model=model,
+        messages=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": user_text},
+        ],
+        temperature=temperature,
+        max_tokens=max_tokens,
+        response_format={"type": "json_object"},
+        timeout_s=timeout_s,
+    )
+    choice = (body.get("choices") or [{}])[0]
+    raw_text = (choice.get("message") or {}).get("content") or ""
+    usage = body.get("usage") or {}
+    in_tok = int(usage.get("prompt_tokens") or 0)
+    out_tok = int(usage.get("completion_tokens") or 0)
+    served = body.get("model") or model
+    return served, raw_text, in_tok, out_tok
 
 
 def _make_client() -> anthropic.Anthropic:
@@ -214,7 +262,10 @@ def call_for_structured(
     """
     if model is None:
         model = DEFAULT_MODEL
-    client = _make_client()
+    # Only the Claude path needs the Anthropic/CLIProxyAPI client; a Mistral arm
+    # (EXP-9) goes direct, so do not construct (or require auth for) the proxy
+    # client when it will not be used.
+    client = None if _is_mistral(model) else _make_client()
     schema = output_schema.model_json_schema()
     schema_text = json.dumps(schema, indent=2)
 
@@ -238,53 +289,66 @@ def call_for_structured(
         )
 
         started = time.monotonic()
-        try:
-            response = client.messages.create(
+        if _is_mistral(model):
+            # Cross-family arm (EXP-9): call Mistral directly, off the Claude
+            # budget. A Mistral auth/quota failure raises MistralAuthError,
+            # which propagates as a normal coordinator failure (not a clean
+            # global stop); the run records the pair as failed.
+            served_model, raw_text, call_in, call_out = _mistral_structured_call(
                 model=model,
+                system=sys_text,
+                user_text=user_text,
                 max_tokens=max_tokens,
                 temperature=temperature,
-                system=sys_text,
-                messages=[{"role": "user", "content": user_text}],
-                timeout=timeout_s,
+                timeout_s=timeout_s,
             )
-        except anthropic.RateLimitError as exc:
-            # Anthropic 429. Log a placeholder usage row, then raise the
-            # typed shutdown signal so the Coordinator can exit cleanly.
-            _log_claude_usage(
-                model=model,
-                input_tokens=0,
-                output_tokens=0,
-                estimated_cost_usd=None,
-                rate_limited=True,
-                context=usage_context,
-                subtrio_id=subtrio_id,
-            )
-            raise RateLimitedShutdown(
-                f"Anthropic rate limit hit for model={model}: {exc}"
-            ) from exc
+        else:
+            try:
+                response = client.messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    system=sys_text,
+                    messages=[{"role": "user", "content": user_text}],
+                    timeout=timeout_s,
+                )
+            except anthropic.RateLimitError as exc:
+                # Anthropic 429. Log a placeholder usage row, then raise the
+                # typed shutdown signal so the Coordinator can exit cleanly.
+                _log_claude_usage(
+                    model=model,
+                    input_tokens=0,
+                    output_tokens=0,
+                    estimated_cost_usd=None,
+                    rate_limited=True,
+                    context=usage_context,
+                    subtrio_id=subtrio_id,
+                )
+                raise RateLimitedShutdown(
+                    f"Anthropic rate limit hit for model={model}: {exc}"
+                ) from exc
+            served_model = response.model
+            raw_text = response.content[0].text if response.content else ""
+            call_in = response.usage.input_tokens
+            call_out = response.usage.output_tokens
 
         elapsed_ms = int((time.monotonic() - started) * 1000)
 
-        cumulative_input_tokens += response.usage.input_tokens
-        cumulative_output_tokens += response.usage.output_tokens
+        cumulative_input_tokens += call_in
+        cumulative_output_tokens += call_out
         cumulative_wall_clock_ms += elapsed_ms
 
-        # Per-call usage log (one row per actual Anthropic call, not per retry).
+        # Per-call usage log (one row per actual provider call, not per retry).
         _log_claude_usage(
-            model=response.model,
-            input_tokens=response.usage.input_tokens,
-            output_tokens=response.usage.output_tokens,
-            estimated_cost_usd=estimate_cost_usd(
-                response.model,
-                response.usage.input_tokens,
-                response.usage.output_tokens,
-            ),
+            model=served_model,
+            input_tokens=call_in,
+            output_tokens=call_out,
+            estimated_cost_usd=estimate_cost_usd(served_model, call_in, call_out),
             rate_limited=False,
             context=usage_context,
             subtrio_id=subtrio_id,
         )
 
-        raw_text = response.content[0].text if response.content else ""
         json_text = _extract_json(raw_text)
 
         try:
@@ -296,7 +360,7 @@ def call_for_structured(
                 estimated_cost_usd=estimate_cost_usd(
                     model, cumulative_input_tokens, cumulative_output_tokens
                 ),
-                model_version=response.model,
+                model_version=served_model,
                 prompt_version_id=prompt_version_id,
                 condition_label=condition_label,
                 raw_response=raw_text,

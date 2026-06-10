@@ -42,7 +42,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from agents.adjudicator import run_adjudicator
-from agents.errors import EXIT_CODE_RATE_LIMITED, RateLimitedShutdown
+from agents.errors import (
+    EXIT_CODE_RATE_LIMITED, EXIT_CODE_BLOCKER,
+    RateLimitedShutdown, BlockerShutdown,
+)
 from agents.tools import answer_shapes
 from agents.models import (
     AdjudicatorInput,
@@ -81,6 +84,21 @@ COUNTRIES = {
     # so portal_url is not on the critical path for the Malta run.
     "MT": {"country_name": "Malta",    "country_language": "en",
            "portal_url": "https://data.gov.mt/"},
+    # Norway: the current development sweep country (D42 hold-out rule). NO sits
+    # outside the nine-country evaluation matrix, so the default pipeline may be
+    # iterated against it without contaminating the held-out estimate.
+    "NO": {"country_name": "Norway",   "country_language": "no",
+           "portal_url": "https://data.norge.no/"},
+    # SK / SI / SE: members of the D42 3x3 evaluation matrix. Wired here so the
+    # codes exist, but the matrix must not be run until the language-resource
+    # axis is fixed empirically (see the warning on D42); these are not for the
+    # headline run yet.
+    "SK": {"country_name": "Slovakia", "country_language": "sk",
+           "portal_url": "https://data.slovensko.sk/"},
+    "SI": {"country_name": "Slovenia", "country_language": "sl",
+           "portal_url": "https://podatki.gov.si/"},
+    "SE": {"country_name": "Sweden",   "country_language": "sv",
+           "portal_url": "https://www.dataportal.se/"},
 }
 
 
@@ -1510,6 +1528,21 @@ def main() -> int:
             ended=True,
         )
         return EXIT_CODE_RATE_LIMITED
+    except BlockerShutdown as exc:
+        # The DIY fetch stage blew its 30s ceiling (D43): a real blocker, not a
+        # per-pair failure. Flush state and signal a global stop, same contract
+        # as a 429 so the dispatcher tears the whole batch down.
+        print(f"\n[BLOCKER] {exc}", file=sys.stderr)
+        _upsert_subtrio_status(
+            subtrio_id=subtrio_id, batch_id=batch_id,
+            question_id=args.question_id, country_code=args.country_code.upper(),
+            stage="interrupted_blocker",
+            final_verdict="interrupted_blocker",
+            last_message=str(exc)[:200],
+            final_failure_reason="diy_fetch_blocker",
+            ended=True,
+        )
+        return EXIT_CODE_BLOCKER
 
     print(f"\n=== TERMINAL: {terminal_status} ===")
     if final_output:

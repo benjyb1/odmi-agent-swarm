@@ -22,6 +22,7 @@ from __future__ import annotations
 
 
 EXIT_CODE_RATE_LIMITED = 42
+EXIT_CODE_BLOCKER = 43
 
 
 class RateLimitedShutdown(RuntimeError):
@@ -29,6 +30,25 @@ class RateLimitedShutdown(RuntimeError):
 
     Re-raised from the LLM wrapper. The caller is expected to flush any
     partial state to the DB and exit with EXIT_CODE_RATE_LIMITED.
+    """
+
+
+class BlockerShutdown(BaseException):
+    """The DIY fetch stage exceeded its wall-clock ceiling (D43).
+
+    Raised when the DIY pipeline's network fetch/extract stage runs longer
+    than `DIY_FETCH_DEADLINE_S`. On the 20x plan DIY is the sole provider
+    and should be fast; a slow fetch stage means a real blocker (Cloudflare
+    / WAF challenge, a hanging portal, a network fault) that a human must
+    clear, so the whole run stops loudly rather than limping on or silently
+    substituting another provider.
+
+    It subclasses `BaseException`, not `Exception`, on purpose: the DIY
+    pipeline and the agents are littered with `except Exception` handlers
+    that record a failure mode and carry on. A blocker must not be absorbed
+    by any of them. It propagates untouched to the Coordinator's `main()`,
+    which flushes partial state and exits with EXIT_CODE_BLOCKER; the
+    dispatcher treats that exit code as a global stop, exactly like a 429.
     """
 
 

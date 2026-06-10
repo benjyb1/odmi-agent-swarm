@@ -12,9 +12,12 @@ from the result list entirely. Result length never exceeds max_results.
 """
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import (
+    ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout,
+)
 from typing import List, Optional
 
+from agents.errors import BlockerShutdown
 from agents.tools.search import SearchResult
 from agents.tools.search_serper import serper_search
 from agents.tools.blocked_domains import is_blocked
@@ -26,6 +29,32 @@ from agents.tools.snippet_picker import (
 from agents.tools import search_cache as cache
 
 FETCH_PARALLELISM = 5
+
+# Per-URL fetch timeouts inside the DIY pipeline (D43). Deliberately tighter than
+# the module defaults in agents/tools/fetch.py (httpx 15s, Playwright 30s). The
+# worst case for one URL is httpx, THEN a browser launch, THEN the render goto;
+# the launch sits outside the goto timeout and balloons under concurrency, so the
+# real per-URL cost is httpx + launch + render, not just the two timeouts. With
+# httpx 8s + render 13s and a few seconds of launch the worst case is ~24s,
+# leaving headroom under the 30s stage ceiling even when several coordinators
+# launch browsers at once. A Cloudflare/WAF challenge that needs ~25s to settle
+# therefore fails fast (the render times out and the URL is dropped) instead of
+# dragging the stage to 30s. That is the point: a normal DIY fetch is fast, so a
+# stage that blows 30s means something is genuinely broken, not just a heavy page.
+# (Tightened from 10s/16s on 2026-06-09 after the EXP-9 haiku arm tripped the
+# ceiling on a data.gov.mt Quality fetch under contention with the Norway sweep.)
+DIY_HTTPX_TIMEOUT_S = 8.0
+DIY_RENDER_TIMEOUT_S = 13.0
+
+# Wall-clock ceiling on the DIY network fetch/extract stage, per query (D43).
+# DIY is the sole provider on the 20x plan and must be fast. With the per-URL
+# timeouts above, the parallel fetch stage clears well within 30s in the normal
+# case. Exceeding it is treated as a real blocker, not a slow page: we stop the
+# whole run loudly via BlockerShutdown so a human pauses and fixes the cause.
+# The ceiling covers only the network stage where blockers live; the Claude
+# snippet-picker that follows is metered Claude latency, not a blocker, so it is
+# deliberately outside the window.
+DIY_FETCH_DEADLINE_S = 30.0
 
 
 def _fetch_and_clean(url: str) -> str:
@@ -39,10 +68,10 @@ def _fetch_and_clean(url: str) -> str:
     Returns "" when the page cannot be fetched or yields no extractable
     content; the caller drops such URLs.
     """
-    result = fetch_html(url)
+    result = fetch_html(url, timeout_s=DIY_HTTPX_TIMEOUT_S)
     if (result.failure_mode in ("empty_after_strip", "timeout")
             or not result.content):
-        result = fetch_rendered_html(url)
+        result = fetch_rendered_html(url, timeout_s=DIY_RENDER_TIMEOUT_S)
     if result.failure_mode is not None or not result.content:
         return ""
     return extract_text(result.content, url=url, is_html=True)
@@ -91,9 +120,22 @@ def diy_search(
         return r, clean
 
     fetched: list[tuple[SearchResult, str]] = []
-    with ThreadPoolExecutor(max_workers=FETCH_PARALLELISM) as pool:
-        for fut in as_completed(pool.submit(_fetch, r) for r in serp):
+    pool = ThreadPoolExecutor(max_workers=FETCH_PARALLELISM)
+    try:
+        futures = [pool.submit(_fetch, r) for r in serp]
+        # as_completed's own timeout enforces the stage deadline. We avoid the
+        # `with` context manager because its __exit__ would block on the hung
+        # fetch we are trying to escape; shutdown(wait=False) abandons it (the
+        # per-fetch httpx/Playwright timeouts bound it) and we stop now.
+        for fut in as_completed(futures, timeout=DIY_FETCH_DEADLINE_S):
             fetched.append(fut.result())
+    except FuturesTimeout:
+        pool.shutdown(wait=False, cancel_futures=True)
+        raise BlockerShutdown(
+            f"DIY fetch stage exceeded {DIY_FETCH_DEADLINE_S:.0f}s for query "
+            f"{query!r} - likely a Cloudflare/WAF challenge or network blocker"
+        )
+    pool.shutdown(wait=True)
 
     # 3. Snippet pick (cached). Text is already clean main content.
     out: List[SearchResult] = []
