@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Optional
 
 from agents.tools.blocked_domains import blocked_reason, is_blocked
+from agents.tools.catalogue import _fetch
 from agents.tools.catalogue._fetch import BlockedEndpointError
 from agents.tools.catalogue.discovery.verify import DiscoveryOutcome
 
@@ -47,6 +48,31 @@ def _guard_urls(payload: dict) -> None:
                 walk(v)
 
     walk(payload)
+
+
+def _robots_note(portal_base: str, robots_fetcher) -> str:
+    """Summarise the portal's robots.txt for the registry receipt.
+
+    Records the lines that matter to a polite harvester (Disallow on API
+    paths, Crawl-delay); an unreachable robots.txt is recorded as absent,
+    the same convention the EE hand-authored registry uses."""
+    try:
+        raw = robots_fetcher(f"{portal_base}/robots.txt")
+    except Exception:  # noqa: BLE001 - absence is a finding, not an error
+        return "No robots.txt reachable at probe time. Throttle, descriptive UA."
+    text = raw.decode("utf-8", errors="replace")[:4000]
+    interesting = [
+        line.strip()
+        for line in text.splitlines()
+        if line.strip().lower().startswith(("disallow:", "crawl-delay:"))
+        and ("api" in line.lower() or "crawl-delay" in line.lower()
+             or line.strip().rstrip() in ("Disallow: /", "Disallow: *"))
+    ]
+    if not interesting:
+        return ("robots.txt present, no Disallow on the API paths used. "
+                "Throttle, descriptive UA.")
+    return ("robots.txt: " + "; ".join(interesting[:6])
+            + ". Throttle, descriptive UA.")
 
 
 def _notes(outcome: DiscoveryOutcome) -> str:
@@ -81,6 +107,7 @@ def emit_registry(
     portals_dir: Path = DEFAULT_PORTALS_DIR,
     force: bool = False,
     verified_at: Optional[str] = None,
+    robots_fetcher=_fetch.fetch_bytes,
 ) -> Path:
     """Write `<CC>.json` for a verified outcome and return the path.
 
@@ -118,7 +145,7 @@ def emit_registry(
         "request_delay_s": 1.0,
         "total_datasets_hint": chosen.evidence.total_datasets,
         "licence_field": licence_field,
-        "robots_note": "",
+        "robots_note": _robots_note(outcome.portal_base, robots_fetcher),
         "verified_at": verified_at or date.today().isoformat(),
         "discovery_method": "auto",
         "discovery_evidence": f"{chosen.evidence.endpoint} -> {chosen.evidence.detail}",

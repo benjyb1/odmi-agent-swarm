@@ -90,6 +90,30 @@ def test_emit_sets_licence_field_from_sample(tmp_path):
     assert data["licence_field"] == "distribution"
 
 
+def test_emit_records_robots_note(tmp_path):
+    def fake_robots(url: str, **kw) -> bytes:
+        assert url == "https://p.example/robots.txt"
+        return b"User-agent: *\nDisallow: /api/\nCrawl-delay: 10\n"
+
+    path = emit_registry(
+        _outcome(), portals_dir=tmp_path, robots_fetcher=fake_robots
+    )
+    note = json.loads(path.read_text())["robots_note"]
+    assert "Disallow: /api/" in note
+    assert "Crawl-delay: 10" in note
+
+
+def test_emit_robots_note_absent_robots_is_recorded(tmp_path):
+    def no_robots(url: str, **kw) -> bytes:
+        raise RuntimeError("404")
+
+    path = emit_registry(
+        _outcome(), portals_dir=tmp_path, robots_fetcher=no_robots
+    )
+    note = json.loads(path.read_text())["robots_note"]
+    assert "no robots.txt" in note.lower()
+
+
 def test_emit_refuses_unverified_outcome(tmp_path):
     out = _outcome()
     out.status = "failed"
