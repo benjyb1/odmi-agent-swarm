@@ -62,3 +62,33 @@ def serper_search(
             provider="serper",
         ))
     return out
+
+
+def check_serper_credits() -> tuple[bool, str]:
+    """Preflight: is Serper usable right now?
+
+    Returns (ok, reason). ok=False with a human-readable reason when the key is
+    missing or the account is out of credits (Serper returns HTTP 400
+    {"message": "Not enough credits"}). Used to fail an experiment loudly the
+    moment its sole search provider is unavailable, rather than degrading
+    silently. A tiny 1-result probe; cheap when credits exist.
+    """
+    api_key = os.environ.get("SERPER_API_KEY")
+    if not api_key:
+        return False, "SERPER_API_KEY is not set in .env"
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.post(
+                _ENDPOINT,
+                headers={"X-API-KEY": api_key, "Content-Type": "application/json"},
+                json={"q": "test", "num": 1},
+            )
+        if resp.status_code == 200:
+            return True, "ok"
+        try:
+            msg = resp.json().get("message", resp.text[:120])
+        except Exception:
+            msg = resp.text[:120]
+        return False, f"Serper HTTP {resp.status_code}: {msg}"
+    except Exception as exc:  # noqa: BLE001
+        return False, f"Serper probe failed: {type(exc).__name__}: {str(exc)[:120]}"

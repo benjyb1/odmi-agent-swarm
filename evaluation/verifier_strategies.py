@@ -53,6 +53,32 @@ from agents.tools.llm import StructuredOutputError, call_for_structured
 from agents.tools.search import search_many
 from agents.verifier import _run_substring_check, generate_adversarial_queries
 from agents.errors import RateLimitedShutdown
+from agents.tools.blocked_domains import is_blocked
+
+
+def _evidence_blocked(row: dict) -> bool:
+    """True if any URL the Researcher cited, fetched, or read in a snippet hits
+    the SPEC D24 deny-list (ODMI publications, the EU Data Portal, archive mirrors).
+
+    The leakage risk D22/D24 warns about: a Researcher row whose evidence touched
+    data.europa.eu (incl. the ODMI factsheet PDFs, the published answer key) leaks
+    the gold answer into the Verifier the judge is grading. Legacy pre-deny-list
+    FR/EE/NL runs carry this; excluding them keeps the EXP-6 candidate set clean.
+    Checks source_url, fetched_urls, and search_snippet URLs, since the Verifier
+    sees all three.
+    """
+    urls = [row.get("source_url") or ""]
+    try:
+        urls += [u for u in json.loads(row.get("fetched_urls") or "[]")]
+    except Exception:
+        pass
+    try:
+        for s in json.loads(row.get("search_snippets") or "[]"):
+            if isinstance(s, dict):
+                urls.append(s.get("url") or "")
+    except Exception:
+        pass
+    return any(u and is_blocked(u) for u in urls)
 
 import evaluation.stats as stats
 
@@ -94,6 +120,14 @@ SECONDARY_COUNTRIES = []
 ROBUSTNESS_COUNTRIES = ["FR"]
 INJ_TARGET = 71
 EXPERIMENT_ID = "verifier_strategy_disc_v1"
+# Frozen-evidence independent-search provider. MUST be the single provider the
+# whole candidate set was generated with, held constant so the only thing that
+# varies in the experiment is the Verifier strategy. Pinned to DIY (Serper);
+# the run is gated on that provider being available (Serper credits / Tavily
+# quota). Brave is deliberately NOT used: mixing providers across the data is a
+# confound. See _freeze_evidence and the watertight protocol in
+# docs/EXPERIMENTS_VERIFIER.md.
+FROZEN_SEARCH_PROVIDER = "diy"
 
 
 def _role_of(cc: str) -> Optional[str]:
@@ -177,14 +211,28 @@ def build_candidates(limit: Optional[int] = None):
     qmeta, gold, cname, rows = _load_world()
     rng = random.Random(SEED)
 
-    # Distinct candidate -> representative row (latest id wins).
+    # Fairness guard 1 (data leakage, D22/D24): drop any Researcher row whose
+    # evidence touched the deny-listed answer-key domains. Legacy pre-deny-list
+    # runs carry these; the current dispatch path scrubs them, so this only
+    # removes stale contaminated rows.
+    rows = [r for r in rows if not _evidence_blocked(r)]
+
+    # Fairness guard 2 (one candidate per pair): dedupe by (question_id,
+    # country_code), latest clean row winning. The pre-registration defined a
+    # candidate as distinct (qid, cc, answer), assuming one dispatch per pair;
+    # the Malta/NL double-dispatch produced the SAME pair with two different
+    # answers, which then landed in BOTH should_pass and should_fail and broke
+    # the independence the J / Wilson / McNemar stats assume. Keeping the latest
+    # committed answer restores one canonical candidate per pair (the documented
+    # 60 MT / 52 NL framing) and matches the phase2_final dedup rule.
     distinct = {}
     for r in rows:
-        key = (r["question_id"], r["country_code"], (r["answer"] or "").strip().lower())
+        key = (r["question_id"], r["country_code"])
         distinct[key] = r  # rows sorted by id asc, so last write = max id
 
     nat_fail, correct_pool = [], []
-    for (qid, cc, ans), r in distinct.items():
+    for (qid, cc), r in distinct.items():
+        ans = (r["answer"] or "").strip().lower()
         meta = qmeta.get(qid)
         if not meta:
             continue
@@ -319,6 +367,67 @@ def build_candidates(limit: Optional[int] = None):
 
 
 # ============================================================
+# FR augmented robustness set (50% label-flip injection)
+# ============================================================
+
+FR_AUGMENTED_FILE = REPO_ROOT / "data" / "questions" / "fr_augmented_eval_pairs.json"
+
+
+def build_fr_augmented_candidates(path: Optional[Path] = None) -> list[Candidate]:
+    """Load the committed, class-balanced FR robustness set built by
+    scripts/build_fr_augmented_pairs.py and turn each frozen record into a
+    Candidate the harness can judge.
+
+    The file is the reproducible artefact (seed 20260603, 30 should_pass / 30
+    flipped should_fail). Each record points at a real phase2_researcher_runs row
+    by source_row_id, so the four-arm judge replays the identical frozen evidence
+    the production Researcher saw, exactly as the on-the-fly INJ stratum does.
+    Everything here is role='robustness': it is never folded into the Malta
+    primary J (EXP-6 design, section 3).
+    """
+    path = Path(path) if path else FR_AUGMENTED_FILE
+    doc = json.loads(path.read_text())
+    qmeta, gold, cname, _ = _load_world()
+    with connect() as conn:
+        conn.row_factory = sqlite3.Row
+        rowmap = {}
+        for rec in doc["pairs"]:
+            r = conn.execute(
+                "select * from phase2_researcher_runs where id=?",
+                (rec["source_row_id"],),
+            ).fetchone()
+            if r:
+                rowmap[rec["source_row_id"]] = dict(r)
+
+    cands: list[Candidate] = []
+    for rec in doc["pairs"]:
+        qid, cc = rec["question_id"], rec["country_code"]
+        meta = qmeta.get(qid)
+        row = rowmap.get(rec["source_row_id"])
+        if not meta or row is None:
+            print(f"   ! FR-aug skip {qid}/{cc}: "
+                  f"{'no question meta' if not meta else 'source row missing'}")
+            continue
+        if _evidence_blocked(row):
+            print(f"   ! FR-aug skip {qid}/{cc}: source row has deny-listed evidence")
+            continue
+        flipped = bool(rec["flipped"])
+        cands.append(Candidate(
+            cand_id=f"FRAUG::{qid}::{cc}::{'flip' if flipped else 'keep'}",
+            stratum="INJ-fail" if flipped else "NAT-pass",
+            role="robustness",
+            gold_label=rec["gold_label"],
+            question_id=qid, country_code=cc, country_name=cname.get(cc, cc),
+            dimension=meta["dim"], answer_shape=meta["shape"],
+            allowed_answers=meta["allowed"],
+            researcher_answer=rec["researcher_answer"],
+            gold_response=rec.get("gold_response") or gold.get((qid, cc), ""),
+            source_row_id=rec["source_row_id"], injected=flipped, row=row,
+        ))
+    return cands
+
+
+# ============================================================
 # Reconstruct ResearcherOutput from a row (tolerant)
 # ============================================================
 
@@ -398,11 +507,16 @@ def _freeze_evidence(cand: Candidate, ro: ResearcherOutput):
     except StructuredOutputError:
         queries, qusage = [], None
     try:
-        # Pinned to DIY (Serper + trafilatura): Tavily's quota is exhausted, and
-        # "auto" would attempt Tavily first and fail once per candidate before
-        # falling back. Pinning keeps the frozen evidence consistent across the
-        # whole run and honours the EXP-6 search constraint.
-        results = search_many(queries, max_results_per_query=5, provider="diy") if queries else []
+        # Frozen-evidence search provider. Pinned (not "auto") so the evidence is
+        # consistent across the whole run and identical across the four arms.
+        # Originally DIY (Serper + trafilatura), but Serper credits are now
+        # exhausted (400 "Not enough credits") and Tavily's quota was already
+        # exhausted, so the pin moves to Brave, the one working provider. Brave
+        # results pass the same deny-list scrub (_scrub_blocked), so no
+        # answer-key domain re-enters the frozen block. The provider is the same
+        # for all four strategy prompts, so it is not a between-arm confound.
+        results = search_many(queries, max_results_per_query=5,
+                              provider=FROZEN_SEARCH_PROVIDER) if queries else []
     except Exception as e:
         print(f"   ! search failed: {type(e).__name__}: {str(e)[:100]}")
         results = []
@@ -507,8 +621,34 @@ def _register_experiment(n_cands: int, counts: dict):
 # Run
 # ============================================================
 
-def run(limit: Optional[int] = None, workers: int = 1):
-    cands = build_candidates(limit=limit)
+def _assert_serper_available() -> None:
+    """Fail loudly if the sole search provider (Serper/DIY) is unavailable.
+
+    EXP-6 holds the search provider constant; Serper is the one provider (no
+    silent fallback to Brave/Tavily, which would vary the apparatus). If Serper
+    is out of credits, the run STOPS here with a clear message rather than
+    degrading. Only enforced when the frozen-evidence provider is the DIY
+    (Serper) pipeline.
+    """
+    if FROZEN_SEARCH_PROVIDER not in ("diy", "serper_raw"):
+        return
+    from agents.tools.search_serper import check_serper_credits
+    ok, reason = check_serper_credits()
+    if not ok:
+        raise RuntimeError(
+            "EXP-6 ABORTED: Serper (the sole, held-constant search provider) is "
+            f"unavailable -> {reason}. Top up Serper credits before running; the "
+            "experiment will not silently fall back to another provider, because "
+            "varying the search backend across the data is a confound."
+        )
+    print(f"[preflight] Serper available ({reason}). Provider held constant: "
+          f"{FROZEN_SEARCH_PROVIDER}.", flush=True)
+
+
+def run(limit: Optional[int] = None, workers: int = 1,
+        cands_override: Optional[list] = None, out_name: Optional[str] = None):
+    _assert_serper_available()
+    cands = cands_override if cands_override is not None else build_candidates(limit=limit)
     counts = Counter((c.stratum, c.gold_label) for c in cands)
     ccounts = Counter(c.country_code for c in cands)
     dcounts = Counter(c.dimension for c in cands)
@@ -525,7 +665,7 @@ def run(limit: Optional[int] = None, workers: int = 1):
     _register_experiment(len(cands), {f"{k[0]}/{k[1]}": v for k, v in counts.items()})
 
     RESULTS_DIR.mkdir(exist_ok=True)
-    out_path = RESULTS_DIR / f"verifier_strategies_{EXPERIMENT_ID}.jsonl"
+    out_path = RESULTS_DIR / (out_name or f"verifier_strategies_{EXPERIMENT_ID}.jsonl")
 
     # ---- Resume support: never overwrite a partial run. ----
     done_ids: set[str] = set()
@@ -810,9 +950,19 @@ def main():
                     help="parallel candidate workers (each does 4 strategy calls). "
                          "Resilient to proxy connection blips via the SDK retry bump.")
     ap.add_argument("--analyse-only", default=None, help="re-analyse an existing JSONL")
+    ap.add_argument("--fr-augmented", nargs="?", const=str(FR_AUGMENTED_FILE),
+                    default=None,
+                    help="Run the four-arm judge over the committed, class-balanced "
+                         "FR robustness set (data/questions/fr_augmented_eval_pairs.json) "
+                         "instead of the default seeded draw. Robustness arm only, "
+                         "written to its own JSONL; the primary run is untouched.")
     args = ap.parse_args()
     if args.analyse_only:
         analyse(args.analyse_only)
+    elif args.fr_augmented:
+        cands = build_fr_augmented_candidates(Path(args.fr_augmented))
+        run(workers=args.workers, cands_override=cands,
+            out_name="verifier_strategies_fr_augmented.jsonl")
     else:
         run(limit=args.limit, workers=args.workers)
 
