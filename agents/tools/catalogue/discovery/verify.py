@@ -29,8 +29,10 @@ from agents.tools.catalogue.discovery.probes import ProbeEvidence
 from agents.tools.catalogue.model import HarvestedDataset
 from agents.tools.catalogue.registry import PortalConfig
 
-# Preference order among routes the adapters can already serve.
-_ROUTE_PREFERENCE = ("dcat_rdf", "ckan_json", "udata_json", "fdk_rdf")
+# Preference order among routes the adapters can already serve. RDF
+# sources first (real graphs for the conformance metrics): a paged feed,
+# then a SPARQL endpoint, then the JSON fallbacks.
+_ROUTE_PREFERENCE = ("dcat_rdf", "sparql_rdf", "ckan_json", "udata_json", "fdk_rdf")
 
 # A verification sample must yield at least this many datasets.
 _MIN_SAMPLE = 1
@@ -289,6 +291,9 @@ def live_sampler(*, max_pages: int = 1) -> Sampler:
         if route == "udata_json":
             from agents.tools.catalogue.adapters import udata_json
             return list(udata_json.harvest(cfg, max_pages=max_pages))
+        if route == "sparql_rdf":
+            from agents.tools.catalogue.adapters import sparql_rdf
+            return list(sparql_rdf.harvest(cfg, max_pages=max_pages))
         if route == "fdk_rdf":
             from agents.tools.catalogue.adapters import fdk_rdf  # type: ignore[attr-defined]
             return list(fdk_rdf.harvest(cfg, max_pages=max_pages))

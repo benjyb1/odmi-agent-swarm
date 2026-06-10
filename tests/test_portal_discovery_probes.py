@@ -202,14 +202,16 @@ def test_probe_datajson_reports_no_route():
     assert ev.total_datasets == 1
 
 
-def test_probe_sparql_reports_no_route():
+def test_probe_sparql_reports_the_sparql_rdf_route():
     fetch = _bytes_stub({
         "https://portal.example/sparql": b'{"head": {}, "boolean": true}'
     })
     ev = probes.probe_sparql("https://portal.example", fetch_bytes=fetch)
     assert ev is not None
     assert ev.stack == "sparql"
-    assert ev.route is None
+    assert ev.route == "sparql_rdf"
+    assert ev.config_fields["native_api_url"] == "https://portal.example/sparql"
+    assert ev.config_fields["pagination"] == "sparql_offset"
 
 
 def test_probe_piveau_reports_no_route():

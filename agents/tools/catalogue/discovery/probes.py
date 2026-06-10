@@ -282,9 +282,14 @@ def probe_sparql(
             return None
         return ProbeEvidence(
             stack="sparql",
-            route=None,  # no adapter yet
+            route="sparql_rdf" if "sparql_rdf" in ROUTES else None,
             endpoint=url,
             detail="SPARQL ASK dcat:Dataset returned true",
+            config_fields={
+                "native_api_url": endpoint,
+                "pagination": "sparql_offset",
+                "page_size": 100,
+            },
         )
 
     return _safe(attempt)

@@ -19,8 +19,10 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 _DIR = _REPO_ROOT / "data" / "catalogue" / "portals"
 
 # Harvest routes. `dcat_rdf` is the common path; the JSON routes are for
-# portals without a national RDF feed (NL, EE) or as a fallback.
-ROUTES = ("dcat_rdf", "ckan_json", "udata_json", "estonia_json")
+# portals without a national RDF feed (NL, EE) or as a fallback;
+# `sparql_rdf` covers portals whose DCAT graph sits behind a SPARQL
+# endpoint only (CZ, HR, SE).
+ROUTES = ("dcat_rdf", "ckan_json", "udata_json", "estonia_json", "sparql_rdf")
 
 
 @dataclass(frozen=True)

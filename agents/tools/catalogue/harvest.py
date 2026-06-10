@@ -73,6 +73,13 @@ def _build_adapter_registry() -> dict[str, Adapter]:
         )
     except Exception:  # noqa: BLE001
         pass
+    try:
+        from agents.tools.catalogue.adapters import sparql_rdf
+        registry["sparql_rdf"] = Adapter(
+            sparql_rdf.harvest, sparql_rdf.normalise_page, "rdf"
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return registry
 
 
