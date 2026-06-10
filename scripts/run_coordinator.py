@@ -363,7 +363,7 @@ def _finalise_after_adjudication(
     adj_quote = (adj_output.chosen_evidence_quote or "").strip()
     if len(adj_quote) < 10:
         adj_quote = "(adjudicator did not provide quote)"
-    # D45: absence of evidence is not "no". If the Adjudicator committed a
+    # D44: absence of evidence is not "no". If the Adjudicator committed a
     # negative label with no supporting quote, it is treating a failure to
     # find evidence as a negative. Abstain instead. (The prompt is the
     # primary guard; this is the structural backstop.)
@@ -879,23 +879,13 @@ def _should_accept_verifier_pass(
     verdict: str,
     answer: Optional[str],
     answer_confidence: Optional[float],
-    verifier_confidence: Optional[float] = None,
 ) -> bool:
-    """A Verifier `pass` finalises an answer when it is a real label (not an
-    abstention) and either side clears the commit floor.
-
-    D44: a pass is accepted if the Researcher's own confidence clears the
-    floor, OR the Verifier passed it at/above the floor. The second arm
-    recovers an answer the Verifier independently confirmed but the
-    Researcher under-rated; without it a confidently-verified answer just
-    under the Researcher floor was discarded and the pair drifted to an
-    abstention (the Norway 'found then lost' case, e.g. PT26: Verifier
-    pass at 0.72 on a Researcher answer at 0.62)."""
-    if verdict != "pass" or _is_abstention(answer):
-        return False
+    """A Verifier `pass` finalises an answer only if it is a real label
+    (not an abstention) and its confidence clears the commit floor."""
     return (
-        (answer_confidence or 0.0) >= COMMIT_CONFIDENCE_FLOOR
-        or (verifier_confidence or 0.0) >= COMMIT_CONFIDENCE_FLOOR
+        verdict == "pass"
+        and not _is_abstention(answer)
+        and (answer_confidence or 0.0) >= COMMIT_CONFIDENCE_FLOOR
     )
 
 
@@ -1303,7 +1293,6 @@ def coordinate(
             v_result.output.verdict,
             last_researcher_output.answer,
             last_researcher_output.answer_confidence,
-            v_result.output.verifier_confidence,
         ):
             final_status = "accepted_by_verifier"
             _upsert_subtrio_status(
