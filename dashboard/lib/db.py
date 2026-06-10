@@ -127,7 +127,12 @@ _MATCH_STATUS_SQL = """
       -- accuracy_summary counts it against accuracy (it never matches).
       WHEN LOWER(TRIM(f.final_answer)) = 'inconclusive'
         THEN 'abstained'
-      WHEN LOWER(TRIM(f.final_answer)) = LOWER(TRIM(gt.response))
+      -- Normalise underscores to spaces on both sides before comparing.
+      -- The swarm writes sentinels like `not_applicable`; ODMI gold carries
+      -- `not applicable`. They are the same answer, so an underscore-vs-space
+      -- difference must not score `differ` (the Norway scoring artefact).
+      WHEN REPLACE(LOWER(TRIM(f.final_answer)), '_', ' ')
+           = REPLACE(LOWER(TRIM(gt.response)), '_', ' ')
         THEN 'match'
       -- A bare `yes` only fully matches a `yes...` gold on a binary
       -- question. On a count_band gold like `yes, >9` a bare `yes`

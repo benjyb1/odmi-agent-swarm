@@ -78,6 +78,22 @@ def _status(conn) -> list[tuple[str, str]]:
     return [(r["question_id"], r["match_status"]) for r in rows]
 
 
+def test_not_applicable_underscore_matches_space(db):
+    # The swarm writes the sentinel as `not_applicable`; ODMI gold carries
+    # `not applicable`. These are the same answer and must score `match`,
+    # not `differ` (the Norway underscore-vs-space scoring artefact).
+    _insert_question(db, "NA1", "binary", ["yes", "no", "not applicable"])
+    _insert_pair(db, "NA1", swarm="not_applicable", odmi="not applicable")
+    assert dict(_status(db))["NA1"] == "match"
+
+
+def test_not_applicable_space_matches_underscore_gold(db):
+    # Symmetric: gold underscore, swarm space.
+    _insert_question(db, "NA2", "binary", ["yes", "no", "not applicable"])
+    _insert_pair(db, "NA2", swarm="not applicable", odmi="not_applicable")
+    assert dict(_status(db))["NA2"] == "match"
+
+
 def test_exact_band_match(db):
     _insert_question(
         db, "Q12", "percentage_band",
