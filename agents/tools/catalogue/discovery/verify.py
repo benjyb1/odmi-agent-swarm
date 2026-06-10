@@ -47,6 +47,9 @@ class SampleStats:
     download_url_share: float   # of datasets that have distributions
     access_url_share: float
     format_share: float
+    # Which level the licences live at, for the registry's licence_field.
+    dataset_licence_share: float = 0.0
+    distribution_licence_share: float = 0.0
 
 
 @dataclass
@@ -80,6 +83,13 @@ def sample_stats(datasets: list[HarvestedDataset]) -> SampleStats:
     if n == 0:
         return SampleStats(0, 0.0, 0, 0.0, 0.0, 0.0)
     licensed = sum(1 for d in datasets if d.all_licences())
+    ds_licensed = sum(
+        1 for d in datasets if any(l and l.strip() for l in d.dataset_licences)
+    )
+    dist_licensed = sum(
+        1 for d in datasets
+        if any(x.licence and x.licence.strip() for x in d.distributions)
+    )
     with_dist = [d for d in datasets if d.has_distributions()]
     nd = len(with_dist)
 
@@ -101,6 +111,8 @@ def sample_stats(datasets: list[HarvestedDataset]) -> SampleStats:
         format_share=_share(
             lambda d: any(x.fmt or x.media_type for x in d.distributions)
         ),
+        dataset_licence_share=ds_licensed / n,
+        distribution_licence_share=dist_licensed / n,
     )
 
 
