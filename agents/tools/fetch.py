@@ -205,11 +205,27 @@ _CF_CHALLENGE_MARKERS = (
 )
 
 
+def _challenge_unresolved(body: str) -> bool:
+    """True if the rendered body still carries a Cloudflare / WAF challenge
+    marker after the settle wait. A body that is still the interstitial is not
+    usable content: returning it as a 200 success would poison the fetch cache
+    with challenge HTML (FM register: WAF challenge cached as evidence)."""
+    return any(marker in body for marker in _CF_CHALLENGE_MARKERS)
+
+
+def _goto_status(resp, default: int = 200) -> int:
+    """The real HTTP status from a Playwright goto Response, or `default` when
+    the navigation returned no response (data: URLs, some redirects) or a
+    test double whose status is not an integer."""
+    status = getattr(resp, "status", None)
+    return status if isinstance(status, int) else default
+
+
 def _settle_through_challenge(page, timeout_s: float) -> str:
     """Return the page HTML, waiting out a Cloudflare passive challenge when
     the first paint is the interstitial rather than the real page."""
     body = page.content()
-    if any(marker in body for marker in _CF_CHALLENGE_MARKERS):
+    if _challenge_unresolved(body):
         try:
             page.wait_for_timeout(4000)
             page.wait_for_load_state("networkidle", timeout=int(timeout_s * 1000))
@@ -252,10 +268,10 @@ def fetch_rendered_text(
             )
             page = context.new_page()
             try:
-                page.goto(url, timeout=timeout_s * 1000, wait_until="domcontentloaded")
+                resp = page.goto(url, timeout=timeout_s * 1000, wait_until="domcontentloaded")
                 page.wait_for_timeout(500)  # let JS settle briefly
                 body = _settle_through_challenge(page, timeout_s)
-                status = 200
+                status = _goto_status(resp)
             except PWTimeout:
                 return FetchResult(
                     url=url, backend="playwright", status_code=0, content="",
@@ -264,6 +280,11 @@ def fetch_rendered_text(
             finally:
                 context.close()
                 browser.close()
+        if _challenge_unresolved(body):
+            return FetchResult(
+                url=url, backend="playwright", status_code=status, content="",
+                truncated=False, failure_mode="waf_challenge_unresolved",
+            )
         text, truncated = _html_to_text(body, max_chars)
         if not text.strip():
             return FetchResult(
@@ -313,10 +334,10 @@ def fetch_rendered_html(
             )
             page = context.new_page()
             try:
-                page.goto(url, timeout=timeout_s * 1000, wait_until="domcontentloaded")
+                resp = page.goto(url, timeout=timeout_s * 1000, wait_until="domcontentloaded")
                 page.wait_for_timeout(500)  # let JS settle briefly
                 body = _settle_through_challenge(page, timeout_s)
-                status = 200
+                status = _goto_status(resp)
             except PWTimeout:
                 return FetchResult(
                     url=url, backend="playwright", status_code=0, content="",
@@ -325,6 +346,11 @@ def fetch_rendered_html(
             finally:
                 context.close()
                 browser.close()
+        if _challenge_unresolved(body):
+            return FetchResult(
+                url=url, backend="playwright", status_code=status, content="",
+                truncated=False, failure_mode="waf_challenge_unresolved",
+            )
         truncated = len(body) > max_chars
         body = body[:max_chars] if truncated else body
         if not body.strip():
@@ -388,6 +414,10 @@ def head_ok(url: str, *, timeout_s: float = 8.0) -> tuple[bool, int]:
     # the URL one chance through a real browser before declaring it dead.
     if status in _WAF_BLOCK_STATUSES or status == 0:
         rendered = fetch_rendered_text(url, timeout_s=max(timeout_s, 25.0))
-        if rendered.status_code == 200 and rendered.content.strip():
+        # Reachability is about whether the render produced usable content,
+        # not the numeric status: a cleared WAF challenge yields real content
+        # while the initial goto status stays 403, and an unresolved challenge
+        # now carries failure_mode='waf_challenge_unresolved' with no content.
+        if rendered.failure_mode is None and rendered.content.strip():
             return True, 200
     return False, status
