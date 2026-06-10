@@ -29,6 +29,24 @@ def _guard(url: str) -> None:
         )
 
 
+def _guard_response(resp: httpx.Response) -> None:
+    """Re-check after redirects: a clean URL must not land on a deny-listed
+    host via a 30x chain. Checked before the body is read into the caller."""
+    final_url = str(resp.url)
+    if is_blocked(final_url):
+        raise BlockedEndpointError(
+            "refusing response: redirect chain landed on a deny-listed "
+            f"endpoint ({blocked_reason(final_url)}): {final_url}"
+        )
+    for r in resp.history:
+        hop = str(r.url)
+        if is_blocked(hop):
+            raise BlockedEndpointError(
+                "refusing response: redirect chain passed through a "
+                f"deny-listed endpoint ({blocked_reason(hop)}): {hop}"
+            )
+
+
 def fetch_json(url: str, *, timeout_s: float = DEFAULT_TIMEOUT_S) -> dict:
     """GET a URL and parse JSON. Raises on deny-list, non-200, or bad JSON."""
     _guard(url)
@@ -38,6 +56,7 @@ def fetch_json(url: str, *, timeout_s: float = DEFAULT_TIMEOUT_S) -> dict:
         headers={"User-Agent": DEFAULT_USER_AGENT, "Accept": "application/json"},
     ) as client:
         resp = client.get(url)
+        _guard_response(resp)
         resp.raise_for_status()
         return resp.json()
 
@@ -54,5 +73,26 @@ def fetch_bytes(
         timeout=timeout_s, follow_redirects=True, headers=headers
     ) as client:
         resp = client.get(url)
+        _guard_response(resp)
         resp.raise_for_status()
         return resp.content
+
+
+def post_json(
+    url: str, body: dict, *, timeout_s: float = DEFAULT_TIMEOUT_S
+) -> dict:
+    """POST a JSON body and parse the JSON response, with the same guard.
+
+    Used by search-service routes (the FDK pattern) where dataset ids are
+    enumerated by POSTing a query rather than GETting a feed.
+    """
+    _guard(url)
+    with httpx.Client(
+        timeout=timeout_s,
+        follow_redirects=True,
+        headers={"User-Agent": DEFAULT_USER_AGENT, "Accept": "application/json"},
+    ) as client:
+        resp = client.post(url, json=body)
+        _guard_response(resp)
+        resp.raise_for_status()
+        return resp.json()
