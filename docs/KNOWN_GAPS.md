@@ -1,5 +1,10 @@
 # Known Gaps
 
+This file is **operational** deferrals: things that break a run (resume,
+CAPTCHA, the human queue). For **correctness** failure modes (ways the swarm
+commits a wrong answer while looking confident), see `docs/FAILURE_MODES.md` —
+that is the false-positive register and the attack list.
+
 Forward-looking failure modes that haven't bitten yet, with the
 observable symptom and the ~hour cost to fix when they do.
 
