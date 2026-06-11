@@ -95,25 +95,60 @@ claim is wanted for the dissertation, the run needs a country with a lower
 abstention ceiling or a larger n, because Malta's retrieval ceiling caps the
 power.
 
-### 3. Make the Adjudicator commit the best candidate it already holds (high value, needs care)
+### 3. Confidence-ranked candidate selection — TESTED, and it does NOT work on the balanced set (negative result)
 
-The Adjudicator abstains on 42 correct candidates for every 2 wrong ones it
-rescues, and the oracle headroom (74% vs 44%) is almost entirely correct
-candidates the pipeline declined to commit. Have it prefer the highest-confidence
-definite candidate across attempts when that confidence clears the floor,
-rather than defaulting to `inconclusive`. This is the single largest accuracy
-lever, but it is also where a careless change buys recovery with false
-positives, so it must be gated on the MT false-positive co-primary and the D37
-floor, and pre-registered. Chaining is a partial version of this already
-(it committed 3 more at lower FP); the fuller change is confidence-ranked
-selection.
+The hypothesis was that the Adjudicator leaves easy recovery on the table (it
+abstains on 42 correct candidates for every 2 it rescues; the oracle headroom is
+74% vs 44% on MT), so committing the highest-confidence definite candidate
+across attempts should recover those answers. I ran it as a free paired replay
+over the production trails (`evaluation/adjudicator_commit_policy.py`,
+`evaluation/results/adjudicator_commit_policy_20260611.json`), policies
+`confrank` and `confrank_adj` against the observed Adjudicator, MT primary.
 
-### 4. Guarantee the substring gate always runs on stored snippets (low value, trivial)
+The result refutes the naive policy:
 
-The gate's false fires are concentrated in the live-fetch fallback (58% vs 7%).
-Persist Researcher snippets on every path that reaches the gate so it never
-falls back to a live re-fetch. Removes a class of false rejects at no
-anti-fabrication cost. Mechanical change.
+| Country | observed recovery | confrank recovery | confrank_adj | paired McNemar |
+|---|---|---|---|---|
+| MT (primary, balanced) | 0.44 | 0.23 | 0.33 | observed recovers 15 that confrank misses, confrank 0 (p=0.0001) |
+| NO | 0.64 | 0.64 | 0.66 | tie on recovery, but confrank makes 0 wrong commits vs observed's 7 (p=0.016) |
+| FR (easy, high-conf) | 0.63 | 0.73 | 0.73 | confrank recovers 14 that observed misses (p=0.004) |
+
+On Malta, confidence ranking is **strictly worse** (-21 points), because the
+correct answers there are *low confidence* (Malta evidence is sparse, correct
+no-claims average ~0.55), so a 0.65 floor on the candidate's own confidence
+abstains on exactly the answers the Adjudicator recovers by reasoning over the
+corpus. The 74% oracle headroom is real but **not reachable by confidence**: you
+cannot identify the gold-correct candidate from its stated confidence on the
+hard set. This independently confirms the verifier programme's finding that the
+Adjudicator is the load-bearing decider (removing it costs 27 correct answers,
+EXP-13a) and that its reasoning does work a threshold cannot.
+
+Where confidence ranking does help is the easy, high-confidence tail (FR +10
+points) and avoiding over-eager wrong commits (NO, -7 wrong). So the usable
+version is narrow and country-dependent, not a headline change: a fast path on
+high confidence (recommendation 1), not a replacement for the Adjudicator.
+**Recommendation 3 is withdrawn as a primary change.** The headroom is real but
+needs a *better selector than confidence* (evidence-based, which is what the
+Adjudicator already approximates), so the lever is improving the Adjudicator's
+evidence (chaining, recommendation 2), not bypassing it.
+
+### 4. Substring gate — NOT cleanly proven by me, and already superseded by the verifier programme
+
+My evidence for "false fires live in the live-fetch fallback" was a 58% (pre-D34)
+vs 7% (snippet-path) split, but that is era-confounded: the pre-D34 rows differ
+from post-D34 rows in more than the fetch path, so I have not isolated the
+fallback as the cause. Honest answer to "has this been proven": no, not by my
+analysis.
+
+It is also moot. The verifier programme diagnosed the gate's real defect more
+precisely (it matched quotes against a corpus of all snippets joined together, so
+a quote stitched across two unrelated snippets passed while a legitimate
+within-snippet elision failed) and **shipped the fix**: matcher v2
+(`agents/tools/substring.py::contains_v2`, replayed over 639 quotes,
+`substring_v2_replay.jsonl`, closes FM-11). That is the substring change; mine is
+withdrawn in favour of it. The one residual worth keeping is operational: ensure
+snippets are persisted so the gate uses v2 on stored snippets rather than ever
+falling back to a live fetch, but it is a tidy-up, not a finding.
 
 ### 5. Do not cut retrieval breadth; if anything widen it on hard countries (informs EXP-2a)
 
@@ -136,6 +171,62 @@ could spend ~38s against a ~24s budget and trip the 30s stage ceiling, halting
 batches. Now a single total budget across launch / goto / settle
 (`agents/tools/fetch.py`, four tests). This was the cause of the recurring DIY
 "timeouts" and the EXP-7 baseline stop.
+
+## Squaring this with the verifier redesign programme
+
+The verifier programme (`docs/VERIFIER_FINDINGS.md`, branch
+`claude/loving-saha-67bbe8`, merged) and this attribution were run independently
+and **agree on the architecture**, which is the reassuring part: two different
+methods (their frozen-evidence classifier ladders and wiring replays; my
+counterfactual and calibration replays) converged on the same picture.
+
+**Where they agree.**
+- The Verifier's pass/fail verdict is not the in-loop gatekeeper. I measured
+  pooled Youden's J = -0.02; they measured the verdict deciding only 9 of 237
+  in-loop commits. Both conclude the 0.65 confidence floor is the real bouncer.
+- The Adjudicator is the load-bearing critical agent. My oracle headroom and
+  abstention asymmetry pointed at it; their EXP-13a showed removing
+  verification+adjudication costs 27 correct answers for 16 wrong saved. Same
+  conclusion, opposite directions of approach.
+- The headroom is in evidence quality, not verdict logic. They state it
+  outright; my snippet-breadth and chaining results say the same.
+
+**Where they go deeper than I did, and correct me.**
+- My "the verdict is uninformative" is a production symptom; they found the
+  cause. EXP-12a: the same `disprove` prompt scores J = 0.10 on production
+  evidence but J = 0.41 on clean frozen evidence, because the Verifier's own
+  *live* counter-search poisons its evidence. The verdict is not broken; it is
+  fed noise. So "don't trust the verdict" is right for the verifier as wired
+  today, but the fix is the evidence channel (their open lead: a no-search or
+  clean-search verifier, J ~ 0.42), not abandoning the verdict.
+- They tested and shipped the substring fix (matcher v2); my recommendation 4 is
+  withdrawn in favour of it (see above).
+- My recommendation 3 (confidence-ranked selection) is refuted by my own EXP
+  above, which lands exactly where their "the Adjudicator's reasoning does work a
+  threshold cannot" sits.
+
+**The one genuine tension, resolved.** My recommendation 1 says "gate on
+Researcher confidence, not the verdict", which reads as undercutting a programme
+whose whole point is to make the verdict better. It does not, for two reasons.
+First, their own result is that the verdict barely gates in-loop regardless (9
+of 237), so a high-confidence fast path that skips the Verifier round when
+Researcher confidence >= 0.80 (98% correct) removes a call the verdict was not
+deciding anyway; it is a cost optimisation, not a vote against the redesign.
+Second, the two are sequenced, not opposed: the redesign makes the verdict
+trustworthy on the *low-confidence* tail (where the fast path does not apply and
+the Verifier earns its cost), while the fast path stops paying for an adversarial
+round on the *high-confidence* head where no verifier, current or redesigned,
+changes the outcome. The redesign improves the verifier where it matters; the
+fast path stops invoking it where it does not. They compose.
+
+**Net effect on the recommendations.** Of the original six: 1 stands but reframed
+as cost not correctness (and pre-registered MT-primary); 2 stands; 3 withdrawn
+(tested, negative); 4 withdrawn in favour of the shipped matcher v2; 5 and 6
+unaffected. The surviving stack changes are the high-confidence fast path
+(EXP-8 family, cost) and chaining as the optimisation baseline (carry the
+corpus, not the verifier counter-quote, since half of it re-cites the
+Researcher's own URL and much of the rest is evidence-fit complaint dressed as
+counter-evidence, their finding (b)).
 
 ## What is stubbed, partial, or owed
 
