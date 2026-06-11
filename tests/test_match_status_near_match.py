@@ -94,6 +94,46 @@ def test_not_applicable_space_matches_underscore_gold(db):
     assert dict(_status(db))["NA2"] == "match"
 
 
+def test_abstention_on_na_gold_scores_match(db):
+    # An `n/a` gold means ODMI itself judged the question not applicable.
+    # The swarm abstaining (`inconclusive`) there is the correct outcome and
+    # must score `match`, not `abstained`.
+    _insert_question(db, "NA3", "binary", ["yes", "no", "not applicable"])
+    _insert_pair(db, "NA3", swarm="inconclusive", odmi="n/a")
+    assert dict(_status(db))["NA3"] == "match"
+
+
+def test_abstention_on_not_applicable_gold_scores_match(db):
+    # Same, with the spelled-out gold literal.
+    _insert_question(db, "NA4", "binary", ["yes", "no", "not applicable"])
+    _insert_pair(db, "NA4", swarm="inconclusive", odmi="not applicable")
+    assert dict(_status(db))["NA4"] == "match"
+
+
+def test_committed_answer_on_na_gold_is_flagged_for_review(db):
+    # ODMI marked the question n/a, but the swarm committed a real answer.
+    # That is not necessarily wrong (the swarm may have found evidence the
+    # assessors missed), so it is flagged for human review, not scored differ.
+    _insert_question(db, "NA5", "binary", ["yes", "no", "not applicable"])
+    _insert_pair(db, "NA5", swarm="yes", odmi="n/a")
+    assert dict(_status(db))["NA5"] == "flag_review"
+
+
+def test_swarm_na_matches_na_gold(db):
+    # Swarm also says n/a on an n/a gold: a match.
+    _insert_question(db, "NA6", "binary", ["yes", "no", "not applicable"])
+    _insert_pair(db, "NA6", swarm="not_applicable", odmi="n/a")
+    assert dict(_status(db))["NA6"] == "match"
+
+
+def test_abstention_on_real_gold_stays_abstained(db):
+    # Regression: abstaining on a non-n/a gold is still an abstention, not a
+    # match. Only n/a golds turn an abstention into a correct outcome.
+    _insert_question(db, "NA7", "binary", ["yes", "no"])
+    _insert_pair(db, "NA7", swarm="inconclusive", odmi="yes")
+    assert dict(_status(db))["NA7"] == "abstained"
+
+
 def test_exact_band_match(db):
     _insert_question(
         db, "Q12", "percentage_band",
@@ -187,8 +227,11 @@ def test_bare_yes_does_not_match_count_band_gold(db):
 
 def test_sentinel_label_is_not_an_adjacent_band(db):
     # `not applicable` sits at the end of some ordinal allowed_answers
-    # lists but is not a band step. A swarm `none...` against a gold of
-    # `not applicable` must be differ, not a spurious near_match.
+    # lists but is not a band step, so a swarm `none...` against a gold of
+    # `not applicable` must never read as a spurious near_match. Under the
+    # n/a-gold policy a committed answer on an n/a gold is routed to
+    # `flag_review` (not necessarily wrong; possibly evidence the assessors
+    # missed) rather than `differ` - either way, not near_match.
     _insert_question(
         db, "P16", "ordinal_magnitude",
         [
@@ -201,7 +244,7 @@ def test_sentinel_label_is_not_an_adjacent_band(db):
         ],
     )
     _insert_pair(db, "P16", "none of the public bodies", "not applicable")
-    assert _status(db) == [("P16", "differ")]
+    assert _status(db) == [("P16", "flag_review")]
 
 
 def test_case_insensitive_match(db):

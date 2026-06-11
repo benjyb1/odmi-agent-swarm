@@ -13,7 +13,14 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 
-from agents.tools.fetch import fetch_html, fetch_rendered_html
+from agents.tools.fetch import (
+    fetch_html,
+    fetch_rendered_html,
+    fetch_rendered_text,
+    head_ok,
+    _challenge_unresolved,
+    FetchResult,
+)
 
 
 _HTML = (
@@ -85,6 +92,111 @@ def test_fetch_rendered_html_refuses_blocked_domain():
     assert result.failure_mode is not None
     assert result.failure_mode.startswith("blocked_data_leakage")
     assert result.content == ""
+
+
+_CHALLENGE_HTML = (
+    "<!DOCTYPE html><html><head><title>Just a moment...</title></head>"
+    "<body><div class='cf-browser-verification'>Checking your browser</div>"
+    "<div id='challenge-platform'></div></body></html>"
+)
+
+
+def _playwright_page(content_html: str, *, goto_status=None):
+    """Build a mocked Playwright stack whose page renders `content_html`."""
+    page = MagicMock()
+    goto_return = MagicMock(status=goto_status) if goto_status is not None else MagicMock()
+    page.goto = MagicMock(return_value=goto_return)
+    page.wait_for_timeout = MagicMock()
+    page.wait_for_load_state = MagicMock()
+    page.content = MagicMock(return_value=content_html)
+
+    context = MagicMock()
+    context.new_page = MagicMock(return_value=page)
+    browser = MagicMock()
+    browser.new_context = MagicMock(return_value=context)
+    chromium = MagicMock()
+    chromium.launch = MagicMock(return_value=browser)
+
+    pw = MagicMock()
+    pw.__enter__ = MagicMock(return_value=MagicMock(chromium=chromium))
+    pw.__exit__ = MagicMock(return_value=False)
+
+    fake_module = MagicMock()
+    fake_module.sync_playwright = MagicMock(return_value=pw)
+    fake_module.TimeoutError = type("PWTimeout", (Exception,), {})
+    return fake_module
+
+
+def test_challenge_unresolved_detects_markers():
+    """A body still carrying a Cloudflare marker is an unresolved challenge."""
+    assert _challenge_unresolved(_CHALLENGE_HTML) is True
+
+
+def test_challenge_unresolved_false_on_clean_page():
+    """A normal page body is not a challenge."""
+    assert _challenge_unresolved(_HTML) is False
+
+
+def test_fetch_rendered_html_unresolved_challenge_is_failure():
+    """A Cloudflare interstitial that never clears must be a failure carrying
+    the real status, not a 200 success that poisons the cache."""
+    fake_module = _playwright_page(_CHALLENGE_HTML, goto_status=403)
+    with patch.dict("sys.modules", {"playwright.sync_api": fake_module}):
+        result = fetch_rendered_html("https://portal.data.gov.mt/")
+    assert result.failure_mode == "waf_challenge_unresolved"
+    assert result.content == ""
+    assert result.status_code == 403
+
+
+def test_fetch_rendered_text_unresolved_challenge_is_failure():
+    """The text renderer (head_ok's path) must also fail on an unresolved
+    challenge rather than return the interstitial as live content."""
+    fake_module = _playwright_page(_CHALLENGE_HTML, goto_status=403)
+    with patch.dict("sys.modules", {"playwright.sync_api": fake_module}):
+        result = fetch_rendered_text("https://portal.data.gov.mt/")
+    assert result.failure_mode == "waf_challenge_unresolved"
+    assert result.content == ""
+    assert result.status_code == 403
+
+
+def _client_403() -> MagicMock:
+    """An httpx client whose HEAD and GET both return 403 (a WAF block)."""
+    resp = _mock_response("blocked", 403)
+    client = MagicMock()
+    client.__enter__ = MagicMock(return_value=client)
+    client.__exit__ = MagicMock(return_value=False)
+    client.head = MagicMock(return_value=resp)
+    client.get = MagicMock(return_value=resp)
+    return client
+
+
+def test_head_ok_true_when_render_clears_waf_challenge():
+    """A 403 WAF block that the browser render clears (real content, no
+    challenge marker) is reachable, even though the initial goto status was
+    403. head_ok must key off usable content, not the numeric status."""
+    cleared = FetchResult(
+        url="https://portal.data.gov.mt/", backend="playwright",
+        status_code=403, content="Real Maltese portal content here",
+        truncated=False, failure_mode=None,
+    )
+    with patch("httpx.Client", return_value=_client_403()), \
+         patch("agents.tools.fetch.fetch_rendered_text", return_value=cleared):
+        ok, _status = head_ok("https://portal.data.gov.mt/")
+    assert ok is True
+
+
+def test_head_ok_false_when_waf_challenge_unresolved():
+    """An unresolved challenge (failure_mode set, empty content) is not
+    reachable, even though it now carries the real 403 status."""
+    unresolved = FetchResult(
+        url="https://portal.data.gov.mt/", backend="playwright",
+        status_code=403, content="", truncated=False,
+        failure_mode="waf_challenge_unresolved",
+    )
+    with patch("httpx.Client", return_value=_client_403()), \
+         patch("agents.tools.fetch.fetch_rendered_text", return_value=unresolved):
+        ok, _status = head_ok("https://portal.data.gov.mt/")
+    assert ok is False
 
 
 def test_fetch_rendered_html_returns_raw_body():

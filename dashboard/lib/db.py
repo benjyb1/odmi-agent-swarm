@@ -121,6 +121,22 @@ _MATCH_STATUS_SQL = """
         THEN 'no_ground_truth'
       WHEN f.final_answer IS NULL OR TRIM(f.final_answer) = ''
         THEN 'no_swarm_answer'
+      -- A `not applicable` / `n/a` gold means ODMI itself judged the question
+      -- not applicable. The swarm abstaining (`inconclusive`) or also saying
+      -- n/a there is the correct outcome, so it scores `match`. A swarm that
+      -- instead commits a real answer is not necessarily wrong: it may have
+      -- found evidence the assessors missed, so it is flagged for human review
+      -- (`flag_review`) rather than scored `differ`, and is excluded from the
+      -- accuracy denominator pending that review.
+      WHEN REPLACE(LOWER(TRIM(gt.response)), '_', ' ') IN
+             ('not applicable', 'n/a', 'na')
+        THEN CASE
+          WHEN LOWER(TRIM(f.final_answer)) = 'inconclusive'
+               OR REPLACE(LOWER(TRIM(f.final_answer)), '_', ' ') IN
+                    ('not applicable', 'n/a', 'na')
+            THEN 'match'
+          ELSE 'flag_review'
+        END
       -- D35/D37: `inconclusive` is an honest abstention, not a label.
       -- It is held in its own bucket so the abstention rate can be
       -- reported separately, but it is still a failure to answer, so
@@ -184,6 +200,27 @@ _MATCH_STATUS_SQL = """
 # (or alias appropriately). The Experimentation page intentionally
 # does the opposite, filtering to a single experiment_id.
 MAIN_RUNS_FILTER = "f.experiment_id IS NULL"
+
+
+# A (question, country) pair can carry several phase2_final rows when it is
+# re-dispatched (e.g. a resumed run, or a re-score after a code fix). The
+# headline aggregates must count each pair once, using the latest row, or a
+# re-run pair is double-counted and a pair with two conflicting finals is
+# scored as both match and differ. This subquery keeps only the newest row per
+# (question, country, experiment_id); use it as `FROM {_LATEST_FINALS} f`.
+# coverage_grid does its own ROW_NUMBER dedup and is left untouched.
+_LATEST_FINALS = """(
+    SELECT * FROM phase2_final
+    WHERE id IN (
+        SELECT id FROM (
+            SELECT id, ROW_NUMBER() OVER (
+                PARTITION BY question_id, country_code, experiment_id
+                ORDER BY id DESC
+            ) AS _rn
+            FROM phase2_final
+        ) WHERE _rn = 1
+    )
+)"""
 
 
 def analytics_frame() -> pd.DataFrame:
@@ -256,7 +293,7 @@ def analytics_frame() -> pd.DataFrame:
             END AS search_provider,
             gt.response         AS odmi_response,
             {_MATCH_STATUS_SQL} AS match_status
-        FROM phase2_final f
+        FROM {_LATEST_FINALS} f
         LEFT JOIN questions q    ON q.question_id = f.question_id
         LEFT JOIN latest_verifier v ON v.pair_run_id = f.pair_run_id
         LEFT JOIN any_rejection ar ON ar.pair_run_id = f.pair_run_id
@@ -313,7 +350,7 @@ def result_cards() -> pd.DataFrame:
             gt.explanation     AS ground_truth_explanation,
             gt.cycle_year      AS ground_truth_cycle,
             {_MATCH_STATUS_SQL} AS match_status
-        FROM phase2_final f
+        FROM {_LATEST_FINALS} f
         LEFT JOIN questions q   ON q.question_id = f.question_id
         LEFT JOIN latest_verifier v ON v.pair_run_id = f.pair_run_id
         LEFT JOIN ground_truth gt
@@ -339,7 +376,7 @@ def country_outcome_counts() -> pd.DataFrame:
         WITH per_pair AS (
             SELECT f.country_code,
                    {_MATCH_STATUS_SQL} AS match_status
-            FROM phase2_final f
+            FROM {_LATEST_FINALS} f
             LEFT JOIN ground_truth gt
               ON gt.question_id = f.question_id
              AND gt.country_code = f.country_code
@@ -352,6 +389,7 @@ def country_outcome_counts() -> pd.DataFrame:
                  WHEN 'near_match' THEN 'Near match (adjacent band)'
                  WHEN 'differ' THEN 'Differs from ODMI'
                  WHEN 'abstained' THEN 'Abstained'
+                 WHEN 'flag_review' THEN 'Flag for review (n/a gold)'
                  ELSE 'No ground truth'
                END AS outcome,
                COUNT(*) AS n
@@ -366,7 +404,15 @@ def accuracy_summary() -> dict:
     """Overall accuracy of the swarm against ODMI ground truth.
 
     Returns {n_finalised, n_match, n_near_match, n_differ, n_abstained,
-    n_no_truth, accuracy, accuracy_within_one_band, abstention_rate}.
+    n_flag_review, n_failed, n_no_truth, accuracy,
+    accuracy_within_one_band, abstention_rate}.
+
+    Counts are over the latest phase2_final row per (question, country,
+    experiment_id): a re-dispatched pair is counted once, never as both
+    match and differ. `n_failed` is pairs with no swarm answer (empty /
+    NULL final_answer); `n_flag_review` is a committed answer on an n/a
+    gold, held for human review. Both are excluded from the accuracy
+    denominator. `n_no_truth` is now ground-truth-missing only.
 
     `accuracy` is exact matches / (matches + near_matches + differs +
     abstentions). An abstention (`inconclusive`) is a failure to answer,
@@ -389,10 +435,13 @@ def accuracy_summary() -> dict:
                            THEN 1 ELSE 0 END) AS n_differ,
                   SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'abstained'
                            THEN 1 ELSE 0 END) AS n_abstained,
-                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) IN
-                           ('no_ground_truth', 'no_swarm_answer')
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'flag_review'
+                           THEN 1 ELSE 0 END) AS n_flag_review,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'no_swarm_answer'
+                           THEN 1 ELSE 0 END) AS n_failed,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'no_ground_truth'
                            THEN 1 ELSE 0 END) AS n_no_truth
-                FROM phase2_final f
+                FROM {_LATEST_FINALS} f
                 LEFT JOIN ground_truth gt
                   ON gt.question_id = f.question_id
                  AND gt.country_code = f.country_code
@@ -403,7 +452,12 @@ def accuracy_summary() -> dict:
     n_near_match = int(row["n_near_match"] or 0)
     n_differ = int(row["n_differ"] or 0)
     n_abstained = int(row["n_abstained"] or 0)
+    n_flag_review = int(row["n_flag_review"] or 0)
+    n_failed = int(row["n_failed"] or 0)
     n_no_truth = int(row["n_no_truth"] or 0)
+    # flag_review (committed on an n/a gold, pending human review) and n_failed
+    # (no swarm answer produced) are excluded from the accuracy denominator:
+    # neither is a scored right-or-wrong answer.
     denom = n_match + n_near_match + n_differ + n_abstained
     accuracy = (n_match / denom) if denom > 0 else None
     accuracy_within_one_band = (
@@ -416,6 +470,8 @@ def accuracy_summary() -> dict:
         "n_near_match": n_near_match,
         "n_differ": n_differ,
         "n_abstained": n_abstained,
+        "n_flag_review": n_flag_review,
+        "n_failed": n_failed,
         "n_no_truth": n_no_truth,
         "accuracy": accuracy,
         "accuracy_within_one_band": accuracy_within_one_band,
