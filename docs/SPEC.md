@@ -168,6 +168,44 @@ Rationale: 2025 data is parsed and ready; 2024 needs re-extraction. The
 held-back design also gives a cleaner external-validity check, because
 prompt and rubric tuning never touch the 2024 evidence.
 
+### D45: Verifier architecture retained, justified by the EXP-11/12/13 programme
+
+**Date:** 2026-06-11.
+
+The verifier investigation (full synthesis in `docs/VERIFIER_FINDINGS.md`)
+concludes by retaining the incumbent design rather than adopting any redesign.
+D45 records that as a justified decision, not a non-result: four lines of attack
+were pre-registered and run, and the incumbent held against all of them.
+
+- **Prompt (EXP-11).** The tristate verdict collapses to always-confirm/abstain
+  (Youden's J 0.03 vs the incumbent disprove's 0.41; it refutes 1 of 150
+  candidates); the deterministic quote-gate strips paraphrased-but-real
+  refutations (sensitivity 0.62 -> 0.10). Incumbent `disprove` retained.
+- **Evidence (EXP-12).** Richer evidence does not raise discrimination. The
+  verifier's own counter-search adds nothing detectable (no-search J 0.42 vs
+  with-search 0.37, not significant) and its live production form was the worst
+  condition (0.10). The verifier's value is cognitive, not retrieval (confirms
+  D15). Current DIY-search recipe retained; no shape-conditional recipe adopted.
+- **Wiring (EXP-13a).** Relaxing the `fail` block (advisory / shaded / veto-only)
+  trades matches for committed-wrong one-for-one; under the committed-wrong-first
+  rule no variant beats the hard gate. Gate retained.
+- **Reframing.** The verifier verdict is the deciding factor on only 9 of 237
+  in-loop commits: the D37 floor is the binding precision control, and the
+  verifier's influence flows through the Adjudicator weighing its
+  counter-evidence (removing the verification layer costs 27 matches and adds 43
+  abstentions at -16 wrong, p < 0.002). The architecture is in practice
+  Researcher -> floor -> Verifier-as-advisor -> Adjudicator-as-decider.
+
+Shipped from the programme: **matcher v2** (per-snippet, ellipsis-aware grounding
+gate; `agents/tools/substring.py::contains_v2`, wired into `agents/verifier.py`),
+closing FM-11 and part of FM-02. Dropped before shipping: the absence
+confidence-ceiling (net-negative on dev) and the absence receipts check
+(near-inert). `verifier_confidence` audited as decision-irrelevant; kept as
+telemetry. The tristate models and prompts remain in the tree as evaluation-only
+apparatus (no production path requests them). Open questions (adjudicator
+ablation, critic-decider merge, held-out evidence work) are logged in
+`docs/VERIFIER_FINDINGS.md` section 7, each needing its own pre-registration.
+
 ### D15: Verifier prompt strategies as an experimental condition
 
 **Date:** 2026-05-11.
@@ -1634,6 +1672,7 @@ note accordingly; no code change.
 
 | Date | Change |
 |---|---|
+| 2026-06-11 (verifier programme closed) | D45 added: the EXP-11/12/13 verifier investigation closes by retaining the incumbent design, with the full synthesis in `docs/VERIFIER_FINDINGS.md`. Four pre-registered attacks all returned null against the incumbent: the tristate verdict collapses (J 0.03 vs 0.41), the quote-gate strips real refutations, richer evidence does not raise discrimination (the verifier's own counter-search adds nothing; its value is cognitive, confirming D15), and relaxing the verdict wiring trades matches for committed-wrong one-for-one. Reframing finding: the verdict decides only 9 of 237 in-loop commits, so the D37 floor is the binding precision control and the verifier's influence flows through the Adjudicator (removing the layer costs 27 matches / +43 abstentions / -16 wrong, p < 0.002). Shipped: matcher v2 (per-snippet ellipsis-aware grounding gate, FM-11 + part of FM-02). Dropped pre-ship: absence confidence-ceiling and receipts check. `verifier_confidence` confirmed telemetry-only. Tristate apparatus stays in-tree, evaluation-only. EXP-13b (Sweden confirmatory) not run: its champion equalled the status quo. Open questions logged for separate pre-registration. 555 non-live tests passing. |
 | 2026-06-10 (EXP-11 stage 0, verifier redesign) | Ran stage 0 of the verifier-redesign programme (`docs/EXPERIMENTS_VERIFIER_REDESIGN.md`, the pre-registered runbook; proposals and Malta diagnosis in `docs/VERIFIER_REDESIGN.md`). Three free offline replays decided three knobs before any quota was spent. (1) **Matcher v2 shipped (P4).** `substring.contains_v2` matches a quote per snippet with ellipsis-aware fragments rather than against a `"\n\n"`-joined corpus, so a cross-snippet splice can no longer pass and a within-snippet elision no longer wrongly fails. Wired into `agents/verifier.py` `_run_substring_check` (snippet path; the live-fetch/catalogue path keeps v1). Replay over 639 researcher quotes: v2 rejects nothing v1 passed and rescues 8 wrongly-failed elisions (4 on correct answers); on verifier counter-quotes it catches a junction-stitch splice that v1 passed on a correct answer. 13 new tests (`tests/test_substring_v2.py`); 546 non-live passing. This is the FM-11/FM-02 deterministic gate hardening, shipped on its own receipt ahead of the rest of the redesign. (2) **Absence confidence-ceiling dropped (P3 lock 3).** A (pair, attempt) replay on MT+NO showed raising the ceiling above the 0.65 floor is net-negative: on Malta it defers 7 of 8 absence commits, all correct, to catch zero wrong; the absence-precision job moves to the live confirmation route (P2), to be measured in stage 1. (3) **Absence receipts check parked (P3 lock 1).** Near-inert as specified because the search templates already name the country; only a subject-term matcher (deferred) would discriminate. `verifier_confidence` audited: it gates nothing and stays telemetry (P6). Stages 1 (classifier ladder) and 2 (end-to-end on Sweden) are unstarted; they need quota, the tristate build, and the NL pinned dispatch. No numbered decision yet (D45 is reserved for adopting the full redesign after stage 2). |
 | 2026-06-08 (false-positive register) | `docs/FAILURE_MODES.md` created: the exhaustive register of ways the swarm can commit a wrong answer while presenting it as confident, distinct from the operational deferrals in `KNOWN_GAPS.md`. Built from a five-pass code audit (Researcher, Verifier, Adjudicator, coordinator finalisation, deterministic gates, catalogue path). 34 failure modes (FM-01..FM-34) under a three-way cut: Caught (deterministic backbone we trust), LLM-only (deciding evidence is in the context window, accepted as prompt-tunable), and Structural (prompting cannot fix; the attack list). The structural set clusters as missing context (FM-02/05/09/34), loose deterministic gates (FM-10/11/13/17), answer-key leakage on allowed domains (FM-14), correlated or skipped adversary (FM-19/20/21/23/33), uncalibrated confidence (FM-22/26/27), and the catalogue path's non-independent recompute (FM-28..32). Indexed from the "Where to look for what" table and from `CLAUDE.md`. The with/without-Verifier ablation and four-strategy head-to-head are the experiments that would quantify which modes the Verifier actually closes. No code change this session; analysis artefact only. |
 | 2026-06-09 (eval matrix) | D42 added, amends D7's Phase B sample. Evaluation sample fixed as a nine-country 3×3 maturity × language-resource matrix, one country per cell: FR / SK / EE (high maturity), DE / HU / SI (mid), SE / RO / MT (low), across high / mid / low-resource language tiers. Wealth dropped as an axis in favour of language-resource (RQ3). The nine are held out: the default pipeline is tuned only on development countries from the 27 outside the matrix (plus France, the legacy in-sample sandbox), then frozen by commit before the headline run. Pre-registered between-condition experiments (Verifier strategies EXP-6, cost-side Family 1, model variants Family 3) are permitted on the nine because they compare arms against a reported baseline; iterative optimisation of the default pipeline against these countries is not. Recorded wrinkles: France's cell is in-sample and base-rate-degenerate (report it as the dev point), and one-country cells are noisy so cell-level claims stay cautious. SK / SI / SE need language codes (sk / sl / sv) added to `run_coordinator.py` before dispatch; NL leaves the sample (shared the mid / high cell with DE). METHODOLOGY RQ3 and Section 6 updated to match. No code or data changed in this entry. |
