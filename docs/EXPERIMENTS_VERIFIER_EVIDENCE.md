@@ -267,5 +267,46 @@ as partials; R12 nulls are findings, drops logged, receipts in JSONL.
 
 ## Change log
 
+- 2026-06-11 (later): **EXP-12a and EXP-13a run (both free phases).**
+  - **EXP-12a (H1): directionally supported, promoted to EXP-12b.** 149 of 150
+    stage 1 candidates matched to a production disprove verdict on the same
+    researcher run (`evaluation/exp12a_premise.py`, results
+    `exp12a_premise.jsonl`). On identical items: production J = 0.10 vs frozen
+    J = 0.41 (restricted to substring-pass-both-sides, where the hard-gate
+    asymmetry cannot fire: 0.12 vs 0.45, n = 143). The gap is concentrated in
+    catching wrong answers: P(pass | wrong) 0.72 production vs 0.38 frozen,
+    with P(pass | correct) near-equal (0.82 vs 0.79), so the frozen evidence
+    buys catch without false rejections. Paired McNemar not significant
+    (b=6, c=12, p = 0.24 all; b=4, c=12, p = 0.077 restricted), so the
+    pre-registered significance criterion fails while the J-gap criterion
+    (+0.31 > 0.15) passes. The direction-gap criterion is vacuous on this
+    slice: the matched set conditions on the LATEST researcher attempt
+    (disproportionately committed answers), and production shows no direction
+    gap there (pass|yes = pass|no = 0.85); among correct answers the frozen
+    gap is small (0.81 vs 0.73), so frozen is not direction-sorting, it is
+    catching wrong no-claims. Mechanism audit: production search was empty on
+    0 of 18 discordants, so the difference is evidence content, not
+    availability. Verdict: H1 holds directionally at modest power; EXP-12b
+    proceeds in full.
+  - **EXP-13a (H3): refuted, a clean null; the wiring question closes.**
+    `evaluation/exp13a_wiring_replay.py` over 237 golded MT+NO pairs, results
+    `exp13a_wiring_replay.jsonl`. Simulator fidelity 237/237 = 1.000 against
+    actual finals (gate >= 0.95 passed). Outcomes (match / abstain / wrong):
+    W-gate 137/69/31; W-veto-hard 140/63/34; W-adv2 137/68/32; W-adv1
+    140/63/34. Every relaxation buys ~3 matches at ~3 extra committed-wrong
+    (McNemar all non-significant); per the pre-registered lexicographic rule
+    (committed-wrong first) no variant beats production, so **W-gate stands**.
+    Mechanism: the verdict block binds on only 9 of 237 in-loop commits
+    (116 vs 125); the D37 floor is the binding constraint, so re-wiring the
+    verdict has little to act on. The W-none reference column (no verifier, no
+    adjudication): 110/112/15, i.e. the verification scaffolding as built nets
+    +27 matches and -43 abstentions at +16 committed-wrong versus a bare
+    floor pipeline (McNemar p < 0.002 both ways), which quantifies the
+    Verifier-plus-Adjudicator contribution and shows most of it is realised at
+    the adjudication stage (W-adv1 vs W-none differ only by that fallback).
+  - **Consequence for EXP-13b (pre-registered gate applied).** The wiring arm
+    reverts to W-gate; EXP-13b becomes a single-component confirmatory test,
+    production vs production-plus-EXP-12b-evidence-champion, on Sweden. Two
+    arms, unchanged sample and adoption rule.
 - 2026-06-11: created. Pre-registers EXP-12a/12b (evidence) and EXP-13a/13b
   (wiring) following the EXP-11 stage 1 null. No run yet at commit time.
