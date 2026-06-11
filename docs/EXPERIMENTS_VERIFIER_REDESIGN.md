@@ -738,6 +738,36 @@ Built by this experiment:
 
 - 2026-06-10: created. Design draft; becomes binding at the section 5
   freeze commit. No stage has run.
+- 2026-06-11: **stage 1 dev ladder run (150/150 candidates, MT 30 + NO 120, 29
+  should_fail); the redesign is NOT adopted, a clean null.** Frozen-evidence
+  classifier, arms A disprove / B tristate / D tristate-probes, pinned `diy`,
+  render disabled (`--no-render`), 6 workers. Primary endpoint Youden's J on DEV
+  all:
+  - A-raw (incumbent) **J=0.41** (sens 0.62, spec 0.79, fpr 0.21), a real
+    discriminator. MT J=0.50, NO J=0.34; no-claims J=0.46, yes-claims J=0.30.
+  - B-raw/B-gated **J=0.03**, D-raw/D-gated **J=0.00**. The tristate arms refuse
+    to refute: 1 refute in 150 (B), 0 in 150 (D); the rest split confirm/
+    inconclusive. The soft middle collapses the adversarial catch (the P1 con,
+    confirmed on data).
+  - A-gated **J=0.02**: the deterministic per-snippet quote gate strips disprove's
+    catches (sens 0.62 -> 0.10) because real refutations paraphrase rather than
+    quote a snippet verbatim. The gate is too strict.
+  - Paired McNemar (Holm) all non-significant; A-raw vs B-raw shows B "better" on
+    raw verdict-correctness (b=17,c=25,p=0.28) ONLY because the set is 81%
+    should_pass and B is a near-degenerate always-pass (pass rate 0.99), exactly
+    the base-rate trap J was pre-registered to expose. Adoption rule (J_B>J_A with
+    sig McNemar) fails decisively; incumbent disprove stays; NL confirmatory not
+    triggered (nothing beat the baseline on dev).
+  - **Reframing finding.** The Malta diagnosis (P(pass|correct) 0.59 vs 0.49, "no
+    discrimination") was on PRODUCTION runs (live search, retries, the loop). On
+    clean frozen single-shot DIY evidence the SAME disprove prompt discriminates
+    well (J=0.41, MT J=0.50). So the weak link on Malta was the production
+    evidence/loop, not the verdict vocabulary. That points the next fix at the
+    evidence pipeline (stage-2 territory), not the verifier prompt. Caveats: n=150
+    (wide CIs, underpowered McNemar); render-off excludes WAF portal pages from the
+    verifier search; the tristate collapse may be partly prompt-design (a
+    refute-biased prompt might recover some catch), but as-tested the redesign
+    loses. Result: `evaluation/results/verifier_redesign_verifier_tristate_v1.jsonl`.
 - 2026-06-10: **stage 0 run and gate passed; this commit is the binding
   pre-registration for stages 1 and 2.** Built `substring.contains_v2` +
   `tests/test_substring_v2.py` (13 tests), `evaluation/_replay_common.py`,

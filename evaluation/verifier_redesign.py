@@ -44,6 +44,7 @@ from typing import Optional
 from pydantic import ValidationError
 
 from agents import verifier as V
+from agents.errors import BlockerShutdown
 from agents.models import (
     ResearcherOutput,
     VerifierInput,
@@ -215,7 +216,11 @@ def freeze_evidence(cand: Candidate, ro: ResearcherOutput) -> dict:
         try:
             results = search_many(queries, max_results_per_query=MAX_RESULTS_PER_QUERY,
                                   provider=PROVIDER)
-        except Exception:
+        except (Exception, BlockerShutdown):
+            # BlockerShutdown (BaseException) fires when the DIY fetch stage
+            # exceeds 30s on a slow/WAF query. In production it halts the run
+            # for a human; in this offline harness one slow query must not kill
+            # the whole sweep, so we degrade that channel to empty and carry on.
             return queries, []
         return queries, results
 
@@ -418,7 +423,7 @@ def run(limit: Optional[int], with_blind: bool, out_name: Optional[str],
             done += 1
             try:
                 freeze_rec, verdicts, err = fut.result()
-            except Exception as exc:
+            except (Exception, BlockerShutdown) as exc:
                 print(f"  [{done}/{len(pending)}] {c.cand_id} WORKER-ERROR {str(exc)[:80]}")
                 continue
             if err:
