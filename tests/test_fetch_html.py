@@ -226,3 +226,63 @@ def test_fetch_rendered_html_returns_raw_body():
     assert result.failure_mode is None
     assert "<article>" in result.content
     assert result.content == _HTML
+
+
+# ------------------------------------------------------------------
+# D43 total-budget discipline (2026-06-11): launch, goto, and the
+# challenge-settle waits all draw from one `timeout_s` budget, so a
+# WAF-challenged URL can never spend more than the render timeout and
+# trip the DIY stage ceiling on its own.
+# ------------------------------------------------------------------
+
+def test_settle_waits_are_bounded_by_remaining_budget():
+    """With 6s of budget left, the settle wait is half the remainder and the
+    networkidle wait is the rest; together they never exceed the budget."""
+    from agents.tools.fetch import _settle_through_challenge
+
+    page = MagicMock()
+    page.content = MagicMock(return_value=_CHALLENGE_HTML)
+    _settle_through_challenge(page, remaining_s=6.0)
+    page.wait_for_timeout.assert_called_once_with(3000)
+    page.wait_for_load_state.assert_called_once_with("networkidle", timeout=3000)
+
+
+def test_settle_skips_waits_when_budget_exhausted():
+    """Under 1s of remaining budget: no waits at all, the interstitial body is
+    returned and the caller reports waf_challenge_unresolved."""
+    from agents.tools.fetch import _settle_through_challenge
+
+    page = MagicMock()
+    page.content = MagicMock(return_value=_CHALLENGE_HTML)
+    body = _settle_through_challenge(page, remaining_s=0.4)
+    page.wait_for_timeout.assert_not_called()
+    page.wait_for_load_state.assert_not_called()
+    assert body == _CHALLENGE_HTML
+
+
+def test_settle_caps_initial_wait_at_4s_with_ample_budget():
+    """With a large remaining budget the settle wait keeps its original 4s
+    figure; the bound only bites when the budget is tight."""
+    from agents.tools.fetch import _settle_through_challenge
+
+    page = MagicMock()
+    page.content = MagicMock(return_value=_CHALLENGE_HTML)
+    _settle_through_challenge(page, remaining_s=20.0)
+    page.wait_for_timeout.assert_called_once_with(4000)
+    page.wait_for_load_state.assert_called_once_with("networkidle", timeout=16000)
+
+
+def test_rendered_html_launch_is_inside_the_budget():
+    """The browser launch gets the budget as its timeout, and the goto timeout
+    is the budget minus elapsed time, never more than the budget itself."""
+    fake_module = _playwright_page(_HTML)
+    with patch.dict("sys.modules", {"playwright.sync_api": fake_module}):
+        result = fetch_rendered_html("https://example.com/spa", timeout_s=13.0)
+    assert result.failure_mode is None
+    chromium = fake_module.sync_playwright.return_value.__enter__.return_value.chromium
+    launch_kwargs = chromium.launch.call_args.kwargs
+    assert launch_kwargs["timeout"] == 13.0 * 1000
+    page = (chromium.launch.return_value.new_context.return_value
+            .new_page.return_value)
+    goto_timeout = page.goto.call_args.kwargs["timeout"]
+    assert 0 < goto_timeout <= 13.0 * 1000

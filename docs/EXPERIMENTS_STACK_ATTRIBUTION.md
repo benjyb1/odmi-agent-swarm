@@ -148,3 +148,18 @@ candidate set.**
 - 2026-06-11: attribution A-E and the counterfactual replay run over 386
   production pairs; H2, H3, H6 resolved as above. EXP-7 dispatched (baseline
   arm first, then chained), `experiment_id = retry_chaining_mt_v1`.
+- 2026-06-11 (later): the first baseline dispatch tripped the D43 DIY blocker
+  at 6 of 40 finals. Root cause found and fixed: the Playwright render
+  timeout was per-phase, not total. Browser launch (which balloons under
+  concurrency) and the Cloudflare settle waits (4s + a networkidle wait of up
+  to the full render timeout) sat outside the goto timeout, so one
+  WAF-challenged URL could spend ~38s against a documented ~24s worst case
+  and trip the 30s stage ceiling. `fetch_rendered_text` / `fetch_rendered_html`
+  now treat `timeout_s` as a total budget (launch + goto + settle), restoring
+  the D43 arithmetic (per-URL worst case httpx 8s + render 13s = 21s). Because
+  child coordinators load code at spawn, continuing the run would have mixed
+  fetch behaviours within and between arms; the 8 pre-fix finals were retagged
+  `retry_chaining_mt_v1_aborted` (kept as audit trail, excluded from analysis)
+  and both arms restarted from zero on the fixed code. This is an apparatus
+  restart before any between-arm comparison existed, not a selective re-run
+  (R11).
