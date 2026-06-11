@@ -1,0 +1,162 @@
+{
+  "majority_baseline_note": "Malta binary gold is ~69% yes; the headline is balanced accuracy and per-class rates, not raw accuracy (R4).",
+  "arms": {
+    "baseline": {
+      "n": 40,
+      "n_committed": 8,
+      "n_abstained": 32,
+      "n_recovered": 6,
+      "n_near_match": 0,
+      "recovery_overall": {
+        "successes": 6,
+        "n": 40,
+        "rate": 0.15,
+        "wilson_95": [
+          0.07061187717320358,
+          0.290723243664897
+        ]
+      },
+      "balanced_accuracy": 0.16666666666666669,
+      "per_class_recall": {
+        "yes": {
+          "successes": 2,
+          "n": 10,
+          "rate": 0.2,
+          "wilson_95": [
+            0.056682151454375274,
+            0.5098375284633582
+          ]
+        },
+        "no": {
+          "successes": 4,
+          "n": 30,
+          "rate": 0.13333333333333333,
+          "wilson_95": [
+            0.053096554840547455,
+            0.2968132668203629
+          ]
+        },
+        "other": {
+          "successes": 0,
+          "n": 0,
+          "rate": null,
+          "wilson_95": [
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "false_positive_rate": {
+        "successes": 2,
+        "n": 8,
+        "rate": 0.25,
+        "wilson_95": [
+          0.07147921275210906,
+          0.5907245696898311
+        ]
+      },
+      "abstention_rate": {
+        "successes": 32,
+        "n": 40,
+        "rate": 0.8,
+        "wilson_95": [
+          0.6524269365360051,
+          0.8950001027456229
+        ]
+      },
+      "calls_per_resolved_pair": 9.125,
+      "calls_total": 73
+    },
+    "chained": {
+      "n": 40,
+      "n_committed": 11,
+      "n_abstained": 29,
+      "n_recovered": 9,
+      "n_near_match": 0,
+      "recovery_overall": {
+        "successes": 9,
+        "n": 40,
+        "rate": 0.225,
+        "wilson_95": [
+          0.12316091323540748,
+          0.37503096742310016
+        ]
+      },
+      "balanced_accuracy": 0.21666666666666667,
+      "per_class_recall": {
+        "yes": {
+          "successes": 2,
+          "n": 10,
+          "rate": 0.2,
+          "wilson_95": [
+            0.056682151454375274,
+            0.5098375284633582
+          ]
+        },
+        "no": {
+          "successes": 7,
+          "n": 30,
+          "rate": 0.23333333333333334,
+          "wilson_95": [
+            0.11792388144489502,
+            0.4092832615812217
+          ]
+        },
+        "other": {
+          "successes": 0,
+          "n": 0,
+          "rate": null,
+          "wilson_95": [
+            0.0,
+            1.0
+          ]
+        }
+      },
+      "false_positive_rate": {
+        "successes": 2,
+        "n": 11,
+        "rate": 0.18181818181818182,
+        "wilson_95": [
+          0.05136768974608513,
+          0.4769805619608441
+        ]
+      },
+      "abstention_rate": {
+        "successes": 29,
+        "n": 40,
+        "rate": 0.725,
+        "wilson_95": [
+          0.5716504419378944,
+          0.8389198375233266
+        ]
+      },
+      "calls_per_resolved_pair": 11.454545454545455,
+      "calls_total": 126
+    }
+  },
+  "paired": {
+    "n_paired": 40,
+    "recovery_mcnemar": {
+      "discordant_baseline_only": 1,
+      "discordant_chained_only": 4,
+      "p_value": 0.375
+    },
+    "false_positive_mcnemar": {
+      "discordant_baseline_only": 2,
+      "discordant_chained_only": 2,
+      "p_value": 1.0
+    },
+    "calls_wilcoxon": {
+      "statistic": 285.0,
+      "p_value": 0.8294514054730323
+    },
+    "median_call_delta": 0,
+    "joint_confirmatory": {
+      "balanced_accuracy_non_decrease": true,
+      "false_positive_not_raised": true,
+      "false_positive_margin": 0.05,
+      "passes": true
+    }
+  },
+  "experiment_id": "retry_chaining_mt_v1"
+}

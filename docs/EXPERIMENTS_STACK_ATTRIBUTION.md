@@ -116,7 +116,7 @@ candidate set.**
 
 | ID | Element | Hypothesis | Experiment | Status |
 |---|---|---|---|---|
-| H1 | Retry loop | Chaining evidence across retries recovers more correct answers per call at no higher false-positive rate | EXP-7 (pre-registered, `EXPERIMENTS_CHAINING.md`): paired baseline vs `--chained`, frozen Malta 40-pair draw, knobs pinned (diy, cold cache, disprove, 5 results, 3 retries) | running 2026-06-11 |
+| H1 | Retry loop | Chaining evidence across retries recovers more correct answers per call at no higher false-positive rate | EXP-7 (pre-registered, `EXPERIMENTS_CHAINING.md`): paired baseline vs `--chained`, frozen Malta 40-pair draw, knobs pinned (diy, cold cache, disprove, 5 results, 3 retries) | done 2026-06-11: directional support (bal-acc +5pts, FP 0.18 vs 0.25, recoveries 9 vs 6), joint non-inferiority passes, recovery McNemar p=0.375 not significant (underpowered by the abstention ceiling). Promising, not proven. |
 | H2 | Substring gate | Gate false-fires are a live-fetch-fallback artefact; restricting the hard fail to the snippet path removes most false rejects at no anti-fabrication cost | Offline replay over stored rows (`substring_gate_replay.py`) plus the date split | done, supported |
 | H3 | Verifier verdict | The verdict adds no discrimination; the verifier's value is the retry trigger and its counter-evidence, not the pass/fail | Attribution A + counterfactual replay (`verifier_counterfactual.py`) | done, supported |
 | H4 | Researcher retrieval | Snippet breadth, not snippet usage, is the researcher-side constraint; lean retrieval knobs will cost accuracy | Attribution D (rank distribution) now; confirmatory test is EXP-2a, prediction registered here before its run | replay done; EXP-2a queued |
