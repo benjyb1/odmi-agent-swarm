@@ -24,13 +24,22 @@ import json, sqlite3, sys
 label = sys.argv[1]
 draw = json.load(open("evaluation/results/exp7_pairs_retry_chaining_mt_v1.json"))
 conn = sqlite3.connect("data/odmi.db")
+# A pair is done if it has ANY finalised row in this arm. Do NOT require a
+# retry_count=0 researcher row: the coordinator's resume path can pick up an
+# orphaned 'researching' row from a prior dispatch attempt and resume at
+# retry_count=1, so a perfectly finalised pair may have no attempt-0 row. The
+# earlier retry_count=0 join missed exactly those pairs (P6/PT18/PT9), declared
+# them unfinished, and re-dispatched them forever (2026-06-11). Matching on any
+# condition_label-tagged researcher row for the finalised pair_run_id is the
+# correct completion test, and mirrors how chaining_analysis.load_outcomes
+# attributes a final to an arm.
 done = {
     row[0]
     for row in conn.execute(
-        """SELECT f.question_id
+        """SELECT DISTINCT f.question_id
            FROM phase2_final f
            JOIN phase2_researcher_runs r
-             ON r.pair_run_id = f.pair_run_id AND r.retry_count = 0
+             ON r.pair_run_id = f.pair_run_id
            WHERE f.experiment_id = ? AND f.country_code = 'MT'
              AND r.condition_label = ?""",
         ("retry_chaining_mt_v1", label),
