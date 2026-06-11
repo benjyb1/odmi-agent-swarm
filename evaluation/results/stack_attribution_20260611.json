@@ -1,0 +1,155 @@
+{
+  "countries": [
+    "MT",
+    "NO",
+    "FR",
+    "EE"
+  ],
+  "n_finals": 357,
+  "n_researcher_runs": 847,
+  "n_verifier_runs": 618,
+  "n_adjudications": 126,
+  "A_verifier_discrimination": {
+    "per_country": {
+      "FR": {
+        "pass_correct": 72,
+        "fail_correct": 85,
+        "pass_wrong": 6,
+        "fail_wrong": 6,
+        "tpr_pass_given_correct": "72/157 = 0.46 [0.38, 0.54]",
+        "tnr_fail_given_wrong": "6/12 = 0.50 [0.25, 0.75]",
+        "youden_j": -0.041,
+        "false_reject_rate": "85/157 = 0.54 [0.46, 0.62]",
+        "false_accept_rate": "6/12 = 0.50 [0.25, 0.75]"
+      },
+      "EE": {
+        "pass_correct": 1,
+        "fail_correct": 16,
+        "pass_wrong": 0,
+        "fail_wrong": 1,
+        "tpr_pass_given_correct": "1/17 = 0.06 [0.01, 0.27]",
+        "tnr_fail_given_wrong": "1/1 = 1.00 [0.21, 1.00]",
+        "youden_j": 0.059,
+        "false_reject_rate": "16/17 = 0.94 [0.73, 0.99]",
+        "false_accept_rate": "0/1 = 0.00 [0.00, 0.79]"
+      },
+      "MT": {
+        "pass_correct": 43,
+        "fail_correct": 30,
+        "pass_wrong": 15,
+        "fail_wrong": 19,
+        "tpr_pass_given_correct": "43/73 = 0.59 [0.47, 0.69]",
+        "tnr_fail_given_wrong": "19/34 = 0.56 [0.39, 0.71]",
+        "youden_j": 0.148,
+        "false_reject_rate": "30/73 = 0.41 [0.31, 0.53]",
+        "false_accept_rate": "15/34 = 0.44 [0.29, 0.61]"
+      },
+      "NO": {
+        "pass_correct": 103,
+        "fail_correct": 40,
+        "pass_wrong": 36,
+        "fail_wrong": 15,
+        "tpr_pass_given_correct": "103/143 = 0.72 [0.64, 0.79]",
+        "tnr_fail_given_wrong": "15/51 = 0.29 [0.19, 0.43]",
+        "youden_j": 0.014,
+        "false_reject_rate": "40/143 = 0.28 [0.21, 0.36]",
+        "false_accept_rate": "36/51 = 0.71 [0.57, 0.81]"
+      }
+    },
+    "pooled": {
+      "pass_correct": 219,
+      "fail_correct": 171,
+      "pass_wrong": 57,
+      "fail_wrong": 41,
+      "tpr_pass_given_correct": "219/390 = 0.56 [0.51, 0.61]",
+      "tnr_fail_given_wrong": "41/98 = 0.42 [0.33, 0.52]",
+      "youden_j": -0.02,
+      "false_reject_rate": "171/390 = 0.44 [0.39, 0.49]",
+      "false_accept_rate": "57/98 = 0.58 [0.48, 0.67]"
+    },
+    "pooled_first_attempt": {
+      "pass_correct": 134,
+      "fail_correct": 49,
+      "pass_wrong": 9,
+      "fail_wrong": 3,
+      "tpr_pass_given_correct": "134/183 = 0.73 [0.66, 0.79]",
+      "tnr_fail_given_wrong": "3/12 = 0.25 [0.09, 0.53]",
+      "youden_j": -0.018,
+      "false_reject_rate": "49/183 = 0.27 [0.21, 0.34]",
+      "false_accept_rate": "9/12 = 0.75 [0.47, 0.91]"
+    }
+  },
+  "B_retry_dynamics": {
+    "pairs_with_retries": 212,
+    "first_to_final_transitions": {
+      "abstain->abstain": 71,
+      "abstain->correct": 61,
+      "abstain->wrong": 25,
+      "correct->abstain": 14,
+      "correct->correct": 35,
+      "correct->wrong": 1,
+      "wrong->abstain": 3,
+      "wrong->wrong": 2
+    },
+    "recovered_wrong_or_abstain_to_correct": 61,
+    "degraded_correct_to_wrong_or_abstain": 15,
+    "recovery_final_retry_count": {
+      "2": 5,
+      "1": 20,
+      "3": 36
+    },
+    "false_reject_cost": {
+      "final_correct": 27,
+      "final_wrong": 1,
+      "final_abstain": 14
+    }
+  },
+  "C_adjudicator_value": {
+    "verdicts": {
+      "researcher_correct": 39,
+      "escalate_human": 50,
+      "verifier_correct": 30,
+      "neither": 7
+    },
+    "adjudicator_committed_accuracy": "35/51 = 0.69 [0.55, 0.80]",
+    "flip_table_last_candidate_vs_adjudicator": {
+      "last_correct|adj_abstain": 42,
+      "last_correct|adj_correct": 33,
+      "last_correct|adj_wrong": 4,
+      "last_not|adj_abstain": 33,
+      "last_not|adj_correct": 2,
+      "last_not|adj_wrong": 12
+    }
+  },
+  "D_snippet_utilisation": {
+    "runs_with_snippets_and_definite_answer": 302,
+    "mean_snippets_per_run": 5.1,
+    "cited_url_in_snippet_set": "299/302 = 0.99 [0.97, 1.00]",
+    "evidence_quote_found_in_snippets": "269/302 = 0.89 [0.85, 0.92]",
+    "cited_snippet_rank_distribution": {
+      "1": 90,
+      "2": 64,
+      "3": 45,
+      "4": 28,
+      "5": 26,
+      "6": 26,
+      "7": 11,
+      "8": 5,
+      "9": 2,
+      "10": 1,
+      "12": 1
+    },
+    "accuracy_by_citation_grounding": {
+      "cited_in_snippets": "213/299 = 0.71 [0.66, 0.76]",
+      "cited_outside": "3/3 = 1.00 [0.44, 1.00]"
+    }
+  },
+  "E_substring_gate": {
+    "fail|fail": 163,
+    "fail|pass": 43,
+    "not_attempted|fail": 1,
+    "not_attempted|pass": 2,
+    "pass|fail": 124,
+    "pass|pass": 285
+  }
+}
