@@ -52,6 +52,13 @@ class _Queries(BaseModel):
     queries: List[str] = Field(..., min_length=1, max_length=3)
 
 
+class _Probes(BaseModel):
+    # The probe generator asks for 3-4 angles (portal, API, policy
+    # register, national-language), so it needs a wider cap than the
+    # adversarial _Queries (max 3) or a 4-query response fails validation.
+    queries: List[str] = Field(..., min_length=1, max_length=4)
+
+
 _QUERY_GEN_NAME = "phase2_verifier_query_gen"
 _QUERY_GEN_VERSION = 2
 _QUERY_GEN_DESCRIPTION = (
@@ -133,6 +140,66 @@ def generate_adversarial_queries(
 
 
 # ============================================================
+# Confirmation-probe query generation (EXP-11 P2, query-gen v3).
+# For an absence claim, generate queries that hunt for the POSITIVE
+# thing the answer says is missing, so the verifier can try to refute
+# the absence before corroborating it. Additive: used by the EXP-11
+# harness, not by production run_verifier.
+# ============================================================
+
+_PROBE_GEN_NAME = "phase2_verifier_probe_gen"
+_PROBE_GEN_VERSION = 1
+_PROBE_GEN_DESCRIPTION = (
+    "Generate 3-4 confirmation-probe web search queries for an absence "
+    "claim. Queries hunt for the positive thing the Researcher says is "
+    "absent (a portal feature, an API, a policy instrument), so the "
+    "verifier can test the absence rather than accept it on silence."
+)
+
+_PROBE_GEN_SYSTEM = """You generate confirmation probes for an absence claim.
+
+The Researcher has answered that some feature, API, dataset, or policy
+instrument does NOT exist for this country. Produce 3-4 short web search
+queries (5-10 words) that would FIND that thing if it existed. The point
+is to give the absence its best chance to be proven wrong.
+
+Cover different angles:
+- the national open-data portal's own feature or documentation page,
+- an API or developer/documentation page,
+- the official policy register, legal gazette, or government strategy,
+- at least one query in the country's national language.
+
+Target official government, legislative, and regulatory sources. Do not
+search for the absence ("no API Malta"); search for the presence ("Malta
+open data portal API documentation"). Return JSON matching the schema."""
+
+
+def generate_confirmation_probes(
+    inp: VerifierInput,
+    *,
+    subtrio_id: str | None = None,
+    model: str | None = None,
+) -> tuple[List[str], LLMUsage]:
+    """Generate confirmation-probe queries for an absence claim."""
+    prompt_id = db_helpers.ensure_prompt_version(
+        _PROBE_GEN_NAME, _PROBE_GEN_VERSION,
+        _PROBE_GEN_SYSTEM, _PROBE_GEN_DESCRIPTION,
+    )
+    parsed, usage = call_for_structured(
+        system=_PROBE_GEN_SYSTEM,
+        user_message=_build_query_gen_message(inp),
+        output_schema=_Probes,
+        model=model,
+        max_tokens=240,
+        condition_label="verifier_probe_gen",
+        prompt_version_id=prompt_id,
+        usage_context=f"verifier_probe_gen:{inp.question_id}:{inp.country_code}",
+        subtrio_id=subtrio_id,
+    )
+    return parsed.queries, usage
+
+
+# ============================================================
 # Substring check (Python-only, no LLM)
 # ============================================================
 
@@ -159,17 +226,27 @@ def _run_substring_check(
     snippet path.
     """
     # --- Snippet path (preferred when snippets are available) ---
+    # P4 (EXP-11, shipped 2026-06-10): match per snippet with the
+    # ellipsis-aware v2 matcher rather than against a joined corpus. v1
+    # let a quote stitched across the junction of two snippets pass
+    # (the "\n\n" join collapsed under normalisation) and wrongly failed
+    # legitimate within-snippet elisions. The S0.1 replay over every
+    # stored run confirmed v2 rejects nothing v1 passed on this path,
+    # admits only within-snippet elisions, and catches cross-snippet
+    # splices. See docs/EXPERIMENTS_VERIFIER_REDESIGN.md S0.1.
     if researcher_snippets:
-        corpus = "\n\n".join(s for s in researcher_snippets if s)
-        if substring.contains(corpus, evidence_quote):
+        match = substring.contains_v2(researcher_snippets, evidence_quote)
+        if match.matched:
             return (
                 "pass",
-                "matched against the snippets the Researcher read",
+                f"matched against snippet {match.snippet_index} the "
+                f"Researcher read ({match.n_fragments} fragment(s))",
                 None,
             )
         return (
             "fail",
-            "quote not present in the snippets the Researcher read",
+            f"quote not present in any single snippet the Researcher "
+            f"read (v2 reason: {match.reason})",
             None,
         )
 

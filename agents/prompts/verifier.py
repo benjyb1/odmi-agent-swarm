@@ -456,6 +456,206 @@ class _StrategySpec:
     description: str
 
 
+# ============================================================
+# EXP-11 tristate strategies (P1/P2). Evaluation-only: the harness
+# parses these with VerifierOutputTristate. Production run_verifier
+# hardcodes the binary VerifierOutput schema, so it must not be pointed
+# at these labels; the coordinator never requests them.
+# ============================================================
+
+_TRISTATE_SCHEMA_NOTE = """
+You will return a JSON object matching the VerifierOutputTristate schema:
+
+{
+  "verdict": "refute" | "inconclusive" | "confirm",
+  "verifier_answer": string from the allowed-answer list in the user
+                     message (or 'inconclusive', or 'not_applicable'),
+  "verifier_confidence": 0.0-1.0,
+  "substring_check_result": "pass" | "fail" | "not_attempted",
+  "substring_check_notes": string | null,
+  "independent_search_queries": [list of strings you searched],
+  "independent_evidence_snippets": [list of short quotes from results],
+  "rejection_reason": string | null,          -- required if verdict=refute
+  "counter_evidence_quote": string | null,    -- required if verdict=refute
+  "counter_source_url": string | null,        -- (counter quote OR url required)
+  "suggested_search_query": string | null,
+  "corroborating_quote": string | null,       -- required if verdict=confirm
+  "corroborating_url": string | null,         -- (quote OR url required)
+  "probe_findings": [ {"query": str, "found": bool, "quote": str|null} ] | null
+}
+
+The three verdicts, and the burden each carries:
+
+- refute: you found SPECIFIC, QUOTABLE evidence that the Researcher's
+  answer is wrong. You must quote it in counter_evidence_quote, taken
+  from the search snippets in front of you (do not invent it). For an
+  ordered band, a verified figure mapping to a DIFFERENT band is a
+  refute. Set verifier_answer to the label the counter-evidence supports.
+- confirm: you found INDEPENDENT corroboration that the answer is right,
+  quotable in corroborating_quote, ideally from a source OTHER than the
+  Researcher's own. Set verifier_answer to the Researcher's answer.
+- inconclusive: you searched and found nothing that decides it either
+  way. This is the honest default. It carries NO penalty. Use it freely
+  rather than manufacturing a refute or a confirm.
+
+Hard rule on evidence fit. If your only objection is that the
+Researcher's quote does not squarely address the question (it is
+generic, off-scope, or about a related-but-different proposition), that
+is NOT a refute. It means the support is weak, not that the answer is
+false. Return inconclusive and say so in rejection_reason.
+
+verifier_confidence is your confidence in your own verdict, not in the
+Researcher's claim.
+"""
+
+_TRISTATE_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm,
+returning a three-way verdict.
+
+The ODMI (EU Open Data Maturity Index) scores national open-data
+ecosystems. Every answer must trace to a specific, authoritative source.
+
+Your task is to decide, on the evidence in front of you, whether the
+Researcher's answer should be REFUTED (you found quotable counter-
+evidence), CONFIRMED (you found quotable corroboration), or left
+INCONCLUSIVE (you searched and nothing decided it).
+
+Reason in this order:
+
+1. Substring check. Python has already checked the Researcher's quote
+   against the snippets it read. A failed check means the quote is not
+   faithful to the evidence; weight it toward refute, but a weak quote
+   on its own is an evidence-fit problem (see step 3), not proof the
+   answer is false.
+
+2. Forbidden sources. ODMI's own publications and the EU Data Portal
+   (data.europa.eu, publications.europa.eu, op.europa.eu, archive
+   mirrors, and any URL containing "open-data-maturity" or "odmi") are
+   forbidden, because they are the ground truth being validated. If the
+   Researcher relies on one, return refute with
+   rejection_reason="forbidden_odmi_source".
+
+3. Evidence fit. Does the quote actually answer THIS question, in scope
+   and tense? If not, that is a weak-support finding: return
+   inconclusive, not refute. Do not convert "I could not confirm it"
+   into counter-evidence.
+
+4. Counter-evidence. Do the independent snippets contradict the answer
+   or reveal a more current or precise source? If you can QUOTE such a
+   passage, return refute and set verifier_answer to the label it
+   supports.
+
+5. Corroboration. Do the independent snippets positively support the
+   answer, ideally from a different source than the Researcher's? If you
+   can QUOTE it, return confirm.
+
+6. Otherwise return inconclusive.
+
+Do not refute on stylistic grounds. Refute only on quotable evidence the
+answer is wrong; confirm only on quotable corroboration; otherwise
+inconclusive.
+""" + _TRISTATE_SCHEMA_NOTE
+
+_TRISTATE_PROBES_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm,
+returning a three-way verdict, with a confirmation protocol for absence
+claims.
+
+The ODMI (EU Open Data Maturity Index) scores national open-data
+ecosystems. Every answer must trace to a specific, authoritative source.
+
+An ABSENCE claim is a "no", a "none", or an ordered shape's bottom band:
+the Researcher says the feature, API, dataset, or instrument does not
+exist. An absence claim has no passage to quote, so a lazy "I could not
+find it either" must not pass for verification. You are therefore given
+CONFIRMATION PROBES: independent searches aimed at finding the POSITIVE
+thing. Work through them.
+
+For an ABSENCE claim:
+1. Read each probe result. Record what you found in probe_findings, one
+   entry per probe (query, found, quote).
+2. If any probe VERIFIABLY surfaces the positive thing (you can quote a
+   passage showing the feature/API/instrument exists), the absence is
+   wrong: return refute, set verifier_answer to the positive label, and
+   put that passage in counter_evidence_quote.
+3. If a probe surfaces an explicit statement that the thing does NOT
+   exist (an authoritative negative), the absence is corroborated:
+   return confirm with that passage in corroborating_quote.
+4. If every probe comes up dry (nothing positive, nothing explicitly
+   negative), return inconclusive. Dry probes are the honest outcome for
+   an unconfirmable absence; do not manufacture a confirm from silence.
+
+For a PRESENCE claim (a "yes", a non-bottom band), behave as the
+standard tristate verifier: refute on quotable counter-evidence, confirm
+on quotable corroboration, otherwise inconclusive. An evidence-fit
+complaint is inconclusive, never refute.
+
+Forbidden sources. ODMI's own publications and the EU Data Portal
+(data.europa.eu, publications.europa.eu, op.europa.eu, archive mirrors,
+and any URL containing "open-data-maturity" or "odmi") are forbidden. If
+the Researcher relies on one, return refute with
+rejection_reason="forbidden_odmi_source".
+""" + _TRISTATE_SCHEMA_NOTE
+
+
+def _probe_block(probe_queries: List[str], probe_snippets: List[str]) -> str:
+    if not probe_queries and not probe_snippets:
+        return "Confirmation probes: none run (the claim is not an absence claim)."
+    q_block = "\n".join(f"  - {q}" for q in probe_queries) or "  (none)"
+    if probe_snippets:
+        s_block = "\n".join(
+            f"  [{i+1}] {s[:300]}" for i, s in enumerate(probe_snippets[:8])
+        )
+    else:
+        s_block = "  (no results returned for the probes)"
+    return (
+        "--- Confirmation probes (searches for the POSITIVE thing) ---\n"
+        f"Probe queries:\n{q_block}\n\nProbe snippets:\n{s_block}"
+    )
+
+
+def build_tristate_user_message(
+    *,
+    question_text: str,
+    country_name: str,
+    country_code: str,
+    researcher_output: ResearcherOutput,
+    substring_result: str,
+    substring_notes: Optional[str],
+    independent_queries: List[str],
+    independent_snippets: List[str],
+    answer_shape: str = "binary",
+    allowed_answers: Optional[List[str]] = None,
+    probe_queries: Optional[List[str]] = None,
+    probe_snippets: Optional[List[str]] = None,
+    include_probes: bool = False,
+) -> str:
+    """Render the user message for a tristate arm. Reuses the production
+    block helpers so the evidence the model sees is identical to the
+    binary arms, plus an optional probe block for the probes arm."""
+    if allowed_answers is None:
+        allowed_answers = ["yes", "no"]
+    sections = [
+        f"Question:\n{question_text}",
+        f"Country: {country_name} ({country_code})",
+        "",
+        _answer_space_block(answer_shape, allowed_answers),
+        "",
+        "--- Researcher's claim ---",
+        _researcher_evidence_block(researcher_output, include_answer=True),
+        "",
+        "--- Pre-computed checks ---",
+        _substring_block(substring_result, substring_notes),
+        "",
+        _search_results_block(independent_queries, independent_snippets),
+    ]
+    if include_probes:
+        sections += ["", _probe_block(probe_queries or [], probe_snippets or [])]
+    sections += [
+        "",
+        "Return your verdict as JSON matching the VerifierOutputTristate schema.",
+    ]
+    return "\n".join(sections)
+
+
 STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
     "verifier-disprove": _StrategySpec(
         name=_DISPROVE_NAME,
@@ -464,6 +664,24 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         description=(
             "Verifier disprove V3: default sceptical stance. "
             "Asks what is wrong with the claim before considering acceptance."
+        ),
+    ),
+    "verifier-tristate": _StrategySpec(
+        name="phase2_verifier_tristate",
+        version=1,
+        system=_TRISTATE_SYSTEM,
+        description=(
+            "Verifier tristate V1 (EXP-11): refute / inconclusive / confirm. "
+            "Evidence-fit complaints are inconclusive, not refute."
+        ),
+    ),
+    "verifier-tristate-probes": _StrategySpec(
+        name="phase2_verifier_tristate_probes",
+        version=1,
+        system=_TRISTATE_PROBES_SYSTEM,
+        description=(
+            "Verifier tristate-probes V1 (EXP-11): tristate plus a "
+            "confirmation-probe protocol for absence claims."
         ),
     ),
     "verifier-negation": _StrategySpec(
