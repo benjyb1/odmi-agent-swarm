@@ -267,6 +267,7 @@ as partials; R12 nulls are findings, drops logged, receipts in JSONL.
 
 ## Change log
 
+- 2026-06-11 (close): **EXP-12c shape-conditional recipe, the last lead, closed.** `evaluation/exp12c_conditional.py`, an exact recombination of the stored E5/E1 verdicts (absence -> E1, presence -> E5; zero new calls). POST-HOC and in-sample by construction (the routing rule came from these 150 candidates), so it is a screen, not a confirmation. Result: EC J=0.39 vs E0 0.37 (gap +0.02 even in-sample), FRR 0.20 > E0's 0.18, McNemar p=0.73. The no-claims gain does not survive pooling (absence is 29/150). The lead does not clear the bar; no held-out dispatch justified. **The entire verifier programme (EXP-11/12/13) now closes**: no prompt, wiring, or evidence change beats the incumbent; the one shipped output is matcher v2 (EXP-11 P4).
 - 2026-06-11 (later still): **EXP-12b phase 1 run (448/450 calls; 2 disprove
   schema failures, NO:I9-c and NO:P2 on E5, dropped). H2 refuted; 13b is moot.**
   `evaluation/exp12b_evidence_ladder.py`, results `exp12b_evidence_ladder.jsonl`.
