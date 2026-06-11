@@ -267,6 +267,44 @@ as partials; R12 nulls are findings, drops logged, receipts in JSONL.
 
 ## Change log
 
+- 2026-06-11 (later still): **EXP-12b phase 1 run (448/450 calls; 2 disprove
+  schema failures, NO:I9-c and NO:P2 on E5, dropped). H2 refuted; 13b is moot.**
+  `evaluation/exp12b_evidence_ladder.py`, results `exp12b_evidence_ladder.jsonl`.
+  Prompt pinned to disprove v3, substring v2, only the evidence block varies.
+  J (fail = positive): **E5 (no independent search) 0.42** (sens 0.64, spec 0.78,
+  FRR 0.23 [0.16, 0.31]); **E0 (adversarial search, status quo) 0.37** (0.55,
+  0.82, FRR 0.18 [0.12, 0.26]); **E1 (+ probes) 0.35** (0.55, 0.80, FRR 0.20).
+  Richer evidence did not raise discrimination; the no-search floor is
+  numerically the best. Ladder McNemar non-significant (E5 vs E0 b=5 c=8
+  p=0.58; E0 vs E1 b=5 c=3 p=0.73; Holm 1.0). Champion by the pre-registered
+  rule (max J subject to FRR <= E0's 0.18): **E0**, since E5's higher J is
+  bought with more false rejections (0.23 > 0.18) the guard forbids.
+  - **Direction split (the one live lead).** On absence claims, search and
+    probes DO help: no-claims J E5 0.35 -> E0 0.45 -> E1 0.50; on presence
+    claims search hurts: yes-claims E5 0.37 -> E1 0.29. The probes help exactly
+    where designed; the pooled J is flat because yes-claims dominate (121/150).
+    A shape-conditional recipe (probes for absence, minimal search for presence)
+    is the lead, but it is not a pre-registered arm, so pursuing it needs its
+    own pre-registration, not a post-hoc graft.
+  - **Reconciliation with EXP-12a.** 12a found production J=0.10 vs frozen
+    E0 J=0.41 on identical items; 12b shows even E5 (no search) reaches 0.42.
+    So production's collapse was not a lack of evidence (none is needed); it is
+    most consistent with production's live search of that era injecting noise
+    (P(pass|wrong) 0.72 production vs 0.38 frozen). Production standardised on
+    DIY-only after that era (D43/D36), so clean DIY search (= E0) is already
+    the production recipe, which is exactly the champion. The verifier's value
+    is cognitive (D15), now measured: it discriminates on the researcher's own
+    evidence and its own search adds noise more than signal on the majority
+    (presence) class.
+  - **EXP-13b decision: not dispatched, moot.** The champion equals the current
+    production recipe (E0 = clean DIY adversarial search), so there is no new
+    component to bundle against production. Dispatching a production-vs-
+    production run would burn the only paid step in the programme to confirm
+    "no change". Per the pre-registered logic (mirroring the NL confirmatory
+    after EXP-11: nothing beat the baseline on dev, so the confirmatory does not
+    run), 13b is recorded as moot. The verifier-evidence thread closes here; its
+    concrete shipped output is matcher v2 (EXP-11 P4). The shape-conditional
+    probe recipe is logged as future work needing fresh pre-registration.
 - 2026-06-11 (later): **EXP-12a and EXP-13a run (both free phases).**
   - **EXP-12a (H1): directionally supported, promoted to EXP-12b.** 149 of 150
     stage 1 candidates matched to a production disprove verdict on the same
