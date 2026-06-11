@@ -1,0 +1,126 @@
+{
+  "MT": {
+    "n_pairs": 73,
+    "observed": {
+      "committed": "39/73",
+      "committed_accuracy": "32/39 = 0.82 [0.67, 0.91]",
+      "overall_accuracy_incl_abstain": "32/73 = 0.44 [0.33, 0.55]",
+      "fp_on_negative_golds": "2/40 = 0.05 [0.01, 0.17]",
+      "abstention_rate": 0.47
+    },
+    "solo": {
+      "committed": "9/73",
+      "committed_accuracy": "7/9 = 0.78 [0.45, 0.94]",
+      "overall_accuracy_incl_abstain": "7/73 = 0.10 [0.05, 0.18]",
+      "fp_on_negative_golds": "1/40 = 0.03 [0.00, 0.13]",
+      "abstention_rate": 0.88
+    },
+    "solo_any": {
+      "committed": "20/73",
+      "committed_accuracy": "17/20 = 0.85 [0.64, 0.95]",
+      "overall_accuracy_incl_abstain": "17/73 = 0.23 [0.15, 0.34]",
+      "fp_on_negative_golds": "2/40 = 0.05 [0.01, 0.17]",
+      "abstention_rate": 0.73
+    },
+    "oracle": {
+      "committed": "54/73",
+      "committed_accuracy": "54/54 = 1.00 [0.93, 1.00]",
+      "overall_accuracy_incl_abstain": "54/73 = 0.74 [0.63, 0.83]",
+      "fp_on_negative_golds": "0/40 = 0.00 [0.00, 0.09]",
+      "abstention_rate": 0.26
+    }
+  },
+  "NO": {
+    "n_pairs": 143,
+    "observed": {
+      "committed": "107/143",
+      "committed_accuracy": "91/107 = 0.85 [0.77, 0.91]",
+      "overall_accuracy_incl_abstain": "91/143 = 0.64 [0.55, 0.71]",
+      "fp_on_negative_golds": "3/9 = 0.33 [0.12, 0.65]",
+      "abstention_rate": 0.25
+    },
+    "solo": {
+      "committed": "62/143",
+      "committed_accuracy": "61/62 = 0.98 [0.91, 1.00]",
+      "overall_accuracy_incl_abstain": "61/143 = 0.43 [0.35, 0.51]",
+      "fp_on_negative_golds": "0/9 = 0.00 [0.00, 0.30]",
+      "abstention_rate": 0.57
+    },
+    "solo_any": {
+      "committed": "100/143",
+      "committed_accuracy": "91/100 = 0.91 [0.84, 0.95]",
+      "overall_accuracy_incl_abstain": "91/143 = 0.64 [0.55, 0.71]",
+      "fp_on_negative_golds": "3/9 = 0.33 [0.12, 0.65]",
+      "abstention_rate": 0.3
+    },
+    "oracle": {
+      "committed": "115/143",
+      "committed_accuracy": "115/115 = 1.00 [0.97, 1.00]",
+      "overall_accuracy_incl_abstain": "115/143 = 0.80 [0.73, 0.86]",
+      "fp_on_negative_golds": "0/9 = 0.00 [0.00, 0.30]",
+      "abstention_rate": 0.2
+    }
+  },
+  "FR": {
+    "n_pairs": 125,
+    "observed": {
+      "committed": "85/125",
+      "committed_accuracy": "79/85 = 0.93 [0.85, 0.97]",
+      "overall_accuracy_incl_abstain": "79/125 = 0.63 [0.54, 0.71]",
+      "fp_on_negative_golds": "0/1 = 0.00 [0.00, 0.79]",
+      "abstention_rate": 0.32
+    },
+    "solo": {
+      "committed": "89/125",
+      "committed_accuracy": "86/89 = 0.97 [0.91, 0.99]",
+      "overall_accuracy_incl_abstain": "86/125 = 0.69 [0.60, 0.76]",
+      "fp_on_negative_golds": "0/1 = 0.00 [0.00, 0.79]",
+      "abstention_rate": 0.29
+    },
+    "solo_any": {
+      "committed": "94/125",
+      "committed_accuracy": "91/94 = 0.97 [0.91, 0.99]",
+      "overall_accuracy_incl_abstain": "91/125 = 0.73 [0.64, 0.80]",
+      "fp_on_negative_golds": "0/1 = 0.00 [0.00, 0.79]",
+      "abstention_rate": 0.25
+    },
+    "oracle": {
+      "committed": "101/125",
+      "committed_accuracy": "101/101 = 1.00 [0.96, 1.00]",
+      "overall_accuracy_incl_abstain": "101/125 = 0.81 [0.73, 0.87]",
+      "fp_on_negative_golds": "0/1 = 0.00 [0.00, 0.79]",
+      "abstention_rate": 0.19
+    }
+  },
+  "EE": {
+    "n_pairs": 16,
+    "observed": {
+      "committed": "4/16",
+      "committed_accuracy": "4/4 = 1.00 [0.51, 1.00]",
+      "overall_accuracy_incl_abstain": "4/16 = 0.25 [0.10, 0.49]",
+      "fp_on_negative_golds": "n/a",
+      "abstention_rate": 0.75
+    },
+    "solo": {
+      "committed": "4/16",
+      "committed_accuracy": "4/4 = 1.00 [0.51, 1.00]",
+      "overall_accuracy_incl_abstain": "4/16 = 0.25 [0.10, 0.49]",
+      "fp_on_negative_golds": "n/a",
+      "abstention_rate": 0.75
+    },
+    "solo_any": {
+      "committed": "7/16",
+      "committed_accuracy": "7/7 = 1.00 [0.65, 1.00]",
+      "overall_accuracy_incl_abstain": "7/16 = 0.44 [0.23, 0.67]",
+      "fp_on_negative_golds": "n/a",
+      "abstention_rate": 0.56
+    },
+    "oracle": {
+      "committed": "10/16",
+      "committed_accuracy": "10/10 = 1.00 [0.72, 1.00]",
+      "overall_accuracy_incl_abstain": "10/16 = 0.62 [0.39, 0.82]",
+      "fp_on_negative_golds": "n/a",
+      "abstention_rate": 0.38
+    }
+  }
+}

@@ -1,0 +1,224 @@
+{
+  "MT": {
+    "n_all": 73,
+    "n_adjudication_tail": 51,
+    "all_pairs": {
+      "observed": {
+        "committed": "39/73",
+        "recovery_over_all_pairs": "32/73 = 0.44 [0.33, 0.55]",
+        "committed_accuracy": "32/39 = 0.82 [0.67, 0.91]",
+        "fp_on_negative_golds": "2/40 = 0.05 [0.01, 0.17]",
+        "abstention": 0.47
+      },
+      "confrank": {
+        "committed": "20/73",
+        "recovery_over_all_pairs": "17/73 = 0.23 [0.15, 0.34]",
+        "committed_accuracy": "17/20 = 0.85 [0.64, 0.95]",
+        "fp_on_negative_golds": "2/40 = 0.05 [0.01, 0.17]",
+        "abstention": 0.73
+      },
+      "confrank_adj": {
+        "committed": "29/73",
+        "recovery_over_all_pairs": "24/73 = 0.33 [0.23, 0.44]",
+        "committed_accuracy": "24/29 = 0.83 [0.65, 0.92]",
+        "fp_on_negative_golds": "2/40 = 0.05 [0.01, 0.17]",
+        "abstention": 0.6
+      },
+      "paired_confrank_vs_observed": {
+        "recovery_discordant": {
+          "confrank_only": 0,
+          "observed_only": 15,
+          "p": 0.0001
+        },
+        "committed_wrong_discordant": {
+          "confrank_only": 2,
+          "observed_only": 6,
+          "p": 0.2891
+        }
+      }
+    },
+    "adjudication_tail": {
+      "observed": {
+        "committed": "23/51",
+        "recovery_over_all_pairs": "17/51 = 0.33 [0.22, 0.47]",
+        "committed_accuracy": "17/23 = 0.74 [0.54, 0.87]",
+        "fp_on_negative_golds": "1/26 = 0.04 [0.01, 0.19]",
+        "abstention": 0.55
+      },
+      "confrank": {
+        "committed": "4/51",
+        "recovery_over_all_pairs": "2/51 = 0.04 [0.01, 0.13]",
+        "committed_accuracy": "2/4 = 0.50 [0.15, 0.85]",
+        "fp_on_negative_golds": "1/26 = 0.04 [0.01, 0.19]",
+        "abstention": 0.92
+      },
+      "confrank_adj": {
+        "committed": "13/51",
+        "recovery_over_all_pairs": "9/51 = 0.18 [0.10, 0.30]",
+        "committed_accuracy": "9/13 = 0.69 [0.42, 0.87]",
+        "fp_on_negative_golds": "1/26 = 0.04 [0.01, 0.19]",
+        "abstention": 0.75
+      },
+      "paired_confrank_vs_observed": {
+        "recovery_discordant": {
+          "confrank_only": 0,
+          "observed_only": 15,
+          "p": 0.0001
+        },
+        "committed_wrong_discordant": {
+          "confrank_only": 2,
+          "observed_only": 6,
+          "p": 0.2891
+        }
+      }
+    }
+  },
+  "NO": {
+    "n_all": 143,
+    "n_adjudication_tail": 42,
+    "all_pairs": {
+      "observed": {
+        "committed": "107/143",
+        "recovery_over_all_pairs": "91/143 = 0.64 [0.55, 0.71]",
+        "committed_accuracy": "91/107 = 0.85 [0.77, 0.91]",
+        "fp_on_negative_golds": "3/9 = 0.33 [0.12, 0.65]",
+        "abstention": 0.25
+      },
+      "confrank": {
+        "committed": "100/143",
+        "recovery_over_all_pairs": "91/143 = 0.64 [0.55, 0.71]",
+        "committed_accuracy": "91/100 = 0.91 [0.84, 0.95]",
+        "fp_on_negative_golds": "3/9 = 0.33 [0.12, 0.65]",
+        "abstention": 0.3
+      },
+      "confrank_adj": {
+        "committed": "109/143",
+        "recovery_over_all_pairs": "94/143 = 0.66 [0.58, 0.73]",
+        "committed_accuracy": "94/109 = 0.86 [0.79, 0.91]",
+        "fp_on_negative_golds": "3/9 = 0.33 [0.12, 0.65]",
+        "abstention": 0.24
+      },
+      "paired_confrank_vs_observed": {
+        "recovery_discordant": {
+          "confrank_only": 3,
+          "observed_only": 3,
+          "p": 1.0
+        },
+        "committed_wrong_discordant": {
+          "confrank_only": 0,
+          "observed_only": 7,
+          "p": 0.0156
+        }
+      }
+    },
+    "adjudication_tail": {
+      "observed": {
+        "committed": "10/42",
+        "recovery_over_all_pairs": "3/42 = 0.07 [0.02, 0.19]",
+        "committed_accuracy": "3/10 = 0.30 [0.11, 0.60]",
+        "fp_on_negative_golds": "0/4 = 0.00 [0.00, 0.49]",
+        "abstention": 0.76
+      },
+      "confrank": {
+        "committed": "2/42",
+        "recovery_over_all_pairs": "2/42 = 0.05 [0.01, 0.16]",
+        "committed_accuracy": "2/2 = 1.00 [0.34, 1.00]",
+        "fp_on_negative_golds": "0/4 = 0.00 [0.00, 0.49]",
+        "abstention": 0.95
+      },
+      "confrank_adj": {
+        "committed": "11/42",
+        "recovery_over_all_pairs": "5/42 = 0.12 [0.05, 0.25]",
+        "committed_accuracy": "5/11 = 0.45 [0.21, 0.72]",
+        "fp_on_negative_golds": "0/4 = 0.00 [0.00, 0.49]",
+        "abstention": 0.74
+      },
+      "paired_confrank_vs_observed": {
+        "recovery_discordant": {
+          "confrank_only": 2,
+          "observed_only": 3,
+          "p": 1.0
+        },
+        "committed_wrong_discordant": {
+          "confrank_only": 0,
+          "observed_only": 7,
+          "p": 0.0156
+        }
+      }
+    }
+  },
+  "FR": {
+    "n_all": 125,
+    "n_adjudication_tail": 25,
+    "all_pairs": {
+      "observed": {
+        "committed": "85/125",
+        "recovery_over_all_pairs": "79/125 = 0.63 [0.54, 0.71]",
+        "committed_accuracy": "79/85 = 0.93 [0.85, 0.97]",
+        "fp_on_negative_golds": "0/1 = 0.00 [0.00, 0.79]",
+        "abstention": 0.32
+      },
+      "confrank": {
+        "committed": "94/125",
+        "recovery_over_all_pairs": "91/125 = 0.73 [0.64, 0.80]",
+        "committed_accuracy": "91/94 = 0.97 [0.91, 0.99]",
+        "fp_on_negative_golds": "0/1 = 0.00 [0.00, 0.79]",
+        "abstention": 0.25
+      },
+      "confrank_adj": {
+        "committed": "94/125",
+        "recovery_over_all_pairs": "91/125 = 0.73 [0.64, 0.80]",
+        "committed_accuracy": "91/94 = 0.97 [0.91, 0.99]",
+        "fp_on_negative_golds": "0/1 = 0.00 [0.00, 0.79]",
+        "abstention": 0.25
+      },
+      "paired_confrank_vs_observed": {
+        "recovery_discordant": {
+          "confrank_only": 14,
+          "observed_only": 2,
+          "p": 0.0042
+        },
+        "committed_wrong_discordant": {
+          "confrank_only": 0,
+          "observed_only": 3,
+          "p": 0.25
+        }
+      }
+    },
+    "adjudication_tail": {
+      "observed": {
+        "committed": "7/25",
+        "recovery_over_all_pairs": "7/25 = 0.28 [0.14, 0.48]",
+        "committed_accuracy": "7/7 = 1.00 [0.65, 1.00]",
+        "fp_on_negative_golds": "n/a",
+        "abstention": 0.72
+      },
+      "confrank": {
+        "committed": "16/25",
+        "recovery_over_all_pairs": "16/25 = 0.64 [0.45, 0.80]",
+        "committed_accuracy": "16/16 = 1.00 [0.81, 1.00]",
+        "fp_on_negative_golds": "n/a",
+        "abstention": 0.36
+      },
+      "confrank_adj": {
+        "committed": "16/25",
+        "recovery_over_all_pairs": "16/25 = 0.64 [0.45, 0.80]",
+        "committed_accuracy": "16/16 = 1.00 [0.81, 1.00]",
+        "fp_on_negative_golds": "n/a",
+        "abstention": 0.36
+      },
+      "paired_confrank_vs_observed": {
+        "recovery_discordant": {
+          "confrank_only": 9,
+          "observed_only": 0,
+          "p": 0.0039
+        },
+        "committed_wrong_discordant": {
+          "confrank_only": 0,
+          "observed_only": 0,
+          "p": 1.0
+        }
+      }
+    }
+  }
+}

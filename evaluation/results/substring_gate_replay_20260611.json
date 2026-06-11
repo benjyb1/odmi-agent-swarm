@@ -1,0 +1,27 @@
+{
+  "n_scored_judgements": 301,
+  "v0_replay_agreement_with_recorded_gate": "301/301 = 1.00 [0.99, 1.00]",
+  "quote_token_length_when_v0_fires": {
+    "median": 34,
+    "n": 21
+  },
+  "quote_token_length_when_v0_passes": {
+    "median": 38.0,
+    "n": 280
+  },
+  "v0_current": {
+    "fires_on_gold_correct": "17/216 = 0.08 [0.05, 0.12]",
+    "fires_on_gold_wrong": "4/85 = 0.05 [0.02, 0.11]",
+    "fire_precision_for_wrongness": "4/21 = 0.19 [0.08, 0.40]"
+  },
+  "v1_window": {
+    "fires_on_gold_correct": "6/216 = 0.03 [0.01, 0.06]",
+    "fires_on_gold_wrong": "0/85 = 0.00 [0.00, 0.04]",
+    "fire_precision_for_wrongness": "0/6 = 0.00 [0.00, 0.39]"
+  },
+  "v2_prefix": {
+    "fires_on_gold_correct": "14/216 = 0.06 [0.04, 0.11]",
+    "fires_on_gold_wrong": "2/85 = 0.02 [0.01, 0.08]",
+    "fire_precision_for_wrongness": "2/16 = 0.12 [0.03, 0.36]"
+  }
+}

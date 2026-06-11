@@ -32,17 +32,20 @@ FETCH_PARALLELISM = 5
 
 # Per-URL fetch timeouts inside the DIY pipeline (D43). Deliberately tighter than
 # the module defaults in agents/tools/fetch.py (httpx 15s, Playwright 30s). The
-# worst case for one URL is httpx, THEN a browser launch, THEN the render goto;
-# the launch sits outside the goto timeout and balloons under concurrency, so the
-# real per-URL cost is httpx + launch + render, not just the two timeouts. With
-# httpx 8s + render 13s and a few seconds of launch the worst case is ~24s,
-# leaving headroom under the 30s stage ceiling even when several coordinators
-# launch browsers at once. A Cloudflare/WAF challenge that needs ~25s to settle
-# therefore fails fast (the render times out and the URL is dropped) instead of
-# dragging the stage to 30s. That is the point: a normal DIY fetch is fast, so a
-# stage that blows 30s means something is genuinely broken, not just a heavy page.
-# (Tightened from 10s/16s on 2026-06-09 after the EXP-9 haiku arm tripped the
-# ceiling on a data.gov.mt Quality fetch under contention with the Norway sweep.)
+# worst case for one URL is httpx, then the Playwright fallback. Since 2026-06-11
+# the render timeout is a TOTAL budget inside fetch_rendered_html: browser
+# launch (which balloons under concurrency), goto, and the Cloudflare settle
+# waits all draw from the one figure. Worst case per URL is therefore
+# httpx 8s + render 13s = 21s, with real headroom under the 30s stage ceiling.
+# Before that fix the settle waits (4s + a networkidle wait of up to the full
+# render timeout) and the launch sat OUTSIDE the goto timeout, so one
+# WAF-challenged URL could spend ~38s and trip the ceiling, which is what
+# killed the 2026-06-09 EXP-9 haiku arm and the 2026-06-11 EXP-7 baseline arm
+# (both on data.gov.mt fetches under machine contention). A challenge that
+# cannot settle inside the budget fails fast and the URL is dropped: a stage
+# that still blows 30s means something is broken at the machine level, not a
+# heavy page.
+# (Timeouts tightened from 10s/16s on 2026-06-09.)
 DIY_HTTPX_TIMEOUT_S = 8.0
 DIY_RENDER_TIMEOUT_S = 13.0
 

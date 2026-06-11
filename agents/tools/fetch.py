@@ -16,6 +16,7 @@ the fetch did not produce usable content.
 from __future__ import annotations
 
 import re
+import time
 from typing import Literal, Optional
 
 import httpx
@@ -221,14 +222,25 @@ def _goto_status(resp, default: int = 200) -> int:
     return status if isinstance(status, int) else default
 
 
-def _settle_through_challenge(page, timeout_s: float) -> str:
+def _settle_through_challenge(page, remaining_s: float) -> str:
     """Return the page HTML, waiting out a Cloudflare passive challenge when
-    the first paint is the interstitial rather than the real page."""
+    the first paint is the interstitial rather than the real page.
+
+    `remaining_s` is what is left of the caller's TOTAL render budget. The
+    settle waits are bounded by it, so a challenge that refuses to clear can
+    never drag the fetch past the budget. The D43 stage ceiling arithmetic
+    (search_diy.py) assumes this bound holds; before 2026-06-11 the waits sat
+    on top of the goto timeout and a challenged URL could spend goto + 4s +
+    networkidle, roughly 2.3x the nominal render timeout, which is what blew
+    the 30s ceiling and killed batches."""
     body = page.content()
-    if _challenge_unresolved(body):
+    if _challenge_unresolved(body) and remaining_s > 1.0:
         try:
-            page.wait_for_timeout(4000)
-            page.wait_for_load_state("networkidle", timeout=int(timeout_s * 1000))
+            settle_ms = min(4000, int(remaining_s * 1000 / 2))
+            page.wait_for_timeout(settle_ms)
+            idle_ms = int(remaining_s * 1000) - settle_ms
+            if idle_ms > 500:
+                page.wait_for_load_state("networkidle", timeout=idle_ms)
         except Exception:  # noqa: BLE001
             pass
         body = page.content()
@@ -261,16 +273,29 @@ def fetch_rendered_text(
         )
 
     try:
+        # `timeout_s` is a TOTAL budget: driver start, browser launch, goto,
+        # and the challenge-settle waits all draw from it. Launch time is the
+        # piece that balloons under concurrency (several coordinators starting
+        # Chromium at once), and before 2026-06-11 it sat outside every
+        # timeout, so the D43 per-URL bound did not actually hold.
+        start = time.monotonic()
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, args=_PW_LAUNCH_ARGS)
+            browser = p.chromium.launch(
+                headless=True, args=_PW_LAUNCH_ARGS, timeout=timeout_s * 1000
+            )
             context = browser.new_context(
                 user_agent=DEFAULT_USER_AGENT, **_PW_CONTEXT_KWARGS
             )
             page = context.new_page()
             try:
-                resp = page.goto(url, timeout=timeout_s * 1000, wait_until="domcontentloaded")
+                remaining = timeout_s - (time.monotonic() - start)
+                if remaining <= 0.5:
+                    raise PWTimeout("render budget exhausted before goto")
+                resp = page.goto(url, timeout=remaining * 1000, wait_until="domcontentloaded")
                 page.wait_for_timeout(500)  # let JS settle briefly
-                body = _settle_through_challenge(page, timeout_s)
+                body = _settle_through_challenge(
+                    page, timeout_s - (time.monotonic() - start)
+                )
                 status = _goto_status(resp)
             except PWTimeout:
                 return FetchResult(
@@ -327,16 +352,27 @@ def fetch_rendered_html(
         )
 
     try:
+        # Same total-budget discipline as fetch_rendered_text: launch, goto,
+        # and settle all draw from `timeout_s`, so the DIY stage ceiling
+        # arithmetic in search_diy.py holds (D43).
+        start = time.monotonic()
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True, args=_PW_LAUNCH_ARGS)
+            browser = p.chromium.launch(
+                headless=True, args=_PW_LAUNCH_ARGS, timeout=timeout_s * 1000
+            )
             context = browser.new_context(
                 user_agent=DEFAULT_USER_AGENT, **_PW_CONTEXT_KWARGS
             )
             page = context.new_page()
             try:
-                resp = page.goto(url, timeout=timeout_s * 1000, wait_until="domcontentloaded")
+                remaining = timeout_s - (time.monotonic() - start)
+                if remaining <= 0.5:
+                    raise PWTimeout("render budget exhausted before goto")
+                resp = page.goto(url, timeout=remaining * 1000, wait_until="domcontentloaded")
                 page.wait_for_timeout(500)  # let JS settle briefly
-                body = _settle_through_challenge(page, timeout_s)
+                body = _settle_through_challenge(
+                    page, timeout_s - (time.monotonic() - start)
+                )
                 status = _goto_status(resp)
             except PWTimeout:
                 return FetchResult(
