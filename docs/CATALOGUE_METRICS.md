@@ -160,3 +160,27 @@ results.
 - **Q21 (download-URL)** is authoritative only on the RDF routes, where the
   portal distinguishes download from access. On CKAN JSON it follows the
   ckanext-dcat convention (resource URL = both), so it tracks Q22.
+
+## Dispatch: the pre-dispatch catalogue warm
+
+A batch can mix web questions with the nine catalogue questions. The catalogue
+route harvests a national portal's metadata; on a cold cache that harvest runs
+inside the Researcher, so without coordination the same country is harvested
+once per catalogue question, and a slow portal (Austria is ~71k datasets) holds
+a parallel dispatch slot for the whole harvest, starving the web questions.
+
+`dispatch_subtrios.dispatch` therefore runs a warm step first (on by default):
+it collects the distinct catalogue countries in the batch (via
+`catalogue.compute.is_computable`, which keys off the per-country registry),
+harvests each one once, sequentially and fully, writing the snapshot cache, then
+runs the normal parallel dispatch. Every catalogue question in the batch is then
+a cache replay of seconds, so the web questions are never blocked behind a
+harvest, and a country is never harvested more than once per batch. A warm
+harvest that fails (a portal down, an IP block) is logged and skipped; its pairs
+fall back to the web path exactly as before. A country whose snapshot is already
+cached (non-empty, not partial) is skipped unless `--refresh-catalogue`.
+
+Catalogue questions never touch the DIY search path, so the 30s DIY fetch-stage
+blocker (D43) does not apply to them: the Researcher routes them at step 0 and
+returns before query generation. Flags: `--no-warm-catalogue` to skip the warm,
+`--refresh-catalogue` to force a re-harvest.

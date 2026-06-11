@@ -190,6 +190,73 @@ class DispatchResult:
     messages: List[str] = field(default_factory=list)
 
 
+# ------------------------------------------------------------------
+# Pre-dispatch catalogue warm step (D30/D46).
+#
+# A batch can mix web questions with the nine catalogue questions. The
+# catalogue route harvests a national portal's metadata; on a cold cache
+# that harvest runs inside the Researcher, so the same country gets
+# harvested once per catalogue question, and a slow portal (Austria is
+# ~71k datasets) holds a parallel slot for the whole harvest, starving the
+# web questions. Warming each distinct catalogue country once, up front,
+# turns every in-dispatch catalogue question into a fast cache replay.
+# ------------------------------------------------------------------
+
+
+def _catalogue_countries_to_warm(
+    pairs: Sequence[tuple[str, str]], *, is_computable: Callable[[str, str], bool]
+) -> List[str]:
+    """The distinct, sorted country codes among the catalogue pairs.
+
+    A pair is a catalogue pair when `is_computable(qid, cc)` is true (the
+    real predicate keys off the per-country registry). Pure: the predicate
+    is injected so this is testable without the registry or the DB.
+    """
+    seen: list[str] = []
+    for qid, cc in pairs:
+        cc = cc.upper()
+        if cc not in seen and is_computable(qid, cc):
+            seen.append(cc)
+    return sorted(seen)
+
+
+def warm_catalogue_snapshots(
+    countries: Sequence[str],
+    *,
+    harvest_fn: Callable[[str], object],
+    cache_loader: Callable[[str], object],
+    refresh: bool = False,
+    log: Callable[[str], None] = lambda m: None,
+) -> List[str]:
+    """Harvest each catalogue country once before the parallel dispatch.
+
+    Skips a country that already has a usable cached snapshot (non-empty
+    and not partial) unless `refresh` is set. A harvest failure for one
+    country is logged and the rest continue; its in-dispatch pairs simply
+    fall back to the web path, as they do today. Returns the countries
+    actually harvested this call.
+    """
+    harvested: list[str] = []
+    for cc in countries:
+        if not refresh:
+            cached = cache_loader(cc)
+            if cached is not None and getattr(cached, "datasets", None) \
+                    and not getattr(cached, "partial", False):
+                n = getattr(cached, "dataset_count", "?")
+                log(f"warm: {cc} cache hit ({n} datasets), skipping harvest")
+                continue
+        try:
+            snap = harvest_fn(cc)
+        except Exception as exc:  # noqa: BLE001 - one bad portal must not abort the batch
+            log(f"warm: {cc} harvest failed: {exc}; its pairs will fall back to web")
+            continue
+        harvested.append(cc)
+        partial = " (partial)" if getattr(snap, "partial", False) else ""
+        n = getattr(snap, "dataset_count", "?")
+        log(f"warm: {cc} harvested {n} datasets{partial}")
+    return harvested
+
+
 def dispatch(
     *,
     questions: Sequence[str] = (),
@@ -214,6 +281,8 @@ def dispatch(
     condition_label: Optional[str] = None,
     allow_large: bool = False,
     max_calls: Optional[int] = None,
+    warm_catalogue: bool = True,
+    refresh_catalogue: bool = False,
     on_message: Optional[Callable[[str], None]] = None,
 ) -> DispatchResult:
     """Spawn one Coordinator subprocess per pair.
@@ -271,6 +340,33 @@ def dispatch(
     researcher_model = researcher_model or _read_default("researcher")
     verifier_model = verifier_model or _read_default("verifier")
     adjudicator_model = adjudicator_model or _read_default("adjudicator")
+
+    # Pre-dispatch catalogue warm (D30/D46). Harvest each distinct
+    # catalogue country once, up front, so the parallel dispatch only ever
+    # replays a warm cache and a slow portal never holds a slot the web
+    # questions need. Runs sequentially and blocks until done by design.
+    if warm_catalogue:
+        from agents.tools.catalogue.compute import is_computable as _cat_computable
+        from agents.tools.catalogue.harvest import (
+            harvest_country, load_cached_snapshot,
+        )
+
+        warm_ccs = _catalogue_countries_to_warm(
+            pairs, is_computable=_cat_computable
+        )
+        if warm_ccs:
+            log(
+                f"warming catalogue snapshots for {len(warm_ccs)} "
+                f"countr{'y' if len(warm_ccs) == 1 else 'ies'}: "
+                f"{', '.join(warm_ccs)} (refresh={refresh_catalogue})"
+            )
+            warm_catalogue_snapshots(
+                warm_ccs,
+                harvest_fn=harvest_country,
+                cache_loader=load_cached_snapshot,
+                refresh=refresh_catalogue,
+                log=log,
+            )
 
     # Pre-flight cost projection (informational; never blocks a dispatch).
     estimate = estimate_pair_cost(
@@ -626,6 +722,18 @@ def main() -> int:
                              "Claude calls. Default off. A normal pair is ~5 "
                              "calls (~17 worst case), so set this well above "
                              "n_pairs x 17 if you use it.")
+    parser.add_argument("--no-warm-catalogue", action="store_true",
+                        help="Skip the pre-dispatch catalogue warm (D30/D46). "
+                             "By default a batch containing catalogue questions "
+                             "harvests each distinct catalogue country once, up "
+                             "front, so the parallel dispatch only replays a warm "
+                             "cache and a slow portal never holds a slot the web "
+                             "questions need.")
+    parser.add_argument("--refresh-catalogue", action="store_true",
+                        help="Force the warm step to re-harvest each catalogue "
+                             "country even if a usable snapshot is cached. Use "
+                             "when the portals may have changed since the last "
+                             "harvest.")
     args = parser.parse_args()
 
     explicit_pairs = None
@@ -665,6 +773,8 @@ def main() -> int:
         condition_label=args.condition_label,
         allow_large=args.allow_large,
         max_calls=args.max_calls,
+        warm_catalogue=not args.no_warm_catalogue,
+        refresh_catalogue=args.refresh_catalogue,
     )
 
     print(f"\n=== DISPATCH COMPLETE ===")
