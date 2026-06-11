@@ -46,6 +46,11 @@ def _neutralise(monkeypatch, captured):
         ),
     )
     monkeypatch.setattr(ds, "publish_to_main", lambda result, log=None: None)
+    # The catalogue warm step (D30/D46) would otherwise do a live national
+    # harvest for any catalogue-computable pair in the batch (these tests
+    # range over Q-ids that include the real catalogue questions for FR).
+    # Stub it: "nothing real is spawned" includes no network harvest.
+    monkeypatch.setattr(ds, "warm_catalogue_snapshots", lambda *a, **k: [])
 
 
 # ---------------------------------------------------------------------------
