@@ -151,5 +151,36 @@
     "not_attempted|pass": 2,
     "pass|fail": 124,
     "pass|pass": 285
+  },
+  "F_confidence_calibration": {
+    "by_band": {
+      "<0.50": "5/9 = 0.56 [0.27, 0.81]",
+      "0.90+": "64/65 = 0.98 [0.92, 1.00]",
+      "0.80-0.89": "50/51 = 0.98 [0.90, 1.00]",
+      "0.65-0.79": "48/52 = 0.92 [0.82, 0.97]",
+      "0.50-0.64": "14/18 = 0.78 [0.55, 0.91]"
+    },
+    "high_conf_0.80_by_country": {
+      "EE": {
+        "accuracy": "2/2 = 1.00 [0.34, 1.00]",
+        "share_of_attempt0": "2/5"
+      },
+      "FR": {
+        "accuracy": "69/71 = 0.97 [0.90, 0.99]",
+        "share_of_attempt0": "71/108"
+      },
+      "MT": {
+        "accuracy": "1/1 = 1.00 [0.21, 1.00]",
+        "share_of_attempt0": "1/14"
+      },
+      "NO": {
+        "accuracy": "42/42 = 1.00 [0.92, 1.00]",
+        "share_of_attempt0": "42/68"
+      }
+    }
+  },
+  "G_counter_url_overlap": {
+    "fails_with_counter_evidence": 280,
+    "counter_url_same_as_researcher_citation": "134/280 = 0.48 [0.42, 0.54]"
   }
 }

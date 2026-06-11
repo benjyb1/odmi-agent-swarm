@@ -119,7 +119,8 @@ def load_rows(conn: sqlite3.Connection, countries: list[str]):
         for r in conn.execute(
             f"""SELECT id, pair_run_id, question_id, country_code, retry_count,
                        researcher_run_id, verdict, substring_check_result,
-                       verifier_confidence, counter_evidence_quote
+                       verifier_confidence, counter_evidence_quote,
+                       counter_source_url
                 FROM phase2_verifier_runs
                 WHERE country_code IN ({ph}) AND experiment_id IS NULL""",
             countries,
@@ -376,6 +377,64 @@ def substring_gate(verifier) -> dict:
     return {f"{sub}|{verdict}": n for (sub, verdict), n in sorted(c.items())}
 
 
+# ---------------------------------------------------------------------------
+# F. Researcher confidence calibration (attempt 0, definite, gold-bearing)
+# ---------------------------------------------------------------------------
+
+def confidence_calibration(qshape, gold, researcher) -> dict:
+    bands = [(0.9, "0.90+"), (0.8, "0.80-0.89"), (0.65, "0.65-0.79"),
+             (0.5, "0.50-0.64"), (0.0, "<0.50")]
+    cells = defaultdict(Counter)
+    per_country_high = defaultdict(Counter)
+    for r in researcher:
+        if r["retry_count"] != 0 or not is_definite(r["answer"]):
+            continue
+        g = gold.get((r["question_id"], r["country_code"]))
+        if g is None:
+            continue
+        ok = answers_match(r["answer"], g, qshape.get(r["question_id"]))
+        conf = r["answer_confidence"] or 0.0
+        band = next(label for lo, label in bands if conf >= lo)
+        cells[band]["correct" if ok else "wrong"] += 1
+        if conf >= 0.8:
+            per_country_high[r["country_code"]]["correct" if ok else "wrong"] += 1
+        per_country_high[r["country_code"]]["n_attempt0"] += 1
+    return {
+        "by_band": {
+            b: _wilson_str(c["correct"], c["correct"] + c["wrong"])
+            for b, c in sorted(cells.items(), reverse=True)
+        },
+        "high_conf_0.80_by_country": {
+            cc: {
+                "accuracy": _wilson_str(c["correct"], c["correct"] + c["wrong"]),
+                "share_of_attempt0": f"{c['correct'] + c['wrong']}/{c['n_attempt0']}",
+            }
+            for cc, c in sorted(per_country_high.items())
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# G. Verifier counter-evidence source overlap (duplicate-work proxy)
+# ---------------------------------------------------------------------------
+
+def counter_url_overlap(researcher, verifier, conn=None) -> dict:
+    rbyid = {r["id"]: r for r in researcher}
+    total = same = 0
+    for v in verifier:
+        if v["verdict"] != "fail" or not v.get("counter_source_url"):
+            continue
+        r = rbyid.get(v["researcher_run_id"])
+        if r is None or not r["source_url"]:
+            continue
+        total += 1
+        same += _norm_url(v["counter_source_url"]) == _norm_url(r["source_url"])
+    return {
+        "fails_with_counter_evidence": total,
+        "counter_url_same_as_researcher_citation": _wilson_str(same, total),
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--countries", nargs="+", default=["MT", "NO", "FR", "EE"])
@@ -404,6 +463,8 @@ def main() -> None:
         ),
         "D_snippet_utilisation": snippet_utilisation(qshape, gold, researcher),
         "E_substring_gate": substring_gate(verifier),
+        "F_confidence_calibration": confidence_calibration(qshape, gold, researcher),
+        "G_counter_url_overlap": counter_url_overlap(researcher, verifier),
     }
     text = json.dumps(report, indent=2)
     print(text)

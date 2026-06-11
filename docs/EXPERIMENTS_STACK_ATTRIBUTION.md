@@ -80,6 +80,25 @@ no variant has fire-precision-for-wrongness above 0.19. **The gate is an
 anti-fabrication control, not an error detector, and its false-fire damage is
 concentrated in the live-fetch fallback.**
 
+### F. Researcher confidence calibration
+
+Attempt-0 definite candidates against gold, by stated confidence: 0.90+ band
+98% correct (64/65), 0.80 to 0.89 band 98% (50/51), 0.65 to 0.79 band 92%,
+0.50 to 0.64 band 78%. The Researcher's own confidence is a far stronger
+correctness signal than the Verifier's verdict (J of about zero). The
+distribution matters as much as the calibration: 71 of 108 FR attempt-0
+candidates clear 0.80 but only 1 of 14 MT candidates does, so a
+high-confidence fast path is a cost lever on easy countries and a no-op on
+hard ones. It cannot help recovery; it can only cut spend.
+
+### G. Verifier counter-evidence overlap
+
+Of 280 Verifier fails carrying counter-evidence, 134 (48% [42, 54]) cite the
+same URL the Researcher cited. Half of the "independent counter-evidence" is a
+re-read of the Researcher's own source with a different interpretation, which
+both halves the value of feeding counter-evidence back (EXP-7) and means the
+Verifier's search budget is partly duplicative.
+
 ### Counterfactual policies (what the whole loop is worth)
 
 Replaying commit policies over stored attempts (MT primary, 73 gold-bearing
