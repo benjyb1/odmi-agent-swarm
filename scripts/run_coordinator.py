@@ -905,6 +905,7 @@ def coordinate(
     max_results_per_query: int = 5,
     num_queries: Optional[int] = None,
     no_cache: bool = False,
+    verifier_search: str = "always",
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -937,6 +938,13 @@ def coordinate(
     commit-confidence floor and honest-abstention rules are unchanged in
     both arms. See `docs/EXPERIMENTS_CHAINING.md`.
 
+    `verifier_search` (EXP-14) is the Verifier's web counter-search policy.
+    'always' (the default) is byte-identical to current production: the
+    Verifier runs its own adversarial web search every round. 'never' skips
+    that independent search so the Verifier reasons only over the
+    Researcher's evidence. 'elective' is not built and raises
+    NotImplementedError. The knob does not touch the substring gate or any
+    verdict post-processing.
 
     Raises RateLimitedShutdown if any LLM call hits a 429; the caller
     (main()) catches it, marks the subtrio as interrupted_rate_limit,
@@ -1229,6 +1237,7 @@ def coordinate(
             model=v_model,
             provider=provider, max_results_per_query=max_results_per_query,
             num_queries=num_queries,
+            verifier_search=verifier_search,
         )
         cumulative_tokens_in += v_result.cumulative_input_tokens
         cumulative_tokens_out += v_result.cumulative_output_tokens
@@ -1513,6 +1522,14 @@ def main() -> int:
              "default, so production and the EXP-8/9 baseline are "
              "byte-identical to the independent-retry loop.")
     parser.add_argument(
+        "--verifier-search", default="always",
+        choices=["never", "elective", "always"],
+        help="EXP-14 Verifier web counter-search policy. 'always' (default) "
+             "is byte-identical to production: the Verifier runs its own "
+             "adversarial web search every round. 'never' skips that search "
+             "so the Verifier reasons only over the Researcher's evidence. "
+             "'elective' is not built and raises NotImplementedError.")
+    parser.add_argument(
         "--dry-run", action="store_true",
         help=(
             "Skip writes to subtrio_status, phase2_researcher_runs, "
@@ -1545,6 +1562,7 @@ def main() -> int:
             max_results_per_query=args.max_results_per_query,
             num_queries=args.num_queries,
             no_cache=args.no_cache,
+            verifier_search=args.verifier_search,
             subtrio_id=subtrio_id,
             batch_id=batch_id,
             experiment_id=args.experiment_id,

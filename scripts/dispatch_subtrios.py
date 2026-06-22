@@ -276,6 +276,7 @@ def dispatch(
     num_queries: Optional[int] = None,
     no_cache: bool = False,
     chained: bool = False,
+    verifier_search: str = "always",
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: Optional[str] = None,
@@ -457,6 +458,11 @@ def dispatch(
                 # EXP-7 evidence-accumulation arm; default off, so the
                 # baseline batch is byte-identical to the independent loop.
                 cmd += ["--chained"]
+            if verifier_search and verifier_search != "always":
+                # EXP-14 Verifier web counter-search policy. Only forwarded
+                # when it differs from the 'always' production default, so the
+                # baseline subprocess invocation is byte-identical.
+                cmd += ["--verifier-search", verifier_search]
             if experiment_id:
                 cmd += ["--experiment-id", experiment_id]
             if condition_label:
@@ -704,6 +710,15 @@ def main() -> int:
                              "adjudicate over the whole corpus. Forwarded to "
                              "each run_coordinator subprocess. Default OFF, so "
                              "the baseline batch is byte-identical.")
+    parser.add_argument("--verifier-search", default="always",
+                        choices=["never", "elective", "always"],
+                        help="EXP-14 Verifier web counter-search policy, "
+                             "forwarded to each run_coordinator subprocess. "
+                             "'always' (default) is byte-identical to "
+                             "production. 'never' skips the Verifier's own "
+                             "web search so it reasons only over the "
+                             "Researcher's evidence. 'elective' is not built "
+                             "and raises NotImplementedError.")
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
                         help="Tag every child row with this experiment_id (D27). "
@@ -768,6 +783,7 @@ def main() -> int:
         num_queries=args.num_queries,
         no_cache=args.no_cache,
         chained=args.chained,
+        verifier_search=args.verifier_search,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
         condition_label=args.condition_label,
