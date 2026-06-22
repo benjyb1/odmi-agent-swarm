@@ -63,6 +63,8 @@ def pick_snippet(
     url: str,
     page_text: str,
     subtrio_id: Optional[str] = None,
+    max_chunks: int = 3,
+    page_text_cap: int = picker_prompt.PAGE_TEXT_CAP,
 ) -> tuple[List[PickedChunk], LLMUsage]:
     """Select relevant passages from page_text that answer query.
 
@@ -76,15 +78,19 @@ def pick_snippet(
     Threshold logic (TOP_CHUNK_THRESHOLD = 0.7)
     --------------------------------------------
     If chunks[0].score >= 0.7, we have a confident top hit; return only
-    that single chunk. Otherwise return up to three (the model may have
-    returned fewer). An empty list from the model is passed back unchanged.
+    that single chunk. Otherwise return up to `max_chunks` (default 3, the
+    model may have returned fewer). An empty list from the model is passed
+    back unchanged. `max_chunks` is the EXP-17 funnel knob; the default
+    keeps the historical three-chunk ceiling byte-identical.
     """
     prompt_version_id = ensure_prompt_version(
         picker_prompt.NAME, picker_prompt.VERSION,
         picker_prompt.SYSTEM, picker_prompt.DESCRIPTION,
     )
 
-    user_message = picker_prompt.build_user_message(query, url, page_text)
+    user_message = picker_prompt.build_user_message(
+        query, url, page_text, page_text_cap=page_text_cap,
+    )
 
     try:
         parsed, usage = call_for_structured(
@@ -118,7 +124,7 @@ def pick_snippet(
     if chunks[0].score >= TOP_CHUNK_THRESHOLD:
         return chunks[:1], usage
 
-    return chunks[:3], usage
+    return chunks[:max_chunks], usage
 
 
 def aggregate_snippet(chunks: List[PickedChunk]) -> str:

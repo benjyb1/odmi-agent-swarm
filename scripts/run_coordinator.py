@@ -908,6 +908,10 @@ def coordinate(
     provider: str = "auto",
     max_results_per_query: int = 5,
     num_queries: Optional[int] = None,
+    use_snippet_picker: bool = True,
+    picker_max_chunks: int = 3,
+    page_text_cap: int = 16000,
+    max_snippet_chars: int = 600,
     no_cache: bool = False,
     verifier_search: str = "always",
     subtrio_id: Optional[str] = None,
@@ -1114,6 +1118,10 @@ def coordinate(
                 model=r_model, prompt_variant=prompt_variant,
                 provider=provider, max_results_per_query=max_results_per_query,
                 num_queries=num_queries,
+                use_snippet_picker=use_snippet_picker,
+                picker_max_chunks=picker_max_chunks,
+                page_text_cap=page_text_cap,
+                max_snippet_chars=max_snippet_chars,
             )
             # Accumulate the queries used so the next attempt can diverge.
             accumulated_search_queries.extend(r_result.search_queries_used)
@@ -1504,6 +1512,23 @@ def main() -> int:
     parser.add_argument("--num-queries", type=int, default=None,
                         help="Cap the generated search queries to this many "
                              "(cost knob). Default: no cap (up to 3).")
+    parser.add_argument("--snippet-picker", choices=["on", "off"], default="on",
+                        help="EXP-17 DIY snippet-funnel knob. 'on' (default) "
+                             "runs the LLM snippet-picker. 'off' BYPASSES the "
+                             "picker: the cleaned page text is used directly as "
+                             "the snippet so a URL is not dropped just because "
+                             "the picker chose nothing. DIY-only; no effect on "
+                             "Tavily/Brave.")
+    parser.add_argument("--max-snippet-chars", type=int, default=600,
+                        help="EXP-17 knob: per-snippet prompt truncation in "
+                             "format_for_prompt (chars). Default 600.")
+    parser.add_argument("--picker-max-chunks", type=int, default=3,
+                        help="EXP-17 knob: most chunks the snippet-picker keeps "
+                             "for a non-confident page. Default 3.")
+    parser.add_argument("--page-text-cap", type=int, default=16000,
+                        help="EXP-17 knob: chars of cleaned page text the "
+                             "snippet-picker sees before truncation. Default "
+                             "16000.")
     parser.add_argument("--no-cache", action="store_true",
                         help="Cold-cache mode (EXP-2): disable DIY cache reads "
                              "for this run so every SERP/fetch/snippet is "
@@ -1577,6 +1602,10 @@ def main() -> int:
             provider=args.provider,
             max_results_per_query=args.max_results_per_query,
             num_queries=args.num_queries,
+            use_snippet_picker=(args.snippet_picker == "on"),
+            picker_max_chunks=args.picker_max_chunks,
+            page_text_cap=args.page_text_cap,
+            max_snippet_chars=args.max_snippet_chars,
             no_cache=args.no_cache,
             verifier_search=args.verifier_search,
             subtrio_id=subtrio_id,

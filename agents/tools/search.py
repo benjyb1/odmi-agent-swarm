@@ -179,6 +179,9 @@ def search(
     include_domains: Optional[List[str]] = None,
     on_call: Optional[CallObserver] = None,
     provider: Provider = "auto",
+    use_snippet_picker: bool = True,
+    picker_max_chunks: int = 3,
+    page_text_cap: int = 16000,
 ) -> List[SearchResult]:
     """Run one search, dispatching to the requested provider(s).
 
@@ -259,6 +262,9 @@ def search(
         try:
             results = diy_search(
                 query, max_results=max_results, include_domains=include_domains,
+                use_snippet_picker=use_snippet_picker,
+                picker_max_chunks=picker_max_chunks,
+                page_text_cap=page_text_cap,
             )
             _emit("diy", t0, results, ok=True, error=None)
             return _scrub_blocked(results)
@@ -290,6 +296,9 @@ def search(
     try:
         results = diy_search(
             query, max_results=max_results, include_domains=include_domains,
+            use_snippet_picker=use_snippet_picker,
+            picker_max_chunks=picker_max_chunks,
+            page_text_cap=page_text_cap,
         )
         _PROVIDER_USAGE_COUNTERS["diy"] += 1
         scrubbed = _scrub_blocked(results)
@@ -308,10 +317,16 @@ def search_many(
     include_domains: Optional[List[str]] = None,
     on_call: Optional[CallObserver] = None,
     provider: Provider = "auto",
+    use_snippet_picker: bool = True,
+    picker_max_chunks: int = 3,
+    page_text_cap: int = 16000,
 ) -> List[SearchResult]:
     """Run several queries, deduplicate by URL, preserve order of first occurrence.
 
     ``provider`` is forwarded to each per-query ``search()`` call.
+    The EXP-17 funnel knobs (``use_snippet_picker``, ``picker_max_chunks``,
+    ``page_text_cap``) are also forwarded; they default to current
+    production behaviour and only affect the DIY pipeline.
     See ``search()`` for full provider semantics and ``on_call`` behaviour.
     """
     seen: set[str] = set()
@@ -324,6 +339,9 @@ def search_many(
             include_domains=include_domains,
             on_call=on_call,
             provider=provider,
+            use_snippet_picker=use_snippet_picker,
+            picker_max_chunks=picker_max_chunks,
+            page_text_cap=page_text_cap,
         ):
             if r.url in seen:
                 continue

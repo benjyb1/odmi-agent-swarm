@@ -199,6 +199,7 @@ def build_user_message(
     *,
     search_results: List[SearchResult],
     queries_used: List[str],
+    max_chars_per_snippet: int = 600,
 ) -> str:
     """Render the user message to send for this question/country.
 
@@ -206,8 +207,14 @@ def build_user_message(
     echoed in the prompt so the model can copy it into
     `search_queries_used` in the structured output without
     paraphrasing.
+
+    `max_chars_per_snippet` is the EXP-17 per-snippet prompt-truncation
+    knob, forwarded to `format_for_prompt`. The default (600) keeps the
+    rendered block byte-identical to current production.
     """
-    search_block = format_for_prompt(search_results)
+    search_block = format_for_prompt(
+        search_results, max_chars_per_snippet=max_chars_per_snippet,
+    )
     queries_block = "\n".join(f"  - {q}" for q in queries_used) or "  (none)"
 
     return f"""Question ID: {input.question_id}

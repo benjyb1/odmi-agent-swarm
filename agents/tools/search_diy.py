@@ -26,9 +26,17 @@ from agents.tools.extract import extract_text
 from agents.tools.snippet_picker import (
     pick_snippet, aggregate_snippet, aggregate_score, PickedChunk,
 )
+from agents.prompts.snippet_picker import PAGE_TEXT_CAP
 from agents.tools import search_cache as cache
 
 FETCH_PARALLELISM = 5
+
+# Defaults for the EXP-17 snippet-funnel knobs. They reproduce current
+# production behaviour exactly: the LLM picker runs, keeps up to three
+# chunks, and a page is truncated to PAGE_TEXT_CAP before the picker sees
+# it. See agents/tools/snippet_picker.py and docs for the funnel rationale.
+PICKER_MAX_CHUNKS_DEFAULT = 3
+PAGE_TEXT_CAP_DEFAULT = PAGE_TEXT_CAP
 
 # Per-URL fetch timeouts inside the DIY pipeline (D43). Deliberately tighter than
 # the module defaults in agents/tools/fetch.py (httpx 15s, Playwright 30s). The
@@ -86,8 +94,24 @@ def diy_search(
     max_results: int = 5,
     include_domains: Optional[List[str]] = None,
     subtrio_id: str | None = None,
+    use_snippet_picker: bool = True,
+    picker_max_chunks: int = PICKER_MAX_CHUNKS_DEFAULT,
+    page_text_cap: int = PAGE_TEXT_CAP_DEFAULT,
 ) -> List[SearchResult]:
-    """Run the full DIY pipeline and return Tavily-shaped SearchResults."""
+    """Run the full DIY pipeline and return Tavily-shaped SearchResults.
+
+    EXP-17 funnel knobs (all default to current production behaviour):
+
+    - ``use_snippet_picker`` (default True): when False, BYPASS the LLM
+      snippet-picker. The cleaned trafilatura page text is used directly as
+      the snippet (truncated to ``page_text_cap``), so a URL is NOT dropped
+      just because the picker chose nothing. This tests whether the picker
+      is binning the answer. The picker is not called at all in this mode.
+    - ``picker_max_chunks`` (default 3): the most chunks the picker keeps
+      for a non-confident page (the confident-top-hit path still returns one).
+    - ``page_text_cap`` (default 16000): characters of cleaned page text the
+      picker sees before truncation.
+    """
 
     # 1. SERP (cached)
     serp = cache.serp_get(query, max_results, include_domains)
@@ -145,11 +169,38 @@ def diy_search(
     for r, text in fetched:
         if not text:
             continue
+
+        if not use_snippet_picker:
+            # EXP-17 picker-bypass arm. Skip the LLM picker entirely and use
+            # the cleaned page text directly as the snippet (truncated to
+            # page_text_cap). No URL is dropped for an empty pick, and the
+            # snippet cache is left untouched because it stores picker output
+            # only. score is None: there is no picker confidence here.
+            out.append(SearchResult(
+                title=r.title,
+                url=r.url,
+                snippet=text[:page_text_cap],
+                score=None,
+                provider="diy",
+            ))
+            if len(out) >= max_results:
+                break
+            continue
+
         cached_chunks = cache.snippet_get(query, text)
         if cached_chunks is None:
+            # Pass the funnel knobs only when they differ from the picker's
+            # own defaults, so the default production call is byte-identical
+            # to before EXP-17 and existing call-site mocks keep working.
+            picker_kwargs = {}
+            if picker_max_chunks != PICKER_MAX_CHUNKS_DEFAULT:
+                picker_kwargs["max_chunks"] = picker_max_chunks
+            if page_text_cap != PAGE_TEXT_CAP_DEFAULT:
+                picker_kwargs["page_text_cap"] = page_text_cap
             chunks, _ = pick_snippet(
                 query=query, url=r.url, page_text=text,
                 subtrio_id=subtrio_id,
+                **picker_kwargs,
             )
             cache.snippet_put(query, text, chunks)
         else:
