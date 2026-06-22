@@ -1,0 +1,18 @@
+{
+  "run_id": "exp17_breadth_nl",
+  "global_parallel": 8,
+  "budget_calls": 6000,
+  "experiments": [
+    {
+      "experiment_id": "exp17_breadth_nl",
+      "type": "retrieval",
+      "questions_from": "data/questions/nl_eval_pairs.json",
+      "countries": ["NL"],
+      "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_results_per_query": 5, "num_queries": 3, "max_retries": 3 },
+      "arms": [
+        { "condition_label": "baseline_r5", "knobs": {} },
+        { "condition_label": "breadth_r10", "knobs": { "max_results_per_query": 10 } }
+      ]
+    }
+  ]
+}
