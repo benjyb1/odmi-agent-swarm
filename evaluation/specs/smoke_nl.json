@@ -1,0 +1,14 @@
+{
+  "run_id": "smoke_nl",
+  "global_parallel": 2,
+  "budget_calls": 200,
+  "experiments": [
+    {
+      "experiment_id": "smoke_nl",
+      "type": "accuracy",
+      "pairs": ["I12:NL", "I17:NL"],
+      "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_retries": 2 },
+      "arms": [ { "condition_label": "smoke", "knobs": {} } ]
+    }
+  ]
+}

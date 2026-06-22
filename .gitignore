@@ -69,3 +69,4 @@ data/catalogue_snapshots/
 
 # Transient run logs (results JSONL are kept; logs are not)
 evaluation/results/*.log
+evaluation/runs/
