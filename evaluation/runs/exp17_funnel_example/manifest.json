@@ -1,0 +1,18 @@
+{
+  "run_id": "exp17_funnel_example",
+  "started": "2026-06-22T14:30:10.632412+00:00",
+  "global_parallel": 8,
+  "budget_calls": 4000,
+  "arms": [
+    {
+      "experiment_id": "exp17_funnel",
+      "condition_label": "baseline",
+      "n_pairs": 52
+    },
+    {
+      "experiment_id": "exp17_funnel",
+      "condition_label": "breadth_8",
+      "n_pairs": 52
+    }
+  ]
+}

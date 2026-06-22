@@ -24,6 +24,10 @@ run) · `running` · `done`.
 | EXP-11 | Verifier redesign: tristate verdict, gated extremes, absence policy | stage 0 done (2026-06-10); stage 1 done (2026-06-11), redesign NOT adopted (null); stage 2 not triggered | stage 0 free replays (knobs frozen); stage 1 classifier ladder, MT+NO dev / NL confirmatory / FR-augmented robustness; stage 2 end-to-end paired dispatch on SE | stage 0 shipped matcher v2 (P4), dropped the absence ceiling and parked the receipts check; stage 1 dev ladder (150 candidates) is a clean NULL: incumbent disprove J=0.41 beats tristate (J=0.03) and the deterministic gate (J=0.02), which collapse the adversarial catch. Key reframing: disprove discriminates well on clean frozen evidence, so the Malta "no discrimination" was the production evidence/loop, not the prompt. Redesign not adopted; NL confirmatory not triggered. Runbook `EXPERIMENTS_VERIFIER_REDESIGN.md`; diagnosis `VERIFIER_REDESIGN.md`. Successor questions pre-registered as EXP-12/EXP-13 |
 | EXP-12 | Verifier evidence: premise diagnostic + evidence ladder | done (2026-06-11). 12a H1 supported; 12b H2 REFUTED; 12c shape-conditional lead closed | 12a free matched-pair production-vs-frozen on stored MT/NO; 12b evidence ladder E5/E0/E1 (+E2/E3) on the 150 dev candidates, J primary | follows the EXP-11 reframing; 12a tests whether the discrimination gap is an evidence effect (H1) before money is spent; 12b holds disprove fixed and varies only the evidence block, phase 1 reuses the stage 1 freeze (zero new searches). `EXPERIMENTS_VERIFIER_EVIDENCE.md` |
 | EXP-13 | Verifier verdict wiring + evidence confirmatory | 13a done (NULL, W-gate stands); 13b MOOT (champion = status quo, not dispatched) | 13a free deterministic replay over MT 60 + NO 143 stored trails (simulator must reproduce production on >=95% of pairs); 13b two-arm end-to-end on Sweden bundling the EXP-12b evidence champion | tests H3 (a fail that advises rather than hard-blocks); W-none is a reference column quantifying the Verifier's contribution, not a candidate; lexicographic rule: committed-wrong first, then match, then abstention. `EXPERIMENTS_VERIFIER_EVIDENCE.md` |
+| EXP-14 | Verifier search policy: never / elective / always counter-search | planned | NL (dev) + AL hard regime; held-out confirmation deferred to the frozen headline run | the "never" arm is the live confirmation of the verifier programme's biggest result (production J 0.10 vs clean 0.42); the "elective" arm gives the Verifier counter-search as a tool it chooses after reading the Researcher's evidence, motivated by the EXP-12b direction split (counter-search helps `no`-claims J 0.35->0.50, hurts `yes`-claims 0.37->0.29) which a fixed routing rule could not exploit (EXP-12c +0.02, dropped). Endpoint J by claim direction + FRR; cost is the tool-call rate on the elective arm. NL not MT: Malta's half-Maltese estate is a language confound (see programme note) |
+| EXP-15 | Adjudicator standalone ablation, under the winning EXP-14 verifier | planned | NL/NO stored trails (replay); no held-out run pre-freeze | isolates the Adjudicator's own contribution (abstain at retry exhaustion vs adjudicate), the cleanest open question in the architecture; re-run under the no-/elective-search verifier so the result reflects the new evidence channel, not the noisy live-search one. Free replay machinery shared with EXP-13a W-none |
+| EXP-16 | Adjudicator free candidate selection | planned | NL primary (balanced), FR easy-tail check | attacks the 74% oracle / 44% observed selection ceiling. Revise the verdict taxonomy so the Adjudicator can commit any of the up-to-4 Researcher attempts' answers explicitly, not just the final-researcher / verifier / neither framing. Endpoint: recovery against the oracle headroom at a held false-positive bound. Confidence ranking already failed here (rec 3, withdrawn), so the selector must reason over evidence |
+| EXP-17 | Search-funnel optimisation family | planned | FR non-Quality 90 (web-answerable), candidate-recall endpoint | the retrieval gate. Three arms over the lossy DIY funnel: (a) snippet-picker fidelity (current <=3x500-char LLM pick + drop-on-no-pick vs raw trafilatura chunks vs higher cap); (b) breadth / rank-depth (EXP-2a, results/query 5->8/10, queries 3->4); (c) prompt-truncation sweep (`max_chars_per_snippet` 600->1200->full). Measured on candidate recall (gold answer present in any Researcher attempt) to decouple retrieval from selection. FR not MT: the funnel only bites where answers are on the open web, and Malta's abstention ceiling is structural |
 
 ---
 
@@ -391,3 +395,160 @@ Status: code built and committed (flag-gated, default off), pre-registered. Run
 not started, pending the Malta dispatch and quota.
 
 Result: pending.
+
+---
+
+# Pipeline optimisation programme (2026-06-22)
+
+The verifier programme (EXP-11/12/13) and the stack-attribution pass closed with
+a clear picture: the verdict logic is not the lever, the evidence channel and the
+decision step are. Brave and Tavily are retired (D43, DIY-only), so the remaining
+work is optimising the search and reasoning pipelines, not provider selection.
+EXP-14 to EXP-17 below operationalise that. None has been run; each needs a full
+pre-registration (endpoints, adoption rule, strata, held-out country) before any
+dispatch, under the universal rules in `EXPERIMENTS_PROTOCOL.md` section 0.
+
+**Datasets (per SPEC D47).** The evaluation redesign (D47, supersedes the D42
+matrix) fixes a five-country in-sample development set and an eight-country
+pre-registered held-out eval set; these experiments draw from the development
+side. The development workhorse is the **Netherlands** (`nl_eval_pairs.json`,
+binary 93 yes / 26 no, 22% no-share, finalised with stored trails), not Malta:
+Malta's better paper no-share (31%) sits behind a half-Maltese (low-resource)
+estate, so a miss there can be the language channel rather than the pipeline.
+**Norway** stored trails serve the free replays, **Malta** trails too but
+caveated (in-sample under D47, language confound). **France non-Quality 90**
+(web-answerable, the EXP-1 set) is the retrieval-funnel set, because the funnel
+only bites where the answer is on the open web and Malta's abstention ceiling is
+structural. **Albania** (added to the dev set in D47) is the thin-web
+low-resource regime for tuning the hard case. Every arm of every experiment
+develops and confirms on the dev set only; the eight held-out countries
+(BA / MK / ME / BG / FI / HR / SE / BE) are frozen and touched exactly once, at
+the final headline run, on a committed pipeline (D47 freeze protocol, the strict
+"never touch" rule decided 2026-06-22).
+
+## EXP-14: Verifier search policy (never / elective / always)
+
+The verifier programme's largest measured effect is that the Verifier's *own live
+counter-search poisons its evidence*: the same `disprove` prompt scores Youden's
+J = 0.10 on production (live-search) evidence and J = 0.42 with no search at all
+(EXP-12a/b). The production recipe was never tested end-to-end against a
+no-search verifier. EXP-14 does that, and adds the elective middle.
+
+Three arms, one variable (what the Verifier is allowed to search):
+
+| arm | the Verifier ... |
+|---|---|
+| `never` | reasons over the Researcher's evidence only; no counter-search (the EXP-12b E5 floor, live) |
+| `elective` | is given counter-search as a tool it may call after reading the Researcher's evidence, with a stated reason; it chooses per pair |
+| `always` | the current production behaviour (D36/D43 clean DIY counter-search every round) |
+
+Rationale for the elective arm. EXP-12b found a direction split that a fixed rule
+could not bank: counter-search and probes help absence (`no`) claims (no-claims J
+E5 0.35 -> E0 0.45 -> E1 0.50) and hurt presence (`yes`) claims (yes-claims 0.37
+-> E1 0.29). The shape-conditional routing rule (EXP-12c) only reached +0.02
+in-sample because the routing decision was made before the evidence was read. An
+agent that *decides to search after reading* can condition on the actual evidence
+state (is this a presence claim the Researcher already grounded, or an absence
+claim that needs disconfirmation), which the fixed rule cannot. This is a
+different mechanism, not a re-run of EXP-12c.
+
+Endpoints: in-loop verdict J split by claim direction (absence vs presence),
+false-rejection rate (must not exceed the `always` arm), recovery and
+false-positive rate end-to-end, and on the `elective` arm the tool-call rate (how
+often the Verifier elects to search, and whether it elects correctly by
+direction). Where to run: Netherlands for development (Dutch is well-resourced,
+so a miss is the pipeline's doing, not the language channel, which is the point
+Malta could not honour; 26 negative golds carry the absence-claim direction), with
+Albania as the thin-web low-resource cross-check. No held-out country is touched;
+the winning policy is confirmed only at the final frozen headline run (D47). The
+`never` arm doubles as the live confirmation owed from verifier open question 4.
+
+Result: pending (design only).
+
+## EXP-15: Adjudicator standalone ablation, under the EXP-14 verifier
+
+EXP-13a measured removing the *whole* verify-plus-adjudicate layer (cost 27
+correct, saved 16 wrong). The Adjudicator on its own has never been isolated:
+verifier open question 1, flagged there as the cleanest unanswered question in
+the architecture. EXP-15 keeps the production loop but abstains at retry
+exhaustion instead of adjudicating, so the delta is the Adjudicator's own
+contribution.
+
+The twist that makes this worth doing now rather than as a footnote to EXP-13a:
+once EXP-14 changes what the Verifier feeds forward (no live-search noise, or
+elective), the Adjudicator is reasoning over a different, cleaner corpus. The
+question "does the Adjudicator still earn its keep if the Verifier brings no new
+evidence" (raised directly in this session) is only answerable under the new
+regime. Run the ablation under whichever EXP-14 arm wins, not under the retired
+always-search verifier.
+
+Free replay first (same machinery as EXP-13a `W-none`, over stored NL and NO
+trails; Malta trails usable but caveated for the language confound), promoted to a
+live dispatch on a dev country (NL/AL) only if the replay shows a non-trivial
+Adjudicator contribution that the replay cannot settle. No held-out country is run
+pre-freeze. Endpoint: match / wrong / abstain
+attributable to the Adjudicator alone, balance-aware (R4).
+
+Result: pending (design only).
+
+## EXP-16: Adjudicator free candidate selection
+
+The single biggest lever found in the stack-attribution pass is candidate
+selection: an oracle that committed the gold-correct candidate the Researcher
+already generated would score 74% on Malta against the observed 44%. The answer
+is usually in hand and the pipeline abstains on it. Confidence ranking does not
+reach it (rec 3, tested, strictly worse on the balanced set: the correct Malta
+answers are low-confidence). So the selector has to reason over evidence, not read
+a number.
+
+Today the Adjudicator's verdict taxonomy (`researcher_correct` / `verifier_correct`
+/ `neither` / `escalate_human`) defines `researcher_correct` as the Researcher's
+*final* answer, and only reaches an earlier attempt's answer through the `neither`
+escape hatch. EXP-16 revises the taxonomy and prompt so the Adjudicator can
+explicitly commit any of the up-to-four Researcher attempts' answers, choosing on
+the evidence each attempt gathered. This is the evidence-based selector rec 3
+pointed to (the Adjudicator already approximates it; this lets it select cleanly).
+
+Endpoint: recovery against the oracle headroom (how much of the 74-44 gap closes)
+at a held false-positive bound, Netherlands primary because its binary gold is
+balanced enough (22% no) for a wrong commit to be visible without Malta's
+language confound; FR as the easy high-confidence tail check (confidence ranking
+gained +10 there, so the new selector must not regress it). Free replay over
+stored multi-attempt trails is possible for a first read before any dispatch. The
+oracle 74/44 headroom figure is from the Malta stored data; re-derive it on NL
+before adopting any number as the target.
+
+Result: pending (design only).
+
+## EXP-17: Search-funnel optimisation family
+
+The DIY retrieval funnel is lossy at three points, and 24% of useful citations sit
+at rank >= 5 while runs average only 5.1 snippets, so the tail does real work and
+the funnel may be discarding the answer:
+
+- cleaned page text capped at 16,000 chars before the LLM snippet-picker
+  (`snippet_picker.py`);
+- the picker keeps at most 3 chunks of <= 500 chars and drops any URL it picks
+  nothing from (`search_diy.py`);
+- the prompt formatter truncates each surviving snippet to 600 chars
+  (`search.py::format_for_prompt`).
+
+Three arms, each measured on candidate recall (does a gold-correct answer appear
+in any Researcher attempt) so retrieval is judged clean of the selection ceiling
+EXP-16 attacks:
+
+| arm | varies |
+|---|---|
+| (a) picker fidelity | current picker vs raw trafilatura chunks (no LLM pick) vs a higher chunk count / cap |
+| (b) breadth + rank depth (folds in EXP-2a) | results/query 5 -> 8/10, queries 3 -> 4, vs the lean 2x3 |
+| (c) truncation sweep | `max_chars_per_snippet` 600 -> 1200 -> full |
+
+The stack-attribution pass pre-registered the prediction that the lean arm of (b)
+loses accuracy on hard countries (rec 5: do not cut breadth, widen it). Cost per
+pair with retries counted (R9) is the secondary endpoint, since a leaner search
+that fails more often triggers another full round (the EXP-2 confound). France
+non-Quality 90 primary (web-answerable, so candidate recall actually responds to
+funnel changes; Malta's abstention ceiling is structural and would mask the
+effect); repeat on a thin-web country once the FR read is in.
+
+Result: pending (design only).

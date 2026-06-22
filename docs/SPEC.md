@@ -1521,6 +1521,13 @@ without re-introducing the friction D40 removed.
 
 **Date:** 2026-06-09. Amends D7's Phase B sample.
 
+**Superseded by D47 (2026-06-22).** The maturity x language matrix is replaced by
+a base-rate-stratified held-out set. Measuring the ODMI score against the binary
+yes-share gives Pearson r = 0.98, so maturity and base-rate balance are one axis,
+not two, and the matrix spent three of nine cells (FR/SK/EE) on countries with
+1-3 negative golds while excluding the Balkan/accession tail that carries the
+false-positive claim. Retained below for the audit trail.
+
 The primary evaluation sample is nine countries arranged on a 3×3 grid: ODMI
 maturity (high / mid / low) crossed with language-resource level (high / mid /
 low), one country per cell. This replaces the six-country 2×3 wealth × maturity
@@ -1759,10 +1766,152 @@ harvest, which is the point of automating it.
 
 ---
 
+### D47: Evaluation redesign — base-rate-stratified held-out set, not a matrix
+
+**Date:** 2026-06-22. Supersedes D42 (the nine-country 3x3 matrix). Builds on D38
+(R4 base-rate rule), D22 (ODMI ground truth), and D24 (deny-list).
+
+**The finding that forces the change.** A country's ODMI score is almost exactly
+its share of `yes` answers: Pearson r = 0.98 between the weighted ODMI score (sum
+`awarded_score` / sum `max_score`) and the binary yes-share across the 36
+countries (France 100% score / 99% yes; Bosnia 15% / 15%). Two consequences:
+
+1. Guessing `yes` on every question scores the country's ODMI score, so naive
+   accuracy on a high-maturity country measures nothing: it reproduces the ODMI
+   ranking. The swarm's discrimination (can it correctly answer `no`) is only
+   visible where `no` golds exist, which is only the low-maturity tail.
+2. The negative golds are scarce and clustered. Binary no-share runs from 85%
+   (Bosnia) to 0% (Lithuania); the usable negative-gold counts sit in the Western
+   Balkans and accession states (BA 78, MK 73, ME 59, BG 51, IS 48, EL 32),
+   almost none of which D42 selected. The matrix optimised a maturity x language
+   grid and excluded the countries that carry the headline claim.
+
+So maturity and base-rate balance are one axis (r = 0.98), not two, and the
+binding characteristic of an evaluation set is negative-gold density, not grid
+coverage.
+
+**Why stratified, not random.** The quantity that carries the dissertation (the
+false-positive rate and true-negative rate, the proof the system does not
+fabricate) is a rare-event quantity concentrated in a few countries. A random
+draw of countries would be dominated by all-`yes` countries with almost no
+negatives, so the false-positive estimate would be unmeasurable or very wide.
+Random sampling of a rare-event population is statistically inefficient. The
+standard, more defensible design is class-stratified (case-control style)
+sampling that oversamples the rare class, with the rule pre-registered and the
+inclusion stated. Defensibility comes from the committed rule, not from
+randomness.
+
+**Development set (in-sample, five countries).** Tuning happens only here; these
+are never the headline. Chosen to span the regimes the pipeline is optimised
+against so it does not overfit one:
+
+- NL (balanced 22% no, well-resourced, thick web),
+- MT (balanced 31% no, low-resource English + Maltese; already burned as the
+  EXP-6 / 9 / 10 and verifier-programme primary, so reclassified here from
+  held-out to in-sample),
+- NO (degenerate 8% no, well-resourced, existing dev trails),
+- FR (degenerate 1% no, well-resourced, the legacy D4 sandbox),
+- AL (balanced 23% no, Albanian low-resource, thin web), added so the hard
+  low-resource thin-web regime can be tuned without burning an eval country.
+
+**Held-out evaluation set (eight countries, frozen, pre-registered rule).**
+Selected before any headline run by an auditable rule, not a hand-picked list:
+
+- Stratum A, low/mid-resource language, negative-rich: the four highest
+  negative-gold counts among non-major-Western-European languages outside the
+  dev set, which is BA, MK, ME, BG.
+- Stratum B, higher-resource language, as balanced as available: the four highest
+  no-share well-resourced-language countries outside the dev set, which is FI,
+  HR, SE, BE.
+
+This yields about 368 binary negative golds (261 in A, 107 in B), all four ODMI
+dimensions, all five answer shapes, across roughly 1,144 (question, country)
+pairs. The two strata are the deliberate language contrast that replaces the
+matrix's language axis: if the false-positive rate is flat across A and B,
+language drives abstention not error (the RQ3 prediction); if it rises in A, that
+is the headline negative result. One pre-stated contrast, not a 3x3 grid.
+
+**Reporting (balance-aware, three-outcome).** No single accuracy number. The
+headline is balance-aware: per-class true-positive and true-negative rates with
+Wilson intervals, balanced accuracy, Youden's J, against the majority-class
+baseline (D38 R4). Because the swarm abstains (D35 / D37), report the
+risk-coverage triangle: commit-accuracy (of committed answers, the share
+correct), coverage (committed vs abstained), and the false-positive rate among
+commits (the safety metric), with the curve as the D37 floor moves. Stratify by
+dimension (Quality's deny-list / self-report ceiling shown as honest abstention,
+not hidden) and by answer shape (`near_match` for adjacent bands). Disagreements
+with ODMI gold get a blind adjudication over frozen evidence and are reported as a
+band (lower bound treats every disagreement as a swarm error, upper bound excludes
+the confirmed-stale gold), because ODMI gold can be one cycle old (D22). France
+stays in the report as a labelled degenerate-baseline contrast, to show
+empirically why raw accuracy is the wrong metric. The deny-list (D24) is verified
+before the run.
+
+**Freeze protocol.** The pipeline (prompt versions and knob settings) is committed
+before the eval runs; the commit SHA is the lock (same rule as the old D9
+hand-mark lock and D42). The held-out eight are not touched by any experiment,
+development or between-condition, until that frozen headline run. This is stricter
+than the D42 between-condition permission and overrides it for the new eight
+(decided 2026-06-22): every experiment develops and confirms on the in-sample dev
+set, so the held-out estimate is read exactly once, from a frozen pipeline. No
+experiment-winning condition becomes the default and then has the headline
+re-reported on the eight without disclosure.
+
+**Stretch.** All 36 countries, balance-aware, as a later deployment-scale run that
+backs the generalisation claim. The eight-country set is the headline; it proves
+discrimination and honesty where they are measurable, and is not claimed to be
+population-representative on its own.
+
+**Open follow-ups.** (a) Language codes for AL, BA, MK, ME, BG, FI, HR, SE, BE
+need adding to `run_coordinator.py` before dispatch (D42 already flagged sk / sl /
+sv). (b) The "English official, no language confound" justification for Malta in
+`EXPERIMENTS_PROTOCOL.md`, `METHODOLOGY.md`, `EXPERIMENTS_MALTA_FAILURES.md`, and
+the EXP-6 / 9 / 10 designs is oversold (about half Malta's estate is low-resource
+Maltese); MT is reclassified as in-sample here regardless, but those documents
+still carry the old claim and need the same correction.
+
+---
+
+### D48: Experiment orchestration framework
+
+**Date:** 2026-06-22.
+
+Running experiments reliably needs the rules enforced by construction, not by
+memory. Three artefacts:
+
+1. **Orchestrator** (`scripts/run_experiments.py`). One process owns every arm of
+   a run. It solves the two concurrency catches structurally: arms typed
+   `retrieval` or `cost` are forced to `--no-cache` (the DIY cache is keyed on
+   query/url, so a warm cache would let one arm read another's snippets), and
+   arms run sequentially each capped at one `global_parallel` in-flight budget
+   (the binding limit is concurrent DIY pipelines hitting Serper/WAFs, not the
+   linear Claude budget per D42, so sequential-at-cap matches concurrent-at-cap
+   with clean per-arm cost and no cross-arm race). Preflight hard-fails on a
+   held-out D47 country, a missing call budget, an unloadable deny-list, a
+   duplicate condition label, or an arm that moves more than one knob. It pauses
+   itself on a budget projection, an unhealthy arm (blocker rate or finalise
+   rate), or a dispatch error, and writes `evaluation/runs/<run_id>/` manifest +
+   JSONL event log. Resumable by re-running the same spec.
+
+2. **Runbook** (`docs/EXPERIMENT_RUNBOOK.md`). The operational layer over
+   `EXPERIMENTS_PROTOCOL.md` (which keeps the R1-R12 statistics): the spec
+   format, the preflight gate, the concurrency model, the reflection points, and
+   the bug log.
+
+3. **Skill** (`.claude/skills/run-experiment/`). The agent procedure, framing the
+   discipline of a careful researcher who runs autonomously but stops to think at
+   the pause points. Autonomy model (decided 2026-06-22): fully autonomous within
+   the guardrails, with self-pausing reflection points so nothing escalates its
+   own resource use; the agent surfaces to a human only for a freeze decision, a
+   production-default change, a recurring unexplained pause, or an unexplained
+   budget rise.
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-22 (experiment framework) | D48 added. `scripts/run_experiments.py` orchestrator + `docs/EXPERIMENT_RUNBOOK.md` + `.claude/skills/run-experiment/` skill, so multi-arm runs enforce the methodology by construction: forced `--no-cache` on retrieval/cost arms (cache-contamination catch), sequential arms at one global in-flight cap (search-ceiling catch), preflight hard-fail on held-out D47 countries / missing budget / unloadable deny-list / >1 variable per arm, self-pausing on budget or unhealthy-arm or dispatch error, manifest + JSONL log per run under `evaluation/runs/`. Verified: a valid NL dev spec dry-runs with `no_cache=True` forced; held-out SE, a two-variable arm, and a missing budget each hard-fail preflight. Example spec `evaluation/specs/exp17_funnel_example.json`. No experiment dispatched this entry. |
+| 2026-06-22 (eval redesign) | D47 added, supersedes D42. The nine-country 3x3 maturity x language matrix is replaced by a base-rate-stratified held-out set after measuring ODMI score against binary yes-share at Pearson r = 0.98: maturity and base-rate balance are one axis, naive accuracy on a mature country just reproduces the ODMI ranking, and the negative golds that carry the false-positive claim sit in the Balkan/accession tail the matrix excluded. Dev set fixed at five in-sample countries (NL, MT, NO, FR, AL), with MT reclassified from held-out to in-sample (already burned by EXP-6/9/10 and the verifier programme). Held-out eval set fixed at eight by a pre-registered stratified rule: stratum A negative-rich low/mid-resource (BA, MK, ME, BG) + stratum B higher-resource balanced (FI, HR, SE, BE), ~1,144 pairs, ~368 negative golds, the two strata being the language contrast that replaces the matrix axis. Reporting locked as balance-aware (per-class rates, balanced accuracy, Youden's J vs majority baseline) and three-outcome (commit-accuracy / coverage / false-positive rate, risk-coverage curve over the D37 floor), stratified by dimension and shape, with a staleness adjudication band (D22) and France as a labelled degenerate contrast. All 36 deferred as the deployment-scale stretch. Follow-ups logged: language codes for the nine new countries, and the oversold Malta "English official" claim still in four other docs. No code or data changed this entry. |
 | 2026-06-11 (verifier programme closed) | D45 added: the EXP-11/12/13 verifier investigation closes by retaining the incumbent design, with the full synthesis in `docs/VERIFIER_FINDINGS.md`. Four pre-registered attacks all returned null against the incumbent: the tristate verdict collapses (J 0.03 vs 0.41), the quote-gate strips real refutations, richer evidence does not raise discrimination (the verifier's own counter-search adds nothing; its value is cognitive, confirming D15), and relaxing the verdict wiring trades matches for committed-wrong one-for-one. Reframing finding: the verdict decides only 9 of 237 in-loop commits, so the D37 floor is the binding precision control and the verifier's influence flows through the Adjudicator (removing the layer costs 27 matches / +43 abstentions / -16 wrong, p < 0.002). Shipped: matcher v2 (per-snippet ellipsis-aware grounding gate, FM-11 + part of FM-02). Dropped pre-ship: absence confidence-ceiling and receipts check. `verifier_confidence` confirmed telemetry-only. Tristate apparatus stays in-tree, evaluation-only. EXP-13b (Sweden confirmatory) not run: its champion equalled the status quo. Open questions logged for separate pre-registration. 555 non-live tests passing. |
 | 2026-06-10 (catalogue warm) | Pre-dispatch catalogue warm added to `dispatch_subtrios.dispatch` (on by default), an operational follow-on to D30/D46. A batch mixing web and catalogue questions previously let a cold-cache catalogue question harvest its country inside the Researcher, so the same slow portal (AT ~71k datasets) was harvested once per question and held a parallel slot for the whole harvest, starving the web questions. The warm step harvests each distinct catalogue country in the batch once, sequentially and fully, before the parallel loop, so every in-dispatch catalogue question is a cache replay of seconds. A usable cached snapshot is reused unless `--refresh-catalogue`; a failed harvest is logged and its pairs fall back to web. Confirmed that catalogue questions never reach the 30s DIY fetch-stage blocker (D43): the Researcher routes them at step 0, before query generation. New `_catalogue_countries_to_warm` (pure selector) and `warm_catalogue_snapshots` (injectable driver); flags `--no-warm-catalogue` / `--refresh-catalogue`; the Run Console inherits the default via the CLI. New `tests/test_dispatch_catalogue_warm.py` (11 cases). |
 | 2026-06-10 (portal discovery) | D46 added, extends D30 under the D24 constraint. New `agents/tools/catalogue/discovery/` package (seeds / probes / verify / emit / run): a committed 36-country seed file with per-entry source annotations, stack fingerprinting (CKAN incl. `/data` prefix, uData, paged DCAT-AP feeds, SPARQL with results-JSON content negotiation, piveau, OpenDataSoft, data.json, hint-driven FDK), one-page sample verification with caveat auto-detection (HU/RO rdf-omits-licence fallback, FDK missing downloadURL, JSON-synthesised conformance, the data.gov.cy class-as-predicate producer bug), and registry emission in the hand-authored shape plus `discovery_method` / `discovery_evidence` / `caveats` / auto robots.txt summary. D24 hardened: the catalogue fetch layer refuses redirect chains landing on deny-listed hosts; seed loader, prober and emitter re-check the deny-list independently. 36-country experiment (one-page samples, no full harvests): on the pre-adapter probe set 14 verified, 5 stack-recognised-no-adapter, 17 failed (SPA stacks, WAFs, one malformed feed, one retired portal); FR / HU / NL re-discovered identically to their hand-authored registries, validating the prober. Two adapters built in response: `sparql_rdf` (CZ, HR, SE; one paged CONSTRUCT after the three-level shape timed out live) and `piveau_json` (AT). Final state 19 verified routes; registry coverage 6 -> 21 countries on this branch (+NO at merge), the 15 newly covered countries gaining a mean +6.5 points of open-web ceiling (83.0% -> 89.4%, `evaluation/discovery_ceiling.py`). New tests: fetch guard, probes, verify, emit, seeds, run, both adapters, ceiling lift. Docs: `docs/PORTAL_DISCOVERY.md`. |

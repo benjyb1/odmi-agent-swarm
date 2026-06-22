@@ -1,0 +1,4 @@
+{"ts": "2026-06-22T14:30:10.633200+00:00", "event": "run_start", "run_id": "exp17_funnel_example", "arms": 2, "total_pairs": 104, "budget_calls": 4000, "global_parallel": 8}
+{"ts": "2026-06-22T14:30:10.633362+00:00", "event": "dry_run_arm", "experiment_id": "exp17_funnel", "condition_label": "baseline", "n_pairs": 52, "no_cache": true, "command": "uv run python scripts/dispatch_subtrios.py --pairs I12:NL I17:NL I22:NL I27:NL I3:NL I8-b:NL I8-d:NL ..."}
+{"ts": "2026-06-22T14:30:10.633431+00:00", "event": "dry_run_arm", "experiment_id": "exp17_funnel", "condition_label": "breadth_8", "n_pairs": 52, "no_cache": true, "command": "uv run python scripts/dispatch_subtrios.py --pairs I12:NL I17:NL I22:NL I27:NL I3:NL I8-b:NL I8-d:NL ..."}
+{"ts": "2026-06-22T14:30:10.633476+00:00", "event": "dry_run_done"}
