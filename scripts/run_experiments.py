@@ -206,11 +206,14 @@ def calls_since(ts: str) -> int:
 
 def arm_health(experiment_id: str, condition_label: str, expected: int) -> Dict[str, Any]:
     with _conn() as c:
+        # Per-arm finalised count: join to the Researcher rows that carry this
+        # arm's condition_label (phase2_final has no condition_label). Counting
+        # experiment-wide would let a finished arm mask a later failed one.
         finalised = c.execute(
-            "SELECT COUNT(*) FROM phase2_final WHERE experiment_id IS ? "
-            "AND pair_run_id IN (SELECT subtrio_id FROM subtrio_status "
-            "WHERE experiment_id IS ? )",
-            (experiment_id, experiment_id),
+            "SELECT COUNT(DISTINCT f.pair_run_id) FROM phase2_final f "
+            "JOIN phase2_researcher_runs r ON r.pair_run_id = f.pair_run_id "
+            "WHERE f.experiment_id IS ? AND r.condition_label IS ?",
+            (experiment_id, condition_label),
         ).fetchone()[0]
         rows = c.execute(
             "SELECT stage, COUNT(*) FROM subtrio_status WHERE experiment_id IS ? "
@@ -264,6 +267,12 @@ def build_command(exp: Dict[str, Any], arm: Dict[str, Any], pairs: List[str],
         "adjudicator_model": "--adjudicator-model",
         "researcher_escalation_model": "--researcher-escalation-model",
         "verifier_escalation_model": "--verifier-escalation-model",
+        "verifier_search": "--verifier-search",
+        "adjudicator_selection": "--adjudicator-selection",
+        "snippet_picker": "--snippet-picker",
+        "max_snippet_chars": "--max-snippet-chars",
+        "picker_max_chunks": "--picker-max-chunks",
+        "page_text_cap": "--page-text-cap",
     }
     for key, flag in flag_map.items():
         if key in knobs and knobs[key] is not None:

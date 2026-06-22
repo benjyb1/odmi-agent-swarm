@@ -1,0 +1,29 @@
+{
+  "run_id": "phase1_verifier_picker_nl",
+  "global_parallel": 8,
+  "budget_calls": 14000,
+  "experiments": [
+    {
+      "experiment_id": "exp14_verifier_search_nl",
+      "type": "retrieval",
+      "questions_from": "data/questions/nl_eval_pairs.json",
+      "countries": ["NL"],
+      "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_results_per_query": 5, "num_queries": 3, "max_retries": 3 },
+      "arms": [
+        { "condition_label": "always", "knobs": {} },
+        { "condition_label": "never", "knobs": { "verifier_search": "never" } }
+      ]
+    },
+    {
+      "experiment_id": "exp17_picker_nl",
+      "type": "retrieval",
+      "questions_from": "data/questions/nl_eval_pairs.json",
+      "countries": ["NL"],
+      "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_results_per_query": 5, "num_queries": 3, "max_retries": 3 },
+      "arms": [
+        { "condition_label": "picker_on", "knobs": {} },
+        { "condition_label": "picker_off", "knobs": { "snippet_picker": "off" } }
+      ]
+    }
+  ]
+}
