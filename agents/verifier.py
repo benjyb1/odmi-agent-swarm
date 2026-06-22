@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional
+from typing import Callable, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -42,6 +42,36 @@ from agents.tools import substring
 from agents.tools.fetch import FetchResult, fetch_rendered_text, fetch_text
 from agents.tools.llm import StructuredOutputError, call_for_structured
 from agents.tools.search import SearchResult, format_for_prompt, search_many
+
+
+# ============================================================
+# EXP-14: Verifier web counter-search policy.
+# ============================================================
+#
+# The Verifier's own live web counter-search (the adversarial query-gen
+# plus search_many call) poisons its evidence: production discrimination
+# was Youden's J=0.10 with the search on against J=0.42 with it off. This
+# knob lets an experiment turn that independent search off without touching
+# the verdict, substring gate, or the counter-evidence-from-Researcher-
+# snippets logic.
+#
+#   "always"   — DEFAULT, current production behaviour, byte-identical.
+#                Generate adversarial queries, run them live, feed the
+#                snippets to the verdict call.
+#   "never"    — skip the independent query-gen and search entirely. The
+#                Verifier reasons only over the evidence the Researcher
+#                already gathered (its snippets remain in the substring
+#                gate and are surfaced to the verdict call).
+#   "elective" — let the Verifier decide whether to counter-search after
+#                reading the Researcher's evidence. NOT IMPLEMENTED yet;
+#                wired to the flag but raises NotImplementedError.
+#
+# When the policy is anything other than "always" a one-line note is added
+# to the per-call USER message (never the system prompt), so prompt_versions
+# is byte-identical across arms. This mirrors the EXP-7 `--chained`
+# `_evidence_corpus_block` pattern in agents/prompts/adjudicator.py.
+
+VerifierSearchPolicy = Literal["always", "never", "elective"]
 
 
 # ============================================================
@@ -455,6 +485,7 @@ def run_verifier(
     max_results_per_query: int = 5,
     provider: str = "auto",
     num_queries: Optional[int] = None,
+    verifier_search: VerifierSearchPolicy = "always",
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> VerifierRunResult:
@@ -466,6 +497,14 @@ def run_verifier(
     `model` selects the Claude model for both the adversarial query-gen
     and the main verdict call (EXP-9 model variants); `None` keeps the
     wrapper default (Sonnet).
+
+    `verifier_search` (EXP-14) is the web counter-search policy. "always"
+    is the default and is byte-identical to current production: generate
+    adversarial queries, run them live, and feed the snippets to the verdict
+    call. "never" skips that independent search and reasons only over the
+    Researcher's own snippets. "elective" is not implemented yet and raises
+    NotImplementedError. The substring gate and all verdict post-processing
+    are unchanged by this knob. See the VerifierSearchPolicy note above.
 
     `on_step(event, payload)` is the walkthrough callback.
     """
@@ -501,49 +540,74 @@ def run_verifier(
         "fetch_status": fetch.status_code if fetch else None,
     })
 
-    # ----- Stage 2: adversarial query generation -----
-    on_step("query_gen_start", {})
-    try:
-        queries, query_usage = generate_adversarial_queries(
-            inp, subtrio_id=subtrio_id, model=model,
-        )
-    except StructuredOutputError as exc:
-        on_step("query_gen_failed", {"error": str(exc)})
-        return VerifierRunResult(
-            output=None,
-            failure_mode="query_gen_schema_invalid",
-            query_gen_usage=None,
-            main_usage=None,
-            substring_result=sub_result,
-            substring_notes=sub_notes,
-            strategy=strategy,
-            notes=str(exc)[:300],
+    # ----- EXP-14: web counter-search policy gate -----
+    # "elective" is not built; fail loud rather than silently behaving like
+    # "always". "never" skips the independent query-gen and search below.
+    if verifier_search == "elective":
+        # TODO(EXP-14): give the Verifier the choice to counter-search after
+        # reading the Researcher's evidence, stating a one-line reason, then
+        # branch on that choice. Until then this arm must not be dispatched.
+        raise NotImplementedError(
+            "verifier_search='elective' is not implemented. Use 'always' "
+            "(production default) or 'never'."
         )
 
-    # Cap the query count when an experiment requests it (a cost knob).
-    if num_queries is not None:
-        queries = queries[:num_queries]
-    on_step("query_gen_complete", {
-        "queries": queries,
-        "input_tokens": query_usage.input_tokens,
-        "output_tokens": query_usage.output_tokens,
-        "wall_clock_ms": query_usage.wall_clock_ms,
-        "cost_usd": query_usage.estimated_cost_usd,
-    })
+    skip_web_search = verifier_search == "never"
 
-    # ----- Stage 3: independent search -----
-    on_step("search_start", {"queries": queries})
-    search_results = search_many(
-        queries, max_results_per_query=max_results_per_query, provider=provider,
-    )
-    on_step("search_complete", {
-        "n_results": len(search_results),
-        "top_titles": [r.title[:80] for r in search_results[:5]],
-    })
+    if skip_web_search:
+        # No independent web counter-search this round. The Verifier reasons
+        # only over the Researcher's own snippets, which still drive the
+        # substring gate and are surfaced to the verdict call below. No
+        # query-gen call is made, so there is no query-gen usage to bill.
+        on_step("search_skipped", {"policy": verifier_search})
+        query_usage = None
+        queries = []
+        search_results = []
+        independent_snippets = []
+    else:
+        # ----- Stage 2: adversarial query generation -----
+        on_step("query_gen_start", {})
+        try:
+            queries, query_usage = generate_adversarial_queries(
+                inp, subtrio_id=subtrio_id, model=model,
+            )
+        except StructuredOutputError as exc:
+            on_step("query_gen_failed", {"error": str(exc)})
+            return VerifierRunResult(
+                output=None,
+                failure_mode="query_gen_schema_invalid",
+                query_gen_usage=None,
+                main_usage=None,
+                substring_result=sub_result,
+                substring_notes=sub_notes,
+                strategy=strategy,
+                notes=str(exc)[:300],
+            )
 
-    independent_snippets = [
-        f"{r.title} — {r.snippet[:200]}" for r in search_results
-    ]
+        # Cap the query count when an experiment requests it (a cost knob).
+        if num_queries is not None:
+            queries = queries[:num_queries]
+        on_step("query_gen_complete", {
+            "queries": queries,
+            "input_tokens": query_usage.input_tokens,
+            "output_tokens": query_usage.output_tokens,
+            "wall_clock_ms": query_usage.wall_clock_ms,
+            "cost_usd": query_usage.estimated_cost_usd,
+        })
+
+        # ----- Stage 3: independent search -----
+        on_step("search_start", {"queries": queries})
+        search_results = search_many(
+            queries, max_results_per_query=max_results_per_query, provider=provider,
+        )
+        on_step("search_complete", {
+            "n_results": len(search_results),
+            "top_titles": [r.title[:80] for r in search_results[:5]],
+        })
+
+        independent_snippets = [
+            f"{r.title} — {r.snippet[:200]}" for r in search_results
+        ]
 
     # ----- Stage 4: register prompt and call the LLM -----
     prompt_id = db_helpers.ensure_prompt_version(
@@ -565,6 +629,7 @@ def run_verifier(
         strategy=strategy,
         answer_shape=inp.answer_shape,
         allowed_answers=list(inp.allowed_answers),
+        verifier_search=verifier_search,
     )
 
     on_step("main_call_start", {

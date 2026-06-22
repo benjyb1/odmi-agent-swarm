@@ -147,6 +147,23 @@ def _search_results_block(queries: List[str], snippets: List[str]) -> str:
     )
 
 
+def _no_search_note() -> str:
+    """EXP-14 `never` policy note.
+
+    Travels in the per-call user message, never the system prompt, so the
+    registered prompt version is byte-identical across the search-policy
+    arms. Mirrors the EXP-7 `_evidence_corpus_block` pattern in
+    agents/prompts/adjudicator.py. Rendered only when the policy is `never`;
+    the `always` default emits nothing and the user message is unchanged.
+    """
+    return (
+        "Independent search: NOT RUN for this verification. Reason only over "
+        "the Researcher's evidence and the snippets it already read (shown "
+        "above). Do not assume an independent web search was performed; absence "
+        "of a counter-source here is not, on its own, corroboration."
+    )
+
+
 def _answer_space_block(answer_shape: str, allowed_answers: List[str]) -> str:
     """D28: tell the Verifier what verifier_answer values are valid."""
     bullets = "\n".join(f"  - {a!r}" for a in allowed_answers)
@@ -187,6 +204,7 @@ def build_user_message(
     strategy: VerifierStrategy,
     answer_shape: str = "binary",
     allowed_answers: Optional[List[str]] = None,
+    verifier_search: str = "always",
 ) -> str:
     """Render the user message for the given strategy.
 
@@ -194,10 +212,24 @@ def build_user_message(
     search before this call. Those results are injected here so the
     model's reasoning is grounded in verified facts, not its own
     speculation about what the page might say.
+
+    `verifier_search` (EXP-14) is the web counter-search policy. The
+    default 'always' renders the usual independent-search block, so the
+    message is byte-identical to current production. 'never' swaps that
+    block for a short note that no independent search was run, carried in
+    this per-call message so the registered system prompt is unchanged
+    across arms.
     """
     include_answer = (strategy != "verifier-blind")
     if allowed_answers is None:
         allowed_answers = ["yes", "no"]
+
+    if verifier_search == "never":
+        search_section = _no_search_note()
+    else:
+        search_section = _search_results_block(
+            independent_queries, independent_snippets
+        )
 
     sections = [
         f"Question:\n{question_text}",
@@ -211,7 +243,7 @@ def build_user_message(
         "--- Pre-computed checks ---",
         _substring_block(substring_result, substring_notes),
         "",
-        _search_results_block(independent_queries, independent_snippets),
+        search_section,
         "",
         "Return your verdict as JSON matching the VerifierOutput schema.",
     ]
