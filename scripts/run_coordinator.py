@@ -339,19 +339,23 @@ def _finalise_after_adjudication(
         )
         return ("escalated_adjudicator", chosen)
 
-    # All three resolved verdicts share the same finalisation logic: use
-    # the Adjudicator's authoritative answer and evidence, not the raw
-    # researcher or verifier fields.
+    # All resolved verdicts share the same finalisation logic: use the
+    # Adjudicator's authoritative answer and evidence, not the raw researcher
+    # or verifier fields.
     #
-    # The D37 commit-confidence floor applies here too. Without this the
-    # floor only gated the in-loop Verifier-pass path, so at retry
-    # exhaustion the Adjudicator could commit a sub-floor label and have it
-    # finalised as a real answer. On sparse evidence that commit is usually
-    # a defensive `no` (and occasionally a weak `yes` false positive), so a
-    # low-confidence commit is downgraded to an honest `inconclusive`
-    # abstention. We abstain rather than guess under the floor.
+    # EXP-16 free arm: an `attempt_correct` verdict commits the answer of the
+    # Researcher attempt the Adjudicator named in `chosen_attempt` (1-based).
+    # We bind adj_answer to that attempt's own answer so the committed label
+    # cannot be a synthesised one outside the attempts' answer set. The
+    # Adjudicator's evidence URL/quote and confidence still carry the
+    # finalisation, and the D37 floor / D44 backstop below apply unchanged.
+    # The standard arm never emits this verdict, so this branch is dead there.
     adj_answer = adj_output.adjudicator_answer or "inconclusive"
     adj_conf = adj_output.adjudicator_confidence
+    if adj_output.adjudicator_verdict == "attempt_correct":
+        idx = adj_output.chosen_attempt
+        if idx is not None and 1 <= idx <= len(researcher_outputs):
+            adj_answer = researcher_outputs[idx - 1].answer
     if (not _is_abstention(adj_answer)
             and (adj_conf or 0.0) < COMMIT_CONFIDENCE_FLOOR):
         adj_answer = "inconclusive"
@@ -910,6 +914,7 @@ def coordinate(
     experiment_id: Optional[str] = None,
     condition_label: str = "baseline",
     chained: bool = False,
+    adjudicator_selection: str = "standard",
     dry_run: bool = False,
     walkthrough: bool = False,
 ) -> tuple[str, Optional[ResearcherOutput]]:
@@ -1412,6 +1417,7 @@ def coordinate(
         adj_inp,
         model=adjudicator_model,
         subtrio_id=subtrio_id,
+        selection=adjudicator_selection,
         on_step=lambda e, p: _print_step("A", e, p),
     )
     if adj_result.usage:
@@ -1513,6 +1519,16 @@ def main() -> int:
              "default, so production and the EXP-8/9 baseline are "
              "byte-identical to the independent-retry loop.")
     parser.add_argument(
+        "--adjudicator-selection", default="standard",
+        choices=["standard", "free"],
+        help="EXP-16 candidate-selection mode. 'standard' (default) is "
+             "byte-identical to production: the Adjudicator's verdict "
+             "taxonomy and the registered phase2_adjudicator prompt are "
+             "unchanged. 'free' lets the Adjudicator commit ANY of the "
+             "up-to-four Researcher attempts' answers by index "
+             "(attempt_correct verdict), registering a separate prompt "
+             "version (phase2_adjudicator_free).")
+    parser.add_argument(
         "--dry-run", action="store_true",
         help=(
             "Skip writes to subtrio_status, phase2_researcher_runs, "
@@ -1550,6 +1566,7 @@ def main() -> int:
             experiment_id=args.experiment_id,
             condition_label=args.condition_label,
             chained=args.chained,
+            adjudicator_selection=args.adjudicator_selection,
             dry_run=args.dry_run,
             walkthrough=args.walkthrough,
         )

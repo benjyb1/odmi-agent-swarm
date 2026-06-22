@@ -135,6 +135,91 @@ agents actually gathered.
 """
 
 
+# ============================================================
+# EXP-16 free-selection arm. SEPARATE prompt version: it adds the
+# `attempt_correct` verdict, so the system prompt differs from the
+# standard one. The standard `phase2_adjudicator` v4 above is untouched,
+# so default-mode `prompt_versions` rows are unchanged. The free arm
+# registers its own row under FREE_NAME / FREE_VERSION.
+# ============================================================
+
+FREE_NAME = "phase2_adjudicator_free"
+FREE_VERSION = 1
+FREE_DESCRIPTION = (
+    "Adjudicator free-selection arm (EXP-16). Extends V4 with an "
+    "`attempt_correct` verdict that lets the Adjudicator commit the answer "
+    "from ANY of the up-to-four Researcher attempts by index, not only the "
+    "final attempt that `researcher_correct` is pinned to. The D44 rule "
+    "(absence of evidence is 'inconclusive', never 'no'), the "
+    "honest-abstention preference, and the confidence floor all still hold. "
+    "Selection-mode 'standard' keeps the V4 prompt and is byte-identical to "
+    "production; only the 'free' arm uses this prompt."
+)
+
+# The free system prompt is the standard one with the verdict taxonomy and
+# output structure extended to admit `attempt_correct` + `chosen_attempt`.
+SYSTEM_FREE = SYSTEM.replace(
+    "decide which of the four verdicts below applies.\n\nThe four verdicts:",
+    "decide which of the five verdicts below applies.\n\nThe five verdicts:",
+).replace(
+    """- escalate_human
+    The case is too uncertain to settle without human judgement. Use""",
+    """- attempt_correct
+    One of the Researcher's attempts (not necessarily the final one)
+    reached the correct answer on the evidence it gathered. Set
+    chosen_attempt to that attempt's 1-based index and copy its answer
+    into adjudicator_answer. Use this when an EARLIER attempt was right
+    and a later attempt drifted or abstained: researcher_correct only
+    ever refers to the FINAL attempt, so this verdict is the only way to
+    commit an earlier attempt's answer. The committed answer must be one
+    of the attempts' own answers (or an honest 'inconclusive'); do not
+    synthesise a new answer here.
+
+- escalate_human
+    The case is too uncertain to settle without human judgement. Use""",
+).replace(
+    '  "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "escalate_human",',
+    '  "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "attempt_correct" | "escalate_human",\n'
+    '  "chosen_attempt":      integer (1-based attempt index, REQUIRED when\n'
+    '                         verdict is "attempt_correct", else null),',
+).replace(
+    """Rules:
+- If verdict is researcher_correct, verifier_correct, or neither, you
+  must set adjudicator_answer, chosen_source_url, and
+  chosen_evidence_quote.""",
+    """Rules:
+- If verdict is researcher_correct, verifier_correct, neither, or
+  attempt_correct, you must set adjudicator_answer, chosen_source_url,
+  and chosen_evidence_quote.
+- If verdict is attempt_correct you must also set chosen_attempt to the
+  1-based index of the chosen Researcher attempt, and adjudicator_answer
+  must equal that attempt's answer (or 'inconclusive' if you judge that
+  attempt's answer to be an honest abstention).""",
+)
+
+
+def _free_selection_block(num_attempts: int) -> str:
+    """Per-call instruction enabling free attempt selection (EXP-16).
+
+    Renders only when free selection is requested. Returned empty for the
+    standard arm, so the standard user message is byte-identical.
+    """
+    return (
+        "\n--- Free attempt selection (EXP-16) ---\n"
+        "You may commit the answer from ANY of the "
+        f"{num_attempts} Researcher attempt(s) above, not only the final "
+        "one. If an EARLIER attempt reached the right answer on the evidence "
+        "it gathered and a later attempt drifted, set "
+        "adjudicator_verdict='attempt_correct', chosen_attempt to that "
+        "attempt's 1-based index, and copy that attempt's answer into "
+        "adjudicator_answer. researcher_correct still refers to the FINAL "
+        "attempt only. The answer you commit must come from one of the "
+        "attempts' answers, or be an honest 'inconclusive'. Absence of "
+        "evidence is 'inconclusive', never 'no'. Prefer an honest "
+        "abstention over a low-confidence commit.\n"
+    )
+
+
 def _format_researcher_attempt(idx: int, r: ResearcherOutput) -> str:
     return (
         f"Researcher attempt {idx + 1}:\n"
@@ -207,8 +292,16 @@ def _answer_space_block(inp: AdjudicatorInput) -> str:
     )
 
 
-def build_user_message(inp: AdjudicatorInput) -> str:
-    """Render the full history block for the Adjudicator."""
+def build_user_message(
+    inp: AdjudicatorInput, *, selection: str = "standard"
+) -> str:
+    """Render the full history block for the Adjudicator.
+
+    `selection` controls EXP-16 free attempt selection. 'standard' (the
+    default) renders no extra block, so the message is byte-identical to the
+    pre-EXP-16 behaviour. 'free' appends the free-selection instruction in
+    this per-call message, keeping the standard registered prompt untouched.
+    """
     researcher_blocks = "\n".join(
         _format_researcher_attempt(i, r)
         for i, r in enumerate(inp.researcher_outputs)
@@ -216,6 +309,12 @@ def build_user_message(inp: AdjudicatorInput) -> str:
     verifier_blocks = "\n".join(
         _format_verifier_attempt(i, v)
         for i, v in enumerate(inp.verifier_outputs)
+    )
+
+    free_block = (
+        _free_selection_block(len(inp.researcher_outputs))
+        if selection == "free"
+        else ""
     )
 
     return f"""Question ID: {inp.question_id}
@@ -233,5 +332,5 @@ Question:
 --- Verifier history ({len(inp.verifier_outputs)} attempts) ---
 
 {verifier_blocks}
-{_evidence_corpus_block(inp)}
+{_evidence_corpus_block(inp)}{free_block}
 Now decide. Return JSON matching the AdjudicatorOutput schema."""
