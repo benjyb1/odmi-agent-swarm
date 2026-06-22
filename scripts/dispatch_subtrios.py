@@ -277,6 +277,7 @@ def dispatch(
     no_cache: bool = False,
     chained: bool = False,
     verifier_search: str = "always",
+    adjudicator_selection: str = "standard",
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: Optional[str] = None,
@@ -463,6 +464,10 @@ def dispatch(
                 # when it differs from the 'always' production default, so the
                 # baseline subprocess invocation is byte-identical.
                 cmd += ["--verifier-search", verifier_search]
+            if adjudicator_selection and adjudicator_selection != "standard":
+                # EXP-16 free attempt-selection arm; default 'standard', so the
+                # baseline batch is byte-identical to production.
+                cmd += ["--adjudicator-selection", adjudicator_selection]
             if experiment_id:
                 cmd += ["--experiment-id", experiment_id]
             if condition_label:
@@ -719,6 +724,13 @@ def main() -> int:
                              "web search so it reasons only over the "
                              "Researcher's evidence. 'elective' is not built "
                              "and raises NotImplementedError.")
+    parser.add_argument("--adjudicator-selection", default="standard",
+                        choices=["standard", "free"],
+                        help="EXP-16 candidate-selection mode forwarded to each "
+                             "run_coordinator subprocess. 'standard' (default) "
+                             "is byte-identical to production. 'free' lets the "
+                             "Adjudicator commit ANY of the up-to-four "
+                             "Researcher attempts' answers by index.")
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
                         help="Tag every child row with this experiment_id (D27). "
@@ -784,6 +796,7 @@ def main() -> int:
         no_cache=args.no_cache,
         chained=args.chained,
         verifier_search=args.verifier_search,
+        adjudicator_selection=args.adjudicator_selection,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
         condition_label=args.condition_label,

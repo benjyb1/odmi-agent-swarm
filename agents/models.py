@@ -65,6 +65,13 @@ AdjudicatorVerdict = Literal[
     "verifier_correct",
     "neither",
     "escalate_human",
+    # EXP-16 free-selection arm only. `researcher_correct` is pinned to the
+    # Researcher's FINAL attempt, so it cannot commit an earlier attempt that
+    # happened to be right. `attempt_correct` lets the Adjudicator name ANY of
+    # the up-to-four attempts by index (`chosen_attempt`). Never emitted in the
+    # standard arm: the standard system prompt does not mention it, so the
+    # registered phase2_adjudicator prompt is unchanged for production.
+    "attempt_correct",
 ]
 TerminalStatus = Literal[
     "accepted_by_verifier",
@@ -372,6 +379,12 @@ class AdjudicatorOutput(BaseModel):
     chosen_source_url: Optional[AnyHttpUrl] = None
     chosen_evidence_quote: Optional[str] = None
 
+    # EXP-16 free-selection arm only. 1-based index of the Researcher attempt
+    # whose answer the Adjudicator commits when the verdict is
+    # `attempt_correct`. None in every standard-arm run, so the default-mode
+    # schema and finalisation are unchanged.
+    chosen_attempt: Optional[int] = Field(default=None, ge=1)
+
     @model_validator(mode="after")
     def _enforce_winner_fields(self) -> "AdjudicatorOutput":
         # If we pick a winner, we need an answer to record.
@@ -379,11 +392,21 @@ class AdjudicatorOutput(BaseModel):
             "researcher_correct",
             "verifier_correct",
             "neither",
+            "attempt_correct",
         )
         if picks_winner and self.adjudicator_answer is None:
             raise ValueError(
                 "adjudicator_answer is required when adjudicator_verdict "
                 "is not 'escalate_human'"
+            )
+        # EXP-16: an attempt_correct verdict must name which attempt.
+        if (
+            self.adjudicator_verdict == "attempt_correct"
+            and self.chosen_attempt is None
+        ):
+            raise ValueError(
+                "chosen_attempt (1-based) is required when adjudicator_verdict "
+                "is 'attempt_correct'"
             )
         return self
 

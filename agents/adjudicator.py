@@ -69,28 +69,49 @@ def run_adjudicator(
     model: str | None = None,
     condition_label: str = "baseline",
     subtrio_id: str | None = None,
+    selection: str = "standard",
     on_step: StepCallback = _noop,
 ) -> AdjudicatorRunResult:
     """Run the Adjudicator once.
 
     Single LLM call. Returns an AdjudicatorRunResult either way; the
     caller writes a phase2_adjudications row regardless of outcome.
+
+    `selection` is the EXP-16 knob. 'standard' (the default) is byte-identical
+    to production: the registered phase2_adjudicator prompt and the user
+    message are unchanged. 'free' registers a SEPARATE prompt version
+    (phase2_adjudicator_free) whose system prompt adds the `attempt_correct`
+    verdict, and appends a per-call free-selection instruction to the user
+    message, so the Adjudicator may commit ANY attempt's answer by index.
     """
     on_step("start", {
         "question_id": inp.question_id,
         "country": inp.country_code,
         "researcher_attempts": len(inp.researcher_outputs),
         "verifier_attempts": len(inp.verifier_outputs),
+        "selection": selection,
     })
 
-    prompt_id = db_helpers.ensure_prompt_version(
-        adjudicator_prompt.NAME,
-        adjudicator_prompt.VERSION,
-        adjudicator_prompt.SYSTEM,
-        adjudicator_prompt.DESCRIPTION,
-    )
+    if selection == "free":
+        system_prompt = adjudicator_prompt.SYSTEM_FREE
+        prompt_id = db_helpers.ensure_prompt_version(
+            adjudicator_prompt.FREE_NAME,
+            adjudicator_prompt.FREE_VERSION,
+            adjudicator_prompt.SYSTEM_FREE,
+            adjudicator_prompt.FREE_DESCRIPTION,
+        )
+    else:
+        system_prompt = adjudicator_prompt.SYSTEM
+        prompt_id = db_helpers.ensure_prompt_version(
+            adjudicator_prompt.NAME,
+            adjudicator_prompt.VERSION,
+            adjudicator_prompt.SYSTEM,
+            adjudicator_prompt.DESCRIPTION,
+        )
 
-    user_message = adjudicator_prompt.build_user_message(inp)
+    user_message = adjudicator_prompt.build_user_message(
+        inp, selection=selection
+    )
 
     on_step("main_call_start", {
         "prompt_version_id": prompt_id,
@@ -98,7 +119,7 @@ def run_adjudicator(
     })
 
     call_kwargs = {
-        "system": adjudicator_prompt.SYSTEM,
+        "system": system_prompt,
         "user_message": user_message,
         "output_schema": AdjudicatorOutput,
         "max_tokens": 1200,
