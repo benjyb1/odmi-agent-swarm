@@ -274,6 +274,10 @@ def dispatch(
     provider: str = "auto",
     max_results_per_query: int = 5,
     num_queries: Optional[int] = None,
+    use_snippet_picker: bool = True,
+    picker_max_chunks: int = 3,
+    page_text_cap: int = 16000,
+    max_snippet_chars: int = 600,
     no_cache: bool = False,
     chained: bool = False,
     batch_id: Optional[str] = None,
@@ -448,6 +452,17 @@ def dispatch(
             cmd += ["--max-results-per-query", str(max_results_per_query)]
             if num_queries is not None:
                 cmd += ["--num-queries", str(num_queries)]
+            # EXP-17 DIY snippet-funnel knobs. Only forwarded when they
+            # differ from the production default, so a default dispatch builds
+            # a command line byte-identical to before this experiment landed.
+            if not use_snippet_picker:
+                cmd += ["--snippet-picker", "off"]
+            if max_snippet_chars != 600:
+                cmd += ["--max-snippet-chars", str(max_snippet_chars)]
+            if picker_max_chunks != 3:
+                cmd += ["--picker-max-chunks", str(picker_max_chunks)]
+            if page_text_cap != 16000:
+                cmd += ["--page-text-cap", str(page_text_cap)]
             if no_cache:
                 # Cold-cache mode (EXP-2): tell each child to bypass DIY cache
                 # reads so its measured search cost is not understated by a
@@ -692,6 +707,22 @@ def main() -> int:
                         help="Results per search query (cost/recall knob).")
     parser.add_argument("--num-queries", type=int, default=None,
                         help="Cap generated search queries to this many (cost knob).")
+    parser.add_argument("--snippet-picker", choices=["on", "off"], default="on",
+                        help="EXP-17 DIY snippet-funnel knob. 'off' bypasses the "
+                             "LLM snippet-picker so the cleaned page text is the "
+                             "snippet and no URL is dropped for an empty pick. "
+                             "Forwarded to each run_coordinator subprocess. "
+                             "DIY-only. Default 'on'.")
+    parser.add_argument("--max-snippet-chars", type=int, default=600,
+                        help="EXP-17 knob: per-snippet prompt truncation chars "
+                             "(format_for_prompt). Forwarded to each subprocess. "
+                             "Default 600.")
+    parser.add_argument("--picker-max-chunks", type=int, default=3,
+                        help="EXP-17 knob: most chunks the snippet-picker keeps "
+                             "per non-confident page. Default 3.")
+    parser.add_argument("--page-text-cap", type=int, default=16000,
+                        help="EXP-17 knob: chars of cleaned page text the picker "
+                             "sees before truncation. Default 16000.")
     parser.add_argument("--no-cache", action="store_true",
                         help="Cold-cache mode (EXP-2): disable DIY cache reads "
                              "for every pair in this batch so each condition "
@@ -766,6 +797,10 @@ def main() -> int:
         provider=args.provider,
         max_results_per_query=args.max_results_per_query,
         num_queries=args.num_queries,
+        use_snippet_picker=(args.snippet_picker == "on"),
+        picker_max_chunks=args.picker_max_chunks,
+        page_text_cap=args.page_text_cap,
+        max_snippet_chars=args.max_snippet_chars,
         no_cache=args.no_cache,
         chained=args.chained,
         batch_id=args.batch_id,

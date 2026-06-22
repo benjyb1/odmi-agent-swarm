@@ -306,6 +306,10 @@ def run_researcher(
     max_results_per_query: int = 5,
     provider: str = "auto",
     num_queries: Optional[int] = None,
+    use_snippet_picker: bool = True,
+    picker_max_chunks: int = 3,
+    page_text_cap: int = 16000,
+    max_snippet_chars: int = 600,
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> ResearcherRunResult:
@@ -376,6 +380,9 @@ def run_researcher(
         include_domains=trusted or None,
         on_call=provider_calls.append,
         provider=provider,
+        use_snippet_picker=use_snippet_picker,
+        picker_max_chunks=picker_max_chunks,
+        page_text_cap=page_text_cap,
     )
     wide_fallback_used = False
     if not search_results and trusted:
@@ -385,6 +392,9 @@ def run_researcher(
             max_results_per_query=max_results_per_query,
             on_call=provider_calls.append,
             provider=provider,
+            use_snippet_picker=use_snippet_picker,
+            picker_max_chunks=picker_max_chunks,
+            page_text_cap=page_text_cap,
         )
         wide_fallback_used = True
     on_step("search_complete", {
@@ -419,6 +429,7 @@ def run_researcher(
         input,
         search_results=search_results,
         queries_used=queries,
+        max_chars_per_snippet=max_snippet_chars,
     )
     on_step("main_call_start", {
         "prompt_version_id": prompt_id,

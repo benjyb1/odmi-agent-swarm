@@ -61,13 +61,17 @@ Rules:
    language; do not translate."""
 
 
-def build_user_message(query: str, url: str, page_text: str) -> str:
+def build_user_message(
+    query: str, url: str, page_text: str, *, page_text_cap: int = PAGE_TEXT_CAP,
+) -> str:
     """Render the user message for one snippet-pick call.
 
-    Truncates page_text to PAGE_TEXT_CAP characters before embedding it
-    to keep token usage predictable.
+    Truncates page_text to `page_text_cap` characters before embedding it
+    to keep token usage predictable. `page_text_cap` defaults to the module
+    constant PAGE_TEXT_CAP (16000); it is the EXP-17 funnel knob exposed so
+    the page-text truncation can be widened or tightened per experiment.
     """
-    truncated = page_text[:PAGE_TEXT_CAP]
+    truncated = page_text[:page_text_cap]
     return (
         f"Search query: {query}\n"
         f"Page URL: {url}\n"
