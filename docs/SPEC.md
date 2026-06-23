@@ -1,6 +1,6 @@
 # ODMI Agent Swarm — Living Spec
 
-Last updated: 2026-06-03
+Last updated: 2026-06-23
 
 Single source of truth for project state. Updated every session. All numbered
 decisions go in here so they can be referenced as "per D7" elsewhere in the
@@ -98,9 +98,11 @@ dimensions are retained in `docs/METHODOLOGY.md` as historical context only.
 
 ### D7: Phased country rollout
 
-**Phase B sample superseded by D42.** The evaluation sample is now a nine-country
-3×3 maturity × language-resource matrix, held out from development. The original
-six-country 2×3 wealth × maturity sketch is kept below for the audit trail.
+**Phase B sample superseded by D42, then by D47.** The evaluation sample is now
+the D47 base-rate-stratified held-out set (eight countries: BA, MK, ME, BG, FI,
+HR, SE, BE) with a five-country in-sample dev set (NL, MT, NO, FR, AL). The
+D42 nine-country 3×3 matrix and the original six-country 2×3 wealth × maturity
+sketch are both kept below for the audit trail.
 
 - **Phase A:** France only (controlled baseline).
 - **Phase B:** Six countries across a 2×3 wealth × maturity matrix: France,
@@ -1161,9 +1163,28 @@ mechanism D26 added is unchanged; only the fallback target changes).
 
 ## Current status
 
-**Phase:** Phase A, experiments programme underway. Swarm running end-to-end; dashboard live (local + Streamlit Cloud); ODMI ground truth loaded. The search-provider and verifier experiments are pre-registered and partly run.
+> **Currency note (2026-06-23).** The authoritative live state is, in order:
+> the change log below (current to 2026-06-23), `docs/ARCHITECTURE.md` (the
+> config ledger), and `docs/EXPERIMENTS.md` (the experiment board, EXP-10..21).
+> The "Built / Not yet built / Open questions" lists in this section are a
+> 2026-06-03 snapshot kept for continuity; where a later change-log entry
+> contradicts them, the change-log entry wins. Headline shifts since the
+> snapshot: evaluation redesigned to the D47 base-rate-stratified held-out set
+> (dev NL/MT/NO/FR/AL, held-out BA/MK/ME/BG/FI/HR/SE/BE), search closed to
+> DIY-only (D43), portal discovery shipped (D46), the experiment orchestrator
+> shipped (D48), and the verifier programme closed on the incumbent (D45).
 
-### Experiments programme (EXP-1..7) and search apparatus (D30-D37)
+**Phase:** Dev-set experiment programme. Swarm running end-to-end; dashboard live
+(local + Streamlit Cloud); ODMI ground truth loaded. Malta dev baseline done;
+dev-set ablations (EXP-10/14/16/17 and the verifier programme EXP-11/12/13) done;
+confirmatory re-tests EXP-18/19/20 designed and in progress; the held-out
+eight-country headline run (EXP-21) is gated on a config freeze.
+
+### Experiments programme (EXP-1..9, 2026-06-03 snapshot) and search apparatus (D30-D37)
+
+> Superseded by the change log and `docs/EXPERIMENTS.md`. The live programme is
+> EXP-10..21; EXP-1/4/5 (provider comparisons) are dead under D43. Read the
+> bullets below as historical context, not the current plan.
 
 Two pre-registrations fix the designs before the runs: `docs/EXPERIMENTS_PROTOCOL.md`
 (the search experiments EXP-1..5) and `docs/EXPERIMENTS_VERIFIER.md` (EXP-6). The
@@ -1518,6 +1539,10 @@ budget", not per-run cost. A high circuit breaker on the real units answers that
 without re-introducing the friction D40 removed.
 
 ### D42: Nine-country held-out evaluation matrix (3×3 maturity × language-resource)
+
+**Superseded by D47 (2026-06-22).** Kept as audit trail. The 3×3 maturity ×
+language matrix is replaced by the base-rate-stratified held-out set; the body
+below records the original design and rationale.
 
 **Date:** 2026-06-09. Amends D7's Phase B sample.
 

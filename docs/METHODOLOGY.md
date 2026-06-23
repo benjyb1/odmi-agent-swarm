@@ -44,10 +44,13 @@ human process for a controlled baseline country?
 (Policy, Portal, Quality, Impact) and across the indicators within
 them? *(Reframed at D22 from the original rubric-tier formulation.)*
 
-**RQ3.** How does answer quality vary across language and portal-maturity
-regimes when the same system is run on a stratified nine-country sample? *(The
-sample is the 3×3 maturity × language-resource matrix fixed in SPEC D42,
-replacing the earlier six-country sketch.)*
+**RQ3.** How does answer quality vary across language and resource-maturity
+regimes? *(Tested by the two-stratum language contrast in the held-out
+evaluation set fixed in SPEC D47, superseding the D42 nine-country matrix:
+stratum A, negative-rich low/mid-resource languages (BA, MK, ME, BG), against
+stratum B, higher-resource languages (FI, HR, SE, BE). A flat false-positive
+rate across the strata supports language driving abstention not error; a rise
+in stratum A is the headline negative result.)*
 
 **RQ4.** What categories of ODMI question are systematically beyond the reach
 of agentic LLMs as currently constituted, and what reformulations would bring
@@ -184,22 +187,27 @@ sub-design for the wealth × maturity matrix.
 
 ---
 
-## 5. Agent swarm architecture (Phase 2, to be built)
+## 5. Agent swarm architecture (built)
 
 Three agents coordinated by a plain Python state machine (per D3,
-`scripts/run_coordinator.py`):
+`scripts/run_coordinator.py`), running end-to-end:
 
 - **Coordinator.** Dispatches (question, country) pairs. Manages retries (max
   3). Logs all parameters and outputs. Escalates CAPTCHA and access blocks to
   a human queue without halting parallel pairs.
-- **Researcher.** Tavily web search, Playwright browser automation, and a
+- **Researcher.** DIY web search (Serper SERP + trafilatura extraction, per
+  D43), Playwright browser automation, and a
   source validator (domain authority check). Reads major EU languages
   natively. Falls back to DeepL for low-resource languages per the language
   confidence table. Returns answer, evidence quote, source URL, and a
   retrieval confidence score.
 - **Adversarial Verifier.** Independent search. Prompted to disprove the
-  Researcher's answer, not confirm it. Visits the cited URL, searches for
+  Researcher's answer, not confirm it (production strategy `disprove`; negation /
+  steelman / blind are evaluation arms). Visits the cited URL, searches for
   counter-evidence, and returns pass/fail plus an answer confidence score.
+- **Adjudicator.** Resolves accept / reject / retry and commits the final answer.
+  Trusts its own answer at finalisation (D32) and abstains with `inconclusive`
+  below the 0.65 commit-confidence floor (D35, D37) rather than forcing a guess.
 
 Output per (question, country) pair:
 
@@ -229,25 +237,34 @@ The 2024 cycle is held back as an independent external-validity set
 (extracted from the 2024 PDFs only after the pipeline is finalised
 on 2025). Prompt and retrieval tuning never touch 2024 evidence.
 
-### Evaluation sample and hold-out (per D42)
+### Evaluation sample and hold-out (per D47, superseding D42)
 
-The primary sample is a nine-country 3×3 matrix, ODMI maturity (high / mid / low)
-crossed with language-resource level (high / mid / low), one country per cell:
-FR / SK / EE (high maturity), DE / HU / SI (mid), SE / RO / MT (low). The nine are
-held out from development. The default pipeline is tuned only on development
-countries drawn from the 27 outside the matrix (plus France, the in-sample legacy
-sandbox), then frozen by commit before the nine are run for the headline numbers.
-Pre-registered between-condition experiments (Verifier strategies, cost-side
-conditions, model variants) may run on the nine because they compare arms against
-a reported baseline; the default pipeline is never iteratively tuned against the
-nine countries' results. Full rule, the matrix table, and the recorded wrinkles
-(France's cell is in-sample and base-rate-degenerate; one-country cells are noisy)
-are in SPEC D42.
+The design is base-rate-stratified, not a maturity matrix. A country's ODMI score
+is almost exactly its binary yes-share (Pearson r = 0.98 across the 36 countries),
+so naive accuracy on a mature country just reproduces the ODMI ranking, and
+discrimination (correctly answering `no`) is only measurable where negative golds
+exist, which is the low-maturity tail. Maturity and base-rate balance are one
+axis, not two.
+
+- **Development set (in-sample, five countries, tuning only):** NL, MT, NO, FR, AL.
+  Malta is reclassified from held-out to in-sample (it was already burned by the
+  verifier and model-variant programmes; about half its open-data estate is
+  low-resource Maltese, so it is not a clean English testbed).
+- **Held-out evaluation set (eight countries, frozen, pre-registered rule):**
+  stratum A, negative-rich low/mid-resource language (BA, MK, ME, BG); stratum B,
+  higher-resource language, as balanced as available (FI, HR, SE, BE). About
+  1,144 (question, country) pairs, about 368 binary negative golds.
+
+The pipeline is committed before the held-out run (the commit SHA is the lock);
+the eight are read exactly once, from a frozen pipeline, and are not touched by
+any development or between-condition experiment. Full rule, the rationale for
+stratified-not-random sampling, and France's role as a labelled degenerate
+contrast are in SPEC D47.
 
 ### Stage 1: retrospective benchmark (2025)
 
 Run the swarm on (question, country) pairs from the 2025 ODMI cycle for
-the nine-country held-out matrix (D42). Compare each swarm `final_answer` against
+the eight-country held-out set (D47). Compare each swarm `final_answer` against
 the `response` column on the corresponding `ground_truth` row. The match
 SQL lives in `dashboard/lib/db.py:_MATCH_STATUS_SQL` and classifies each
 pair as `match`, `differ`, `no_ground_truth`, or `no_swarm_answer`.
@@ -277,10 +294,10 @@ publication or its mirrors as evidence. The mitigation is defence in
 depth across five layers, all enforced from a single deny-list module
 (`agents/tools/blocked_domains.py`):
 
-1. **Search-layer block.** `agents/tools/search.py` passes
-   `exclude_domains=list(BLOCKED_DOMAINS)` to Tavily, appends
-   `-site:<d>` clauses to every Brave query, and post-filters
-   results against `is_blocked()` regardless of provider. The
+1. **Search-layer block.** `agents/tools/search.py` filters the
+   DIY Serper SERP against `BLOCKED_DOMAINS` before any fetch,
+   appending `-site:<d>` clauses to the query and post-filtering
+   results against `is_blocked()`. The
    blocked count is exposed via `session_usage()` so the dashboard
    keeps an honest observability surface.
 2. **Fetch-layer refusal.** `agents/tools/fetch.py` short-circuits
@@ -362,23 +379,25 @@ same schema with a `condition_label` column.
 
 These experiments are now pre-registered before each run, with the design,
 endpoints, sampling, and analysis fixed in advance: `docs/EXPERIMENTS_PROTOCOL.md`
-covers the search-provider and search-knob experiments (EXP-1..5) and
-`docs/EXPERIMENTS_VERIFIER.md` covers the Verifier-strategy comparison (EXP-6,
-Family 2 below). The live status board is `docs/EXPERIMENTS.md`. A third family
-sits alongside the two below: the search-provider comparison (DIY vs Tavily vs
-Brave vs Serper), where EXP-1 already reports DIY winning 89% of the decided
-French pairs.
+covers the search-knob experiments and `docs/EXPERIMENTS_VERIFIER.md` covers the
+Verifier-strategy comparison (Family 2 below). The live status board is
+`docs/EXPERIMENTS.md`; the current config ledger is `docs/ARCHITECTURE.md`. The
+search-provider question is closed (D43): the system runs DIY only (Serper SERP +
+trafilatura). EXP-1 confirmed DIY winning 89% of the decided French pairs; no
+further provider comparison runs, and multilingual recall is treated as a
+DIY-internal retrieval question, not a provider comparison.
 
 The families are also bound by the universal experiment rules
 (`docs/EXPERIMENTS_PROTOCOL.md` section 0, SPEC D38). The rule that matters most
 here is the base-rate rule (R4): the accuracy axis of the surface is measured on a
 base-rate-balanced country, not on France. France's binary gold is about 99%
 `yes`, so an accuracy figure there cannot be told apart from majority-class
-guessing. Family 1 (EXP-8) and Family 3 (EXP-9) therefore run on Malta (English
-official, ~30 `no`-gold binary questions) as the primary country and Netherlands
-as the secondary, with accuracy read balance-aware (balanced accuracy and
-per-class rates against the printed majority baseline) rather than as raw
-accuracy. Family 2 (EXP-6) follows the same rule.
+guessing. The cost-side and model-variant experiments therefore run on in-sample
+dev countries that carry negative golds (Malta, about 30 `no`-gold binary
+questions, and the Netherlands), with accuracy read balance-aware (balanced
+accuracy and per-class rates against the printed majority baseline) rather than as
+raw accuracy. Malta is not a clean English testbed (about half its estate is
+low-resource Maltese); it is in-sample dev per D47.
 
 **Family 1: cost-side optimisations.** Aimed at the cost axis of the
 accuracy-cost surface.
@@ -387,7 +406,7 @@ accuracy-cost surface.
 |---|---|
 | `baseline` | Full prompt, full retrieval, no truncation. The reference accuracy and cost. |
 | `prompt-compressed` | Same agent loop, prompts compressed (no examples, terser instructions). |
-| `retrieval-tight` | Tavily search limited to top-3 hits; Playwright fetch capped at first 4k chars. |
+| `retrieval-tight` | DIY (Serper) search limited to top-3 hits; trafilatura extraction capped at first 4k chars. |
 | `cache-hot` | Identical query within an hour returns the cached evidence rather than re-fetching. |
 | `model-fallback` | Cheaper model (e.g. Haiku) tried first; escalates to Sonnet only on Verifier reject. |
 
@@ -471,8 +490,8 @@ them.
 - LLM via CLIProxyAPI on `localhost:8317` (D1). Model version captured in
   every row.
 - SQLite (D2) as the single store. Schema in `scripts/setup_sqlite.py`.
-- Tavily for search. Playwright for browser automation. DeepL for fallback
-  translation.
+- DIY search (Serper SERP + trafilatura extraction) per D43. Playwright for
+  browser automation. DeepL for fallback translation.
 - Tests under `pytest`. CI not currently set up.
 
 Every run records: timestamp, git commit SHA, model version, prompt version,

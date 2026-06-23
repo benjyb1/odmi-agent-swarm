@@ -55,14 +55,19 @@ requirements follow.
   a false positive to show up (the discrimination requirement), and a
   well-resourced language so a poor result is the pipeline's doing and not the
   language channel (the no-confound requirement). The two pull the same way here.
-  Malta is the clearest pick: English is an official language and most of its
-  open-data estate is in English, and it still carries about 30 `no` binary golds.
-  The selection table, computed from `ground_truth` over binary questions with a
-  yes/no gold (this denominator, not the all-question yes-share quoted in EXP-7):
+  Malta carries about 30 `no` binary golds, the discrimination requirement.
+  **Correction (D47, 2026-06-22):** the original "English official, clean
+  English testbed" justification is oversold; about half Malta's open-data
+  estate is low-resource Maltese, so Malta is not a no-confound country. Malta
+  is reclassified as in-sample dev under D47 (not a held-out test country), and
+  the no-confound role passes to the higher-resource stratum B of the D47
+  held-out set (FI, HR, SE, BE). The selection table below is retained as the
+  base-rate evidence (computed from `ground_truth` over binary questions with a
+  yes/no gold, this denominator, not the all-question yes-share quoted in EXP-7):
 
-  | Country | Language | binary yes / no | No-share | majority baseline | Role |
+  | Country | Language | binary yes / no | No-share | majority baseline | Role (per D47) |
   |---|---|---|---|---|---|
-  | Malta (MT) | English (official) | 68 / 30 | 31% | 69% | primary test country |
+  | Malta (MT) | English + Maltese (bilingual, mixed-resource) | 68 / 30 | 31% | 69% | in-sample dev |
   | Netherlands (NL) | Dutch (well-resourced) | 93 / 26 | 22% | 78% | secondary (pipeline already runs NL) |
   | Belgium (BE) | French / Dutch / German | 91 / 24 | 21% | 79% | viable, no pairs yet |
   | Sweden (SE) | Swedish | 94 / 27 | 22% | 78% | viable, no pairs yet |

@@ -8,7 +8,13 @@ wrong. No code is written until the contract is locked.
 Read this before touching any agent code. Changes require a numbered decision
 in `docs/SPEC.md`.
 
-Last reviewed: 2026-05-11.
+Last reviewed: 2026-06-23.
+
+> **Search-provider note (2026-06-23).** This document predates D43. Where the
+> text below says "Tavily", read it as the original design; the shipped system
+> is DIY-only (Serper SERP + trafilatura), with Tavily and Brave retired and no
+> provider fallback. The agent remits, contracts, and control flow still hold;
+> only the search backend differs. See `docs/ARCHITECTURE.md` for the live config.
 
 ---
 
@@ -116,8 +122,9 @@ class ResearcherOutput(BaseModel):
 
 ### 3.4 Tools and capabilities
 
-- **Tavily web search.** Up to 3 queries per call, top 5 results each.
-  Snippets returned to the model.
+- **DIY web search (Serper SERP + trafilatura extraction, per D43).** Up to 3
+  queries per call, top results each, snippets selected by the picker funnel and
+  returned to the model.
 - **Playwright browser fetch.** Used when a snippet is insufficient and
   the model wants the full page. Fetched content capped at 4000 chars
   by default (configurable for the `retrieval-tight` optimisation

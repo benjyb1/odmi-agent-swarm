@@ -37,9 +37,10 @@ appendix rather than rated.
 This register exists so we can optimise without overfitting. Two standing rules:
 
 1. **Nothing is tuned on the held-out countries.** Declare the test set before any
-   sweep. Tune on a development set (France plus Malta is the obvious choice given
-   coverage), lock a configuration, and measure once on countries that were never
-   in the loop. The harder countries are the test set, not the optimisation target.
+   sweep. Tune on the fixed development set (NL, MT, NO, FR, AL per D47), lock a
+   configuration, and measure once on the eight held-out countries (BA, MK, ME, BG,
+   FI, HR, SE, BE) that were never in the loop. The harder countries are the test
+   set, not the optimisation target.
 2. **Sweeping a knob is a pre-registered experiment, not a fishing trip.** Each
    entry promoted to an experiment gets a hypothesis and a metric written down
    before it runs, and any multi-knob sweep carries a multiple-comparisons
@@ -173,14 +174,14 @@ the model ever sees.
 
 | ID | Decision | Current | Leverage | Test | Where |
 |----|----------|---------|----------|------|-------|
-| SRCH-1 | Provider and fallback order | auto: Tavily, then DIY, then Brave | High | Hard | search.py:24 |
-| SRCH-2 | Tavily-exhausted detection | keyword match on rate/quota/limit/credit, sticky global flag | Med (operational) | Clean | search.py:304 |
-| SRCH-3 | DIY empty/exception falls through to Brave | yes | Med | Confounded | search.py:324 |
+| SRCH-1 | Provider | DIY only (Serper SERP + trafilatura); no Tavily, no Brave, no fallback (D43) | High | Closed | search.py:24 |
+| SRCH-2 | (obsolete) Tavily-exhausted detection | n/a, Tavily no longer used (D43) | n/a | n/a | search.py:304 |
+| SRCH-3 | (obsolete) DIY empty falls through to Brave | n/a, no provider fallback (D43) | n/a | n/a | search.py:324 |
 | SRCH-4 | max_results_per_query | 5 (set in 4 places) | High | Confounded (recall vs noise) | search.py:348 |
 | SRCH-5 | Narrow-to-trusted-then-widen | trusted first, wide only if empty | High | Hard | researcher.py:370 |
 | SRCH-6 | Widen trigger | only when narrow returns zero | High | Hard | researcher.py:381 |
 | SRCH-7 | Trusted-domain list per country | `data/trusted_domains/<cc>.json` | High | Hard | trusted_domains.py |
-| SRCH-8 | Brave/Serper include-domain cap | first 8 domains | Med | Confounded | search_serper.py:21 |
+| SRCH-8 | Serper include-domain cap | first 8 domains | Med | Confounded | search_serper.py:21 |
 | SRCH-9 | Result dedup and ordering | by URL, first-occurrence order | Med (ordering bias) | Clean | search.py:359 |
 | SRCH-10 | Serper relevance score | `1/position` | Low | Clean | search_serper.py:61 |
 | SRCH-11 | Deny-list contents | 12 domains + 7 path fragments | High (leakage control) | Clean | blocked_domains.py:29 |

@@ -124,10 +124,12 @@ Calls per resolved pair and abstention rate are secondary, reported alongside.
 
 ## 5. Items and sampling
 
-- **Country: Malta primary (R4(c)).** Malta is the base-rate-balanced,
-  well-resourced-language pick: English is an official language so a poor result
-  is the pipeline's doing and not a language artefact, and about 30 binary
-  questions carry a `no` gold so a false `yes` can occur. France (99% `yes`) is
+- **Country: Malta primary (R4(c)).** Malta is the base-rate-balanced pick:
+  about 30 binary questions carry a `no` gold so a false `yes` can occur.
+  (Correction per D47, 2026-06-22: the "English official, no language artefact"
+  justification is oversold; ~half Malta's estate is low-resource Maltese, and
+  Malta is now in-sample dev. EXP-7 is broadened to EXP-20 on NL+AL.) France
+  (99% `yes`) is
   **barred** as the primary set: a recovery number there cannot be told apart from
   majority-class guessing (the explicit D35 / D37 / R4 lesson). **Netherlands** is
   the secondary check (Dutch, well-resourced, 78% majority baseline) if its

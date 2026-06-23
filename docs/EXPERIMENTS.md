@@ -163,7 +163,8 @@ a Wilcoxon token-cost comparison.
 `EXPERIMENTS_PROTOCOL.md` section 0).** The first design built its should_fail
 class almost entirely from France (20 of 21 natural errors), where the binary gold
 is 99% `yes` and a false positive can barely occur. The primary should_fail source
-is now Malta (English official, ~30 `no`-gold binary questions), with Netherlands
+is now Malta (~30 `no`-gold binary questions; the "English official" framing is
+oversold per D47, ~half Maltese and in-sample dev), with Netherlands
 secondary and the France-dominated natural errors plus the injected label-flips
 kept as a robustness arm, reported separately. The earlier partial run on the
 France/injected set (committed at 3 of 89, extended to ~40 of 89 in working state)
@@ -447,8 +448,9 @@ co-primary), abstention rate, and calls per resolved pair. Paired McNemar (×2)
 and Wilcoxon; one confirmatory joint claim (balanced-accuracy non-decrease at a
 non-increased false-positive rate). Full design in `EXPERIMENTS_CHAINING.md`.
 
-Where to run: Malta primary (English official, ~30 `no`-gold binary questions so
-a false `yes` is visible), Netherlands secondary. France is barred (99% `yes`,
+Where to run: Malta primary (~30 `no`-gold binary questions so a false `yes` is
+visible; "English official" is oversold per D47, ~half Maltese, in-sample dev),
+Netherlands secondary. France is barred (99% `yes`,
 recovery indistinguishable from majority-class guessing, the D35 / D37 / R4
 lesson). The lower-resource `no`-heavy countries (BA, MK, ME, BG, IS) are deferred
 to a follow-on so a poor result there is not blamed on language.

@@ -56,8 +56,9 @@ uv run python scripts/dispatch_subtrios.py --pairs <PAIRS> \
 
 After the first condition, sanity-check that the swarm actually used DIY:
 the `phase2_researcher_runs` rows for this experiment_id should show DIY in
-`search_provider_calls`. If they show tavily or brave, the provider flag did
-not take; stop and investigate before spending more.
+`search_provider_calls`. If they show anything other than DIY, the provider flag
+did not take; stop and investigate before spending more. (DIY is the only
+provider per D43; Tavily and Brave are retired.)
 
 ## Step 3 — wait for completion
 The dispatcher is fire-and-forget per pair. Wait until every subtrio for the
