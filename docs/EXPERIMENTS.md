@@ -26,7 +26,7 @@ run) · `running` · `done`.
 | EXP-13 | Verifier verdict wiring + evidence confirmatory | 13a done (NULL, W-gate stands); 13b MOOT (champion = status quo, not dispatched) | 13a free deterministic replay over MT 60 + NO 143 stored trails (simulator must reproduce production on >=95% of pairs); 13b two-arm end-to-end on Sweden bundling the EXP-12b evidence champion | tests H3 (a fail that advises rather than hard-blocks); W-none is a reference column quantifying the Verifier's contribution, not a candidate; lexicographic rule: committed-wrong first, then match, then abstention. `EXPERIMENTS_VERIFIER_EVIDENCE.md` |
 | EXP-14 | Verifier search policy: never / elective / always counter-search | done (partial, 2026-06-23): never vs always on NL; elective stubbed | NL (dev) + AL hard regime; held-out confirmation deferred to the frozen headline run | the "never" arm is the live confirmation of the verifier programme's biggest result (production J 0.10 vs clean 0.42); the "elective" arm gives the Verifier counter-search as a tool it chooses after reading the Researcher's evidence, motivated by the EXP-12b direction split (counter-search helps `no`-claims J 0.35->0.50, hurts `yes`-claims 0.37->0.29) which a fixed routing rule could not exploit (EXP-12c +0.02, dropped). Endpoint J by claim direction + FRR; cost is the tool-call rate on the elective arm. NL not MT: Malta's half-Maltese estate is a language confound (see programme note) |
 | EXP-15 | Adjudicator standalone ablation, under the winning EXP-14 verifier | planned | NL/NO stored trails (replay); no held-out run pre-freeze | isolates the Adjudicator's own contribution (abstain at retry exhaustion vs adjudicate), the cleanest open question in the architecture; re-run under the no-/elective-search verifier so the result reflects the new evidence channel, not the noisy live-search one. Free replay machinery shared with EXP-13a W-none |
-| EXP-16 | Adjudicator free candidate selection | running (2026-06-23): standard vs free on NL, after the attempt_correct CHECK migration | NL primary (balanced), FR easy-tail check | attacks the 74% oracle / 44% observed selection ceiling. Revise the verdict taxonomy so the Adjudicator can commit any of the up-to-4 Researcher attempts' answers explicitly, not just the final-researcher / verifier / neither framing. Endpoint: recovery against the oracle headroom at a held false-positive bound. Confidence ranking already failed here (rec 3, withdrawn), so the selector must reason over evidence |
+| EXP-16 | Adjudicator free candidate selection | done (2026-06-23, NULL): standard vs free on NL; keep standard | NL primary (balanced), FR easy-tail check | attacks the 74% oracle / 44% observed selection ceiling. Revise the verdict taxonomy so the Adjudicator can commit any of the up-to-4 Researcher attempts' answers explicitly, not just the final-researcher / verifier / neither framing. Endpoint: recovery against the oracle headroom at a held false-positive bound. Confidence ranking already failed here (rec 3, withdrawn), so the selector must reason over evidence |
 | EXP-17 | Search-funnel optimisation family | partial: breadth done (NL, r10 wins); picker fidelity done (NL, 2026-06-23, keep picker); truncation pending | FR non-Quality 90 (web-answerable), candidate-recall endpoint | the retrieval gate. Three arms over the lossy DIY funnel: (a) snippet-picker fidelity (current <=3x500-char LLM pick + drop-on-no-pick vs raw trafilatura chunks vs higher cap); (b) breadth / rank-depth (EXP-2a, results/query 5->8/10, queries 3->4); (c) prompt-truncation sweep (`max_chars_per_snippet` 600->1200->full). Measured on candidate recall (gold answer present in any Researcher attempt) to decouple retrieval from selection. FR not MT: the funnel only bites where answers are on the open web, and Malta's abstention ceiling is structural |
 
 ---
@@ -544,7 +544,31 @@ stored multi-attempt trails is possible for a first read before any dispatch. Th
 oracle 74/44 headroom figure is from the Malta stored data; re-derive it on NL
 before adopting any number as the target.
 
-Result: pending (design only).
+Result (2026-06-23, NL, standard vs free). Canonical rows per pair, binary
+yes/no gold, n = 51. Harness `evaluation/analyze_phase1.py
+exp16_adjudicator_selection_nl`.
+
+| arm | commit acc [95% CI] | coverage | yes-rec | no-rec | FP (no-gold) | GBP/pair |
+|---|---|---|---|---|---|---|
+| `standard` (production) | 0.58 [0.43, 0.71] | 0.88 | 0.84 | 0.19 | 18 | 0.051 |
+| `free` (may commit any attempt) | 0.57 [0.42, 0.70] | 0.86 | 0.88 | 0.12 | 17 | 0.054 |
+
+Paired McNemar on the 40 pairs both committed: 1 vs 1, exact p = 1.00.
+**Verdict: keep `standard`** (NULL). `free` did exercise the new capability,
+committing a non-final attempt via `attempt_correct` on 16 of its 52 pairs, so
+the arm was live, not inert. But the picks bought nothing: commit accuracy is a
+hair lower (0.57 vs 0.58), false positives and cost essentially unchanged.
+
+The reading matters for the programme. The selection headroom is real (on NL
+candidate recall 0.63-0.67 sits above commit accuracy ~0.58, a ~10-point
+ceiling; on Malta the oracle gap was 74/44). But giving the Adjudicator free
+choice does not bank it: handed the freedom, it cannot reliably tell which
+earlier attempt holds the correct answer from the evidence as presented. This
+echoes the rec-3 confidence-ranking failure (the correct earlier answers are not
+the high-confidence ones). The ceiling is not closable by widening the
+Adjudicator's choice set alone; it needs a better per-attempt signal than the
+evidence already carries. Honest limits: small n, single dev run, overlapping
+CIs, NL only (the FR high-confidence tail check is still owed).
 
 ## EXP-17: Search-funnel optimisation family
 
