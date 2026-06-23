@@ -239,13 +239,16 @@ Five research questions, aligned to `docs/METHODOLOGY.md` Section 2:
 ### 3.1 System architecture
 
 - Three-agent swarm: **Researcher** (web search + read, structured answer with a
-  quoted source passage) to **Verifier** (adversarial, four strategies: disprove,
-  negation, steelman, blind) to **Adjudicator** (resolves accept/reject/retry and
-  commits the final answer).
+  quoted source passage) to **Verifier** (adversarial; production strategy is
+  `disprove`, with negation / steelman / blind retained as evaluation arms) to
+  **Adjudicator** (resolves accept/reject/retry and commits the final answer).
 - **Coordinator** is a plain Python state machine (`scripts/run_coordinator.py`),
-  not a graph framework (D3 amended). Linear retry loop with bounded retries.
-- LLM access via CLIProxyAPI on `localhost:8317` on a Claude Max subscription
-  (Claude Sonnet currently); no direct Anthropic API billing (D1).
+  not a graph framework (D3 amended). Bounded retry loop: max 3 retries (proxy
+  cushion to 8).
+- LLM access via CLIProxyAPI on `localhost:8317` on a Claude Max subscription;
+  all three agents currently on Sonnet (`claude-sonnet-4-6`); no direct Anthropic
+  API billing (D1). Model-variant comparison (Haiku / Opus / tiered / cross-family
+  Mistral) is pending (EXP-9).
 - Every LLM call writes a receipt row (model version, prompt version, raw
   response, timestamp, cost) to `claude_usage_log`. Every prompt is versioned in
   `prompt_versions` (D5).
@@ -256,7 +259,11 @@ Five research questions, aligned to `docs/METHODOLOGY.md` Section 2:
   and Brave are retired; the provider question is closed. The earlier
   Tavily/DIY/Brave fallback (D36) is superseded.
 - Extraction fix (D29): trafilatura runs on raw HTML before truncation; snippet
-  quality rose from 31% to 58%. A snippet-picker funnel selects the passage.
+  quality rose from 31% to 58%. A snippet-picker funnel selects the passage
+  (kept on: EXP-17 picker showed off is neither cheaper nor better).
+- Production breadth is 3 queries x 3 results per query, page-text cap 16,000
+  chars (D29). EXP-17 breadth favours widening to r10 on NL but production is not
+  switched yet (pending the multi-country confirmation EXP-18).
 - A 30s fetch-stage blocker stops a run that stalls in retrieval (D43).
 - Deny-list (D24) drops ODMI publications and data.europa.eu before retrieval,
   not after.
@@ -384,6 +391,20 @@ Five research questions, aligned to `docs/METHODOLOGY.md` Section 2:
 - **EXP-21** the whole-system headline: the frozen production architecture
   end-to-end on the D47 held-out 8, balance-aware and three-outcome, no adoption
   rule. Gated on a config freeze, run after the re-tests.
+- **EXP-15** Adjudicator standalone ablation (does the Adjudicator earn its keep
+  under the current evidence channel): planned, dev-set replay, no held-out run
+  pre-freeze.
+
+### 4.8 Cross-programme reading
+
+- A recurring result across the verifier and adjudicator programmes
+  (EXP-11/12/13, EXP-14, EXP-16): the incumbent design keeps winning, and the
+  binding precision control is the 0.65 commit floor (D37), not the verifier
+  verdict or the Adjudicator's choice set.
+- The verifier discriminates well on clean frozen evidence (J 0.41) but poorly in
+  the production loop (J 0.10); the gap is the evidence and loop, not the prompt.
+- So the open accuracy gains now look retrieval-side and signal-side, not
+  reasoning-wiring-side. This frames the remaining experiments and the write-up.
 
 ### 4.7 Provenance and reproducibility apparatus
 
