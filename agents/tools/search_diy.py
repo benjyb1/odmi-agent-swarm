@@ -146,16 +146,21 @@ def diy_search(
         cache.fetch_put(r.url, clean, status_code=200, backend="diy")
         return r, clean
 
-    fetched: list[tuple[SearchResult, str]] = []
+    # Results are keyed by submission index so the final order matches the
+    # SERP order, not thread-completion order. as_completed yields futures as
+    # they finish (non-deterministic), which would otherwise leak into the
+    # result order and make runs irreproducible (D-level requirement: every
+    # evaluation must replay identically from logs).
+    results_by_index: dict[int, tuple[SearchResult, str]] = {}
     pool = ThreadPoolExecutor(max_workers=FETCH_PARALLELISM)
     try:
-        futures = [pool.submit(_fetch, r) for r in serp]
+        futures = {pool.submit(_fetch, r): i for i, r in enumerate(serp)}
         # as_completed's own timeout enforces the stage deadline. We avoid the
         # `with` context manager because its __exit__ would block on the hung
         # fetch we are trying to escape; shutdown(wait=False) abandons it (the
         # per-fetch httpx/Playwright timeouts bound it) and we stop now.
         for fut in as_completed(futures, timeout=DIY_FETCH_DEADLINE_S):
-            fetched.append(fut.result())
+            results_by_index[futures[fut]] = fut.result()
     except FuturesTimeout:
         pool.shutdown(wait=False, cancel_futures=True)
         raise BlockerShutdown(
@@ -163,6 +168,11 @@ def diy_search(
             f"{query!r} - likely a Cloudflare/WAF challenge or network blocker"
         )
     pool.shutdown(wait=True)
+    # Reassemble in submission (SERP) order. Every future has resolved by here
+    # (as_completed either delivered all of them or raised above).
+    fetched: list[tuple[SearchResult, str]] = [
+        results_by_index[i] for i in range(len(serp))
+    ]
 
     # 3. Snippet pick (cached). Text is already clean main content.
     out: List[SearchResult] = []
