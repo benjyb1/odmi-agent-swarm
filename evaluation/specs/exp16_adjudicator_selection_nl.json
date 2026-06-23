@@ -1,0 +1,18 @@
+{
+  "run_id": "exp16_adjudicator_selection_nl",
+  "global_parallel": 8,
+  "budget_calls": 4000,
+  "experiments": [
+    {
+      "experiment_id": "exp16_adjudicator_selection_nl",
+      "type": "accuracy",
+      "questions_from": "data/questions/nl_eval_pairs.json",
+      "countries": ["NL"],
+      "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_results_per_query": 5, "num_queries": 3, "max_retries": 3 },
+      "arms": [
+        { "condition_label": "standard", "knobs": {} },
+        { "condition_label": "free", "knobs": { "adjudicator_selection": "free" } }
+      ]
+    }
+  ]
+}

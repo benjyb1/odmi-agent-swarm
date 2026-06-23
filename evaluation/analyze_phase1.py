@@ -40,6 +40,7 @@ ABST = {"inconclusive", "other", "not_applicable", "not applicable",
 DEFAULT_ARMS = {
     "exp14_verifier_search_nl": ("always", "never"),
     "exp17_picker_nl": ("picker_on", "picker_off"),
+    "exp16_adjudicator_selection_nl": ("standard", "free"),
 }
 GBP = 0.79  # USD->GBP, matches dashboard/lib/currency.py
 
