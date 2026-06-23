@@ -320,6 +320,33 @@ precision threshold itself. Replay faithfulness note: 1 abstained pair carries a
 candidate at or above baseline, flagged in the harness output for a later look.
 MT only (base-rate balanced, the point of choosing it); single stored set.
 
+All-country extension (2026-06-23, free replay; `evaluation/floor_sweep_all.py`,
+`evaluation/results/floor_sweep_all.jsonl`). n=60 on one country is too thin to
+gate every commit, so the sweep was pooled over every country with stored data:
+production rows (`experiment_id IS NULL`) for MT, NO, FR, EE, DE, RO, plus NL's
+production-config baseline (the EXP-16 `standard` arm) for its 26 negative golds.
+Pooled n = 360 across 7 countries, 67 negative golds (6x the Malta sample).
+
+| floor | committed | correct | recovered | rec-correct | rec-FP | rec-precision | neg-FPR |
+|---|---|---|---|---|---|---|---|
+| 0.65 | 295 | 248 | 0 | 0 | 0 | n/a | 0.37 |
+| 0.55 | 314 | 261 | 19 | 13 | 6 | 0.68 | 0.39 |
+| 0.50 | 324 | 270 | 29 | 22 | 7 | 0.76 | 0.39 |
+
+**Verdict holds: keep 0.65.** Recovered-answer precision at 0.50 is 0.76 pooled,
+almost identical to Malta's 0.75, so the result is consistent across a much
+larger sample, not a Malta artefact; it sits just under the pre-registered 0.80
+bar. The negative-class false-positive rate barely moves on lowering (0.37 ->
+0.39, inside the 0.05 bound), confirming the floor is a recall dial, not the
+false-positive control. Per-country recommended floors: the three balanced
+countries MT / NO / NL all return 0.65; only the yes-skewed FR and EE lean to
+0.55, where lowering recovers only correct answers because they carry almost no
+negative golds to get wrong (a base-rate artefact, not evidence for a lower
+production floor). Honest scope: NL enters via a production-config experiment
+baseline rather than a true `experiment_id IS NULL` run, and the negative-gold
+mass is still MT + NL + NO; FR / EE / DE / RO add recovery-precision evidence but
+little negative-class signal. The decision is now supported at n=360, not n=60.
+
 ## EXP-11: Verifier redesign evaluation (planned)
 
 Pre-registered and operationalised in `docs/EXPERIMENTS_VERIFIER_REDESIGN.md`,

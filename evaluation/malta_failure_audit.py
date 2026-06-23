@@ -240,9 +240,16 @@ def _substring_failed(val) -> bool:
     return s in ("fail", "failed", "not_found", "no", "false", "0", "missing", "mismatch")
 
 
-def load_pairs(conn, country: str = "MT", experiment_id: Optional[str] = None) -> list:
+def load_pairs(conn, country: str = "MT", experiment_id: Optional[str] = None,
+               condition_label: Optional[str] = None) -> list:
     """One record per finalised pair for `country`, with every signal the coder
-    and the floor sweep need."""
+    and the floor sweep need.
+
+    `condition_label` scopes to one arm of an experiment (phase2_final carries no
+    condition_label, so it is matched via the Researcher rows). This lets a
+    production-config baseline arm (e.g. EXP-16 `standard`) stand in as
+    production-equivalent data for a country that has few `experiment_id IS NULL`
+    rows, without pulling in the varied arm."""
     qmeta = {r["question_id"]: dict(dim=r["dimension"], shape=r["answer_shape"] or "binary",
                                     allowed=json.loads(r["allowed_answers"]) if r["allowed_answers"] else ["yes", "no"])
              for r in conn.execute("select question_id,dimension,answer_shape,allowed_answers from questions")}
@@ -261,6 +268,13 @@ def load_pairs(conn, country: str = "MT", experiment_id: Optional[str] = None) -
         exp_filter, exp_args = "experiment_id = ?", [experiment_id]
     else:
         exp_filter, exp_args = "experiment_id IS NULL", []
+    # Optional arm scoping: keep only pair_run_ids tagged with this condition
+    # label (the label lives on the Researcher rows, not phase2_final).
+    cond_filter = ""
+    if condition_label is not None:
+        cond_filter = (" AND pair_run_id IN (SELECT DISTINCT pair_run_id "
+                       "FROM phase2_researcher_runs WHERE condition_label = ?)")
+        exp_args = [*exp_args, condition_label]
     finals = [dict(r) for r in conn.execute(
         f"""
         WITH ranked AS (
@@ -268,7 +282,7 @@ def load_pairs(conn, country: str = "MT", experiment_id: Optional[str] = None) -
                 PARTITION BY question_id, country_code ORDER BY id DESC
             ) AS _canon_rn
             FROM phase2_final
-            WHERE country_code = ? AND {exp_filter}
+            WHERE country_code = ? AND {exp_filter}{cond_filter}
         )
         SELECT * FROM ranked WHERE _canon_rn = 1
         """, [country, *exp_args])]
