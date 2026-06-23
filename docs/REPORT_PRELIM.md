@@ -51,21 +51,29 @@ Citations and figures sit inside the count for whichever page they appear on.
 
 ### 1.1 Domain and motivation
 
-(TODO, prose. Establish ODMI in two paragraphs. What it is, who runs it
-(Capgemini Invent for the European Commission), what it measures, how it is
-currently collected (national representatives answer a questionnaire, manually
-assessed), and why this matters: the index informs policy benchmarking and
-funding allocation across 36 participating countries. Note the constraints of
-the manual process: labour, inconsistency between assessors, slow refresh
-cycles, weaker coverage and engagement for smaller countries.)
+(To draft into two paragraphs from these points.)
+
+- ODMI is the EU Open Data Maturity Index, run by Capgemini Invent for the
+  European Commission and published annually on data.europa.eu.
+- It measures open-data maturity across four dimensions (Policy, Portal, Quality,
+  Impact) and 17 indicators, via a 143-question questionnaire.
+- Collected manually: national representatives answer the questionnaire, then the
+  responses are assessed by hand.
+- It matters because the index informs policy benchmarking and funding allocation
+  across 36 participating countries.
+- Constraints of the manual process: labour cost, inconsistency between assessors,
+  slow refresh cycles, weaker coverage and engagement for smaller countries.
 
 ### 1.2 Problem statement
 
-(TODO, prose. The manual methodology is a bottleneck. Frame the research
-opportunity: agentic LLMs combined with retrieval can in principle automate the
-evidence-gathering and answering steps. The open question is which questions
-they can answer reliably, which they cannot, and whether the system abstains
-honestly rather than fabricating an answer when the evidence is absent.)
+(To draft from these points.)
+
+- The manual methodology is a bottleneck.
+- Research opportunity: agentic LLMs plus retrieval can in principle automate the
+  evidence-gathering and answering steps.
+- Open questions: which questions the system can answer reliably, which it cannot,
+  and whether it abstains honestly rather than fabricating an answer when the
+  evidence is absent.
 
 ### 1.3 Aims and research questions
 
@@ -127,12 +135,19 @@ Five research questions, aligned to `docs/METHODOLOGY.md` Section 2:
 
 ### 1.6 Methodology in brief
 
-(Half a page when drafted. Two operational pieces.) The evaluation compares each
-finalised swarm answer directly against ODMI's published answer (D22); the
-original answerability rubric is retained as historical analytical context only
-(D6/D8/D9/D10 superseded). The swarm itself is a Researcher to Verifier to
-Adjudicator pipeline driven by a plain Python Coordinator state machine (D3
-amended; not a graph framework). Full methodology in `docs/METHODOLOGY.md`.
+(Half a page when drafted from these points. Full methodology in
+`docs/METHODOLOGY.md`.)
+
+- Evaluation compares each finalised swarm answer directly against ODMI's
+  published answer (D22).
+- The original three-axis answerability rubric is retained as historical
+  analytical context only (D6/D8/D9/D10 superseded).
+- The swarm is a Researcher to Verifier to Adjudicator pipeline, driven by a plain
+  Python Coordinator state machine (D3 amended; not a graph framework).
+- Search is DIY only (D43); honesty controls are an `inconclusive` abstention and
+  a 0.65 commit-confidence floor (D35/D37).
+- The held-out evaluation is base-rate-stratified across eight countries, reported
+  balance-aware and three-outcome (D47).
 
 ---
 
@@ -140,64 +155,82 @@ amended; not a graph framework). Full methodology in `docs/METHODOLOGY.md`.
 
 ### 2.1 Open data maturity assessment
 
-(TODO, prose. The ODMI's place in the European open data policy stack. Reference
-the annual ODMI report, the data.europa.eu portal, the Open Data Directive
-(2019/1024) and the implementing regulation (EU) 2023/138 on high-value
-datasets. Briefly note other digital index methodologies (UN E-Government
-Survey, OECD Going Digital, World Bank Statistical Performance Indicators) to
-establish the wider context.)
+(Points and references to cover; prose to draft.)
+
+- ODMI's place in the European open data policy stack.
+- References: the annual ODMI report, the data.europa.eu portal, the Open Data
+  Directive (2019/1024), the implementing regulation (EU) 2023/138 on high-value
+  datasets.
+- Wider context: other digital index methodologies (UN E-Government Survey, OECD
+  Going Digital, World Bank Statistical Performance Indicators).
 
 ### 2.2 Agentic LLM systems
 
-(TODO, prose. Define agentic LLM systems and where they sit between zero-shot
-chat and full autonomous agents. Cover the standard architectures: tool-augmented
-chains, multi-agent systems with role specialisation, retrieval-augmented
-generation, and adversarial / red-team verification. Key references: ReAct,
-AutoGen, recent multi-agent papers from 2024-2025. Note for honesty: the project
-uses a plain Python state machine, not a graph-orchestration framework (D3
-amended); the related-work discussion of graph runtimes stays as context, but
-the system does not depend on one.)
+(Points and references to cover.)
+
+- Define agentic LLM systems and place them between zero-shot chat and fully
+  autonomous agents.
+- Standard architectures: tool-augmented chains, multi-agent systems with role
+  specialisation, retrieval-augmented generation, adversarial / red-team
+  verification.
+- References: ReAct, AutoGen, recent multi-agent work 2024-2025.
+- Honesty note for the write-up: the project uses a plain Python state machine,
+  not a graph-orchestration framework (D3 amended); the graph-runtime discussion
+  stays as related-work context, the system does not depend on one.
 
 ### 2.3 LLM evaluation on real-world tasks
 
-(TODO, prose. Benchmarks that approximate this problem: GAIA, ToolBench,
-AgentBench, WebArena, MMLU-Pro. The literature gap: these test general competence
-on synthetic tasks. ODMI is a real-world, multilingual, policy-evaluation task
-with published ground truth, a different evaluation regime.)
+(Points and references to cover.)
+
+- Benchmarks that approximate this problem: GAIA, ToolBench, AgentBench, WebArena,
+  MMLU-Pro.
+- Literature gap: these test general competence on synthetic tasks.
+- Contrast: ODMI is a real-world, multilingual, policy-evaluation task with
+  published ground truth, a different evaluation regime.
 
 ### 2.4 Hallucination, faithfulness, and adversarial verification
 
-(TODO, prose. The faithfulness problem in retrieval-augmented systems. Survey
-mitigations: source citation, dual-confidence scoring, adversarial verifiers,
-chain-of-verification. The argument for a Verifier prompted to disprove rather
-than confirm, and for honest abstention under a confidence floor rather than a
-forced guess. Tie to the project's deterministic quote-grounding gate and the
-0.65 commit-confidence floor.)
+(Points and references to cover.)
+
+- The faithfulness problem in retrieval-augmented systems.
+- Mitigations to survey: source citation, dual-confidence scoring, adversarial
+  verifiers, chain-of-verification.
+- Argument for a Verifier prompted to disprove rather than confirm, and for honest
+  abstention under a confidence floor rather than a forced guess.
+- Tie-in to the project's own controls: the deterministic quote-grounding gate
+  (D34, matcher v2) and the 0.65 commit-confidence floor (D37).
 
 ### 2.5 Multilingual evidence and policy text
 
-(TODO, prose. LLM performance on low-resource European languages. Relevant to the
-held-out evaluation's stratum A (Bosnian, Macedonian, Montenegrin, Bulgarian) and
-the dev-set low-resource cases (Maltese, Albanian). Document-level translation
-versus native multilingual reading. The case for treating multilingual recall as
-a retrieval question inside the DIY pipeline, not a provider comparison.)
+(Points and references to cover.)
+
+- LLM performance on low-resource European languages.
+- Relevance to this project: held-out stratum A (Bosnian, Macedonian,
+  Montenegrin, Bulgarian) and the dev-set low-resource cases (Maltese, Albanian).
+- Document-level translation versus native multilingual reading.
+- Position taken: multilingual recall is a retrieval question inside the DIY
+  pipeline, not a provider comparison (D43).
 
 ### 2.6 Automated policy and benchmark analysis
 
-(TODO, prose. Closer related work: AI for civic and policy analysis, AI for
-academic benchmark production, prior attempts at automating index-style
-benchmarks. The novelty: applying verified multi-agent retrieval to a policy
-index that is currently manually collected, with empirical evaluation against
-published ground truth.)
+(Points and references to cover.)
+
+- Closer related work: AI for civic and policy analysis, AI for academic benchmark
+  production, prior attempts at automating index-style benchmarks.
+- Novelty: applying verified multi-agent retrieval to a policy index that is
+  currently manually collected, with empirical evaluation against published ground
+  truth.
 
 ### 2.7 Gap statement
 
-(TODO, half a page prose. Synthesise: (i) ODMI is a substantively important index
-with a manual bottleneck; (ii) agentic LLM systems are now capable of the
-component tasks; (iii) no prior work has applied verified multi-agent retrieval
-to a real policy index of this scale with empirical evaluation against ground
-truth; (iv) the failure-mode taxonomy that emerges is itself a contribution to
-the agentic-AI evaluation literature.)
+(Half a page to synthesise from these four points.)
+
+- ODMI is a substantively important index with a manual bottleneck.
+- Agentic LLM systems are now capable of the component tasks.
+- No prior work has applied verified multi-agent retrieval to a real policy index
+  of this scale with empirical evaluation against ground truth.
+- The failure-mode taxonomy that emerges (FM-01..FM-34) is itself a contribution
+  to the agentic-AI evaluation literature.
 
 ---
 
