@@ -20,7 +20,7 @@ run) · `running` · `done`.
 | EXP-7 | Retry chaining: accumulate evidence across the loop | done (2026-06-11) | Malta primary, 40 pairs/arm | chained beats baseline directionally: balanced accuracy 0.217 vs 0.167, recoveries 9 vs 6, false-positive rate 0.18 vs 0.25 (not raised, the co-primary), abstention 0.725 vs 0.80. Recovery McNemar p=0.375 (not significant; underpowered by Malta's 72-80% abstention ceiling). Per-pair call median delta 0 (Wilcoxon p=0.83). Pre-registered joint non-inferiority claim passes. Verdict: promising, not proven; adopt as the optimisation baseline. Result: `evaluation/results/chaining_retry_chaining_mt_v1.json`. |
 | EXP-8 | Cost-side optimisations (Family 1) | planned | baseline + prompt-compressed / retrieval-tight / cache-hot / model-fallback; MT primary, NL secondary | unblocked; Malta baseline done (60/60), condition-tagged runs over the same pair list are runnable |
 | EXP-9 | Model variants (Family 3) | running (2026-06-09) | Haiku / Sonnet / Opus / tiered / Mistral; MT primary, NL secondary | dispatching all five arms over the Malta 60 via `scripts/run_exp9_model_variants.sh`, knobs pinned (provider diy, cold cache, disprove, 5 results, 3 retries, full prompt, unchained), only the model varies. Mistral-large-latest added as a cross-family arm. Caveat: overlaps the Norway dev sweep, so the latency endpoint may be contention-inflated; token-cost and accuracy unaffected. |
-| EXP-10 | Malta failure-mode audit + confidence-floor recovery | planned | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | unblocked; 60 finalised Malta pairs available (batches exp6_malta + malta_baseline), failure taxonomy drafted (search-empty, resume-orphan, abstention, conservative-FN, FP); floor sweep is free |
+| EXP-10 | Malta failure-mode audit + confidence-floor recovery | done (2026-06-23, free replay): keep the 0.65 floor; non-matches are 61% fixable, 0% structural | MT finalised pairs vs ground truth; Phase A taxonomy, Phase B floor sweep | floor sweep validates 0.65 by the pre-registered rule (lowering to 0.50 recovers 6 correct but at 0.75 precision, below the 0.80 bar; negative-class FPR flat at 0.13 across floors). Phase A: of 28 non-matches, 17 fixable (7 fetch 4xx/5xx, 6 below-floor, 4 other), 11 genuine wrong, 0 structural. Biggest fixable bucket is retrieval-side |
 | EXP-11 | Verifier redesign: tristate verdict, gated extremes, absence policy | stage 0 done (2026-06-10); stage 1 done (2026-06-11), redesign NOT adopted (null); stage 2 not triggered | stage 0 free replays (knobs frozen); stage 1 classifier ladder, MT+NO dev / NL confirmatory / FR-augmented robustness; stage 2 end-to-end paired dispatch on SE | stage 0 shipped matcher v2 (P4), dropped the absence ceiling and parked the receipts check; stage 1 dev ladder (150 candidates) is a clean NULL: incumbent disprove J=0.41 beats tristate (J=0.03) and the deterministic gate (J=0.02), which collapse the adversarial catch. Key reframing: disprove discriminates well on clean frozen evidence, so the Malta "no discrimination" was the production evidence/loop, not the prompt. Redesign not adopted; NL confirmatory not triggered. Runbook `EXPERIMENTS_VERIFIER_REDESIGN.md`; diagnosis `VERIFIER_REDESIGN.md`. Successor questions pre-registered as EXP-12/EXP-13 |
 | EXP-12 | Verifier evidence: premise diagnostic + evidence ladder | done (2026-06-11). 12a H1 supported; 12b H2 REFUTED; 12c shape-conditional lead closed | 12a free matched-pair production-vs-frozen on stored MT/NO; 12b evidence ladder E5/E0/E1 (+E2/E3) on the 150 dev candidates, J primary | follows the EXP-11 reframing; 12a tests whether the discrimination gap is an evidence effect (H1) before money is spent; 12b holds disprove fixed and varies only the evidence block, phase 1 reuses the stage 1 freeze (zero new searches). `EXPERIMENTS_VERIFIER_EVIDENCE.md` |
 | EXP-13 | Verifier verdict wiring + evidence confirmatory | 13a done (NULL, W-gate stands); 13b MOOT (champion = status quo, not dispatched) | 13a free deterministic replay over MT 60 + NO 143 stored trails (simulator must reproduce production on >=95% of pairs); 13b two-arm end-to-end on Sweden bundling the EXP-12b evidence champion | tests H3 (a fail that advises rather than hard-blocks); W-none is a reference column quantifying the Verifier's contribution, not a candidate; lexicographic rule: committed-wrong first, then match, then abstention. `EXPERIMENTS_VERIFIER_EVIDENCE.md` |
@@ -280,10 +280,45 @@ confidences, reporting the recovery-precision trade-off and adopting a lower flo
 only under a pre-set precision and false-positive bound. Malta being base-rate
 balanced (R4) is what makes the false-positive check meaningful.
 
-Harness: `evaluation/malta_failure_audit.py` (to build). Phase A runs incrementally
+Harness: `evaluation/malta_failure_audit.py` (built). Phase A runs incrementally
 on whatever Malta pairs exist; the floor sweep needs no quota. Tavily-independent.
 
-Result: pending.
+Result (2026-06-23, MT n=60, free replay; `evaluation/results/malta_failure_audit_MT.jsonl`).
+Match status 32 match / 17 abstain / 11 differ.
+
+Phase A taxonomy of the 28 non-match pairs:
+
+| cause | class | n | share [95% CI] |
+|---|---|---|---|
+| wrong_answer | error | 11 | 0.18 [0.11, 0.30] |
+| fetch_4xx_5xx | fixable | 7 | 0.12 [0.06, 0.22] |
+| below_floor | fixable | 6 | 0.10 [0.05, 0.20] |
+| substring_gate | fixable | 2 | 0.03 [0.01, 0.11] |
+| abstain_other | fixable | 2 | 0.03 [0.01, 0.11] |
+
+17 fixable, 11 genuine error, **0 structural**. The largest fixable bucket is
+retrieval-side (fetch 4xx/5xx), reinforcing that the open gains are in
+retrieval, not reasoning wiring.
+
+Phase B confidence-floor sweep:
+
+| floor | committed | correct | recovered | rec-correct | rec-FP | rec-precision | neg-FPR |
+|---|---|---|---|---|---|---|---|
+| 0.65 | 44 | 32 | 0 | 0 | 0 | n/a | 0.13 |
+| 0.55 | 47 | 34 | 3 | 2 | 1 | 0.67 | 0.13 |
+| 0.50 | 52 | 38 | 8 | 6 | 2 | 0.75 | 0.13 |
+
+**Verdict: keep the 0.65 floor.** The pre-registered rule (adopt a lower floor
+only if recovered-answer precision >= 0.80 and negative-class FPR rises by no
+more than 0.05) rejects both lower settings: lowering to 0.50 recovers 6 correct
+answers but admits 2 wrong (0.75 precision, under the 0.80 bar). One honest
+nuance: the negative-class false-positive rate is flat at 0.13 across all three
+floors, so the floor is not what drives false positives, and the 0.50 case
+(6 correct for 2 wrong, no FPR rise) is closer than the binary verdict suggests.
+The pre-registered bar holds it at 0.65; a future run could revisit the 0.80
+precision threshold itself. Replay faithfulness note: 1 abstained pair carries a
+candidate at or above baseline, flagged in the harness output for a later look.
+MT only (base-rate balanced, the point of choosing it); single stored set.
 
 ## EXP-11: Verifier redesign evaluation (planned)
 

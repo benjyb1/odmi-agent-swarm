@@ -56,7 +56,7 @@ Last updated 2026-06-23 (after EXP-14, EXP-16, EXP-17 picker/breadth).
 |---|---|---|---|
 | Candidate selection | standard (researcher_correct / verifier_correct / neither / escalate_human) | EXP-16 (free choice of any attempt gained nothing) | kept |
 | Finalisation answer | the Adjudicator's own answer, not the last Researcher output | D32 | adopted |
-| Commit-confidence floor | 0.65; abstain (`inconclusive`) below it | D37 | adopted |
+| Commit-confidence floor | 0.65; abstain (`inconclusive`) below it | D37; confirmed by EXP-10 (lowering fails the recovered-precision bar) | adopted |
 
 ## Retry loop
 
