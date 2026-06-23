@@ -100,18 +100,25 @@ class IrisClient:
         self._last = time.monotonic()
 
     def _get(self, url: str, params: Optional[list] = None) -> dict:
-        last: Optional[httpx.Response] = None
-        for attempt in range(3):
+        last_exc: Optional[Exception] = None
+        for attempt in range(4):
             self._throttle()
-            last = self._http.get(url, params=params)
-            if last.status_code == 200:
-                return last.json()
-            if last.status_code in (429, 500, 502, 503, 504) and attempt < 2:
+            try:
+                resp = self._http.get(url, params=params)
+            except httpx.HTTPError as exc:
+                # Transient transport error (server disconnect, timeout). IRIS
+                # drops connections intermittently; back off and retry.
+                last_exc = exc
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            if resp.status_code == 200:
+                return resp.json()
+            if resp.status_code in (429, 500, 502, 503, 504) and attempt < 3:
                 time.sleep(2 ** attempt)
                 continue
-            break
-        assert last is not None
-        last.raise_for_status()
+            resp.raise_for_status()
+        if last_exc is not None:
+            raise last_exc
         return {}
 
     # --- search / count ------------------------------------------------------
@@ -212,10 +219,17 @@ class IrisClient:
         return out
 
     def download(self, bitstream: Bitstream) -> bytes:
-        self._throttle()
-        resp = self._http.get(bitstream.content_url)
-        resp.raise_for_status()
-        return resp.content
+        last_exc: Optional[Exception] = None
+        for attempt in range(4):
+            self._throttle()
+            try:
+                resp = self._http.get(bitstream.content_url)
+                resp.raise_for_status()
+                return resp.content
+            except httpx.HTTPError as exc:
+                last_exc = exc
+                time.sleep(1.5 * (attempt + 1))
+        raise last_exc  # type: ignore[misc]
 
     # --- convenience ---------------------------------------------------------
 
