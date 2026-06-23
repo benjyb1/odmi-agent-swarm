@@ -191,11 +191,79 @@ def preflight(spec: Dict[str, Any]) -> List[str]:
 
 
 # --------------------------------------------------------------------------- #
+# Pre-registration (R1) and idempotent resume
+# --------------------------------------------------------------------------- #
+
+def unregistered_in_spec(spec: Dict[str, Any], registered: set) -> List[str]:
+    """Return an error per experiment_id absent from the `experiments` table.
+
+    R1 (EXPERIMENTS_PROTOCOL.md) requires every experiment to be pre-registered
+    with its endpoints and adoption rule before it runs, so the analysis plan
+    is fixed blind. The orchestrator enforces this by construction: an
+    unregistered id is a hard preflight error, not a thing to remember.
+    """
+    errors: List[str] = []
+    for exp in spec["experiments"]:
+        eid = exp.get("experiment_id")
+        if eid and eid not in registered:
+            errors.append(
+                f"{eid}: not pre-registered; add a row to the `experiments` "
+                f"table (id, name, description with endpoints and the adoption "
+                f"rule, conditions) before running (R1)"
+            )
+    return errors
+
+
+def remaining_pairs(pairs: List[str], finalised: set) -> List[str]:
+    """Drop already-finalised pairs, preserving order.
+
+    Re-running a spec is the sanctioned resume path. Skipping pairs that
+    already wrote a `phase2_final` row for this arm makes a resume idempotent:
+    no duplicate finalisations, no re-spend on completed work. The canonical
+    row for analysis is then simply the one finalisation per (question,
+    country, condition); duplicates from older interrupted runs are superseded
+    by the latest.
+    """
+    return [p for p in pairs if p not in finalised]
+
+
+# --------------------------------------------------------------------------- #
 # DB health and budget
 # --------------------------------------------------------------------------- #
 
 def _conn() -> sqlite3.Connection:
     return sqlite3.connect(str(DB_PATH))
+
+
+def registered_experiment_ids() -> set:
+    """The set of experiment_ids pre-registered in the `experiments` table."""
+    try:
+        with _conn() as c:
+            return {
+                r[0] for r in c.execute(
+                    "SELECT experiment_id FROM experiments"
+                ).fetchall()
+            }
+    except sqlite3.Error:
+        return set()
+
+
+def finalised_pairs(experiment_id: str, condition_label: str) -> set:
+    """The 'QID:CC' pairs already finalised for one arm (resume skip set).
+
+    Scoped by experiment_id and condition_label (the latter via the Researcher
+    rows, since phase2_final carries no condition_label) so one arm never
+    treats another arm's finalisations as its own.
+    """
+    with _conn() as c:
+        return {
+            f"{r[0]}:{r[1]}" for r in c.execute(
+                "SELECT DISTINCT f.question_id, f.country_code FROM phase2_final f "
+                "JOIN phase2_researcher_runs r ON r.pair_run_id = f.pair_run_id "
+                "WHERE f.experiment_id IS ? AND r.condition_label IS ?",
+                (experiment_id, condition_label),
+            ).fetchall()
+        }
 
 def calls_since(ts: str) -> int:
     with _conn() as c:
@@ -323,17 +391,32 @@ def run(spec: Dict[str, Any], dry_run: bool) -> int:
 
     if dry_run:
         for exp, arm, pairs in queue:
-            cmd = build_command(exp, arm, pairs, spec["global_parallel"])
-            log("dry_run_arm", experiment_id=exp["experiment_id"],
-                condition_label=arm["condition_label"], n_pairs=len(pairs),
-                no_cache="--no-cache" in cmd, command=" ".join(cmd[:12]) + " ...")
+            eid, label = exp["experiment_id"], arm["condition_label"]
+            done = finalised_pairs(eid, label)
+            todo = remaining_pairs(pairs, done)
+            cmd = build_command(exp, arm, todo or pairs, spec["global_parallel"])
+            log("dry_run_arm", experiment_id=eid, condition_label=label,
+                n_pairs=len(pairs), already_finalised=len(pairs) - len(todo),
+                remaining=len(todo), no_cache="--no-cache" in cmd,
+                command=" ".join(cmd[:12]) + " ...")
         log("dry_run_done")
         return 0
 
     for exp, arm, pairs in queue:
         eid, label = exp["experiment_id"], arm["condition_label"]
+        # Idempotent resume: skip pairs this arm has already finalised, so a
+        # re-run neither re-spends on completed work nor writes duplicate rows.
+        done = finalised_pairs(eid, label)
+        todo = remaining_pairs(pairs, done)
+        if not todo:
+            log("arm_skipped", experiment_id=eid, condition_label=label,
+                reason="all pairs already finalised", n_pairs=len(pairs))
+            continue
+        if done:
+            log("arm_resume", experiment_id=eid, condition_label=label,
+                already_finalised=len(done), remaining=len(todo))
         spent = calls_since(started)
-        projected = spent + len(pairs) * CALLS_PER_PAIR_WORST
+        projected = spent + len(todo) * CALLS_PER_PAIR_WORST
         if spec["budget_calls"] is not None and projected > spec["budget_calls"]:
             log("PAUSE_budget", reason="next arm would breach the call budget",
                 spent=spent, projected=projected, budget=spec["budget_calls"],
@@ -343,8 +426,8 @@ def run(spec: Dict[str, Any], dry_run: bool) -> int:
             return 2
 
         log("arm_start", experiment_id=eid, condition_label=label,
-            n_pairs=len(pairs), calls_spent=spent)
-        cmd = build_command(exp, arm, pairs, spec["global_parallel"])
+            n_pairs=len(todo), calls_spent=spent)
+        cmd = build_command(exp, arm, todo, spec["global_parallel"])
         result = subprocess.run(cmd, cwd=str(REPO))
         if result.returncode != 0:
             log("PAUSE_dispatch_error", experiment_id=eid, condition_label=label,
@@ -383,7 +466,7 @@ def main() -> int:
     args = ap.parse_args()
 
     spec = load_spec(args.spec)
-    errors = preflight(spec)
+    errors = preflight(spec) + unregistered_in_spec(spec, registered_experiment_ids())
     if errors:
         print("PREFLIGHT FAILED:")
         for e in errors:

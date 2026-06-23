@@ -13,6 +13,8 @@ from scripts.run_experiments import (
     build_command,
     expand_pairs,
     preflight,
+    remaining_pairs,
+    unregistered_in_spec,
 )
 
 
@@ -116,6 +118,35 @@ def test_build_command_accuracy_may_keep_cache():
     exp = {"experiment_id": "x", "type": "accuracy", "baseline_knobs": {}}
     arm = {"condition_label": "c", "knobs": {}}
     assert "--no-cache" not in build_command(exp, arm, ["A:NL"], 8)
+
+
+def test_unregistered_experiment_blocks():
+    # R1: an experiment must be pre-registered in the `experiments` table
+    # before it may run. An unknown id is a hard error.
+    spec = _valid_spec()  # experiment_id "x"
+    errors = unregistered_in_spec(spec, registered={"other"})
+    assert any("not pre-registered" in e and "x" in e for e in errors)
+
+
+def test_registered_experiment_passes():
+    spec = _valid_spec()
+    assert unregistered_in_spec(spec, registered={"x"}) == []
+
+
+def test_remaining_pairs_skips_finalised_preserving_order():
+    pairs = ["A:NL", "B:NL", "C:NL", "D:NL"]
+    done = {"B:NL", "D:NL"}
+    assert remaining_pairs(pairs, done) == ["A:NL", "C:NL"]
+
+
+def test_remaining_pairs_none_done_is_identity():
+    pairs = ["A:NL", "B:NL"]
+    assert remaining_pairs(pairs, set()) == pairs
+
+
+def test_remaining_pairs_all_done_is_empty():
+    pairs = ["A:NL", "B:NL"]
+    assert remaining_pairs(pairs, {"A:NL", "B:NL"}) == []
 
 
 def test_build_command_threads_knobs():

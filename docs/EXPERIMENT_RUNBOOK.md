@@ -85,6 +85,29 @@ Dry-run any spec first: `uv run python scripts/run_experiments.py spec.json
 5. **Unique labels.** Every arm has a distinct `condition_label`, so the resume
    path and cost attribution stay clean (the lookup is scoped by
    `experiment_id` + `condition_label`).
+6. **Pre-registered (R1).** Every `experiment_id` in the spec must already have a
+   row in the `experiments` table (its endpoints and adoption rule, fixed before
+   the run). An unregistered id is a hard error, not a thing to remember: the
+   gate exists because a run once started on an unregistered experiment and was
+   caught only by hand. Register first, run second.
+
+## Idempotent resume and the canonical row
+
+Re-running a spec is the resume path, and it is idempotent. Before each arm the
+orchestrator reads the pairs that arm has already finalised (a `phase2_final`
+row scoped to this `experiment_id` + `condition_label`) and dispatches only the
+remainder; an arm with nothing left is skipped, logged as `arm_skipped`. So a
+resume never re-spends on completed work and never writes a duplicate
+finalisation. Each `arm_start` logs `already_finalised` / `remaining`, which is
+also the cheapest way to read true run state from the DB rather than a possibly
+stale prose handover.
+
+Older interrupted runs may still have left duplicate `phase2_final` rows for the
+same pair (from before this gate, or a kill mid-flight). The analysis rule is
+therefore explicit: the **canonical row** for a pair is the latest
+`phase2_final` for that `(question, country, condition_label)`; earlier
+duplicates are superseded, never summed. Reporting that counts raw rows would
+double-count; always dedup to the canonical row first.
 
 ## Reflection points (when to stop and think)
 
