@@ -24,10 +24,10 @@ run) · `running` · `done`.
 | EXP-11 | Verifier redesign: tristate verdict, gated extremes, absence policy | stage 0 done (2026-06-10); stage 1 done (2026-06-11), redesign NOT adopted (null); stage 2 not triggered | stage 0 free replays (knobs frozen); stage 1 classifier ladder, MT+NO dev / NL confirmatory / FR-augmented robustness; stage 2 end-to-end paired dispatch on SE | stage 0 shipped matcher v2 (P4), dropped the absence ceiling and parked the receipts check; stage 1 dev ladder (150 candidates) is a clean NULL: incumbent disprove J=0.41 beats tristate (J=0.03) and the deterministic gate (J=0.02), which collapse the adversarial catch. Key reframing: disprove discriminates well on clean frozen evidence, so the Malta "no discrimination" was the production evidence/loop, not the prompt. Redesign not adopted; NL confirmatory not triggered. Runbook `EXPERIMENTS_VERIFIER_REDESIGN.md`; diagnosis `VERIFIER_REDESIGN.md`. Successor questions pre-registered as EXP-12/EXP-13 |
 | EXP-12 | Verifier evidence: premise diagnostic + evidence ladder | done (2026-06-11). 12a H1 supported; 12b H2 REFUTED; 12c shape-conditional lead closed | 12a free matched-pair production-vs-frozen on stored MT/NO; 12b evidence ladder E5/E0/E1 (+E2/E3) on the 150 dev candidates, J primary | follows the EXP-11 reframing; 12a tests whether the discrimination gap is an evidence effect (H1) before money is spent; 12b holds disprove fixed and varies only the evidence block, phase 1 reuses the stage 1 freeze (zero new searches). `EXPERIMENTS_VERIFIER_EVIDENCE.md` |
 | EXP-13 | Verifier verdict wiring + evidence confirmatory | 13a done (NULL, W-gate stands); 13b MOOT (champion = status quo, not dispatched) | 13a free deterministic replay over MT 60 + NO 143 stored trails (simulator must reproduce production on >=95% of pairs); 13b two-arm end-to-end on Sweden bundling the EXP-12b evidence champion | tests H3 (a fail that advises rather than hard-blocks); W-none is a reference column quantifying the Verifier's contribution, not a candidate; lexicographic rule: committed-wrong first, then match, then abstention. `EXPERIMENTS_VERIFIER_EVIDENCE.md` |
-| EXP-14 | Verifier search policy: never / elective / always counter-search | planned | NL (dev) + AL hard regime; held-out confirmation deferred to the frozen headline run | the "never" arm is the live confirmation of the verifier programme's biggest result (production J 0.10 vs clean 0.42); the "elective" arm gives the Verifier counter-search as a tool it chooses after reading the Researcher's evidence, motivated by the EXP-12b direction split (counter-search helps `no`-claims J 0.35->0.50, hurts `yes`-claims 0.37->0.29) which a fixed routing rule could not exploit (EXP-12c +0.02, dropped). Endpoint J by claim direction + FRR; cost is the tool-call rate on the elective arm. NL not MT: Malta's half-Maltese estate is a language confound (see programme note) |
+| EXP-14 | Verifier search policy: never / elective / always counter-search | done (partial, 2026-06-23): never vs always on NL; elective stubbed | NL (dev) + AL hard regime; held-out confirmation deferred to the frozen headline run | the "never" arm is the live confirmation of the verifier programme's biggest result (production J 0.10 vs clean 0.42); the "elective" arm gives the Verifier counter-search as a tool it chooses after reading the Researcher's evidence, motivated by the EXP-12b direction split (counter-search helps `no`-claims J 0.35->0.50, hurts `yes`-claims 0.37->0.29) which a fixed routing rule could not exploit (EXP-12c +0.02, dropped). Endpoint J by claim direction + FRR; cost is the tool-call rate on the elective arm. NL not MT: Malta's half-Maltese estate is a language confound (see programme note) |
 | EXP-15 | Adjudicator standalone ablation, under the winning EXP-14 verifier | planned | NL/NO stored trails (replay); no held-out run pre-freeze | isolates the Adjudicator's own contribution (abstain at retry exhaustion vs adjudicate), the cleanest open question in the architecture; re-run under the no-/elective-search verifier so the result reflects the new evidence channel, not the noisy live-search one. Free replay machinery shared with EXP-13a W-none |
-| EXP-16 | Adjudicator free candidate selection | planned | NL primary (balanced), FR easy-tail check | attacks the 74% oracle / 44% observed selection ceiling. Revise the verdict taxonomy so the Adjudicator can commit any of the up-to-4 Researcher attempts' answers explicitly, not just the final-researcher / verifier / neither framing. Endpoint: recovery against the oracle headroom at a held false-positive bound. Confidence ranking already failed here (rec 3, withdrawn), so the selector must reason over evidence |
-| EXP-17 | Search-funnel optimisation family | planned | FR non-Quality 90 (web-answerable), candidate-recall endpoint | the retrieval gate. Three arms over the lossy DIY funnel: (a) snippet-picker fidelity (current <=3x500-char LLM pick + drop-on-no-pick vs raw trafilatura chunks vs higher cap); (b) breadth / rank-depth (EXP-2a, results/query 5->8/10, queries 3->4); (c) prompt-truncation sweep (`max_chars_per_snippet` 600->1200->full). Measured on candidate recall (gold answer present in any Researcher attempt) to decouple retrieval from selection. FR not MT: the funnel only bites where answers are on the open web, and Malta's abstention ceiling is structural |
+| EXP-16 | Adjudicator free candidate selection | running (2026-06-23): standard vs free on NL, after the attempt_correct CHECK migration | NL primary (balanced), FR easy-tail check | attacks the 74% oracle / 44% observed selection ceiling. Revise the verdict taxonomy so the Adjudicator can commit any of the up-to-4 Researcher attempts' answers explicitly, not just the final-researcher / verifier / neither framing. Endpoint: recovery against the oracle headroom at a held false-positive bound. Confidence ranking already failed here (rec 3, withdrawn), so the selector must reason over evidence |
+| EXP-17 | Search-funnel optimisation family | partial: breadth done (NL, r10 wins); picker fidelity done (NL, 2026-06-23, keep picker); truncation pending | FR non-Quality 90 (web-answerable), candidate-recall endpoint | the retrieval gate. Three arms over the lossy DIY funnel: (a) snippet-picker fidelity (current <=3x500-char LLM pick + drop-on-no-pick vs raw trafilatura chunks vs higher cap); (b) breadth / rank-depth (EXP-2a, results/query 5->8/10, queries 3->4); (c) prompt-truncation sweep (`max_chars_per_snippet` 600->1200->full). Measured on candidate recall (gold answer present in any Researcher attempt) to decouple retrieval from selection. FR not MT: the funnel only bites where answers are on the open web, and Malta's abstention ceiling is structural |
 
 ---
 
@@ -463,7 +463,33 @@ Albania as the thin-web low-resource cross-check. No held-out country is touched
 the winning policy is confirmed only at the final frozen headline run (D47). The
 `never` arm doubles as the live confirmation owed from verifier open question 4.
 
-Result: pending (design only).
+Result (2026-06-23, NL, never vs always; the elective arm was stubbed, not run).
+Canonical rows per pair, binary yes/no gold, n = 51. Harness
+`evaluation/analyze_phase1.py exp14_verifier_search_nl`.
+
+| arm | commit acc [95% CI] | coverage | yes-rec | no-rec | FP (no-gold) | GBP/pair |
+|---|---|---|---|---|---|---|
+| `always` (production) | 0.59 [0.43, 0.72] | 0.80 | 0.84 | 0.12 | 15 | 0.057 |
+| `never` | 0.61 [0.47, 0.74] | 0.86 | 0.88 | 0.19 | 16 | 0.045 |
+
+Paired McNemar on the 38 pairs both arms committed: 0 always-only-right, 2
+never-only-right, exact p = 0.50, so no end-to-end accuracy difference. `never`
+is cheaper and commits more, but its no-gold false-positive rate is higher
+(0.62 vs 0.58), which fails the pre-registered rule (never may not raise the
+false-positive rate). **Verdict: keep `always`.**
+
+This is the live end-to-end null behind the EXP-12 in-loop finding, and it
+reconciles cleanly. EXP-12 scored the Verifier's verdict as a classifier on
+frozen evidence, where live counter-search hurt (J 0.10 vs 0.42). End to end on
+balanced NL, removing that search does not lift commit accuracy: the
+counter-search's working contribution is the abstention it triggers on thin
+evidence, which suppresses a few false positives on `no`-gold pairs. The
+clean-evidence J advantage does not translate into an end-to-end win, and the
+live search earns its keep on the false-positive margin, barely. Honest limits:
+small n, single dev run, CIs wide and overlapping; the `always` arm mixes prior
+and re-run pairs (idempotent resume kept the prior finalisations) while `never`
+is prior-session data; descriptive, not powered. The elective arm (the new
+mechanism, decide-to-search-after-reading) is still owed.
 
 ## EXP-15: Adjudicator standalone ablation, under the EXP-14 verifier
 
@@ -551,4 +577,32 @@ non-Quality 90 primary (web-answerable, so candidate recall actually responds to
 funnel changes; Malta's abstention ceiling is structural and would mask the
 effect); repeat on a thin-web country once the FR read is in.
 
-Result: pending (design only).
+Result, arm (a) picker fidelity (2026-06-23, NL not FR, picker_on vs picker_off).
+Canonical rows per pair, binary yes/no gold, n = 50. Harness
+`evaluation/analyze_phase1.py exp17_picker_nl`.
+
+| arm | cand recall | commit acc [95% CI] | coverage | FP (no-gold) | GBP/pair |
+|---|---|---|---|---|---|
+| `picker_on` (production) | 0.70 | 0.59 [0.44, 0.72] | 0.92 | 18 | 0.049 |
+| `picker_off` (raw page-text head) | 0.72 | 0.66 [0.49, 0.79] | 0.70 | 12 | 0.077 |
+
+Paired McNemar on the 34 pairs both committed: 1 vs 1, exact p = 1.00.
+**Verdict: keep `picker_on`** (the rule needed `picker_off` non-inferior at
+*lower* cost; it is not cheaper). But the two hypotheses behind cutting the
+picker are both refuted:
+
+- **It does not bin the answer.** Candidate recall is the same with and without
+  it (0.70 vs 0.72), so the gold answer reaches the Researcher equally either
+  way. The 16% selection headroom is not the picker discarding the
+  answer-bearing chunk.
+- **It is not a wasteful LLM call.** Removing it *raised* cost by ~57% (GBP
+  0.049 to 0.077). Feeding raw page-text heads instead of LLM-selected snippets
+  enlarges the Researcher's context and, because coverage drops sharply (0.70 vs
+  0.92, the arm abstains far more), triggers more retries. The picker pays for
+  itself by compressing context and lifting coverage.
+
+The real shape is a coverage / precision trade, not a free win: `picker_off`
+commits less often but is more accurate and lower-FP when it does (0.66 acc, 12
+FP), `picker_on` commits almost everything at lower precision. Neither dominates,
+and at n = 50 the accuracy gap sits inside overlapping CIs. Single dev run, NL
+only (the design's FR candidate-recall read is still owed); descriptive.
