@@ -35,13 +35,13 @@ no more. Cite figures inline.
 
 - Figure 1 (SVG): the agent swarm pipeline.
   - Coordinator dispatches (question, country) pairs.
-  - Researcher: Tavily search, Playwright fetch, returns answer + source URL +
-    evidence quote + retrieval confidence.
+  - Researcher: DIY search (Serper + trafilatura), Playwright fetch, returns
+    answer + source URL + evidence quote + retrieval confidence.
   - Adversarial Verifier: independent search, prompted to disprove, returns
     pass/fail + answer confidence.
   - Output: Yes / No / Other plus dual confidences and a verifiable source.
-- Stack: plain Python state machine, Claude via CLIProxyAPI, Tavily,
-  Playwright, SQLite, DeepL for low-resource languages.
+- Stack: plain Python state machine, Claude via CLIProxyAPI, DIY search
+  (Serper + trafilatura), Playwright, SQLite, DeepL for low-resource languages.
 
 ### Slide 4 — Methodology: the rubric as analytical lens
 
@@ -74,9 +74,10 @@ that includes legislation transposing the Open Data Directive?".
 1. Query generation: a small Claude call produced three queries (one
    English, one French, one with a `site:data.gouv.fr` filter).
    438 input + 69 output tokens, 2.6 seconds.
-2. Tavily search across the three queries: 15 unique results
+2. Web search across the three queries: 15 unique results
    covering data.gouv.fr, the European Commission digital-strategy
-   portal, CNIL, and Wikipedia.
+   portal, CNIL, and Wikipedia. (This May first-run used the then-current
+   Tavily provider; the system is now DIY-only per D43.)
 3. Main Claude call with the snippets pasted in. Returned a
    structured answer matching the Pydantic contract on the first
    attempt. 6,905 input + 1,170 output tokens, 20.5 seconds.
@@ -138,8 +139,9 @@ RQ5 output.
     measurement plumbed.
   - Phase A (mid-May to mid-June): France full run. Coordinator-Researcher-
     Verifier swarm built end-to-end. Hand-marks expanded to 30-50 questions.
-  - Phase B (mid-June to mid-July): six-country 2×3 wealth × maturity matrix.
-    Same questions re-marked per country. Full retrospective benchmark on
+  - Phase B (mid-June to mid-July): dev-set experiment programme, then the
+    D47 base-rate-stratified held-out evaluation (eight countries: BA/MK/ME/BG
+    + FI/HR/SE/BE; dev set NL/MT/NO/FR/AL). Full retrospective benchmark on
     2025.
   - Phase C (mid-July to early August): held-out test on 2024.
     Failure-mode taxonomy and accuracy-cost surface finalised. Dissertation

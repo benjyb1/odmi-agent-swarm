@@ -63,9 +63,11 @@ errors almost entirely from France (20 of 21), where the binary gold runs 99%
 `yes`. A should_fail class built there is both tiny and tilted to one country, and
 a Verifier that waves everything through is barely penalised, so the primary
 endpoint would have been measured where false positives can hardly occur. The
-primary should_fail source moves to **Malta**: English is an official language, so
-a missed error is not a language artefact, and about 30 binary questions carry a
+primary should_fail source moves to **Malta**: about 30 binary questions carry a
 `no` gold, so real Researcher errors on the minority class can actually happen.
+(Correction per D47, 2026-06-22: the "English official, no language artefact"
+claim is oversold; about half Malta's estate is low-resource Maltese, and Malta
+is now in-sample dev, not a held-out no-confound testbed.)
 **Netherlands** is the secondary test country (Dutch, well-resourced, already in
 the pipeline). France and the injected flips are kept as **robustness arms**,
 reported separately and never folded into the primary.
@@ -212,7 +214,8 @@ is executed; it has not been run yet.
   rule (R4, `EXPERIMENTS_PROTOCOL.md` section 0). The primary should_fail class
   was France-dominated (20/21 natural errors) where the binary gold is 99% `yes`,
   so false positives could barely occur; the primary now sources natural errors
-  from Malta (English official, ~30 `no` binary golds), with Netherlands secondary
+  from Malta (~30 `no` binary golds; the earlier "English official" framing is
+  oversold, ~half Maltese, in-sample dev per D47), with Netherlands secondary
   and France plus the injected flips kept as a robustness arm. This change
   predates the full run. The earlier partial run on the France/injected set
   (committed at 3 of 89, extended to ~40 of 89 in working state) is **superseded

@@ -17,9 +17,13 @@ the full classification, so the pilot cannot bias the coding.
 
 ## 1. Question
 
-Malta is the base-rate-balanced primary country (R4): English is an official
-language, so a failure there is not a language artefact, and it carries about 30
-`no`-gold binary questions, so a false positive can actually occur. The pilot
+Malta is the base-rate-balanced primary country (R4) and carries about 30
+`no`-gold binary questions, so a false positive can actually occur. (Correction
+per D47, 2026-06-22: the original "English official, so a failure is not a
+language artefact" justification is oversold; about half Malta's open-data estate
+is low-resource Maltese. Malta is now in-sample dev, not a held-out no-confound
+testbed; the no-confound role passes to stratum B of the D47 held-out set.) The
+pilot
 suggests Malta's losses are abstentions rather than wrong answers, which makes
 this a question about recall, not precision.
 
