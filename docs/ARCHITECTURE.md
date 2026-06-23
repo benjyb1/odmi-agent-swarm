@@ -23,8 +23,7 @@ Last updated 2026-06-23 (after EXP-14, EXP-16, EXP-17 picker/breadth).
 
 | Knob | Current value | Set by | Status |
 |---|---|---|---|
-| Provider | DIY (Serper SERP + trafilatura) | EXP-1 (beats Tavily, adjudicated); D43 | adopted |
-| Provider fallback | Tavily -> DIY -> Brave | D36 | adopted |
+| Provider | DIY only (Serper SERP + trafilatura). No Tavily, no Brave, no fallback. | D43 | adopted, closed |
 | Snippet picker | on (LLM selects chunks) | EXP-17 picker (off is no cheaper, no better, does not bin the answer) | kept |
 | Results per query | 3 (production) | default | adopted |
 | ... breadth finding | widen to ~10 | EXP-17 breadth (r10 > r5 on NL) | favoured, not switched |
@@ -91,8 +90,10 @@ Last updated 2026-06-23 (after EXP-14, EXP-16, EXP-17 picker/breadth).
 
 - **Search cost/quality** (EXP-2, EXP-8): can the funnel be made cheaper without
   losing recall? Confounded by retries, so judged on calls per pair.
-- **Multilingual / thin-web retrieval** (EXP-3, EXP-4, EXP-5): does DIY's lead
-  hold off France, and where do Brave and other providers sit?
+- **Multilingual / thin-web retrieval**: does the DIY pipeline's recall hold up
+  off France, on thin-web and low-resource-language countries (AL especially)?
+  This is a DIY-internal recall question, not a provider comparison (provider is
+  closed: DIY only, D43).
 - **Model variants** (EXP-9): how much of the accuracy is the pipeline vs Claude
   specifically (Mistral cross-family arm).
 - **Adjudicator ablation** (EXP-15): does the Adjudicator earn its keep under the
