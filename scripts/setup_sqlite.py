@@ -240,7 +240,8 @@ CREATE TABLE phase2_adjudications (
                                     'researcher_correct',
                                     'verifier_correct',
                                     'neither',
-                                    'escalate_human'
+                                    'escalate_human',
+                                    'attempt_correct'
                                 )),
     adjudicator_answer          TEXT,
     adjudicator_confidence      REAL,
