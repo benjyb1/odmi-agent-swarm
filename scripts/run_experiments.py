@@ -150,14 +150,20 @@ def preflight(spec: Dict[str, Any]) -> List[str]:
             errors.append(str(exc))
             continue
 
-        # D47 hold-out: no eval country may appear in a development run.
-        bad = sorted({p.split(":", 1)[1] for p in pairs} & HELD_OUT)
-        if bad:
+        # D47 hold-out: no eval country may appear in a development run. The one
+        # sanctioned exception is the frozen headline run (EXP-21): it requires
+        # spec-level `headline: true` AND that every country in the experiment is
+        # held-out. A development run can never lift the guard by accident, since
+        # any dev country in the mix breaks the subset condition.
+        countries_in_exp = {p.split(":", 1)[1] for p in pairs}
+        headline_ok = spec.get("headline") is True and countries_in_exp <= HELD_OUT
+        bad = sorted(countries_in_exp & HELD_OUT)
+        if bad and not headline_ok:
             errors.append(
                 f"{eid}: held-out D47 eval countries present {bad}; these are "
                 f"frozen until the headline run and must never appear here"
             )
-        unknown = sorted({p.split(":", 1)[1] for p in pairs} - DEV - HELD_OUT)
+        unknown = sorted(countries_in_exp - DEV - HELD_OUT)
         if unknown:
             errors.append(
                 f"{eid}: countries {unknown} are neither dev nor held-out; "

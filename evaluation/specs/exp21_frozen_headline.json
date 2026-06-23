@@ -1,0 +1,26 @@
+{
+  "run_id": "exp21_frozen_headline",
+  "headline": true,
+  "global_parallel": 3,
+  "budget_calls": 20000,
+  "experiments": [
+    {
+      "experiment_id": "exp21_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["FI", "HR", "SE", "BE", "BA", "MK", "ME", "BG"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "no_cache": true
+      },
+      "arms": [
+        { "condition_label": "production", "knobs": {} }
+      ]
+    }
+  ]
+}

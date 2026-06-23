@@ -99,6 +99,32 @@ COUNTRIES = {
            "portal_url": "https://podatki.gov.si/"},
     "SE": {"country_name": "Sweden",   "country_language": "sv",
            "portal_url": "https://www.dataportal.se/"},
+    # Albania: dev-set country (D47). Albanian (sq) is low-resource, so binary
+    # questions route through web search and portal_url is not on the critical
+    # path. Portal from the D46 discovery seed list (opendata.gov.al, AKSHI).
+    "AL": {"country_name": "Albania",  "country_language": "sq",
+           "portal_url": "https://opendata.gov.al/"},
+    # D47 held-out evaluation set, wired here for the EXP-21 frozen headline run
+    # (the one sanctioned use of these countries). Languages are the national
+    # query language; portal bases come from the D46 discovery seeds. SE is
+    # already configured above. Stratum A (negative-rich, low/mid resource):
+    "BA": {"country_name": "Bosnia and Herzegovina", "country_language": "bs",
+           "portal_url": "https://odp.iddeea.gov.ba/"},
+    "MK": {"country_name": "North Macedonia", "country_language": "mk",
+           "portal_url": "https://data.gov.mk/"},
+    "ME": {"country_name": "Montenegro", "country_language": "sr",
+           "portal_url": "https://data.gov.me/"},
+    "BG": {"country_name": "Bulgaria", "country_language": "bg",
+           "portal_url": "https://data.egov.bg/"},
+    # Stratum B (higher-resource, balanced):
+    "FI": {"country_name": "Finland", "country_language": "fi",
+           "portal_url": "https://www.avoindata.fi/"},
+    "HR": {"country_name": "Croatia", "country_language": "hr",
+           "portal_url": "https://data.gov.hr/"},
+    # Belgium is trilingual; Dutch is the largest first language, so queries
+    # default to nl. The federal portal is multilingual (EN/FR/NL available).
+    "BE": {"country_name": "Belgium", "country_language": "nl",
+           "portal_url": "https://data.gov.be/"},
 }
 
 
