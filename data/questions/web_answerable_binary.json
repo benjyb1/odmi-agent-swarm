@@ -1,0 +1,334 @@
+{
+  "description": "Web-answerable binary questions (binary shape minus catalogue and self_report classes per answerability.json). For EXP-18 retrieval-breadth candidate-recall, crossed onto FR + AL.",
+  "source": "answerability.json + questions.answer_shape",
+  "n": 109,
+  "pairs": [
+    {
+      "question_id": "I1"
+    },
+    {
+      "question_id": "I10"
+    },
+    {
+      "question_id": "I11"
+    },
+    {
+      "question_id": "I12"
+    },
+    {
+      "question_id": "I13"
+    },
+    {
+      "question_id": "I14"
+    },
+    {
+      "question_id": "I15"
+    },
+    {
+      "question_id": "I16"
+    },
+    {
+      "question_id": "I17"
+    },
+    {
+      "question_id": "I18"
+    },
+    {
+      "question_id": "I19"
+    },
+    {
+      "question_id": "I20"
+    },
+    {
+      "question_id": "I21"
+    },
+    {
+      "question_id": "I22"
+    },
+    {
+      "question_id": "I23"
+    },
+    {
+      "question_id": "I24"
+    },
+    {
+      "question_id": "I25"
+    },
+    {
+      "question_id": "I26"
+    },
+    {
+      "question_id": "I27"
+    },
+    {
+      "question_id": "I28"
+    },
+    {
+      "question_id": "I29"
+    },
+    {
+      "question_id": "I3"
+    },
+    {
+      "question_id": "I30"
+    },
+    {
+      "question_id": "I31"
+    },
+    {
+      "question_id": "I5"
+    },
+    {
+      "question_id": "I6"
+    },
+    {
+      "question_id": "I7"
+    },
+    {
+      "question_id": "I8"
+    },
+    {
+      "question_id": "I8-a"
+    },
+    {
+      "question_id": "I8-d"
+    },
+    {
+      "question_id": "I9"
+    },
+    {
+      "question_id": "I9-b"
+    },
+    {
+      "question_id": "I9-c"
+    },
+    {
+      "question_id": "P1"
+    },
+    {
+      "question_id": "P10-a"
+    },
+    {
+      "question_id": "P10-b"
+    },
+    {
+      "question_id": "P11"
+    },
+    {
+      "question_id": "P12"
+    },
+    {
+      "question_id": "P13"
+    },
+    {
+      "question_id": "P15"
+    },
+    {
+      "question_id": "P17"
+    },
+    {
+      "question_id": "P19"
+    },
+    {
+      "question_id": "P2"
+    },
+    {
+      "question_id": "P23"
+    },
+    {
+      "question_id": "P24"
+    },
+    {
+      "question_id": "P26-a"
+    },
+    {
+      "question_id": "P26-b"
+    },
+    {
+      "question_id": "P27"
+    },
+    {
+      "question_id": "P28"
+    },
+    {
+      "question_id": "P3"
+    },
+    {
+      "question_id": "P4"
+    },
+    {
+      "question_id": "P5"
+    },
+    {
+      "question_id": "P6"
+    },
+    {
+      "question_id": "P7"
+    },
+    {
+      "question_id": "P8"
+    },
+    {
+      "question_id": "P9"
+    },
+    {
+      "question_id": "PT1"
+    },
+    {
+      "question_id": "PT10"
+    },
+    {
+      "question_id": "PT11"
+    },
+    {
+      "question_id": "PT12"
+    },
+    {
+      "question_id": "PT13"
+    },
+    {
+      "question_id": "PT14"
+    },
+    {
+      "question_id": "PT15"
+    },
+    {
+      "question_id": "PT16"
+    },
+    {
+      "question_id": "PT17"
+    },
+    {
+      "question_id": "PT18"
+    },
+    {
+      "question_id": "PT19"
+    },
+    {
+      "question_id": "PT2"
+    },
+    {
+      "question_id": "PT20"
+    },
+    {
+      "question_id": "PT21"
+    },
+    {
+      "question_id": "PT22"
+    },
+    {
+      "question_id": "PT24"
+    },
+    {
+      "question_id": "PT26"
+    },
+    {
+      "question_id": "PT27"
+    },
+    {
+      "question_id": "PT28"
+    },
+    {
+      "question_id": "PT3"
+    },
+    {
+      "question_id": "PT30"
+    },
+    {
+      "question_id": "PT31"
+    },
+    {
+      "question_id": "PT33"
+    },
+    {
+      "question_id": "PT34"
+    },
+    {
+      "question_id": "PT35"
+    },
+    {
+      "question_id": "PT36"
+    },
+    {
+      "question_id": "PT38"
+    },
+    {
+      "question_id": "PT39"
+    },
+    {
+      "question_id": "PT4"
+    },
+    {
+      "question_id": "PT40"
+    },
+    {
+      "question_id": "PT41"
+    },
+    {
+      "question_id": "PT42"
+    },
+    {
+      "question_id": "PT43"
+    },
+    {
+      "question_id": "PT45"
+    },
+    {
+      "question_id": "PT5"
+    },
+    {
+      "question_id": "PT6"
+    },
+    {
+      "question_id": "PT7"
+    },
+    {
+      "question_id": "PT8"
+    },
+    {
+      "question_id": "PT9"
+    },
+    {
+      "question_id": "Q1"
+    },
+    {
+      "question_id": "Q10"
+    },
+    {
+      "question_id": "Q11"
+    },
+    {
+      "question_id": "Q14"
+    },
+    {
+      "question_id": "Q15"
+    },
+    {
+      "question_id": "Q19"
+    },
+    {
+      "question_id": "Q20"
+    },
+    {
+      "question_id": "Q23"
+    },
+    {
+      "question_id": "Q24"
+    },
+    {
+      "question_id": "Q4"
+    },
+    {
+      "question_id": "Q5"
+    },
+    {
+      "question_id": "Q6"
+    },
+    {
+      "question_id": "Q8"
+    },
+    {
+      "question_id": "Q9"
+    }
+  ]
+}

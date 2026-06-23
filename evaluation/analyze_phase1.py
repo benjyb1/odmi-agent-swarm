@@ -41,6 +41,9 @@ DEFAULT_ARMS = {
     "exp14_verifier_search_nl": ("always", "never"),
     "exp17_picker_nl": ("picker_on", "picker_off"),
     "exp16_adjudicator_selection_nl": ("standard", "free"),
+    "exp18_breadth_multicountry": ("baseline_r5", "breadth_r10"),
+    "exp19_verifier_search_multicountry": ("always", "never"),
+    "exp20_chaining_committing": ("baseline", "chained"),
 }
 GBP = 0.79  # USD->GBP, matches dashboard/lib/currency.py
 
