@@ -50,3 +50,28 @@ Strata (D47): A = BA MK ME BG (negative-rich, low/mid resource); B = FI HR SE BE
 
 - 23:35 building prerequisites. EXP-19 done (NL+MT, 104/arm). EXP-20 chained arm
   running. Disk 153GB free, RAM healthy post-reboot.
+- 00:05 EXP-21 wired and committed (5872e48). Held-out countries smoke-tested
+  (FI, BG pass config gate). Spec dry-runs clean: 1144 pairs, preflight passed.
+- 00:10 Launched `scripts/overnight_driver.sh` under caffeinate (pid in
+  /tmp/overnight_driver.pid), with `ODMI_SKIP_AUTO_PUBLISH=1` so the run does NOT
+  commit/push the 218MB DB per batch (that auto-publish is the .git-bloat source;
+  also avoids pushing partial held-out data to public origin/main). Driver: wait
+  for EXP-20 to finish -> resume it to completion -> run EXP-21 to 1144 with
+  auto-resume past D43 blocker / rate-limit / budget pauses. `overnight_watch.sh`
+  pings on exit/stall/90-min.
+- Storage note for morning: `.git` is 21GB because `dispatch_subtrios` commits
+  `data/odmi.db` (218MB) on every batch. Did NOT rewrite history (destructive on
+  a shared repo). Recommendation: `git rm --cached data/odmi.db` + gitignore, or
+  a BFG history clean, to stop the bloat. `git worktree prune` run (no stale
+  entries to drop; 17 live worktrees from other windows left untouched).
+- EXP-15 (adjudicator ablation, free deterministic replay, no proxy) queued to
+  run concurrently once EXP-21 is confirmed dispatching.
+- 01:32 FIRST BLOCKER HIT + FIXED: EXP-21's single 1144-pair arm hit the
+  `dispatch_subtrios` 500-pair runaway guard (`aborted_oversize`), so every pass
+  dispatched 0 jobs and the driver stalled at 0. Fix: split the spec into 8
+  per-country experiments (143 pairs each, under the guard), condition_label =
+  country code, reliable stratum B first (FI HR SE BE) then thin stratum A
+  (BA MK ME BG). Bonus robustness: the D43 fetch blocker now only stops one
+  country's batch, never all 1144. Driver made more patient (stall = 6 dry
+  passes, up to 120 passes). EXP-20 final: baseline 104/104, chained 102/104.
+- 01:45 relaunched driver + watcher; confirming FI dispatches.

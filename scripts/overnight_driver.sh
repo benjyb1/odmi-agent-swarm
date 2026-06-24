@@ -28,7 +28,7 @@ done
 log "PHASE 2: EXP-21 frozen headline (target 1144)"
 TARGET=1144
 stall=0
-for pass in $(seq 1 50); do
+for pass in $(seq 1 120); do
   before=$(cnt exp21_frozen_headline)
   log "EXP-21 pass $pass START finalised=$before/$TARGET"
   uv run python scripts/run_experiments.py evaluation/specs/exp21_frozen_headline.json >> /tmp/exp21_driver.log 2>&1
@@ -36,8 +36,11 @@ for pass in $(seq 1 50); do
   delta=$((after - before))
   log "EXP-21 pass $pass DONE finalised=$after (+$delta)"
   [ "$after" -ge "$TARGET" ] && { log "EXP-21 COMPLETE ($after/$TARGET)"; break; }
-  if [ "$delta" -lt 2 ]; then stall=$((stall+1)); else stall=0; fi
-  if [ "$stall" -ge 4 ]; then log "EXP-21 STALLED ($stall passes <2 new); stopping for diagnosis"; break; fi
+  # Patient stall: only a run of fully-dry passes (zero new) means genuinely
+  # stuck (e.g. a pair whose fetch always hangs the blocker). The thin-web
+  # countries trickle, so tolerate small deltas.
+  if [ "$delta" -lt 1 ]; then stall=$((stall+1)); else stall=0; fi
+  if [ "$stall" -ge 6 ]; then log "EXP-21 STALLED ($stall dry passes); stopping for diagnosis"; break; fi
   sleep 5
 done
 log "DRIVER DONE exp21=$(cnt exp21_frozen_headline)/$TARGET"
