@@ -89,3 +89,21 @@ Strata (D47): A = BA MK ME BG (negative-rich, low/mid resource); B = FI HR SE BE
   mid-headline would break cross-country consistency vs the frozen config).
   Kept parallel 3 (battery was 2%). Killed the hung stack, relaunched driver +
   watcher. Battery recovering (2 -> 10%).
+- 10:05 BLOCKER: SE catalogue harvest HUNG (SE's SPARQL endpoint accepted the
+  connection but never responded; the harvest had NO wall-clock timeout, so it
+  blocked the whole dispatch for >13 min). HR had harvested fine (1400 datasets).
+  Three fixes, all committed:
+    1. `warm_catalogue_snapshots` now bounds each harvest with a 120s wall clock
+       (ThreadPoolExecutor) -> timeout falls back to web, like a hard failure.
+    2. `compute()` (the Researcher's on-demand harvest path) bounds `get_snapshot`
+       with a 90s wall clock -> timeout returns None -> web. Closes the gap where
+       a cold-cache country would re-hang inside the Researcher.
+    3. SE taken off the catalogue route for this run (portal file moved to
+       data/catalogue/portals/_disabled_during_exp21/SE.json) since its endpoint
+       is down -> SE is web-only; its ~9 Quality questions use the web path.
+       RESTORE SE.json after EXP-21 if its endpoint recovers.
+  HR/ME keep their catalogue routes (HR proven fast). Documented headline caveat:
+  SE Quality questions are web-routed, not catalogue-computed.
+- 10:08 Also: all 36 countries wired into COUNTRIES; 46 merged git branches
+  pruned (69 -> 23); git gc ran but the 21GB is referenced odmi.db history (needs
+  a deliberate history rewrite, not done). Restarted driver + watcher.

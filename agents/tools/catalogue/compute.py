@@ -13,6 +13,7 @@ computation. The band is assigned from the question's own allowed answers.
 from __future__ import annotations
 
 import sys
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
@@ -27,6 +28,12 @@ from agents.tools.db import connect
 # A tag stamped on the Researcher output's `notes` so the Verifier knows
 # to recompute deterministically rather than search the web.
 CATALOGUE_NOTE_TAG = "catalogue_computed"
+
+# Wall-clock bound on an on-demand harvest from inside the Researcher. A portal
+# whose endpoint accepts the connection but never responds (SE's SPARQL, June
+# 2026) would otherwise hang the coordinator with no exception to catch. On
+# timeout the pair falls back to the web path, like any other harvest failure.
+_ONDEMAND_HARVEST_TIMEOUT_S = 90.0
 
 # The nine questions the tool computes in v1 (see docs/CATALOGUE_METRICS.md).
 COMPUTABLE_QUESTIONS = frozenset(
@@ -99,7 +106,18 @@ def compute(
 
     try:
         if snapshot is None:
-            snapshot = get_snapshot(cc, refresh=refresh)
+            _ex = ThreadPoolExecutor(max_workers=1)
+            try:
+                snapshot = _ex.submit(
+                    get_snapshot, cc, refresh=refresh
+                ).result(timeout=_ONDEMAND_HARVEST_TIMEOUT_S)
+            finally:
+                _ex.shutdown(wait=False)
+    except FuturesTimeout:
+        print(f"[catalogue] harvest timed out for {cc} "
+              f"(>{_ONDEMAND_HARVEST_TIMEOUT_S:.0f}s); falling back to web",
+              file=sys.stderr)
+        return None
     except Exception as exc:  # noqa: BLE001 - harvest failure -> fall back
         print(f"[catalogue] harvest failed for {cc}: {exc}", file=sys.stderr)
         return None

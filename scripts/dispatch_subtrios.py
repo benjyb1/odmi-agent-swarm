@@ -28,6 +28,7 @@ import sys
 import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -203,6 +204,13 @@ class DispatchResult:
 # ------------------------------------------------------------------
 
 
+# Wall-clock bound on one country's catalogue harvest. A portal that accepts the
+# connection but never finishes (SE's SPARQL endpoint, June 2026) would otherwise
+# hang the whole dispatch, since the harvest had no total-time ceiling. On timeout
+# the country falls back to the web path, exactly as a hard harvest failure does.
+HARVEST_TIMEOUT_S: float = 120.0
+
+
 def _catalogue_countries_to_warm(
     pairs: Sequence[tuple[str, str]], *, is_computable: Callable[[str, str], bool]
 ) -> List[str]:
@@ -246,7 +254,15 @@ def warm_catalogue_snapshots(
                 log(f"warm: {cc} cache hit ({n} datasets), skipping harvest")
                 continue
         try:
-            snap = harvest_fn(cc)
+            _ex = ThreadPoolExecutor(max_workers=1)
+            try:
+                snap = _ex.submit(harvest_fn, cc).result(timeout=HARVEST_TIMEOUT_S)
+            finally:
+                _ex.shutdown(wait=False)
+        except FuturesTimeout:
+            log(f"warm: {cc} harvest exceeded {HARVEST_TIMEOUT_S:.0f}s; "
+                f"its pairs will fall back to web")
+            continue
         except Exception as exc:  # noqa: BLE001 - one bad portal must not abort the batch
             log(f"warm: {cc} harvest failed: {exc}; its pairs will fall back to web")
             continue
