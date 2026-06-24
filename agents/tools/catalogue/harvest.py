@@ -87,6 +87,13 @@ def _build_adapter_registry() -> dict[str, Adapter]:
         )
     except Exception:  # noqa: BLE001
         pass
+    try:
+        from agents.tools.catalogue.adapters import al_dcat_api
+        registry["al_dcat_api"] = Adapter(
+            al_dcat_api.harvest, al_dcat_api.normalise_page, "json"
+        )
+    except Exception:  # noqa: BLE001
+        pass
     return registry
 
 

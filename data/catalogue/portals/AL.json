@@ -1,0 +1,25 @@
+{
+  "country_code": "AL",
+  "country_name": "Albania",
+  "portal_base": "https://opendata.gov.al",
+  "stack": "custom-dotnet",
+  "stack_version": null,
+  "harvest_route": "al_dcat_api",
+  "dcat_catalog_url": null,
+  "native_api_url": "https://opendata.gov.al/api/Dataset/filter",
+  "dataset_detail_url": "https://opendata.gov.al/api/Dataset/metadata/{id}",
+  "pagination": "page_post",
+  "page_size": 50,
+  "request_delay_s": 1.0,
+  "licence_field": "distribution",
+  "total_datasets_hint": 129,
+  "robots_note": "API under /api/; no robots Disallow on it. POST filter endpoint, descriptive UA, 1s throttle.",
+  "verified_at": "2026-06-24",
+  "discovery_method": "manual",
+  "discovery_evidence": "Homepage is an Angular SPA (21 chars visible text); Swagger at /swagger/v1/swagger.json (67 endpoints); POST /api/Dataset/filter {\"page\":1,\"pageSize\":10} -> 200, rowCount 129 datasets with inline dcatDistributions. data.europa.eu not used (D24).",
+  "caveats": [
+    "spa_portal_invisible_to_static_retrieval",
+    "licence_at_distribution_level_not_dataset"
+  ],
+  "notes": "Manually discovered API route (the D46 static prober could not parse the SPA, so no auto AL.json). The list endpoint returns full DCAT records inline (distributions carry EU authority file-type and licence URIs), so no per-dataset detail fetch is needed. See docs/LANGUAGE_FRAMEWORK_DEEPDIVE.md section F."
+}
