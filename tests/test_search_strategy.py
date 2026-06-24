@@ -42,7 +42,7 @@ def _stub_query_gen(monkeypatch):
     monkeypatch.setattr(
         researcher,
         "generate_queries",
-        lambda inp, subtrio_id=None, model=None: (["q1", "q2"], _usage()),
+        lambda inp, subtrio_id=None, model=None, **kwargs: (["q1", "q2"], _usage()),
     )
 
 

@@ -55,7 +55,7 @@ def _verifier_input() -> VerifierInput:
 def test_run_researcher_threads_picker_model(monkeypatch):
     captured = {}
     monkeypatch.setattr(researcher, "generate_queries",
-                        lambda inp, subtrio_id=None, model=None: (["q1"], _usage()))
+                        lambda inp, subtrio_id=None, model=None, **kwargs: (["q1"], _usage()))
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: [])
 
     def fake_search_many(queries, **kw):
@@ -72,7 +72,7 @@ def test_run_researcher_threads_picker_model(monkeypatch):
 def test_run_researcher_default_picker_model_is_none(monkeypatch):
     captured = {}
     monkeypatch.setattr(researcher, "generate_queries",
-                        lambda inp, subtrio_id=None, model=None: (["q1"], _usage()))
+                        lambda inp, subtrio_id=None, model=None, **kwargs: (["q1"], _usage()))
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: [])
     monkeypatch.setattr(researcher, "search_many",
                         lambda queries, **kw: captured.update(
