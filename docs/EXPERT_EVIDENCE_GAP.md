@@ -5,6 +5,19 @@ code was changed and no expert answer or expert source was written into any
 table the swarm reads. This document exists for our understanding of the
 abstention pattern and must not bleed back into the swarm (D24).
 
+Snapshot and scope. The integers below are a single read taken on 2026-06-24
+while EXP-21 was still finalising the held-out countries (HR, FI, SE). They are
+a snapshot, not a constant: a later read moves them by a few pairs. The
+verified-exact figures held on the day were 4,373 populated explanations, 553
+inconclusive / 65 agent-failure / 33 overlap, and 249 distinct abstained pairs;
+re-running the generator (see Reproduce) on a later DB returns the same shape on
+a larger denominator. The population also pools dev countries (NL, MT, NO, FR,
+AL) with the held-out set and one earlier ad-hoc country (EE), so it reads the
+abstention pattern, not the headline result. The clean writeup should report the
+pattern on the dev set, with the held-out countries as confirmatory only after
+EXP-21 completes and is frozen. None of this peeks at held-out answers in a way
+that reaches the swarm: the join is read-only and stays behind the D24 firewall.
+
 ## Question
 
 For the (question, country) pairs the swarm keeps abstaining on, how did the
@@ -326,3 +339,33 @@ The order that buys the most: 2 (national-language queries) and 1 (portal
 sub-section enumeration) together address the bulk of the 76 findable pairs;
 5 (structural labelling) reframes the other half without pretending to answer
 it.
+
+One correction to that order, found on a later read. The native-language query
+arm (item 2) is not a new build: the Researcher already generates a native query
+alongside the English one (`phase2_researcher_query_gen` v2), and AL pairs
+verifiably issue well-formed Albanian queries. So the lever for the findable half
+is no longer "add native queries" but "measure whether the native queries we
+already issue actually help, and reach native-language pages once fetched". The
+foreign-language experiment is therefore an ablation of the existing behaviour,
+designed in `docs/EXPERIMENTS_FOREIGN_LANG.md`, not a feature addition.
+
+## Reproduce
+
+```bash
+uv run python evaluation/expert_evidence_gap.py
+# prints ground-truth coverage, the non-committed population, distinct abstained
+# pairs by country, non-commit by dimension, the assessor-answer split, a
+# source-type classification of the yes-tier explanations, recurring domains,
+# and the findable-vs-structural split.
+uv run python evaluation/expert_evidence_gap.py --db /path/to/odmi.db
+```
+
+The generator is deterministic and strictly read-only (opens the DB with
+`mode=ro`). It reproduces the population, dimension, assessor-answer and
+findable-vs-structural numbers exactly for a given DB state. Two honest caveats
+on the source-type table: the script counts URLs, while the table above counts
+pairs by their dominant source, so the integers differ by unit; and the
+portal / government / other split is a transparent host-and-path heuristic
+(see `PORTAL_HOSTS` and `classify_url`), not the manual judgement used for the
+table. The script is the reproducible companion; the prose table is the curated
+read.
