@@ -12,6 +12,7 @@ from the result list entirely. Result length never exceeds max_results.
 """
 from __future__ import annotations
 
+import sys
 from concurrent.futures import (
     ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout,
 )
@@ -153,6 +154,7 @@ def diy_search(
     # evaluation must replay identically from logs).
     results_by_index: dict[int, tuple[SearchResult, str]] = {}
     pool = ThreadPoolExecutor(max_workers=FETCH_PARALLELISM)
+    timed_out = False
     try:
         futures = {pool.submit(_fetch, r): i for i, r in enumerate(serp)}
         # as_completed's own timeout enforces the stage deadline. We avoid the
@@ -162,16 +164,29 @@ def diy_search(
         for fut in as_completed(futures, timeout=DIY_FETCH_DEADLINE_S):
             results_by_index[futures[fut]] = fut.result()
     except FuturesTimeout:
+        # D43 (revised 2026-06-24): a slow fetch stage is a PER-PAIR event, not a
+        # batch blocker. A single slow national portal must never stop the whole
+        # run. The 30s deadline still guards against a fetch spinning forever -
+        # we abandon the hung futures here - but instead of raising
+        # BlockerShutdown (which dispatch treated like a 429 and halted every pair
+        # in the batch), we keep whatever returned in time and let THIS pair carry
+        # on with partial evidence. Its own retry loop re-queries if that is too
+        # thin. The leaked threads are bounded by the per-fetch httpx/Playwright
+        # timeouts.
+        timed_out = True
         pool.shutdown(wait=False, cancel_futures=True)
-        raise BlockerShutdown(
-            f"DIY fetch stage exceeded {DIY_FETCH_DEADLINE_S:.0f}s for query "
-            f"{query!r} - likely a Cloudflare/WAF challenge or network blocker"
+        print(
+            f"[search_diy] fetch stage exceeded {DIY_FETCH_DEADLINE_S:.0f}s for "
+            f"query {query!r}; proceeding with {len(results_by_index)}/{len(serp)} "
+            f"fetched (per-pair, no batch stop)",
+            file=sys.stderr,
         )
-    pool.shutdown(wait=True)
-    # Reassemble in submission (SERP) order. Every future has resolved by here
-    # (as_completed either delivered all of them or raised above).
+    if not timed_out:
+        pool.shutdown(wait=True)
+    # Reassemble in submission (SERP) order. A URL that did not return in time
+    # counts as an empty fetch, exactly like a 404 or an extraction miss.
     fetched: list[tuple[SearchResult, str]] = [
-        results_by_index[i] for i in range(len(serp))
+        results_by_index.get(i, (serp[i], "")) for i in range(len(serp))
     ]
 
     # 3. Snippet pick (cached). Text is already clean main content.
