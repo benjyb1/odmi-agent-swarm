@@ -125,6 +125,45 @@ COUNTRIES = {
     # default to nl. The federal portal is multilingual (EN/FR/NL available).
     "BE": {"country_name": "Belgium", "country_language": "nl",
            "portal_url": "https://data.gov.be/"},
+    # Remaining ODMI countries, wired for completeness so no (question, country)
+    # pair can ever bail with 'Country not configured'. Languages are the
+    # national query language; portal bases from the D46 discovery seeds. These
+    # are neither dev nor held-out, so the orchestrator preflight still gates
+    # them out of experiment runs; this only removes the coordinator-level bail.
+    "AT": {"country_name": "Austria",     "country_language": "de",
+           "portal_url": "https://www.data.gv.at/"},
+    "CH": {"country_name": "Switzerland", "country_language": "de",
+           "portal_url": "https://opendata.swiss/"},
+    "CY": {"country_name": "Cyprus",      "country_language": "el",
+           "portal_url": "https://www.data.gov.cy/"},
+    "CZ": {"country_name": "Czechia",     "country_language": "cs",
+           "portal_url": "https://data.gov.cz/"},
+    "DK": {"country_name": "Denmark",     "country_language": "da",
+           "portal_url": "https://www.opendata.dk/"},
+    "EL": {"country_name": "Greece",      "country_language": "el",
+           "portal_url": "https://data.gov.gr/"},
+    "ES": {"country_name": "Spain",       "country_language": "es",
+           "portal_url": "https://datos.gob.es/"},
+    "IE": {"country_name": "Ireland",     "country_language": "en",
+           "portal_url": "https://data.gov.ie/"},
+    "IS": {"country_name": "Iceland",     "country_language": "is",
+           "portal_url": "https://opingogn.is/"},
+    "IT": {"country_name": "Italy",       "country_language": "it",
+           "portal_url": "https://www.dati.gov.it/"},
+    "LT": {"country_name": "Lithuania",   "country_language": "lt",
+           "portal_url": "https://data.gov.lt/"},
+    "LU": {"country_name": "Luxembourg",  "country_language": "fr",
+           "portal_url": "https://data.public.lu/"},
+    "LV": {"country_name": "Latvia",      "country_language": "lv",
+           "portal_url": "https://data.gov.lv/"},
+    "PL": {"country_name": "Poland",      "country_language": "pl",
+           "portal_url": "https://dane.gov.pl/"},
+    "PT": {"country_name": "Portugal",    "country_language": "pt",
+           "portal_url": "https://dados.gov.pt/"},
+    "RS": {"country_name": "Serbia",      "country_language": "sr",
+           "portal_url": "https://data.gov.rs/"},
+    "UA": {"country_name": "Ukraine",     "country_language": "uk",
+           "portal_url": "https://data.gov.ua/"},
 }
 
 

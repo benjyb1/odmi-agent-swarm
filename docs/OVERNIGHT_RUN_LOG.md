@@ -74,4 +74,18 @@ Strata (D47): A = BA MK ME BG (negative-rich, low/mid resource); B = FI HR SE BE
   (BA MK ME BG). Bonus robustness: the D43 fetch blocker now only stops one
   country's batch, never all 1144. Driver made more patient (stall = 6 dry
   passes, up to 120 passes). EXP-20 final: baseline 104/104, chained 102/104.
-- 01:45 relaunched driver + watcher; confirming FI dispatches.
+- 01:45 relaunched driver + watcher; FI dispatching confirmed (per-country fix
+  works). EXP-21 ran through the night.
+- 09:46 POWER EVENT: battery hit 2% (charging now). The machine did NOT reboot
+  (uptime 10:28) but the low-power state froze an in-flight HR coordinator, hung
+  the dispatch, and stalled the driver (~3h, 1 finalised/30min). Watcher had been
+  killed separately. State at recovery: FI 143/143 done, HR 59/143, total
+  202/1144. All preserved in DB.
+- 09:50 Diagnosis: HR (Croatian) is genuinely thin-web (~20/hr, blocker trips
+  ~every 2 pairs); FI was clean. In sequential per-country mode a slow country
+  blocks the ones after it, so HR (2nd) was holding up SE/BE. Fix: REORDERED to
+  FI, SE, BE, HR, BA, MK, ME, BG so the likely-reliable countries finish before
+  the thin-web grind. Did NOT touch the 30s fetch budget / blocker (changing it
+  mid-headline would break cross-country consistency vs the frozen config).
+  Kept parallel 3 (battery was 2%). Killed the hung stack, relaunched driver +
+  watcher. Battery recovering (2 -> 10%).
