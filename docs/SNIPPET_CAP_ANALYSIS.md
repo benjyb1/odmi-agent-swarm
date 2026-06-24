@@ -198,8 +198,50 @@ Read-only against `data/odmi.db`. Joins to `questions` (for question text) and
 to `ground_truth` (none in this script's joins, kept clean of leakage). No DB
 writes; no pipeline contact.
 
+## Phase B result (Opus replay, decisive)
+
+EXP-24 Phase B ran: 25 NL abstained binary pairs, Researcher reasoning replayed
+at cap=600 (baseline) and cap=3000 (treatment), every other variable held
+constant including the stored snippets and prior queries. Opus pinned across
+both arms. Cost: about $8.
+
+Outcome was strictly worse at the higher cap:
+
+| metric | cap=600 | cap=3000 |
+|---|---:|---:|
+| committed | 12 | 15 |
+| correct | 3 | 3 |
+| abstain to correct flip | - | 0 |
+| abstain to wrong flip | - | 3 |
+| correct to abstain flip | - | 0 |
+
+The 3 abstentions that flipped to commit all flipped to a wrong "yes" against a
+GT "no". Confidence on already-wrong commits rose with the bigger cap (P7
+0.60 to 0.92, I3 0.50 to 0.92, Q4 honest abstain to confident wrong "yes" at
+0.75). More context did not help the swarm find the right answer; it fed the
+NL false-positive bias and made wrong answers more confident.
+
+**Decision.** Keep `max_chars_per_snippet=600` as the production default. The
+cap is doing useful work as an accidental constraint on the false-positive
+bleed. Raising it is not the lever; the lever is the FP bias itself
+(entailment-confidence work, trusted-domain narrow-then-widen, prompt audit).
+
+The 17.4% un-located quotes from A1 remain a separate, useful signal about
+substring-gate flexibility, not pursued here.
+
+## Reproduce Phase B
+
+```bash
+uv run python evaluation/snippet_cap_replay.py --n 25 --country NL
+```
+
+Reads stored snippets only; no new search or fetch. Pinned to
+`claude-opus-4-6`. Writes to `claude_usage_log` with `context LIKE 'exp24:%'`.
+
 ## Change log
 
 | Date | Change |
 |---|---|
 | 2026-06-24 | Phase A landed: A1 quote-position, A2 hidden-content heuristic with per-country split, A3 cost projection across six caps. |
+| 2026-06-24 | Phase A heuristic manually calibrated on 20 cases: true hidden rate 15-25%, not 39%; NL strongest at 29%. |
+| 2026-06-24 | Phase B replay: cap=3000 vs cap=600 on 25 NL pairs, zero accuracy gain, 3 wrong-direction flips, higher confidence on wrong commits. Keep 600. EXP-24 closed. |
