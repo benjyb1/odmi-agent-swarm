@@ -32,29 +32,6 @@
       "type": "accuracy",
       "questions_from": "data/questions/all_questions.json",
       "countries": [
-        "HR"
-      ],
-      "baseline_knobs": {
-        "provider": "diy",
-        "strategy": "verifier-disprove",
-        "max_results_per_query": 5,
-        "num_queries": 3,
-        "max_retries": 3,
-        "verifier_search": "always",
-        "no_cache": true
-      },
-      "arms": [
-        {
-          "condition_label": "HR",
-          "knobs": {}
-        }
-      ]
-    },
-    {
-      "experiment_id": "exp21_frozen_headline",
-      "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
-      "countries": [
         "SE"
       ],
       "baseline_knobs": {
@@ -92,6 +69,29 @@
       "arms": [
         {
           "condition_label": "BE",
+          "knobs": {}
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp21_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "HR"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "no_cache": true
+      },
+      "arms": [
+        {
+          "condition_label": "HR",
           "knobs": {}
         }
       ]

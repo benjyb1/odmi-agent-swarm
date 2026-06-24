@@ -1,13 +1,13 @@
 {
   "run_id": "phase2_retests",
-  "global_parallel": 8,
+  "global_parallel": 3,
   "budget_calls": 18000,
   "experiments": [
     {
       "experiment_id": "exp19_verifier_search_multicountry",
       "type": "retrieval",
       "questions_from": "data/questions/nl_eval_pairs.json",
-      "countries": ["NL", "MT", "AL"],
+      "countries": ["NL", "MT"],
       "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_results_per_query": 5, "num_queries": 3, "max_retries": 3 },
       "arms": [
         { "condition_label": "always", "knobs": {} },
@@ -18,22 +18,11 @@
       "experiment_id": "exp20_chaining_committing",
       "type": "retrieval",
       "questions_from": "data/questions/nl_eval_pairs.json",
-      "countries": ["NL", "AL"],
+      "countries": ["NL", "MT"],
       "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_results_per_query": 5, "num_queries": 3, "max_retries": 3 },
       "arms": [
         { "condition_label": "baseline", "knobs": {} },
         { "condition_label": "chained", "knobs": { "chained": true } }
-      ]
-    },
-    {
-      "experiment_id": "exp18_breadth_multicountry",
-      "type": "retrieval",
-      "questions_from": "data/questions/web_answerable_binary.json",
-      "countries": ["FR", "AL"],
-      "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_results_per_query": 5, "num_queries": 3, "max_retries": 3 },
-      "arms": [
-        { "condition_label": "baseline_r5", "knobs": {} },
-        { "condition_label": "breadth_r10", "knobs": { "max_results_per_query": 10 } }
       ]
     }
   ]
