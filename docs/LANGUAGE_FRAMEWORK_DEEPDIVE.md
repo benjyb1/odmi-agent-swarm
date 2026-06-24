@@ -716,10 +716,13 @@ AL committed none of these nine: the portal was invisible and the swarm abstaine
 on every AL Quality question.
 
 The pattern generalises. SK (data.slovensko.sk) is also a Swagger SPA, but a
-different vendor: its spec lists standard `/datasets`, `/datasets/search` and
-`/dcat3.jsonld` endpoints, so SK is tractable once the API base is found (the paths
-are not served from `/api/` on the portal host), most likely via the existing
-`dcat_rdf` route against its JSON-LD feed rather than a new adapter. A cleaned
+different vendor. Its `/dcat3.jsonld` feed serves only the JSON-LD context with
+zero datasets, so the `dcat_rdf` route does not apply. The working route is
+`POST https://data.slovensko.sk/datasets/search` with a `{"page", "pageSize"}`
+body, which returns `{"items": [{"id", "key", ...}]}`. SK therefore needs its own
+small adapter on the AL pattern (a bespoke POST list endpoint), not a reuse of an
+existing route. This is a turnkey follow-up: the endpoint and shape are known, only
+the field mapping and an `SK.json` remain. A cleaned
 re-probe of the audit's noisy cells corrects two false flags (DK and PL render
 statically and are readable) and confirms BA and SE as SPAs needing API discovery
 (SE already has a SPARQL route, disabled during exp21), ES as Incapsula-walled, and
