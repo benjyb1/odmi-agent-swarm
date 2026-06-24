@@ -5,6 +5,28 @@ agent swarm that automatically answers EU Open Data Maturity Index (ODMI) questi
 across 36 countries in 20+ languages. Validated against 2024 ground truth, targeting
 the 2026 assessment cycle.
 
+## How to talk to Benjy (mandatory, every reply)
+
+Benjy runs several Claude instances at once and cannot read long prose. Two layers:
+
+1. **Working-out** — tool calls, tests, reasoning. Unrestricted, but narrate it in
+   single short lines, not paragraphs. He skims or skips this.
+2. **Final block** — always last, after a `---` divider. This is the only part he
+   reads. Every fact he needs goes here. Fields, in order, omit one only if empty:
+   - **Context** — the problem, 1-2 short sentences.
+   - **Doing** — the fix or action taken.
+   - **Results** — commands run, outcomes, numbers. Facts only, no spin.
+   - **Analysis** — what the numbers mean. One or two lines.
+   - **Next** — the next step, or the decision needed from Benjy.
+
+Style for everything addressed to him:
+- Short sentences. Bullets over paragraphs. No essays. Final block under ~150 words
+  unless he asks for depth.
+- Formal, matter-of-fact, concise. State facts and numbers.
+- Banned: agreement and praise openers ("you're right", "great point", "good call",
+  "absolutely"), apologies for style, hedging, filler.
+- Never state an unverified number. Verify against the DB or code, then state it.
+
 ## Read first
 
 At the start of every session, read these in order:
@@ -168,80 +190,8 @@ a branch.
 - When the work is done, merge the branch back and let the worktree be removed
   (`ExitWorktree`, or `git worktree remove`). Prune stale ones periodically.
 
-## What's actually built
+## Current status
 
-See `docs/SPEC.md` for the current status block. As of 2026-06-03: full
-three-agent swarm running end-to-end, nine-page Streamlit dashboard live
-(local and on Streamlit Cloud), 143 questions catalogued and tagged by
-answer shape (124 binary / 12 percentage_band / 3 ordinal_magnitude /
-2 count_band / 2 categorical), 5,148 ODMI ground-truth rows loaded, 129
-finalised swarm pairs across FR/DE/NL/RO covering all four ODMI
-dimensions. D28 Phase 2 complete: per-shape answer space across
-Researcher / Verifier / Adjudicator, `inconclusive` literal replacing
-honest-uncertainty collapses to `other`, `near_match` state on
-`_MATCH_STATUS_SQL` for adjacent-band misses, dashboard renders the new
-state. D29 done: DIY search pipeline fixed (extraction now runs
-trafilatura on raw HTML before truncating; snippet quality 31% → 58%)
-and benchmarked against Tavily by a blind, position-swapped Opus
-adjudicator (`evaluation/diy_vs_tavily.py`). On web-answerable FR pairs
-DIY is not worse than Tavily 78% of the time and out-wins it 3:1; the
-dominant limit is that ~half the questions (all Quality) are
-unanswerable from the open web because the gold answer lives on
-deny-listed data.europa.eu or is a self-report. D28 Phase 3 re-dispatch
-parked (no longer quota-gated; 20x plan and DIY-only per D43). D31 done: search knobs (provider,
-results-per-query, query count) are threaded end-to-end and exposed in
-the Run Console, so the DIY cost/quality trade-off is runnable as a
-tagged experiment (defined, not yet run). D30 done: deterministic
-catalogue-metrics tool (`agents/tools/catalogue/`) computes the nine
-catalogue-derivable Quality questions from national-portal metadata
-(DCAT-AP RDF preferred, CKAN/udata/custom JSON fallbacks; SHACL via
-pyshacl for conformance), independently of the deny-listed MQA. Wired
-into the Researcher (routes before web search) and a recompute Verifier.
-Validated against ODMI GT across the Phase B set (HU 8/1/0, NL 5/0/4,
-DE 4/2/3, FR 4/1/4, RO 3/3/3; EE blocked by a 403). Headline finding:
-France self-reported `>90%` on licence coverage and conformance but the
-independent recompute reads ~38% and ~32%, the D29 self-report ceiling
-made measurable. D32-D37 and the experiments programme (2026-06-02/03):
-D32+D33 trust the adjudicator's answer at finalisation and force retry
-queries to diverge; D34 checks the evidence quote against the snippets the
-Researcher actually read, not a live re-fetch; D35 makes `inconclusive` an
-abstention that retries then adjudicates rather than a terminal label; D36
-sets search auto-fallback to Tavily → DIY → Brave; D37 adds a 0.65
-commit-confidence floor, abstaining honestly over a forced guess. The search
-and verifier experiments are pre-registered
-(`docs/EXPERIMENTS_PROTOCOL.md`, `docs/EXPERIMENTS_VERIFIER.md`) and tracked
-in `docs/EXPERIMENTS.md`. EXP-1 is done and supersedes the D29 pilot above:
-on the full FR non-Quality stratum (90 pairs) DIY wins 89% of the 55 decided
-pairs (Wilson CI [78, 95], p < 1e-4; 42/45 = 93% [82, 98] under strict
-both-orientation exclusion), with answer-blind agreement 67%. The
-cross-family reliability check is done (Mistral Large, after Groq's per-org
-daily-token cap blocked every available key): 78% raw agreement, Krippendorff
-alpha 0.648 on the frozen 27-pair subsample, all disagreements Opus `both_fail`
-vs a Mistral commitment, rebutting the same-family self-preference concern.
-EXP-4/5 are mid-run and resumable, EXP-2a/2b queued, EXP-3 skipped. EXP-6 now
-has all its data: Malta primary (60/60) and NL secondary (52/52,
-`nl_eval_pairs.json`, batch `nl_baseline`, 2026-06-05) both finalised, plus a
-committed class-balanced FR augmented 50%-flip robustness set
-(`fr_augmented_eval_pairs.json`, via `--fr-augmented`); the harness builds
-primary 48 + secondary 48 + robustness 82, so only the four-arm judge run
-remains. EXP-7 (retry chaining): the chained arm is built behind
-`--chained` (default off, so production and the EXP-8/9 baseline are
-byte-identical) and pre-registered (D39, `docs/EXPERIMENTS_CHAINING.md`,
-Malta primary); the run is gated only on the Malta dispatch and Claude quota.
-D46 (2026-06-10): portal discovery replaces hand-authored catalogue
-registries. `agents/tools/catalogue/discovery/` probes each country's
-national portal from a committed, annotated seed list (never via the EU
-aggregator), verifies a one-page sample through the real adapters,
-auto-detects the known caveats (rdf-omits-licence, missing downloadURL,
-synthesised conformance, the data.gov.cy class-as-predicate bug) and
-emits `data/catalogue/portals/<CC>.json` with provenance; D24 enforced
-at every layer including a new redirect-chain guard in the catalogue
-fetch. The 36-country experiment: 14 verified, 5 stack-recognised-
-without-adapter, 17 honest fails (SPA stacks, WAFs, one malformed feed,
-one retired portal); FR/HU/NL re-discovered identically to their
-hand-authored registries, validating the prober. New `sparql_rdf` (CZ,
-HR, SE) and `piveau_json` (AT) adapters convert four of the five
-flagged countries; final state 19 verified routes, registry coverage
-6 -> 21 (+NO at merge), mean +6.5 points of accuracy ceiling per newly
-covered country (`evaluation/discovery_ceiling.py`). See
-`docs/PORTAL_DISCOVERY.md`.
+See `docs/SPEC.md` for the live status block, current decisions and open
+questions. It is the single source of truth for project state; do not
+duplicate or summarise it here (this section went stale when it tried).
