@@ -24,7 +24,7 @@ _DIR = _REPO_ROOT / "data" / "catalogue" / "portals"
 # endpoint only (CZ, HR, SE).
 ROUTES = (
     "dcat_rdf", "ckan_json", "udata_json", "estonia_json", "sparql_rdf",
-    "piveau_json",
+    "piveau_json", "al_dcat_api",
 )
 
 
