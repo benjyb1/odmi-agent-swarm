@@ -302,11 +302,17 @@ def test_diy_fetch_cache_hit_skips_fetch_html(mock_layers, monkeypatch):
 # 30s fetch-stage ceiling (D43)
 # ---------------------------------------------------------------------------
 
-def test_fetch_stage_deadline_raises_blocker(monkeypatch, tmp_path):
-    """A fetch stage that blows the wall-clock ceiling raises BlockerShutdown.
+def test_fetch_stage_deadline_returns_partial_no_blocker(monkeypatch, tmp_path):
+    """A fetch stage that blows the wall-clock ceiling returns partial results.
 
-    Stands in for a Cloudflare/WAF challenge or a hanging portal: the run must
-    stop loudly rather than wait the full per-fetch timeout out and carry on.
+    D43 revised 2026-06-24: a slow fetch stage is now a PER-PAIR event, not a
+    batch blocker. The deadline still abandons the hung futures so a single
+    pair doesn't spin forever, but the function returns what was fetched in
+    time (possibly nothing) rather than raising BlockerShutdown and stopping
+    the whole batch on one slow national portal.
+
+    A stall is still recorded via _record_fetch_stall so the dispatch's
+    systemic breaker can tell one slow portal from a batch-wide block.
     """
     import time as _time
     import agents.tools.search_cache as cache_mod
@@ -332,5 +338,18 @@ def test_fetch_stage_deadline_raises_blocker(monkeypatch, tmp_path):
 
     monkeypatch.setattr(diy, "fetch_html", slow_fetch_html)
 
-    with pytest.raises(BlockerShutdown):
-        diy.diy_search("q", max_results=3)
+    stall_calls: list[None] = []
+    monkeypatch.setattr(diy, "_record_fetch_stall",
+                        lambda: stall_calls.append(None))
+
+    try:
+        results = diy.diy_search("q", max_results=3)
+    except BlockerShutdown:
+        pytest.fail("diy_search must not raise BlockerShutdown on a slow "
+                    "fetch stage (D43 revised 2026-06-24)")
+
+    assert results == [], "no URL returned in time, so the result list is empty"
+    assert len(stall_calls) == 1, (
+        "the fetch-stage stall must be recorded for the dispatch's systemic "
+        "breaker"
+    )
