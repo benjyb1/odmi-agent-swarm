@@ -446,6 +446,100 @@ scoring against ground truth would quantify how much real recall the Verifier
 costs versus how many false positives it prevents, which is the central
 self-verification trade-off the dissertation is trying to measure.
 
+## Developed synthesis: what to do with the abstention findings
+
+This taxonomy and the expert evidence-gap report (`docs/EXPERT_EVIDENCE_GAP.md`)
+read the same population through different lenses and reach what looks like
+opposite conclusions about the `no` abstentions. Resolving that apparent
+conflict is the most useful thing the two documents do together.
+
+### The `no` abstention: two readings, one resolution
+
+This file calls the `no` asymmetry "the single most actionable finding for
+accuracy": of the GT-`no` abstentions, 80 sit in category E and 80 in G, about
+160 pairs where a committed `no` would have matched the experts. The
+expert-evidence report reads the same pairs and calls them correct behaviour:
+55 of the 78 distinct GT-`no` abstained pairs carry no positive assessor
+justification, so there is no artefact to find and abstaining is right.
+
+Both are true because GT-`no` is not one kind of question. It splits cleanly:
+
+- **Publicly-visible-if-present.** "Does the portal have a feedback button / an
+  RSS feed / a use-case section?" If the feature existed it would be on the
+  portal, so a thorough search that finds nothing is good evidence of absence.
+  Here a committed `no` from exhaustive non-discovery is epistemically sound, and
+  these are the pairs this file is pointing at.
+- **Internal-practice / self-report.** "Do you monitor reuse / run API analytics
+  / have an impact methodology?" Absence of a public page says nothing, because
+  the practice can exist unpublished inside the portal team. These are the pairs
+  the expert-evidence report fences off as structural, and a `no` here would be
+  a guess, not a finding.
+
+The resolution is that any rule which commits `no` from non-discovery must be
+gated on question type, allowed only for the publicly-visible-if-present set and
+never for the internal-practice set. That single gate turns the conflict into a
+bounded, defensible design and is the honest framing for the writeup: the swarm
+under-commits `no` on questions where absence is evidence, and correctly abstains
+on questions where it is not.
+
+### If the commit-`no` rule is greenlit (direction i): design sketch
+
+Not built; the decision to spend on it is open. Pre-registration sketch so it is
+ready if chosen:
+
+- Scope: only questions on a fixed allow-list of publicly-visible-if-present
+  items (portal-feature PT questions, published-document Policy questions),
+  derived from the question bank, never the I-series, PT-usage, or process
+  Quality items.
+- Trigger: a documented exhaustive non-discovery, a fixed battery of targeted
+  "does X exist" queries (including native-language and portal-scoped) all
+  returning nothing, logged as the evidence for the `no`.
+- Guard: a hard false-positive ceiling on negative golds, measured against GT
+  before adoption; the rule abstains rather than commit whenever the battery is
+  incomplete or any query is inconclusive.
+- Endpoint: per-class recall on GT-`no` and the negative-gold FPR, paired
+  against the current abstain-always behaviour. Adopt only if `no`-recall rises
+  materially with FPR held under the ceiling.
+
+This relaxes the no-hallucination stance in one narrow, audited place, so it is
+the one to prototype last and behind a flag, never to hard-wire.
+
+### Recommended order for the system fixes
+
+For the open i/ii/iii decision, cheapest and least risky first:
+
+1. **(ii) Playwright for data.gov.mt.** Malta's 82% abstention is mostly a 403
+   WAF fetch artefact (category B and F3), not reasoning. Clearing it
+   de-confounds ~72 MT pairs and cleans every downstream abstention and accuracy
+   number, including this taxonomy's and the expert-gap report's. Mechanical, no
+   epistemic risk, highest information per pound. Do first.
+2. **(iii) Recalibrate the 0.65 floor.** 146 pairs abstain on the floor
+   (category G). An empirical calibration against GT (FM-26) shows whether the
+   floor sits where it should and whether a per-dimension floor beats one global
+   value. Low risk, no stance change.
+3. **(i) Commit-`no` rule.** Highest accuracy reward (~160 pairs) but the only
+   one that touches the core stance, so last, gated as above.
+
+### What the dissertation can claim from this (his to write up)
+
+Raw claims, with the supporting numbers, not finished prose:
+
+- Non-committed rate ~35% of finalised pairs; 95.5% of those are misses against
+  a committed expert answer, so abstention is a recall ceiling, not the
+  questions being impossible.
+- 64% of non-committed pairs carry an explicit "the snippets do not contain the
+  evidence" note: the ceiling is source availability, heaviest in Quality and
+  Impact, the dimensions whose answers are MQA percentages or internal processes.
+- The `no` asymmetry is a structural finding, resolved by the question-type
+  split above; report it as under-commitment on publicly-visible questions and
+  correct abstention on internal-practice ones.
+- The Malta 82% figure is a WAF and bilingual confound, not reasoning; true
+  reasoning quality reads off NL/NO/FI/FR/SE at 16 to 27%. Naming it pre-empts
+  the examiner.
+- This is the abstention half of the evaluation; it pairs with the
+  false-positive register in `docs/FAILURE_MODES.md` and is the recall context
+  for the EXP-21 headline.
+
 ## Reproduce
 
 ```bash
@@ -463,3 +557,4 @@ The classifier is deterministic and reads only `phase2_final`,
 | Date | Change |
 |---|---|
 | 2026-06-24 | File created. 580-pair non-committed population classified into ten categories from a read-only trail walk. |
+| 2026-06-24 | Added the developed synthesis: resolved the `no`-abstention conflict with the expert-evidence report via a question-type gate, sketched the gated commit-`no` design, recommended the i/ii/iii fix order, and listed the dissertation claims. |
