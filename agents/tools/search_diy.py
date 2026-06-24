@@ -13,6 +13,7 @@ from the result list entirely. Result length never exceeds max_results.
 from __future__ import annotations
 
 import sys
+import time
 from concurrent.futures import (
     ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout,
 )
@@ -62,11 +63,31 @@ DIY_RENDER_TIMEOUT_S = 13.0
 # DIY is the sole provider on the 20x plan and must be fast. With the per-URL
 # timeouts above, the parallel fetch stage clears well within 30s in the normal
 # case. Exceeding it is treated as a real blocker, not a slow page: we stop the
-# whole run loudly via BlockerShutdown so a human pauses and fixes the cause.
-# The ceiling covers only the network stage where blockers live; the Claude
-# snippet-picker that follows is metered Claude latency, not a blocker, so it is
-# deliberately outside the window.
+# this pair (D43 revised 2026-06-24); a BURST of them across the batch is logged
+# so the dispatch's systemic breaker can tell a single slow portal from a real
+# WAF/network block. The ceiling covers only the network stage where blockers
+# live; the Claude snippet-picker that follows is metered Claude latency, not a
+# blocker, so it is deliberately outside the window.
 DIY_FETCH_DEADLINE_S = 30.0
+
+
+def _record_fetch_stall() -> None:
+    """Best-effort: log a fetch-stage timeout so the dispatch's systemic breaker
+    (D43 revised) can distinguish one slow portal (handled per-pair) from a
+    batch-wide block (paused to jog). Never raises; recording a stall must not
+    break the search itself."""
+    try:
+        from agents.tools.db import connect
+        with connect() as conn:
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS fetch_stage_timeouts (ts REAL)"
+            )
+            conn.execute(
+                "INSERT INTO fetch_stage_timeouts(ts) VALUES (?)", (time.time(),)
+            )
+            conn.commit()
+    except Exception:  # noqa: BLE001 - best-effort telemetry, never fatal
+        pass
 
 
 def _fetch_and_clean(url: str) -> str:
@@ -181,6 +202,7 @@ def diy_search(
             f"fetched (per-pair, no batch stop)",
             file=sys.stderr,
         )
+        _record_fetch_stall()
     if not timed_out:
         pool.shutdown(wait=True)
     # Reassemble in submission (SERP) order. A URL that did not return in time

@@ -210,6 +210,66 @@ class DispatchResult:
 # the country falls back to the web path, exactly as a hard harvest failure does.
 HARVEST_TIMEOUT_S: float = 120.0
 
+# How long a PARTIAL catalogue snapshot is reused before re-harvesting. A partial
+# means the harvest errored mid-stream (HR's SPARQL endpoint drops after ~1400
+# rows); re-harvesting just re-hits the same error and yields nothing more, so the
+# old code re-harvested all 1400 rows on every single dispatch. Reuse a recent
+# partial; only re-harvest once it is stale, in case the portal has recovered.
+PARTIAL_SNAPSHOT_TTL_H: float = 24.0
+
+
+def _snapshot_age_h(snap: object) -> float:
+    """Age of a cached snapshot in hours, or +inf if its timestamp is unreadable."""
+    fetched_at = getattr(snap, "fetched_at", None)
+    if not fetched_at:
+        return float("inf")
+    try:
+        ts = datetime.fromisoformat(str(fetched_at).rstrip("Z"))
+        return (datetime.utcnow() - ts).total_seconds() / 3600.0
+    except Exception:  # noqa: BLE001 - a bad timestamp forces a re-harvest, safe
+        return float("inf")
+
+
+# Systemic fetch-stall breaker (D43 revised). A single slow portal is handled
+# per-pair inside search_diy (it proceeds with partial evidence). But this many
+# fetch-stage timeouts inside this window means a real batch-wide block (WAF /
+# network), so we pause and let the orchestrator resume the run fresh - the "jog"
+# the original D43 was reaching for, now at batch granularity instead of one URL.
+FETCH_STALL_THRESHOLD: int = 6
+FETCH_STALL_WINDOW_S: float = 45.0
+
+
+def _recent_fetch_timeouts(window_s: float) -> int:
+    """Count fetch-stage timeouts logged (by search_diy) in the last window_s."""
+    try:
+        with connect() as conn:
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS fetch_stage_timeouts (ts REAL)"
+            )
+            row = conn.execute(
+                "SELECT COUNT(*) FROM fetch_stage_timeouts WHERE ts > ?",
+                (time.time() - window_s,),
+            ).fetchone()
+            return int(row[0]) if row else 0
+    except Exception:  # noqa: BLE001 - telemetry read, never fatal
+        return 0
+
+
+def _reset_fetch_stall_window() -> None:
+    """Drop stale fetch-stall events so a prior batch cannot trip this batch."""
+    try:
+        with connect() as conn:
+            conn.execute(
+                "CREATE TABLE IF NOT EXISTS fetch_stage_timeouts (ts REAL)"
+            )
+            conn.execute(
+                "DELETE FROM fetch_stage_timeouts WHERE ts < ?",
+                (time.time() - FETCH_STALL_WINDOW_S,),
+            )
+            conn.commit()
+    except Exception:  # noqa: BLE001 - best-effort cleanup
+        pass
+
 
 def _catalogue_countries_to_warm(
     pairs: Sequence[tuple[str, str]], *, is_computable: Callable[[str, str], bool]
@@ -248,11 +308,16 @@ def warm_catalogue_snapshots(
     for cc in countries:
         if not refresh:
             cached = cache_loader(cc)
-            if cached is not None and getattr(cached, "datasets", None) \
-                    and not getattr(cached, "partial", False):
+            if cached is not None and getattr(cached, "datasets", None):
                 n = getattr(cached, "dataset_count", "?")
-                log(f"warm: {cc} cache hit ({n} datasets), skipping harvest")
-                continue
+                if not getattr(cached, "partial", False):
+                    log(f"warm: {cc} cache hit ({n} datasets), skipping harvest")
+                    continue
+                age = _snapshot_age_h(cached)
+                if age < PARTIAL_SNAPSHOT_TTL_H:
+                    log(f"warm: {cc} partial cache hit ({n} datasets, "
+                        f"{age:.1f}h old), skipping re-harvest")
+                    continue
         try:
             _ex = ThreadPoolExecutor(max_workers=1)
             try:
@@ -416,6 +481,9 @@ def dispatch(
         ) for (q, c) in pairs
     ]
 
+    # Start this batch with a clean systemic-stall window (D43 revised).
+    _reset_fetch_stall_window()
+
     # The dispatch loop. Run with a semaphore equal to parallel_limit.
     sem = threading.Semaphore(parallel_limit)
     rate_limited = False
@@ -442,6 +510,19 @@ def dispatch(
                         )
                     calls_capped = True
                     return
+
+            # Systemic fetch-stall breaker (D43 revised). One slow portal is a
+            # per-pair event; a burst across the batch is a real block, so pause
+            # and let the orchestrator resume fresh (the jog). One slow server can
+            # never reach the threshold on its own.
+            stalls = _recent_fetch_timeouts(FETCH_STALL_WINDOW_S)
+            if stalls >= FETCH_STALL_THRESHOLD:
+                if not blocked:
+                    log(f"systemic fetch-stall breaker: {stalls} fetch-stage "
+                        f"timeouts in {FETCH_STALL_WINDOW_S:.0f}s; pausing batch "
+                        f"so the run can be resumed fresh")
+                blocked = True
+                return
 
             cmd = [
                 sys.executable, str(REPO_ROOT / "scripts" / "run_coordinator.py"),

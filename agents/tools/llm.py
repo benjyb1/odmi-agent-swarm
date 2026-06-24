@@ -125,10 +125,16 @@ def _make_client() -> anthropic.Anthropic:
     # exponential backoff and only raises after exhausting these, so a momentary
     # drop now recovers while a sustained 429 still surfaces as RateLimitError
     # and trips the D41 shutdown unchanged.
+    # max_retries above the SDK default of 2: the SDK already does exponential
+    # backoff and honours Retry-After, retrying APIConnectionError / 5xx / 429 /
+    # 529 before raising. Raised 8 -> 12 for the thin-web held-out grind (EXP-21),
+    # where 529 "overloaded" bursts on the shared Max subscription are longer; the
+    # extra attempts ride out a transient storm rather than failing the pair. A
+    # sustained 429 still surfaces as RateLimitError and trips the D41 shutdown.
     return anthropic.Anthropic(
         api_key=os.environ["ANTHROPIC_API_KEY"],
         base_url=os.environ["ANTHROPIC_BASE_URL"],
-        max_retries=8,
+        max_retries=12,
     )
 
 
