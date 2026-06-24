@@ -1,0 +1,159 @@
+{
+  "_db": "/Users/benjyb/Desktop/MscProject/data/odmi.db",
+  "_n_final": 1724,
+  "cuts": {
+    "pooled": {
+      "answer_confidence": {
+        "coverage": 1.0,
+        "auroc": 0.5528380732254715,
+        "within_pos": 0.7995320277802617,
+        "within_neg": 0.18095334140110259,
+        "n": 1065
+      },
+      "retrieval_confidence": {
+        "coverage": 1.0,
+        "auroc": 0.5866621445080896,
+        "within_pos": 0.8081313899072998,
+        "within_neg": 0.2936668011294877,
+        "n": 1065
+      },
+      "domain_trust_score": {
+        "coverage": 0.996244131455399,
+        "auroc": 0.39746120107962213,
+        "within_pos": 0.5853974783153,
+        "within_neg": 0.3288597586350395,
+        "n": 1061
+      },
+      "verifier_confidence": {
+        "coverage": 0.9990610328638497,
+        "auroc": 0.5614772141230928,
+        "within_pos": 0.8165370055739366,
+        "within_neg": 0.24828697421981005,
+        "n": 1064
+      },
+      "substring_pass": {
+        "coverage": 0.9990610328638497,
+        "auroc": 0.4736418409831323,
+        "within_pos": 0.5060955617156995,
+        "within_neg": 0.4710990502035278,
+        "n": 1064
+      },
+      "combo_ret_x_trust": {
+        "coverage": 0.996244131455399,
+        "auroc": 0.4445597165991903,
+        "within_pos": 0.7141643566127157,
+        "within_neg": 0.28273685670689414,
+        "n": 1061
+      },
+      "combo_ret_x_trust_x_substr": {
+        "coverage": 0.9953051643192489,
+        "auroc": 0.4267124155405405,
+        "within_pos": 0.7026737011535367,
+        "within_neg": 0.27956876334488434,
+        "n": 1060
+      }
+    },
+    "dev": {
+      "answer_confidence": {
+        "coverage": 1.0,
+        "auroc": 0.5465394749802994,
+        "within_pos": 0.8369258872651357,
+        "within_neg": 0.1734472181988583,
+        "n": 858
+      },
+      "retrieval_confidence": {
+        "coverage": 1.0,
+        "auroc": 0.5865993154058313,
+        "within_pos": 0.8577244258872652,
+        "within_neg": 0.2967538553293005,
+        "n": 858
+      },
+      "domain_trust_score": {
+        "coverage": 0.9953379953379954,
+        "auroc": 0.41488264922708107,
+        "within_pos": 0.6252087682672234,
+        "within_neg": 0.3091286307053942,
+        "n": 854
+      },
+      "verifier_confidence": {
+        "coverage": 0.9988344988344988,
+        "auroc": 0.5552297255627505,
+        "within_pos": 0.8620563674321503,
+        "within_neg": 0.24672865013774103,
+        "n": 857
+      },
+      "substring_pass": {
+        "coverage": 0.9988344988344988,
+        "auroc": 0.46983657107616406,
+        "within_pos": 0.5040709812108559,
+        "within_neg": 0.471806129476584,
+        "n": 857
+      },
+      "combo_ret_x_trust": {
+        "coverage": 0.9953379953379954,
+        "auroc": 0.46543757336364144,
+        "within_pos": 0.7538361169102297,
+        "within_neg": 0.2690474088461199,
+        "n": 854
+      },
+      "combo_ret_x_trust_x_substr": {
+        "coverage": 0.9941724941724942,
+        "auroc": 0.4451851529253664,
+        "within_pos": 0.7480949895615866,
+        "within_neg": 0.26890643822781424,
+        "n": 853
+      }
+    },
+    "NL": {
+      "answer_confidence": {
+        "coverage": 1.0,
+        "auroc": 0.5207597653066768,
+        "within_pos": 0.7571428571428571,
+        "within_neg": 0.23959745541766608,
+        "n": 549
+      },
+      "retrieval_confidence": {
+        "coverage": 1.0,
+        "auroc": 0.5579059596892486,
+        "within_pos": 0.8082417582417583,
+        "within_neg": 0.41631035561580976,
+        "n": 549
+      },
+      "domain_trust_score": {
+        "coverage": 0.9981785063752276,
+        "auroc": 0.4970638326861503,
+        "within_pos": 0.4432234432234432,
+        "within_neg": 0.4868673926969891,
+        "n": 548
+      },
+      "verifier_confidence": {
+        "coverage": 1.0,
+        "auroc": 0.5740343347639485,
+        "within_pos": 0.8564102564102564,
+        "within_neg": 0.329648555636667,
+        "n": 549
+      },
+      "substring_pass": {
+        "coverage": 1.0,
+        "auroc": 0.49638045308849893,
+        "within_pos": 0.4926739926739927,
+        "within_neg": 0.49285639795599123,
+        "n": 549
+      },
+      "combo_ret_x_trust": {
+        "coverage": 0.9981785063752276,
+        "auroc": 0.5479119831051161,
+        "within_pos": 0.7241758241758242,
+        "within_neg": 0.43086696562032883,
+        "n": 548
+      },
+      "combo_ret_x_trust_x_substr": {
+        "coverage": 0.9981785063752276,
+        "auroc": 0.5472375502418421,
+        "within_pos": 0.723992673992674,
+        "within_neg": 0.43043988896006835,
+        "n": 548
+      }
+    }
+  }
+}
