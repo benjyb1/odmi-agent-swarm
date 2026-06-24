@@ -695,24 +695,36 @@ registered as a route with a committed `data/catalogue/portals/AL.json`, plus
 offline tests (`tests/test_catalogue_adapter_al.py`, 6 passing; the existing 121
 catalogue tests stay green). Running the nine deterministic D30 catalogue metrics
 over the live harvest (130 datasets, 468 distributions) and comparing each band to
-the ODMI expert answer gives **7 of 9 exact matches**
+the ODMI expert answer gives **8 of 9 exact matches**
 (`evaluation/validate_catalogue_al.py`):
 
 | | Q12 lic | Q13 distinct | Q21 dl-url | Q22 acc-url | Q25 open-lic | Q27 open-fmt | Q16 mand | Q17 rec | Q18 opt |
 |---|---|---|---|---|---|---|---|---|---|
-| computed | >90% | 1-4 | >90% | >90% | >90% | >90% | <10% | >90% | >90% |
+| computed | >90% | 1-4 | >90% | >90% | >90% | >90% | >90% | >90% | >90% |
 | ODMI | >90% | 5-10 | >90% | >90% | >90% | >90% | >90% | >90% | >90% |
-| | match | miss | match | match | match | match | miss | match | match |
+| | match | miss | match | match | match | match | match | match | match |
 
-The two misses are informative, not adapter faults. Q13: AL really does use only
+The one miss is informative, not an adapter fault. Q13: AL really does use only
 two licences (CC-BY-4.0, CC-BY-SA-4.0); ODMI logged 5-10, a swarm-vs-expert
-discrepancy worth a human glance (D22). Q16: the mandatory SHACL reads 0% because
-the JSON-to-RDF synthesis omits a property the SEMIC mandatory shape requires (the
-raw distributions are well formed and Q17/Q18 pass at 100%), so this is a
-synthesise-completeness gap shared with the other JSON routes, not an AL data gap.
-Before this adapter, AL committed none of these nine: the portal was invisible and
-the swarm abstained on every AL Quality question. The pattern now generalises to
-SK (also a Swagger SPA) and to the other SPA portals in the audit.
+discrepancy worth a human glance (D22). Q16 initially read 0% because the portal
+emits distribution download URLs as site-relative paths (`/files/Dataset/...`),
+which are not valid IRIs, so the DCAT-AP mandatory SHACL rejected every dataset on
+`dcat:downloadURL` nodeKind. Resolving them against the portal base in the adapter
+lifts Q16 to 100%; the synthesiser is right to keep a non-IRI string as a literal,
+so the fix belongs in the adapter, not the shared synthesis. Before this adapter,
+AL committed none of these nine: the portal was invisible and the swarm abstained
+on every AL Quality question.
+
+The pattern generalises. SK (data.slovensko.sk) is also a Swagger SPA, but a
+different vendor: its spec lists standard `/datasets`, `/datasets/search` and
+`/dcat3.jsonld` endpoints, so SK is tractable once the API base is found (the paths
+are not served from `/api/` on the portal host), most likely via the existing
+`dcat_rdf` route against its JSON-LD feed rather than a new adapter. A cleaned
+re-probe of the audit's noisy cells corrects two false flags (DK and PL render
+statically and are readable) and confirms BA and SE as SPAs needing API discovery
+(SE already has a SPARQL route, disabled during exp21), ES as Incapsula-walled, and
+BE and MK as intermittently unreachable. The hardest set is the WAF'd portals
+(MT, BG, ES), which need a Playwright render or residential egress.
 
 ### The stage-instrumented experiment
 
@@ -828,3 +840,4 @@ python3 evaluation/abstention_taxonomy.py
 | 2026-06-24 | Section F added: stage-by-stage funnel attributes AL's deficit to search coverage (portal `opendata.gov.al` unindexed, 88% of site-restricted queries empty, never fetched), a thin and partly Incapsula-walled native web (28% of AL national fetches are silent 200 WAF/tiny blocks), and a downstream confidence floor. Servers, query well-formedness and comprehension ruled out. Stage-instrumented experiment and revised free/quota order recorded. |
 | 2026-06-24 | Live probe of `opendata.gov.al`: the portal is an Angular SPA, invisible to static HTML retrieval, but serves a documented DCAT API (Swagger, 67 endpoints; `POST /api/Dataset/filter` returns 129 datasets). The AL deficit is a portal-technology mismatch, not a thin estate or comprehension limit. |
 | 2026-06-24 | Fix implemented: `al_dcat_api` adapter + `data/catalogue/portals/AL.json` + offline tests. Live harvest (130 datasets, 468 distributions) scores 7/9 catalogue metrics against ODMI GT (`evaluation/validate_catalogue_al.py`). Misses: Q13 (AL uses 2 licences, ODMI 5-10) and Q16 (JSON-to-RDF synthesis gap). Before the adapter, AL committed none of the nine. |
+| 2026-06-24 | Q16 fixed (7/9 to 8/9): the portal emits site-relative download URLs, so the adapter now resolves them against the portal base; the mandatory SHACL passes 130/130. SK scoped (Swagger SPA, different vendor, standard `/datasets` and `/dcat3.jsonld` endpoints, API base still to find). Audit re-probe: DK and PL are static-readable (false WAF flags corrected); MT, BG, ES remain WAF'd. |

@@ -84,6 +84,22 @@ def test_normalise_handles_missing_fields():
     assert ds.all_licences() == set()
 
 
+def test_relative_download_url_is_resolved_absolute():
+    # The portal emits download URLs as site-relative paths; they must be
+    # made absolute or the DCAT-AP mandatory SHACL (Q16) rejects every
+    # dataset on dcat:downloadURL nodeKind.
+    item = {
+        "id": "y",
+        "dcatDistributions": [
+            {"accessUrl": "/dataset/y", "downloadUrl": "/files/Dataset/y_csv.csv"}
+        ],
+    }
+    ds = al_dcat_api.normalise_al_dataset(item, base="https://opendata.gov.al")
+    dist = ds.distributions[0]
+    assert dist.download_url == "https://opendata.gov.al/files/Dataset/y_csv.csv"
+    assert dist.access_url == "https://opendata.gov.al/dataset/y"
+
+
 def test_harvest_paginates_until_empty_page():
     pages = {1: _page([_HIT, {**_HIT, "id": "b"}]), 2: _page([{**_HIT, "id": "c"}]), 3: _page([])}
     seen = []
