@@ -65,6 +65,7 @@ def pick_snippet(
     subtrio_id: Optional[str] = None,
     max_chunks: int = 3,
     page_text_cap: int = picker_prompt.PAGE_TEXT_CAP,
+    model: Optional[str] = None,
 ) -> tuple[List[PickedChunk], LLMUsage]:
     """Select relevant passages from page_text that answer query.
 
@@ -102,6 +103,7 @@ def pick_snippet(
             prompt_version_id=prompt_version_id,
             usage_context=f"snippet_pick:{url[:80]}",
             subtrio_id=subtrio_id,
+            model=model,
         )
     except StructuredOutputError as exc:
         # The model occasionally emits invalid JSON (e.g. unescaped inner

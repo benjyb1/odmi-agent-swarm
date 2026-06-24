@@ -981,6 +981,7 @@ def coordinate(
     verifier_search: str = "always",
     query_language: str = "bilingual",
     search_strategy: str = "narrow_then_wide",
+    picker_model: Optional[str] = None,
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -1199,6 +1200,7 @@ def coordinate(
                 max_snippet_chars=max_snippet_chars,
                 query_language=query_language,
                 search_strategy=search_strategy,
+                picker_model=picker_model,
             )
             # Accumulate the queries used so the next attempt can diverge.
             accumulated_search_queries.extend(r_result.search_queries_used)
@@ -1328,6 +1330,7 @@ def coordinate(
             provider=provider, max_results_per_query=max_results_per_query,
             num_queries=num_queries,
             verifier_search=verifier_search,
+            picker_model=picker_model,
         )
         cumulative_tokens_in += v_result.cumulative_input_tokens
         cumulative_tokens_out += v_result.cumulative_output_tokens
@@ -1657,6 +1660,13 @@ def main() -> int:
              "empty, so EXP-23 can attribute any wide_only gain to the "
              "widening step rather than to the absence of narrowing.")
     parser.add_argument(
+        "--picker-model", default=None,
+        help="Pin the snippet-picker LLM to this model. Default None falls "
+             "back to agents.tools.llm.DEFAULT_MODEL (currently Sonnet); "
+             "set to e.g. claude-opus-4-6 when Sonnet quota is exhausted "
+             "and the agent models are pinned to Opus, so the picker does "
+             "not 429 mid-pair. EXP-23 sets it to Opus.")
+    parser.add_argument(
         "--adjudicator-selection", default="standard",
         choices=["standard", "free"],
         help="EXP-16 candidate-selection mode. 'standard' (default) is "
@@ -1706,6 +1716,7 @@ def main() -> int:
             verifier_search=args.verifier_search,
             query_language=args.query_language,
             search_strategy=args.search_strategy,
+            picker_model=args.picker_model,
             subtrio_id=subtrio_id,
             batch_id=batch_id,
             experiment_id=args.experiment_id,

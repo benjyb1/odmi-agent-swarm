@@ -182,6 +182,7 @@ def search(
     use_snippet_picker: bool = True,
     picker_max_chunks: int = 3,
     page_text_cap: int = 16000,
+    picker_model: Optional[str] = None,
 ) -> List[SearchResult]:
     """Run one search, dispatching to the requested provider(s).
 
@@ -265,6 +266,7 @@ def search(
                 use_snippet_picker=use_snippet_picker,
                 picker_max_chunks=picker_max_chunks,
                 page_text_cap=page_text_cap,
+                picker_model=picker_model,
             )
             _emit("diy", t0, results, ok=True, error=None)
             return _scrub_blocked(results)
@@ -299,6 +301,7 @@ def search(
             use_snippet_picker=use_snippet_picker,
             picker_max_chunks=picker_max_chunks,
             page_text_cap=page_text_cap,
+            picker_model=picker_model,
         )
         _PROVIDER_USAGE_COUNTERS["diy"] += 1
         scrubbed = _scrub_blocked(results)
@@ -320,6 +323,7 @@ def search_many(
     use_snippet_picker: bool = True,
     picker_max_chunks: int = 3,
     page_text_cap: int = 16000,
+    picker_model: Optional[str] = None,
 ) -> List[SearchResult]:
     """Run several queries, deduplicate by URL, preserve order of first occurrence.
 
@@ -342,6 +346,7 @@ def search_many(
             use_snippet_picker=use_snippet_picker,
             picker_max_chunks=picker_max_chunks,
             page_text_cap=page_text_cap,
+            picker_model=picker_model,
         ):
             if r.url in seen:
                 continue

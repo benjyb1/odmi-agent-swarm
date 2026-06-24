@@ -362,6 +362,7 @@ def run_researcher(
     max_snippet_chars: int = 600,
     query_language: str = "bilingual",
     search_strategy: str = "narrow_then_wide",
+    picker_model: Optional[str] = None,
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> ResearcherRunResult:
@@ -445,6 +446,7 @@ def run_researcher(
         use_snippet_picker=use_snippet_picker,
         picker_max_chunks=picker_max_chunks,
         page_text_cap=page_text_cap,
+        picker_model=picker_model,
     )
     wide_fallback_used = False
     if (
@@ -461,6 +463,7 @@ def run_researcher(
             use_snippet_picker=use_snippet_picker,
             picker_max_chunks=picker_max_chunks,
             page_text_cap=page_text_cap,
+            picker_model=picker_model,
         )
         wide_fallback_used = True
     on_step("search_complete", {

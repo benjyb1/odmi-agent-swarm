@@ -21,7 +21,8 @@
         "no_cache": true,
         "researcher_model": "claude-opus-4-6",
         "verifier_model": "claude-opus-4-6",
-        "adjudicator_model": "claude-opus-4-6"
+        "adjudicator_model": "claude-opus-4-6",
+        "picker_model": "claude-opus-4-6"
       },
       "arms": [
         { "condition_label": "baseline_narrow_then_wide", "knobs": {} },
@@ -45,7 +46,8 @@
         "no_cache": true,
         "researcher_model": "claude-opus-4-6",
         "verifier_model": "claude-opus-4-6",
-        "adjudicator_model": "claude-opus-4-6"
+        "adjudicator_model": "claude-opus-4-6",
+        "picker_model": "claude-opus-4-6"
       },
       "arms": [
         { "condition_label": "baseline_narrow_then_wide", "knobs": {} },
@@ -69,7 +71,8 @@
         "no_cache": true,
         "researcher_model": "claude-opus-4-6",
         "verifier_model": "claude-opus-4-6",
-        "adjudicator_model": "claude-opus-4-6"
+        "adjudicator_model": "claude-opus-4-6",
+        "picker_model": "claude-opus-4-6"
       },
       "arms": [
         { "condition_label": "baseline_narrow_then_wide", "knobs": {} },

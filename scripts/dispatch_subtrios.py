@@ -364,6 +364,7 @@ def dispatch(
     verifier_search: str = "always",
     query_language: str = "bilingual",
     search_strategy: str = "narrow_then_wide",
+    picker_model: Optional[str] = None,
     adjudicator_selection: str = "standard",
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -588,6 +589,11 @@ def dispatch(
                 # it differs from the production default, so the baseline
                 # subprocess invocation is byte-identical.
                 cmd += ["--search-strategy", search_strategy]
+            if picker_model:
+                # Pin the snippet-picker LLM (EXP-23 sets this to Opus when
+                # Sonnet's quota is exhausted). Default None keeps production
+                # byte-identical to before EXP-23.
+                cmd += ["--picker-model", picker_model]
             if adjudicator_selection and adjudicator_selection != "standard":
                 # EXP-16 free attempt-selection arm; default 'standard', so the
                 # baseline batch is byte-identical to production.
@@ -884,6 +890,14 @@ def main() -> int:
                              "widens, so any wide_only gain is attributable "
                              "to the widening step rather than to the absence "
                              "of narrowing.")
+    parser.add_argument("--picker-model", default=None,
+                        help="Pin the snippet-picker LLM to this model, "
+                             "forwarded to each run_coordinator subprocess. "
+                             "Default None falls back to "
+                             "agents.tools.llm.DEFAULT_MODEL (currently "
+                             "Sonnet). Set to claude-opus-4-6 when Sonnet "
+                             "is rate-limited and the agent models are pinned "
+                             "to Opus, so the picker does not 429 mid-pair.")
     parser.add_argument("--adjudicator-selection", default="standard",
                         choices=["standard", "free"],
                         help="EXP-16 candidate-selection mode forwarded to each "
@@ -962,6 +976,7 @@ def main() -> int:
         verifier_search=args.verifier_search,
         query_language=args.query_language,
         search_strategy=args.search_strategy,
+        picker_model=args.picker_model,
         adjudicator_selection=args.adjudicator_selection,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
