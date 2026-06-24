@@ -126,6 +126,84 @@ almost entirely NL: FR carries 1 negative binary gold, the SEL-1 yes-skew, so an
 
 ---
 
+## 1A. The decisive reframe: ODMI is self-report, and most false positives are measurement mismatches
+
+Added 2026-06-24 after tracing the false positives to their source. This is the
+most consequential finding in the document, and it reframes the headline.
+
+**ODMI is a country self-report questionnaire validated by Capgemini, across all
+four dimensions.** The official methodology confirms the answers are "collected
+through a questionnaire sent to the national open data representatives",
+coordinated by Capgemini for the Publications Office (data.europa.eu / Capgemini).
+The validation action is recorded per (question, country) in
+`ground_truth.decision`, with three values over all 5,148 rows:
+
+- `confirm` 3,249 (63%): the country's self-reported answer was accepted as-is
+- `complement` 1,385 (27%): the country's answer was kept and the assessor added evidence
+- `change` 514 (10%): the assessor overrode the country's answer
+
+This holds on every dimension, not only Quality. The earlier project assumption
+(only some Quality questions self-report) was wrong: first-person country
+explanations ("we chose not to invest in such activities last year") sit in
+Portal and Impact too.
+
+**Swarm accuracy is governed by whether the gold is itself web-evidenced, not by
+dimension.** Deduplicated binary yes/no pairs, all countries, by decision:
+
+| decision | pairs | abstain | accuracy (committed) | false positives |
+|---|---:|---:|---:|---:|
+| `complement` (assessor added evidence) | 249 | 24% | 92% | 1 |
+| `confirm` (country's word accepted) | 360 | 29% | 78% | 36 |
+| `change` (assessor overrode) | 55 | 42% | 62% | 10 |
+
+The `complement` accuracy is ~92% on every dimension (policy 93, portal 92,
+quality 89, impact 92); `confirm` runs 73-88%. So when ODMI's own answer carries
+web evidence, the swarm matches it almost perfectly regardless of dimension. The
+divergence concentrates where ODMI took the country's unverifiable word.
+
+**This reinterprets the false positives.** The swarm measures the open web and the
+national portal; a `confirm` gold often encodes the country's self-reported
+*internal* action, which is not on the web. ODMI's own explanations for the NL
+false positives show the pattern:
+
+- PT27 / PT25 (gold `no`): "Last year we chose **not** to invest in such
+  activities..." The swarm cited real 2019-2020 activity; the country reported it
+  paused in the assessment period. The quote is real, on-topic and time-mismatched.
+  A genuine error, but one the swarm cannot fix from the open web, because the
+  truth is unpublished and lives only in the self-report (the deny-listed key).
+- I22 (gold `no`): impact *stories* exist (ODMI lists them) but the question asks
+  for impact *data*. A definitional gap.
+- Q23 (gold `no`): the country self-reported it does not formally use a quality
+  model; the portal merely documents the 5-star concept. The swarm over-read a
+  mention.
+
+This is why no confidence number and no second reader catches them. The
+Researcher, the production Verifier (which passed 217 of 223 NL false positives,
+agreeing `yes` after its own independent search, mean confidence 0.82, substring
+gate passing on 221/223) and an added Opus entailment scorer all read the same
+real portal evidence and reach the same `yes`. The failure is not low confidence
+or thin evidence; it is a mismatch between what the web shows and what the country
+reported.
+
+**Consequence for the evaluation.** Stratify every accuracy, abstention and
+false-positive figure by `decision`. A swarm-vs-`confirm` disagreement on an
+internal-action question is a measurement mismatch, not automatically a swarm
+error (the D22 caveat, quantified). The honest headline is conditional: where the
+gold is web-evidenced (`complement`), the swarm is ~92% accurate across all
+dimensions; where ODMI took the country's word (`confirm`), it is ~77%, and that
+is where the false positives sit.
+
+Caveat: the questionnaire / self-report framing is confirmed by the official
+source; the precise `confirm` / `complement` / `change` definitions are inferred
+from the field values and the explanation voice (the methodology PDF did not
+machine-read), worth a one-line confirmation against the official definitions
+before this is load-bearing in the dissertation. Reproduce the table with
+`evaluation/selfreport_decision_split.py` over the canonical DB (1,724 finalised
+rows); counts drift by one or two while a dispatch window writes the DB, so treat
+them as a snapshot, not a constant.
+
+---
+
 ## 2. Task A: calibration
 
 ### 2.1 Reliability
@@ -636,3 +714,4 @@ scalar.
 | Date | Change |
 |---|---|
 | 2026-06-24 | Created. Reproduced the pooled headline (1065 / 744 / 268 FP), decomposed it (NL-under-degraded-arms vs 88% production), refuted the catalogue-band theory, confirmed Theory 1 (FPs as confident as correct answers), showed the precision frontier is flat (no working single floor), and proved the mechanism (within-positive AUROC 0.84, within-negative 0.17; the confidence encodes the label, not correctness). Added the decomposed/class-aware/calibrated redesign, pre-registered EXP-22 to EXP-25, and the free-vs-quota do-next list. Analysis in `evaluation/confidence_deepdive.py`; SVG and JSON in `evaluation/results/`. |
+| 2026-06-24 | Step 1 (free): no stored signal beats answer_confidence (`evaluation/confidence_signals_replay.py`); all anti-predictive on the negative class. Step 2 (Opus smoke, `evaluation/exp22_entailment_smoke.py`): an explicit entailment score does not separate correct from false positives (0.74 vs 0.75) because the FPs carry genuinely strong evidence. Traced the FPs to source: the production Verifier passed 217/223 NL FPs after its own independent search. Added section 1A, the self-report reframe: ODMI is a country self-report questionnaire validated by Capgemini (`decision` confirm/complement/change, all dimensions), source-verified; swarm is 92% accurate on web-evidenced (`complement`) golds and 78% on accepted-self-report (`confirm`) golds, where the false positives sit. `evaluation/selfreport_decision_split.py`. |
