@@ -79,6 +79,52 @@ query, or a list of already-tried queries is provided below):
 Return JSON matching the schema."""
 
 
+# Foreign-language ablation arm (default OFF). The English-only prompt is the
+# production prompt with the single native-language bullet swapped for an
+# English-only instruction, so the only variable between arms is the query
+# language; the retry-divergence guidance and everything else are byte-identical
+# by construction. Registered under its own prompt_versions identity so each arm
+# is auditable. See docs/EXPERIMENTS_FOREIGN_LANG.md.
+_QUERY_GEN_EN_ONLY_NAME = "phase2_researcher_query_gen_en_only"
+_QUERY_GEN_EN_ONLY_VERSION = 1
+_QUERY_GEN_EN_ONLY_DESCRIPTION = (
+    "Foreign-language ablation: English-only query generation (the "
+    "native-language query is removed). Default off; the bilingual prompt is "
+    "the production default."
+)
+_QUERY_GEN_SYSTEM_EN_ONLY = _QUERY_GEN_SYSTEM.replace(
+    "- One query in English. If the country's national language is not\n"
+    "  English, add a second query in the local language.",
+    "- All queries in English only. Do not produce queries in the\n"
+    "  country's national language, even when it is not English.",
+)
+# Fail loudly if the anchor above drifts, so the ablation can never silently
+# become a no-op that still issues native-language queries.
+assert "local language" not in _QUERY_GEN_SYSTEM_EN_ONLY, (
+    "en-only query-gen prompt failed to drop the native-language instruction; "
+    "the _QUERY_GEN_SYSTEM bullet text changed and the replace anchor is stale"
+)
+
+
+def _query_gen_spec(query_language: str = "bilingual") -> tuple[str, int, str, str]:
+    """Select the query-gen prompt for a language mode.
+
+    Returns (prompt_name, version, system_prompt, description). "bilingual" is
+    production (one English query plus a native-language query when the country
+    is not English-speaking). "en" is the foreign-language ablation: English
+    only. Each mode carries its own prompt_versions identity.
+    """
+    if query_language == "bilingual":
+        return (_QUERY_GEN_NAME, _QUERY_GEN_VERSION,
+                _QUERY_GEN_SYSTEM, _QUERY_GEN_DESCRIPTION)
+    if query_language == "en":
+        return (_QUERY_GEN_EN_ONLY_NAME, _QUERY_GEN_EN_ONLY_VERSION,
+                _QUERY_GEN_SYSTEM_EN_ONLY, _QUERY_GEN_EN_ONLY_DESCRIPTION)
+    raise ValueError(
+        f"unknown query_language {query_language!r}; expected 'bilingual' or 'en'"
+    )
+
+
 def _build_query_gen_message(input: ResearcherInput) -> str:
     """Build the user-turn message for the query-generation LLM call.
 
@@ -129,13 +175,14 @@ def generate_queries(
     *,
     subtrio_id: str | None = None,
     model: str | None = None,
+    query_language: str = "bilingual",
 ) -> tuple[List[str], LLMUsage]:
+    name, version, system, description = _query_gen_spec(query_language)
     prompt_id = db_helpers.ensure_prompt_version(
-        _QUERY_GEN_NAME, _QUERY_GEN_VERSION,
-        _QUERY_GEN_SYSTEM, _QUERY_GEN_DESCRIPTION,
+        name, version, system, description,
     )
     parsed, usage = call_for_structured(
-        system=_QUERY_GEN_SYSTEM,
+        system=system,
         user_message=_build_query_gen_message(input),
         output_schema=_Queries,
         model=model,
@@ -310,6 +357,7 @@ def run_researcher(
     picker_max_chunks: int = 3,
     page_text_cap: int = 16000,
     max_snippet_chars: int = 600,
+    query_language: str = "bilingual",
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> ResearcherRunResult:
@@ -345,6 +393,7 @@ def run_researcher(
     try:
         queries, query_usage = generate_queries(
             input, subtrio_id=subtrio_id, model=model,
+            query_language=query_language,
         )
     except StructuredOutputError as exc:
         on_step("query_gen_failed", {"error": str(exc)})

@@ -106,7 +106,7 @@ def _wire_researcher(monkeypatch, captured):
 
     monkeypatch.setattr(researcher, "_try_catalogue", lambda *a, **k: None)
     monkeypatch.setattr(researcher, "generate_queries",
-                        lambda inp, subtrio_id=None, model=None: (["q1"], _usage()))
+                        lambda inp, subtrio_id=None, model=None, **kwargs: (["q1"], _usage()))
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: [])
     monkeypatch.setattr(researcher, "search_many", lambda queries, **kw: _one_result())
     monkeypatch.setattr(researcher.db_helpers, "ensure_prompt_version", fake_ensure)

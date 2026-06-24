@@ -362,6 +362,7 @@ def dispatch(
     no_cache: bool = False,
     chained: bool = False,
     verifier_search: str = "always",
+    query_language: str = "bilingual",
     adjudicator_selection: str = "standard",
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -576,6 +577,11 @@ def dispatch(
                 # when it differs from the 'always' production default, so the
                 # baseline subprocess invocation is byte-identical.
                 cmd += ["--verifier-search", verifier_search]
+            if query_language and query_language != "bilingual":
+                # Foreign-language ablation. Only forwarded when it differs from
+                # the 'bilingual' production default, so the baseline subprocess
+                # invocation is byte-identical.
+                cmd += ["--query-language", query_language]
             if adjudicator_selection and adjudicator_selection != "standard":
                 # EXP-16 free attempt-selection arm; default 'standard', so the
                 # baseline batch is byte-identical to production.
@@ -852,6 +858,13 @@ def main() -> int:
                              "web search so it reasons only over the "
                              "Researcher's evidence. 'elective' is not built "
                              "and raises NotImplementedError.")
+    parser.add_argument("--query-language", default="bilingual",
+                        choices=["bilingual", "en"],
+                        help="Foreign-language ablation forwarded to each "
+                             "run_coordinator subprocess. 'bilingual' (default) "
+                             "is byte-identical to production. 'en' ablates the "
+                             "native-language query so all queries are "
+                             "English-only. See docs/EXPERIMENTS_FOREIGN_LANG.md.")
     parser.add_argument("--adjudicator-selection", default="standard",
                         choices=["standard", "free"],
                         help="EXP-16 candidate-selection mode forwarded to each "
@@ -928,6 +941,7 @@ def main() -> int:
         no_cache=args.no_cache,
         chained=args.chained,
         verifier_search=args.verifier_search,
+        query_language=args.query_language,
         adjudicator_selection=args.adjudicator_selection,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,

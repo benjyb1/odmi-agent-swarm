@@ -979,6 +979,7 @@ def coordinate(
     max_snippet_chars: int = 600,
     no_cache: bool = False,
     verifier_search: str = "always",
+    query_language: str = "bilingual",
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -1187,6 +1188,7 @@ def coordinate(
                 picker_max_chunks=picker_max_chunks,
                 page_text_cap=page_text_cap,
                 max_snippet_chars=max_snippet_chars,
+                query_language=query_language,
             )
             # Accumulate the queries used so the next attempt can diverge.
             accumulated_search_queries.extend(r_result.search_queries_used)
@@ -1626,6 +1628,14 @@ def main() -> int:
              "so the Verifier reasons only over the Researcher's evidence. "
              "'elective' is not built and raises NotImplementedError.")
     parser.add_argument(
+        "--query-language", default="bilingual",
+        choices=["bilingual", "en"],
+        help="Foreign-language ablation. 'bilingual' (default) is "
+             "byte-identical to production: the Researcher generates an "
+             "English query plus a native-language query when the country is "
+             "not English-speaking. 'en' ablates the native query so all "
+             "queries are English-only. See docs/EXPERIMENTS_FOREIGN_LANG.md.")
+    parser.add_argument(
         "--adjudicator-selection", default="standard",
         choices=["standard", "free"],
         help="EXP-16 candidate-selection mode. 'standard' (default) is "
@@ -1673,6 +1683,7 @@ def main() -> int:
             max_snippet_chars=args.max_snippet_chars,
             no_cache=args.no_cache,
             verifier_search=args.verifier_search,
+            query_language=args.query_language,
             subtrio_id=subtrio_id,
             batch_id=batch_id,
             experiment_id=args.experiment_id,

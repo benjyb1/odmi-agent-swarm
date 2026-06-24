@@ -88,7 +88,7 @@ def _researcher_output() -> ResearcherOutput:
 def test_run_researcher_threads_model_to_query_gen_and_main(monkeypatch):
     captured: dict = {}
 
-    def fake_gen(inp, subtrio_id=None, model=None):
+    def fake_gen(inp, subtrio_id=None, model=None, **kwargs):
         captured["qgen_model"] = model
         return (["q1"], _usage())
 
@@ -122,7 +122,7 @@ def test_run_researcher_default_model_is_none(monkeypatch):
 
     monkeypatch.setattr(researcher, "_try_catalogue", lambda *a, **k: None)
     monkeypatch.setattr(researcher, "generate_queries",
-                        lambda inp, subtrio_id=None, model=None: (["q1"], _usage()))
+                        lambda inp, subtrio_id=None, model=None, **kwargs: (["q1"], _usage()))
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: [])
     monkeypatch.setattr(researcher, "search_many", lambda queries, **kw: _one_result())
     monkeypatch.setattr(researcher.db_helpers, "ensure_prompt_version",
