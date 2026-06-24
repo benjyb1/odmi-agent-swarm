@@ -1,0 +1,848 @@
+{
+  "headline": {
+    "pooled (all rows)": {
+      "n": 1065,
+      "acc": 0.6985915492957746,
+      "fp": 268,
+      "fn": 53,
+      "neg": 379,
+      "neg_fp": 268
+    },
+    "pooled, dev only": {
+      "n": 858,
+      "acc": 0.6713286713286714,
+      "fp": 242,
+      "fn": 40,
+      "neg": 339,
+      "neg_fp": 242
+    },
+    "production (dedup)": {
+      "n": 243,
+      "acc": 0.8806584362139918,
+      "fp": 6,
+      "fn": 23,
+      "neg": 33,
+      "neg_fp": 6
+    },
+    "production, dev": {
+      "n": 234,
+      "acc": 0.8760683760683761,
+      "fp": 6,
+      "fn": 23,
+      "neg": 32,
+      "neg_fp": 6
+    },
+    "NL only (all arms)": {
+      "n": 549,
+      "acc": 0.575591985428051,
+      "fp": 223,
+      "fn": 10,
+      "neg": 266,
+      "neg_fp": 223
+    },
+    "MT only (all arms)": {
+      "n": 110,
+      "acc": 0.7454545454545455,
+      "fp": 16,
+      "fn": 12,
+      "neg": 63,
+      "neg_fp": 16
+    },
+    "held-out (diagnostic)": {
+      "n": 198,
+      "acc": 0.803030303030303,
+      "fp": 26,
+      "fn": 13,
+      "neg": 39,
+      "neg_fp": 26
+    }
+  },
+  "calibration": {
+    "pooled": {
+      "ece": 0.10503286384976526,
+      "mce": 0.3869230769230769,
+      "brier": 0.21584394366197182,
+      "n": 1065,
+      "commit_bands": [
+        {
+          "band": "[0.00,0.50)",
+          "n": 11,
+          "acc": 0.2727272727272727
+        },
+        {
+          "band": "[0.50,0.65)",
+          "n": 32,
+          "acc": 0.84375
+        },
+        {
+          "band": "[0.65,0.80)",
+          "n": 599,
+          "acc": 0.671118530884808
+        },
+        {
+          "band": "[0.80,0.90)",
+          "n": 249,
+          "acc": 0.642570281124498
+        },
+        {
+          "band": "[0.90,1.00)",
+          "n": 174,
+          "acc": 0.8735632183908046
+        }
+      ]
+    },
+    "pooled-dev": {
+      "ece": 0.12301864801864797,
+      "mce": 0.3816666666666666,
+      "brier": 0.2304469696969697,
+      "n": 858,
+      "commit_bands": [
+        {
+          "band": "[0.00,0.50)",
+          "n": 11,
+          "acc": 0.2727272727272727
+        },
+        {
+          "band": "[0.50,0.65)",
+          "n": 30,
+          "acc": 0.8333333333333334
+        },
+        {
+          "band": "[0.65,0.80)",
+          "n": 478,
+          "acc": 0.6422594142259415
+        },
+        {
+          "band": "[0.80,0.90)",
+          "n": 203,
+          "acc": 0.6059113300492611
+        },
+        {
+          "band": "[0.90,1.00)",
+          "n": 136,
+          "acc": 0.8676470588235294
+        }
+      ]
+    },
+    "production": {
+      "ece": 0.12135802469135802,
+      "mce": 0.34777777777777774,
+      "brier": 0.1010283950617284,
+      "n": 243,
+      "commit_bands": [
+        {
+          "band": "[0.00,0.50)",
+          "n": 8,
+          "acc": 0.25
+        },
+        {
+          "band": "[0.50,0.65)",
+          "n": 26,
+          "acc": 0.8076923076923077
+        },
+        {
+          "band": "[0.65,0.80)",
+          "n": 95,
+          "acc": 0.8210526315789474
+        },
+        {
+          "band": "[0.80,0.90)",
+          "n": 50,
+          "acc": 1.0
+        },
+        {
+          "band": "[0.90,1.00)",
+          "n": 64,
+          "acc": 0.984375
+        }
+      ]
+    },
+    "NL-only": {
+      "ece": 0.20477231329690346,
+      "mce": 0.44999999999999996,
+      "brier": 0.28747030965391623,
+      "n": 549,
+      "commit_bands": [
+        {
+          "band": "[0.50,0.65)",
+          "n": 2,
+          "acc": 1.0
+        },
+        {
+          "band": "[0.65,0.80)",
+          "n": 322,
+          "acc": 0.5652173913043478
+        },
+        {
+          "band": "[0.80,0.90)",
+          "n": 147,
+          "acc": 0.48299319727891155
+        },
+        {
+          "band": "[0.90,1.00)",
+          "n": 78,
+          "acc": 0.782051282051282
+        }
+      ]
+    }
+  },
+  "catalogue_theory": {
+    "catalogue_committed": 9,
+    "hi_band": 189,
+    "hi_band_catalogue": 9,
+    "binary_catalogue": 0,
+    "catalogue_confs": [
+      0.95
+    ]
+  },
+  "theory1": {
+    "pooled-dev": {
+      "correct": {
+        "n": 576,
+        "mean": 0.7748958333333333,
+        "median": 0.75
+      },
+      "false_positive": {
+        "n": 242,
+        "mean": 0.7673553719008264,
+        "median": 0.75
+      },
+      "false_negative": {
+        "n": 40,
+        "mean": 0.64175,
+        "median": 0.65
+      },
+      "neg_fp_per_band": [
+        {
+          "band": "[0.50,0.65)",
+          "n": 16,
+          "fp_rate": 0.0625,
+          "ci": [
+            0.011119344764642547,
+            0.2832873757029893
+          ]
+        },
+        {
+          "band": "[0.65,0.80)",
+          "n": 220,
+          "fp_rate": 0.65,
+          "ci": [
+            0.5848888108500723,
+            0.709962734291387
+          ]
+        },
+        {
+          "band": "[0.80,0.90)",
+          "n": 82,
+          "fp_rate": 0.975609756097561,
+          "ci": [
+            0.9153662160893606,
+            0.9932856296688367
+          ]
+        },
+        {
+          "band": "[0.90,1.00)",
+          "n": 19,
+          "fp_rate": 0.8947368421052632,
+          "ci": [
+            0.68605917288891,
+            0.9706414397011298
+          ]
+        }
+      ]
+    },
+    "NL-only": {
+      "correct": {
+        "n": 316,
+        "mean": 0.7819936708860759,
+        "median": 0.75
+      },
+      "false_positive": {
+        "n": 223,
+        "mean": 0.77304932735426,
+        "median": 0.78
+      },
+      "false_negative": {
+        "n": 10,
+        "mean": 0.712,
+        "median": 0.72
+      },
+      "neg_fp_per_band": [
+        {
+          "band": "[0.50,0.65)",
+          "n": 2,
+          "fp_rate": 0.0,
+          "ci": [
+            0.0,
+            0.6576197724933468
+          ]
+        },
+        {
+          "band": "[0.65,0.80)",
+          "n": 167,
+          "fp_rate": 0.7784431137724551,
+          "ci": [
+            0.7095941259979625,
+            0.8347702258518291
+          ]
+        },
+        {
+          "band": "[0.80,0.90)",
+          "n": 78,
+          "fp_rate": 0.9743589743589743,
+          "ci": [
+            0.9112472996432416,
+            0.9929399065272407
+          ]
+        },
+        {
+          "band": "[0.90,1.00)",
+          "n": 19,
+          "fp_rate": 0.8947368421052632,
+          "ci": [
+            0.68605917288891,
+            0.9706414397011298
+          ]
+        }
+      ]
+    }
+  },
+  "threshold_sweep": {
+    "pooled-dev binary": {
+      "N": 1319,
+      "neg_total": 592,
+      "optimism": {
+        "abstained_with_candidate": 360,
+        "verifier_rejected": 213,
+        "verifier_passed": 147,
+        "other": 0
+      },
+      "rows": [
+        {
+          "t": 0.5,
+          "committed": 1093,
+          "correct": 729,
+          "precision": 0.666971637694419,
+          "coverage": 0.8286580742987112,
+          "recall": 0.5526914329037149,
+          "neg_committed": 480,
+          "neg_fp": 289,
+          "neg_fp_rate": 0.6020833333333333,
+          "neg_fp_rate_all": 0.48817567567567566
+        },
+        {
+          "t": 0.55,
+          "committed": 999,
+          "correct": 665,
+          "precision": 0.6656656656656657,
+          "coverage": 0.7573919636087946,
+          "recall": 0.5041698256254739,
+          "neg_committed": 424,
+          "neg_fp": 279,
+          "neg_fp_rate": 0.6580188679245284,
+          "neg_fp_rate_all": 0.47128378378378377
+        },
+        {
+          "t": 0.6,
+          "committed": 929,
+          "correct": 614,
+          "precision": 0.6609257265877287,
+          "coverage": 0.7043214556482184,
+          "recall": 0.4655041698256255,
+          "neg_committed": 390,
+          "neg_fp": 270,
+          "neg_fp_rate": 0.6923076923076923,
+          "neg_fp_rate_all": 0.4560810810810811
+        },
+        {
+          "t": 0.65,
+          "committed": 837,
+          "correct": 558,
+          "precision": 0.6666666666666666,
+          "coverage": 0.6345716451857468,
+          "recall": 0.4230477634571645,
+          "neg_committed": 332,
+          "neg_fp": 250,
+          "neg_fp_rate": 0.7530120481927711,
+          "neg_fp_rate_all": 0.4222972972972973
+        },
+        {
+          "t": 0.7,
+          "committed": 646,
+          "correct": 432,
+          "precision": 0.6687306501547987,
+          "coverage": 0.489764973464746,
+          "recall": 0.32752084912812734,
+          "neg_committed": 231,
+          "neg_fp": 201,
+          "neg_fp_rate": 0.8701298701298701,
+          "neg_fp_rate_all": 0.33952702702702703
+        },
+        {
+          "t": 0.75,
+          "committed": 472,
+          "correct": 320,
+          "precision": 0.6779661016949152,
+          "coverage": 0.35784685367702807,
+          "recall": 0.24260803639120546,
+          "neg_committed": 157,
+          "neg_fp": 148,
+          "neg_fp_rate": 0.9426751592356688,
+          "neg_fp_rate_all": 0.25
+        },
+        {
+          "t": 0.8,
+          "committed": 339,
+          "correct": 241,
+          "precision": 0.7109144542772862,
+          "coverage": 0.25701288855193327,
+          "recall": 0.18271417740712662,
+          "neg_committed": 101,
+          "neg_fp": 97,
+          "neg_fp_rate": 0.9603960396039604,
+          "neg_fp_rate_all": 0.16385135135135134
+        },
+        {
+          "t": 0.85,
+          "committed": 242,
+          "correct": 186,
+          "precision": 0.768595041322314,
+          "coverage": 0.18347232752084913,
+          "recall": 0.14101592115238817,
+          "neg_committed": 58,
+          "neg_fp": 55,
+          "neg_fp_rate": 0.9482758620689655,
+          "neg_fp_rate_all": 0.0929054054054054
+        },
+        {
+          "t": 0.9,
+          "committed": 136,
+          "correct": 118,
+          "precision": 0.8676470588235294,
+          "coverage": 0.10310841546626232,
+          "recall": 0.08946171341925702,
+          "neg_committed": 19,
+          "neg_fp": 17,
+          "neg_fp_rate": 0.8947368421052632,
+          "neg_fp_rate_all": 0.028716216216216218
+        }
+      ]
+    },
+    "NL binary": {
+      "N": 652,
+      "neg_total": 351,
+      "optimism": {
+        "abstained_with_candidate": 103,
+        "verifier_rejected": 56,
+        "verifier_passed": 47,
+        "other": 0
+      },
+      "rows": [
+        {
+          "t": 0.5,
+          "committed": 633,
+          "correct": 358,
+          "precision": 0.5655608214849921,
+          "coverage": 0.9708588957055214,
+          "recall": 0.549079754601227,
+          "neg_committed": 337,
+          "neg_fp": 262,
+          "neg_fp_rate": 0.7774480712166172,
+          "neg_fp_rate_all": 0.7464387464387464
+        },
+        {
+          "t": 0.55,
+          "committed": 606,
+          "correct": 340,
+          "precision": 0.5610561056105611,
+          "coverage": 0.9294478527607362,
+          "recall": 0.5214723926380368,
+          "neg_committed": 313,
+          "neg_fp": 254,
+          "neg_fp_rate": 0.8115015974440895,
+          "neg_fp_rate_all": 0.7236467236467237
+        },
+        {
+          "t": 0.6,
+          "committed": 589,
+          "correct": 331,
+          "precision": 0.5619694397283531,
+          "coverage": 0.9033742331288344,
+          "recall": 0.5076687116564417,
+          "neg_committed": 299,
+          "neg_fp": 246,
+          "neg_fp_rate": 0.822742474916388,
+          "neg_fp_rate_all": 0.7008547008547008
+        },
+        {
+          "t": 0.65,
+          "committed": 554,
+          "correct": 315,
+          "precision": 0.5685920577617328,
+          "coverage": 0.8496932515337423,
+          "recall": 0.4831288343558282,
+          "neg_committed": 270,
+          "neg_fp": 229,
+          "neg_fp_rate": 0.8481481481481481,
+          "neg_fp_rate_all": 0.6524216524216524
+        },
+        {
+          "t": 0.7,
+          "committed": 455,
+          "correct": 256,
+          "precision": 0.5626373626373626,
+          "coverage": 0.6978527607361963,
+          "recall": 0.39263803680981596,
+          "neg_committed": 213,
+          "neg_fp": 191,
+          "neg_fp_rate": 0.8967136150234741,
+          "neg_fp_rate_all": 0.5441595441595442
+        },
+        {
+          "t": 0.75,
+          "committed": 326,
+          "correct": 185,
+          "precision": 0.5674846625766872,
+          "coverage": 0.5,
+          "recall": 0.2837423312883436,
+          "neg_committed": 147,
+          "neg_fp": 140,
+          "neg_fp_rate": 0.9523809523809523,
+          "neg_fp_rate_all": 0.39886039886039887
+        },
+        {
+          "t": 0.8,
+          "committed": 225,
+          "correct": 132,
+          "precision": 0.5866666666666667,
+          "coverage": 0.3450920245398773,
+          "recall": 0.20245398773006135,
+          "neg_committed": 97,
+          "neg_fp": 93,
+          "neg_fp_rate": 0.9587628865979382,
+          "neg_fp_rate_all": 0.26495726495726496
+        },
+        {
+          "t": 0.85,
+          "committed": 156,
+          "correct": 102,
+          "precision": 0.6538461538461539,
+          "coverage": 0.2392638036809816,
+          "recall": 0.15644171779141106,
+          "neg_committed": 57,
+          "neg_fp": 54,
+          "neg_fp_rate": 0.9473684210526315,
+          "neg_fp_rate_all": 0.15384615384615385
+        },
+        {
+          "t": 0.9,
+          "committed": 78,
+          "correct": 61,
+          "precision": 0.782051282051282,
+          "coverage": 0.1196319018404908,
+          "recall": 0.09355828220858896,
+          "neg_committed": 19,
+          "neg_fp": 17,
+          "neg_fp_rate": 0.8947368421052632,
+          "neg_fp_rate_all": 0.04843304843304843
+        }
+      ]
+    },
+    "production-dev binary": {
+      "N": 295,
+      "neg_total": 41,
+      "optimism": {
+        "abstained_with_candidate": 44,
+        "verifier_rejected": 26,
+        "verifier_passed": 18,
+        "other": 0
+      },
+      "rows": [
+        {
+          "t": 0.5,
+          "committed": 257,
+          "correct": 227,
+          "precision": 0.8832684824902723,
+          "coverage": 0.8711864406779661,
+          "recall": 0.7694915254237288,
+          "neg_committed": 35,
+          "neg_fp": 6,
+          "neg_fp_rate": 0.17142857142857143,
+          "neg_fp_rate_all": 0.14634146341463414
+        },
+        {
+          "t": 0.55,
+          "committed": 247,
+          "correct": 218,
+          "precision": 0.8825910931174089,
+          "coverage": 0.8372881355932204,
+          "recall": 0.7389830508474576,
+          "neg_committed": 31,
+          "neg_fp": 6,
+          "neg_fp_rate": 0.1935483870967742,
+          "neg_fp_rate_all": 0.14634146341463414
+        },
+        {
+          "t": 0.6,
+          "committed": 231,
+          "correct": 205,
+          "precision": 0.8874458874458875,
+          "coverage": 0.7830508474576271,
+          "recall": 0.6949152542372882,
+          "neg_committed": 31,
+          "neg_fp": 6,
+          "neg_fp_rate": 0.1935483870967742,
+          "neg_fp_rate_all": 0.14634146341463414
+        },
+        {
+          "t": 0.65,
+          "committed": 210,
+          "correct": 191,
+          "precision": 0.9095238095238095,
+          "coverage": 0.711864406779661,
+          "recall": 0.6474576271186441,
+          "neg_committed": 23,
+          "neg_fp": 5,
+          "neg_fp_rate": 0.21739130434782608,
+          "neg_fp_rate_all": 0.12195121951219512
+        },
+        {
+          "t": 0.7,
+          "committed": 160,
+          "correct": 155,
+          "precision": 0.96875,
+          "coverage": 0.5423728813559322,
+          "recall": 0.5254237288135594,
+          "neg_committed": 6,
+          "neg_fp": 1,
+          "neg_fp_rate": 0.16666666666666666,
+          "neg_fp_rate_all": 0.024390243902439025
+        },
+        {
+          "t": 0.75,
+          "committed": 131,
+          "correct": 129,
+          "precision": 0.9847328244274809,
+          "coverage": 0.4440677966101695,
+          "recall": 0.43728813559322033,
+          "neg_committed": 1,
+          "neg_fp": 0,
+          "neg_fp_rate": 0.0,
+          "neg_fp_rate_all": 0.0
+        },
+        {
+          "t": 0.8,
+          "committed": 109,
+          "correct": 108,
+          "precision": 0.9908256880733946,
+          "coverage": 0.3694915254237288,
+          "recall": 0.36610169491525424,
+          "neg_committed": 0,
+          "neg_fp": 0,
+          "neg_fp_rate": null,
+          "neg_fp_rate_all": 0.0
+        },
+        {
+          "t": 0.85,
+          "committed": 83,
+          "correct": 82,
+          "precision": 0.9879518072289156,
+          "coverage": 0.28135593220338984,
+          "recall": 0.27796610169491526,
+          "neg_committed": 0,
+          "neg_fp": 0,
+          "neg_fp_rate": null,
+          "neg_fp_rate_all": 0.0
+        },
+        {
+          "t": 0.9,
+          "committed": 59,
+          "correct": 58,
+          "precision": 0.9830508474576272,
+          "coverage": 0.2,
+          "recall": 0.19661016949152543,
+          "neg_committed": 0,
+          "neg_fp": 0,
+          "neg_fp_rate": null,
+          "neg_fp_rate_all": 0.0
+        }
+      ]
+    }
+  },
+  "per_shape": {
+    "binary": {
+      "N": 1378,
+      "at_065": {
+        "t": 0.65,
+        "committed": 859,
+        "correct": 573,
+        "precision": 0.6670547147846333,
+        "precision_ci": [
+          0.6348573093065818,
+          0.697764630756733
+        ],
+        "coverage": 0.6233671988388969,
+        "recall": 0.4158200290275762,
+        "neg_committed": 332,
+        "neg_fp": 250,
+        "neg_fp_rate": 0.7530120481927711,
+        "neg_fp_rate_all": 0.4222972972972973
+      },
+      "at_080": {
+        "t": 0.8,
+        "committed": 351,
+        "correct": 251,
+        "precision": 0.7150997150997151,
+        "precision_ci": [
+          0.6657498609721837,
+          0.7597922966489816
+        ],
+        "coverage": 0.25471698113207547,
+        "recall": 0.18214804063860668,
+        "neg_committed": 101,
+        "neg_fp": 97,
+        "neg_fp_rate": 0.9603960396039604,
+        "neg_fp_rate_all": 0.16385135135135134
+      }
+    },
+    "percentage_band": {
+      "N": 15,
+      "at_065": {
+        "t": 0.65,
+        "committed": 0,
+        "correct": 0,
+        "precision": null,
+        "precision_ci": [
+          null,
+          null
+        ],
+        "coverage": 0.0,
+        "recall": 0.0,
+        "neg_committed": 0,
+        "neg_fp": 0,
+        "neg_fp_rate": null,
+        "neg_fp_rate_all": null
+      },
+      "at_080": {
+        "t": 0.8,
+        "committed": 0,
+        "correct": 0,
+        "precision": null,
+        "precision_ci": [
+          null,
+          null
+        ],
+        "coverage": 0.0,
+        "recall": 0.0,
+        "neg_committed": 0,
+        "neg_fp": 0,
+        "neg_fp_rate": null,
+        "neg_fp_rate_all": null
+      }
+    }
+  },
+  "predictive_power": {
+    "pooled binary": {
+      "n": 1065,
+      "auc_answer": {
+        "auc": 0.5528380732254715,
+        "lo": 0.5158256516605406,
+        "hi": 0.5898504947904024,
+        "se": 0.01888388855353617
+      },
+      "auc_retrieval": {
+        "auc": 0.5866621445080896,
+        "lo": 0.5504270764887123,
+        "hi": 0.622897212527467,
+        "se": 0.018487279601723153
+      },
+      "auc_mean": 0.5744418483904465,
+      "corr_answer_retrieval": 0.8249912725085858,
+      "base_accuracy": 0.6985915492957746,
+      "retrieval_within_fixed_answer_conf": {
+        "0.65": {
+          "n": 190,
+          "acc": 0.7052631578947368,
+          "auc_retrieval": 0.5197228144989339
+        },
+        "0.72": {
+          "n": 181,
+          "acc": 0.6408839779005525,
+          "auc_retrieval": 0.6242042440318303
+        }
+      },
+      "mean_conf_pred_yes": 0.7873029966703663,
+      "mean_conf_pred_no": 0.6689024390243903,
+      "auc_within_positive_gold": 0.7995320277802617,
+      "auc_within_negative_gold": 0.18095334140110259
+    },
+    "pooled-dev binary": {
+      "n": 858,
+      "auc_answer": {
+        "auc": 0.5465394749802994,
+        "lo": 0.5060498029486389,
+        "hi": 0.58702914701196,
+        "se": 0.020657995934520685
+      },
+      "auc_retrieval": {
+        "auc": 0.5865993154058313,
+        "lo": 0.5470248770376422,
+        "hi": 0.6261737537740204,
+        "se": 0.020191039983769914
+      },
+      "auc_mean": 0.5708511869582348,
+      "corr_answer_retrieval": 0.8190000428158403,
+      "base_accuracy": 0.6713286713286714,
+      "retrieval_within_fixed_answer_conf": {
+        "0.65": {
+          "n": 147,
+          "acc": 0.6938775510204082,
+          "auc_retrieval": 0.5208061002178649
+        },
+        "0.72": {
+          "n": 148,
+          "acc": 0.6216216216216216,
+          "auc_retrieval": 0.640527950310559
+        }
+      },
+      "mean_conf_pred_yes": 0.7865880721220527,
+      "mean_conf_pred_no": 0.6611678832116789,
+      "auc_within_positive_gold": 0.8369258872651357,
+      "auc_within_negative_gold": 0.1734472181988583
+    },
+    "NL binary": {
+      "n": 549,
+      "auc_answer": {
+        "auc": 0.5207597653066768,
+        "lo": 0.472011585954768,
+        "hi": 0.5695079446585856,
+        "se": 0.024871520077504476
+      },
+      "auc_retrieval": {
+        "auc": 0.5579059596892486,
+        "lo": 0.5096899640648578,
+        "hi": 0.6061219553136394,
+        "se": 0.024599997767546365
+      },
+      "auc_mean": 0.5483851252240995,
+      "corr_answer_retrieval": 0.7423805460864731,
+      "base_accuracy": 0.575591985428051,
+      "retrieval_within_fixed_answer_conf": {
+        "0.65": {
+          "n": 78,
+          "acc": 0.6410256410256411,
+          "auc_retrieval": 0.5017857142857143
+        },
+        "0.72": {
+          "n": 113,
+          "acc": 0.5398230088495575,
+          "auc_retrieval": 0.6848991172761665
+        }
+      },
+      "mean_conf_pred_yes": 0.785,
+      "mean_conf_pred_no": 0.7030188679245283,
+      "auc_within_positive_gold": 0.7571428571428571,
+      "auc_within_negative_gold": 0.23959745541766608
+    }
+  }
+}

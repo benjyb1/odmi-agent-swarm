@@ -1,0 +1,48 @@
+<svg viewBox="0 0 460 460" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif" font-size="12">
+<rect x="0" y="0" width="460" height="460" fill="white"/>
+<line x1="60" y1="400" x2="400" y2="400" stroke="#333"/>
+<line x1="60" y1="60" x2="60" y2="400" stroke="#333"/>
+<line x1="60" y1="400" x2="60" y2="405" stroke="#333"/>
+<text x="60" y="418" text-anchor="middle">0.00</text>
+<line x1="55" y1="400" x2="60" y2="400" stroke="#333"/>
+<text x="50" y="404" text-anchor="end">0.00</text>
+<line x1="145" y1="400" x2="145" y2="405" stroke="#333"/>
+<text x="145" y="418" text-anchor="middle">0.25</text>
+<line x1="55" y1="315" x2="60" y2="315" stroke="#333"/>
+<text x="50" y="319" text-anchor="end">0.25</text>
+<line x1="230" y1="400" x2="230" y2="405" stroke="#333"/>
+<text x="230" y="418" text-anchor="middle">0.50</text>
+<line x1="55" y1="230" x2="60" y2="230" stroke="#333"/>
+<text x="50" y="234" text-anchor="end">0.50</text>
+<line x1="315" y1="400" x2="315" y2="405" stroke="#333"/>
+<text x="315" y="418" text-anchor="middle">0.75</text>
+<line x1="55" y1="145" x2="60" y2="145" stroke="#333"/>
+<text x="50" y="149" text-anchor="end">0.75</text>
+<line x1="400" y1="400" x2="400" y2="405" stroke="#333"/>
+<text x="400" y="418" text-anchor="middle">1.00</text>
+<line x1="55" y1="60" x2="60" y2="60" stroke="#333"/>
+<text x="50" y="64" text-anchor="end">1.00</text>
+<line x1="60" y1="400" x2="400" y2="60" stroke="#999" stroke-dasharray="5 4"/>
+<text x="304.79999999999995" y="135" fill="#999" transform="rotate(-45 305 135)">perfect calibration</text>
+<text x="230" y="448" text-anchor="middle" font-size="13">stated answer_confidence (bin mean)</text>
+<text x="18" y="230" text-anchor="middle" font-size="13" transform="rotate(-90 18 230)">empirical accuracy</text>
+<circle cx="179.0" cy="400.0" r="4.0" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b"/>
+<circle cx="211.3" cy="298.0" r="6.2" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b"/>
+<circle cx="242.3" cy="86.2" r="6.6" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b"/>
+<circle cx="281.5" cy="159.9" r="18.7" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b"/>
+<circle cx="311.0" cy="177.6" r="22.3" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b"/>
+<circle cx="345.1" cy="181.5" r="18.8" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b"/>
+<circle cx="379.5" cy="103.0" r="16.2" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b"/>
+<polyline points="179.0,400.0 211.3,298.0 242.3,86.2 281.5,159.9 311.0,177.6 345.1,181.5 379.5,103.0" fill="none" stroke="#c0392b" stroke-width="1.5"/>
+<rect x="250" y="55" width="12" height="12" fill="#c0392b" fill-opacity="0.45" stroke="#c0392b"/>
+<text x="266" y="65">pooled (all arms) (ECE 0.11)</text>
+<circle cx="210.9" cy="315.0" r="5.8" fill="#2471a3" fill-opacity="0.45" stroke="#2471a3"/>
+<circle cx="244.0" cy="97.8" r="6.0" fill="#2471a3" fill-opacity="0.45" stroke="#2471a3"/>
+<circle cx="279.2" cy="148.9" r="11.1" fill="#2471a3" fill-opacity="0.45" stroke="#2471a3"/>
+<circle cx="310.8" cy="88.9" r="9.9" fill="#2471a3" fill-opacity="0.45" stroke="#2471a3"/>
+<circle cx="345.1" cy="60.0" r="10.1" fill="#2471a3" fill-opacity="0.45" stroke="#2471a3"/>
+<circle cx="382.5" cy="65.3" r="11.0" fill="#2471a3" fill-opacity="0.45" stroke="#2471a3"/>
+<polyline points="210.9,315.0 244.0,97.8 279.2,148.9 310.8,88.9 345.1,60.0 382.5,65.3" fill="none" stroke="#2471a3" stroke-width="1.5"/>
+<rect x="250" y="73" width="12" height="12" fill="#2471a3" fill-opacity="0.45" stroke="#2471a3"/>
+<text x="266" y="83">production (ECE 0.12)</text>
+</svg>
