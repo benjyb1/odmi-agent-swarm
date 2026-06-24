@@ -1,0 +1,17 @@
+{
+  "country_code": "AL",
+  "country_name": "Albania",
+  "portal_url": "https://opendata.gov.al/",
+  "trusted_domains": [
+    "opendata.gov.al",
+    "gov.al",
+    "www.gov.al",
+    "akshi.gov.al",
+    "instat.gov.al",
+    "parlament.al",
+    "qbz.gov.al",
+    "financa.gov.al",
+    "kryeministria.al"
+  ],
+  "notes": "Sources: opendata.gov.al is the national open data portal (data/catalogue/portal_seeds.json). akshi.gov.al is the operating agency (National Agency for Information Society, AKSHI) per the same seed entry. instat.gov.al is the Institute of Statistics (INSTAT). parlament.al is the Albanian Parliament. qbz.gov.al is the Centre for Official Publications, which hosts the Official Gazette. financa.gov.al is the Ministry of Finance and Economy (Impact-dimension). kryeministria.al is the Office of the Prime Minister. gov.al is the government root. data.europa.eu is deliberately excluded per D22. Authored for EXP-23; sanity-check before promoting to production retrieval narrowing. The list is 9 entries; Serper's SRCH-8 cap keeps the first 8, so kryeministria.al is reserve. Thin-web country: the practical authoritative open-data footprint is smaller than NL's."
+}

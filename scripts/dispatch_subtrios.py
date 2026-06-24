@@ -363,6 +363,7 @@ def dispatch(
     chained: bool = False,
     verifier_search: str = "always",
     query_language: str = "bilingual",
+    search_strategy: str = "narrow_then_wide",
     adjudicator_selection: str = "standard",
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -582,6 +583,11 @@ def dispatch(
                 # the 'bilingual' production default, so the baseline subprocess
                 # invocation is byte-identical.
                 cmd += ["--query-language", query_language]
+            if search_strategy and search_strategy != "narrow_then_wide":
+                # EXP-23 Researcher retrieval strategy. Only forwarded when
+                # it differs from the production default, so the baseline
+                # subprocess invocation is byte-identical.
+                cmd += ["--search-strategy", search_strategy]
             if adjudicator_selection and adjudicator_selection != "standard":
                 # EXP-16 free attempt-selection arm; default 'standard', so the
                 # baseline batch is byte-identical to production.
@@ -865,6 +871,19 @@ def main() -> int:
                              "is byte-identical to production. 'en' ablates the "
                              "native-language query so all queries are "
                              "English-only. See docs/EXPERIMENTS_FOREIGN_LANG.md.")
+    parser.add_argument("--search-strategy", default="narrow_then_wide",
+                        choices=["narrow_then_wide", "wide_only", "narrow_only"],
+                        help="EXP-23 Researcher retrieval strategy (SRCH-5/6), "
+                             "forwarded to each run_coordinator subprocess. "
+                             "'narrow_then_wide' (default) is byte-identical "
+                             "to production: trusted-domain include list on "
+                             "the first pass, widen only on empty. "
+                             "'wide_only' skips the include list entirely so "
+                             "every query runs against the open web. "
+                             "'narrow_only' keeps the include list but never "
+                             "widens, so any wide_only gain is attributable "
+                             "to the widening step rather than to the absence "
+                             "of narrowing.")
     parser.add_argument("--adjudicator-selection", default="standard",
                         choices=["standard", "free"],
                         help="EXP-16 candidate-selection mode forwarded to each "
@@ -942,6 +961,7 @@ def main() -> int:
         chained=args.chained,
         verifier_search=args.verifier_search,
         query_language=args.query_language,
+        search_strategy=args.search_strategy,
         adjudicator_selection=args.adjudicator_selection,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,

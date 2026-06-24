@@ -980,6 +980,7 @@ def coordinate(
     no_cache: bool = False,
     verifier_search: str = "always",
     query_language: str = "bilingual",
+    search_strategy: str = "narrow_then_wide",
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
@@ -1020,6 +1021,14 @@ def coordinate(
     Researcher's evidence. 'elective' is not built and raises
     NotImplementedError. The knob does not touch the substring gate or any
     verdict post-processing.
+
+    `search_strategy` (EXP-23) is the Researcher's retrieval strategy
+    (SRCH-5/6). 'narrow_then_wide' (the default) is byte-identical to
+    production: trusted-domain include list on the first pass, widen only
+    on empty. 'wide_only' skips the include list entirely so every query
+    runs against the open web. 'narrow_only' keeps the include list but
+    never widens, so EXP-23 can attribute any wide_only gain to the
+    widening step rather than to the absence of narrowing.
 
     Raises RateLimitedShutdown if any LLM call hits a 429; the caller
     (main()) catches it, marks the subtrio as interrupted_rate_limit,
@@ -1189,6 +1198,7 @@ def coordinate(
                 page_text_cap=page_text_cap,
                 max_snippet_chars=max_snippet_chars,
                 query_language=query_language,
+                search_strategy=search_strategy,
             )
             # Accumulate the queries used so the next attempt can diverge.
             accumulated_search_queries.extend(r_result.search_queries_used)
@@ -1636,6 +1646,17 @@ def main() -> int:
              "not English-speaking. 'en' ablates the native query so all "
              "queries are English-only. See docs/EXPERIMENTS_FOREIGN_LANG.md.")
     parser.add_argument(
+        "--search-strategy", default="narrow_then_wide",
+        choices=["narrow_then_wide", "wide_only", "narrow_only"],
+        help="EXP-23 Researcher retrieval strategy (SRCH-5/6). "
+             "'narrow_then_wide' (default) is byte-identical to production: "
+             "trusted-domain include list on the first pass, widen only on "
+             "empty. 'wide_only' skips the include list entirely so every "
+             "query runs against the open web (one pass, no widen). "
+             "'narrow_only' keeps the include list but never widens even on "
+             "empty, so EXP-23 can attribute any wide_only gain to the "
+             "widening step rather than to the absence of narrowing.")
+    parser.add_argument(
         "--adjudicator-selection", default="standard",
         choices=["standard", "free"],
         help="EXP-16 candidate-selection mode. 'standard' (default) is "
@@ -1684,6 +1705,7 @@ def main() -> int:
             no_cache=args.no_cache,
             verifier_search=args.verifier_search,
             query_language=args.query_language,
+            search_strategy=args.search_strategy,
             subtrio_id=subtrio_id,
             batch_id=batch_id,
             experiment_id=args.experiment_id,

@@ -1,0 +1,18 @@
+{
+  "country_code": "MT",
+  "country_name": "Malta",
+  "portal_url": "https://open.data.gov.mt/",
+  "trusted_domains": [
+    "open.data.gov.mt",
+    "data.gov.mt",
+    "gov.mt",
+    "www.gov.mt",
+    "mita.gov.mt",
+    "nso.gov.mt",
+    "legislation.mt",
+    "justiceservices.gov.mt",
+    "economy.gov.mt",
+    "parlament.mt"
+  ],
+  "notes": "Sources: open.data.gov.mt and data.gov.mt are the national open data portal and its documented alternate host (data/catalogue/portal_seeds.json). mita.gov.mt is the operating agency (Malta Information Technology Agency) per the same seed entry. nso.gov.mt is the National Statistics Office. legislation.mt is the Laws of Malta corpus; justiceservices.gov.mt is the wider Ministry for Justice services hub. economy.gov.mt is the Ministry for the Economy (Impact-dimension). parlament.mt is Parliament. gov.mt is the government root. data.europa.eu is deliberately excluded per D22. Authored for EXP-23; sanity-check before promoting to production retrieval narrowing. The list is 10 entries; Serper's SRCH-8 cap keeps the first 8 (everything down to justiceservices.gov.mt), so economy.gov.mt and parlament.mt are reserve."
+}
