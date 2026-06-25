@@ -235,7 +235,7 @@ def diy_search(
                 break
             continue
 
-        cached_chunks = cache.snippet_get(query, text)
+        cached_chunks = cache.snippet_get(query, text, picker_model=picker_model)
         if cached_chunks is None:
             # Pass the funnel knobs only when they differ from the picker's
             # own defaults, so the default production call is byte-identical
@@ -252,7 +252,7 @@ def diy_search(
                 subtrio_id=subtrio_id,
                 **picker_kwargs,
             )
-            cache.snippet_put(query, text, chunks)
+            cache.snippet_put(query, text, chunks, picker_model=picker_model)
         else:
             chunks = cached_chunks
         if not chunks:

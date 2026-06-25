@@ -256,3 +256,39 @@ class TestSnippetCache:
         sc.snippet_put("query", "page", [])
         hit = sc.snippet_get("query", "page")
         assert hit == []
+
+    def test_different_picker_model_different_key(self) -> None:
+        # A row written by one picker model must not be served to another.
+        # This is the core invariant for the picker_model knob.
+        chunks_opus = _make_chunks(2)
+        sc.snippet_put("q", "page", chunks_opus, picker_model="claude-opus-4-6")
+        # Sonnet must miss the Opus row.
+        assert sc.snippet_get("q", "page", picker_model="claude-sonnet-4-6") is None
+        # The default (production) None must also miss the Opus row.
+        assert sc.snippet_get("q", "page") is None
+        # Opus still hits its own row.
+        hit = sc.snippet_get("q", "page", picker_model="claude-opus-4-6")
+        assert hit is not None
+        assert len(hit) == 2
+
+    def test_picker_model_none_vs_named_distinct_keys(self) -> None:
+        # _snippet_key must produce distinct hashes for None and a named
+        # model on the same (query, page_text). This pins the migration
+        # behaviour: production (None) keeps its own namespace, and any
+        # experiment that overrides picker_model writes a fresh row.
+        k_none = sc._snippet_key("q", "page")
+        k_opus = sc._snippet_key("q", "page", picker_model="claude-opus-4-6")
+        k_sonnet = sc._snippet_key("q", "page", picker_model="claude-sonnet-4-6")
+        assert k_none != k_opus
+        assert k_none != k_sonnet
+        assert k_opus != k_sonnet
+
+    def test_default_get_hits_default_put(self) -> None:
+        # Production reads (picker_model=None) must keep hitting production
+        # writes (picker_model=None). This guards against the migration
+        # accidentally making None its own special key.
+        chunks = _make_chunks(2)
+        sc.snippet_put("q", "page", chunks)
+        hit = sc.snippet_get("q", "page")
+        assert hit is not None
+        assert len(hit) == 2
