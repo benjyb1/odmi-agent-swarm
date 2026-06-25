@@ -699,3 +699,68 @@ commits less often but is more accurate and lower-FP when it does (0.66 acc, 12
 FP), `picker_on` commits almost everything at lower precision. Neither dominates,
 and at n = 50 the accuracy gap sits inside overlapping CIs. Single dev run, NL
 only (the design's FR candidate-recall read is still owed); descriptive.
+
+## EXP-22 / EXP-24: entailment and argue-the-opposite commit gates (done, NULL/harmful)
+
+The confidence deep dive (`docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md`) showed
+`answer_confidence` is a near-chance correctness ranker (AUROC 0.55) whose signal
+flips sign within the negative class (within-negative AUROC 0.17): the swarm's
+most confident `no`-gold commits are its most often wrong. EXP-22 and EXP-24 test
+the two pre-registered gates meant to fix that by conditioning on evidence rather
+than the label. Pre-registered in the `experiments` table as
+`exp22_entailment_gate` / `exp24_argue_opposite`; design in the deep dive
+section 6.
+
+Both are frozen-evidence replays over one shared scoring pass: for each NL
+committed binary pair, a single production-Sonnet (`claude-sonnet-4-6`)
+Verifier-side call scores how strongly the cited evidence establishes the
+proposed label (`entailment_for`) and the opposite (`entailment_against`). The
+two experiments are decision rules on those scores, each compared against the
+production commit (the 0.65 floor). Both can only turn a commit into an
+abstention, never flip a label. Deviation from the deep dive's pre-registration,
+recorded per R1: the scorer is production Sonnet, not the Opus named when Sonnet
+quota was exhausted; this removes a model confound and matches the production
+Verifier. `evaluation/confidence_gates.py`.
+
+Result (2026-06-25, NL, n = 50 committed pairs, 25 committed negative golds).
+
+| arm | commit acc | abstain | neg-gold FP rate [95% CI] | Youden J | adopt |
+|---|---|---|---|---|---|
+| baseline (`answer_confidence` >= 0.65) | 0.62 | 0% | 0.76 [0.57, 0.88] (19/25) | +0.24 | — |
+| EXP-22 `entailment_for` >= 0.70 | 0.54 | 30% | **1.00** [0.81, 1.00] (16/16) | +0.00 | no |
+| EXP-24 margin (for - against) >= 0.25 | 0.60 | 14% | 0.85 [0.64, 0.95] (17/20) | +0.15 | no |
+
+**Verdict: both NULL, and in fact harmful.** Neither gate clears the adoption bar
+(FP rate drop >= 15pp, no balanced-accuracy loss, abstention rise <= 10pp); both
+move every term the wrong way. The entailment gate *raises* the negative-gold FP
+rate from 0.76 to 1.00 and halves Youden's J, because the correct `no` commits
+are the low-entailment ones (thin / absence evidence) and abstain first, while the
+confident false positives carry high entailment and sail through. Paired McNemar
+on the negative golds: EXP-22 caught 3 of 19 FPs (p = 0.25), EXP-24 caught 2
+(p = 0.50), 0 of them the high-confidence (>= 0.80) FPs the check was designed for.
+
+This is the within-negative sign-flip made operational and confirmed on the
+production model. The mechanism is the one the NL false-positive audit found
+(`evaluation/nl_fp_audit.py` + `nl_fp_audit_adversarial.py`): the NL FPs are
+well-evidenced loose-`yes` answers in which the open-web evidence genuinely
+supports a `yes` reading (scored FP `entailment_for` 0.74 vs correct 0.68; margin
++0.69 vs +0.59 — the FPs look *more* like supported `yes` answers than the correct
+commits do). A charitable audit pass calls only 1-2 of 22 a genuine swarm error;
+an adversarial advocate pass (told to argue ODMI is wrong) vindicates the swarm on
+0 of 22 but rates 11 clear over-reads and 11 ambiguous, so the genuine-error rate
+brackets ~5% to ~50% by framing. Either way the disagreement is a strict-vs-loose
+question reading against a self-report gold, which no evidence-grounded gate can
+arbitrate. No
+evidence-grounded gate can separate a well-evidenced `yes` from a gold `no` that
+encodes the country's unpublished self-report. The correct response is the
+`decision`-stratified reporting (D22; Analytics page self-report split) and the
+D22 staleness adjudication of `confirm`-gold disagreements, not a better commit
+gate.
+
+Honest limits: underpowered by construction — deduped to one row per question, NL
+holds only 25 committed negative golds (the deep dive's 266 were non-independent
+pooled-across-arms rows), so the McNemar tests are not powered for a small true
+effect; the direction and the mechanism, not the p-values, carry the result.
+EXP-23 (self-consistency, 5x cost) and EXP-25 (decomposed score, spends the frozen
+held-out measurement) are held: same target, same null mechanism, and EXP-25 must
+wait for a config lock.

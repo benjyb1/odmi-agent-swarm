@@ -1,0 +1,76 @@
+{
+  "model": "claude-sonnet-4-6",
+  "n_scored": 50,
+  "snapshot_max_final_id": 1863,
+  "baseline": {
+    "n_total": 50,
+    "n_committed": 50,
+    "abstention_rate": 0.0,
+    "acc_committed": 0.62,
+    "n_neg_committed": 25,
+    "fp": 19,
+    "fp_rate": 0.76,
+    "fp_ci": [
+      0.566,
+      0.885
+    ],
+    "tpr": 1.0,
+    "tnr": 0.24,
+    "youden_j": 0.24
+  },
+  "exp22_entailment_gate": {
+    "arm": {
+      "n_total": 50,
+      "n_committed": 35,
+      "abstention_rate": 0.3,
+      "acc_committed": 0.543,
+      "n_neg_committed": 16,
+      "fp": 16,
+      "fp_rate": 1.0,
+      "fp_ci": [
+        0.806,
+        1.0
+      ],
+      "tpr": 1.0,
+      "tnr": 0.0,
+      "youden_j": 0.0
+    },
+    "mcnemar_b": 3,
+    "mcnemar_p": 0.25,
+    "decision": {
+      "fp_drop_pp": -24.0,
+      "abst_rise_pp": 30.0,
+      "youden_fall": 0.24,
+      "fps_caught": 3,
+      "adopt": false
+    }
+  },
+  "exp24_argue_opposite": {
+    "arm": {
+      "n_total": 50,
+      "n_committed": 43,
+      "abstention_rate": 0.14,
+      "acc_committed": 0.605,
+      "n_neg_committed": 20,
+      "fp": 17,
+      "fp_rate": 0.85,
+      "fp_ci": [
+        0.64,
+        0.948
+      ],
+      "tpr": 1.0,
+      "tnr": 0.15,
+      "youden_j": 0.15
+    },
+    "mcnemar_b": 2,
+    "mcnemar_p": 0.5,
+    "high_conf_fps_caught": 0,
+    "decision": {
+      "fp_drop_pp": -9.0,
+      "abst_rise_pp": 14.0,
+      "youden_fall": 0.09,
+      "fps_caught": 2,
+      "adopt": false
+    }
+  }
+}

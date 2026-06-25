@@ -193,14 +193,20 @@ gold is web-evidenced (`complement`), the swarm is ~92% accurate across all
 dimensions; where ODMI took the country's word (`confirm`), it is ~77%, and that
 is where the false positives sit.
 
-Caveat: the questionnaire / self-report framing is confirmed by the official
-source; the precise `confirm` / `complement` / `change` definitions are inferred
-from the field values and the explanation voice (the methodology PDF did not
-machine-read), worth a one-line confirmation against the official definitions
-before this is load-bearing in the dissertation. Reproduce the table with
-`evaluation/selfreport_decision_split.py` over the canonical DB (1,724 finalised
-rows); counts drift by one or two while a dispatch window writes the DB, so treat
-them as a snapshot, not a constant.
+Definitions confirmed (2026-06-25). The three-way taxonomy is no longer inferred:
+the official 2022 ODMI methodology paper lists "Complement the results with
+additional desk research" as a named assessment step (step 4 of the work
+approach), and the 2024 methodology describes the research team validating
+submitted responses while respondents "confirm or change" prefilled prior-year
+answers. The field values match these actions, and the score/explanation
+signatures in the data corroborate them: `complement` rows are 100% explained,
+their explanations average ~1,830 characters (4x the others) and they score 0.87
+of max; `change` rows carry the highest zero-score rate (40%); `confirm` is the
+accepted-as-submitted baseline. So `complement` = answer kept with assessor-added
+web evidence, `change` = assessor overrode, `confirm` = the country's word
+accepted. Reproduce the table with `evaluation/selfreport_decision_split.py` over
+the canonical DB; counts drift by one or two while a dispatch window writes the
+DB, so treat them as a snapshot, not a constant.
 
 ---
 
@@ -715,3 +721,4 @@ scalar.
 |---|---|
 | 2026-06-24 | Created. Reproduced the pooled headline (1065 / 744 / 268 FP), decomposed it (NL-under-degraded-arms vs 88% production), refuted the catalogue-band theory, confirmed Theory 1 (FPs as confident as correct answers), showed the precision frontier is flat (no working single floor), and proved the mechanism (within-positive AUROC 0.84, within-negative 0.17; the confidence encodes the label, not correctness). Added the decomposed/class-aware/calibrated redesign, pre-registered EXP-22 to EXP-25, and the free-vs-quota do-next list. Analysis in `evaluation/confidence_deepdive.py`; SVG and JSON in `evaluation/results/`. |
 | 2026-06-24 | Step 1 (free): no stored signal beats answer_confidence (`evaluation/confidence_signals_replay.py`); all anti-predictive on the negative class. Step 2 (Opus smoke, `evaluation/exp22_entailment_smoke.py`): an explicit entailment score does not separate correct from false positives (0.74 vs 0.75) because the FPs carry genuinely strong evidence. Traced the FPs to source: the production Verifier passed 217/223 NL FPs after its own independent search. Added section 1A, the self-report reframe: ODMI is a country self-report questionnaire validated by Capgemini (`decision` confirm/complement/change, all dimensions), source-verified; swarm is 92% accurate on web-evidenced (`complement`) golds and 78% on accepted-self-report (`confirm`) golds, where the false positives sit. `evaluation/selfreport_decision_split.py`. |
+| 2026-06-25 | Confirmatory pass on production Sonnet (quota restored). **EXP-22 / EXP-24 both NULL and harmful** (`evaluation/confidence_gates.py`, NL n=50, 25 committed negative golds): the entailment gate raises the negative-gold FP rate 0.76 to 1.00 and halves Youden's J, the argue-opposite margin gate likewise, because the correct `no` commits are the low-entailment ones and abstain first while the confident FPs (entailment_for 0.74 vs correct 0.68) sail through. McNemar caught 3/19 and 2/19 FPs (p=0.25, 0.50), 0 high-confidence. Pre-registered `exp22_entailment_gate` / `exp24_argue_opposite`; EXP-23/25 held (same null mechanism; EXP-25 spends the frozen held-out set). **NL false-positive audit** (`evaluation/nl_fp_audit.py` + `nl_fp_audit_adversarial.py`, 22 questions over frozen evidence, two framings). Charitable pass: 1 genuine swarm error on Opus (PT25), 2 on Sonnet (I8-d, PT4), rest definitional/self-report — a ~5-9% error rate. Adversarial advocate pass (Opus told to defend the swarm's `yes` and argue ODMI's `no` is wrong): **0/22 gold_wrong** (the swarm is never vindicated), 11/22 clear over-reads with the gold standing, 11/22 genuinely ambiguous. So the genuine-error rate **brackets ~5% (charitable) to ~50% (strict over-read)** and is framing-dependent; the robust, framing-independent findings are that no NL FP is a case of the swarm being right against a stale gold, and the disagreements are strict-vs-loose question readings and self-report that no evidence gate can resolve. **Decision definitions confirmed** against the official 2022/2024 methodology (section 1A caveat resolved). **Dashboard**: `dashboard/lib/db.py::accuracy_by_decision` + Analytics self-report split surfaces the confirm/complement/change stratification; all 6 production FPs sit on `confirm` golds. Net: no evidence-grounded commit gate can catch the confident FPs; the answer is decision-stratified reporting + D22 staleness adjudication, not a better gate. |

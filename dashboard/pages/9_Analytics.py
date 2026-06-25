@@ -243,3 +243,46 @@ with st.expander(f"Show the {len(df)} pairs behind these numbers", expanded=Fals
     )
     drill = drill.drop(columns=["cumulative_cost_usd"])
     st.dataframe(drill, use_container_width=True, height=400)
+
+
+# ============================================================
+# Self-report (ODMI decision) stratification
+# ============================================================
+# Production-wide and independent of the filters above: the headline figures
+# split by ODMI's confirm / complement / change validation field (D22;
+# docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md section 1A). ODMI is a country
+# self-report questionnaire, so a swarm-vs-`confirm` disagreement on the
+# country's unverifiable word is often a measurement mismatch, not a swarm
+# error, whereas `complement` golds carry assessor desk-research evidence.
+
+st.divider()
+st.subheader("Accuracy by ODMI validation decision (self-report split)")
+st.caption(
+    "Production runs, all countries and shapes, not filtered by the controls "
+    "above. `confirm` = the country's answer accepted as submitted, `complement` "
+    "= kept with assessor-added desk-research evidence, `change` = assessor "
+    "overrode. False positives (a committed `yes` on a `no` gold) concentrate on "
+    "`confirm` golds, where the gold encodes the country's word, not the web."
+)
+_by_decision = db.accuracy_by_decision()
+if _by_decision:
+    _dec_rows = [
+        {
+            "decision": d["decision"],
+            "n (with gold)": d["n_finalised"],
+            "accuracy": f"{d['accuracy']:.0%}" if d["accuracy"] is not None else "-",
+            "abstention": (
+                f"{d['abstention_rate']:.0%}"
+                if d["abstention_rate"] is not None else "-"
+            ),
+            "false positives": d["n_fp"],
+            "committed negatives": d["n_committed_neg"],
+            "FP rate": f"{d['fp_rate']:.0%}" if d["fp_rate"] is not None else "-",
+        }
+        for d in _by_decision
+    ]
+    st.dataframe(
+        pd.DataFrame(_dec_rows), use_container_width=True, hide_index=True
+    )
+else:
+    st.info("No ground-truth-joined production rows to stratify yet.")

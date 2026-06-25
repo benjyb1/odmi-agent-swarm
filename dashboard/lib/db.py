@@ -479,6 +479,87 @@ def accuracy_summary() -> dict:
     }
 
 
+def accuracy_by_decision() -> list[dict]:
+    """Swarm accuracy stratified by ODMI's `decision` validation field.
+
+    ODMI is a country self-report questionnaire validated by assessors; the
+    `ground_truth.decision` field records, per (question, country), whether the
+    country's answer was accepted as submitted (`confirm`, ~63% of rows), kept
+    with assessor-added desk-research evidence (`complement`, ~27%), or
+    overridden by the assessor (`change`, ~10%). The swarm reads the open web,
+    so a disagreement on a `confirm` gold (the country's unverifiable word) is
+    often a measurement mismatch rather than a swarm error, whereas `complement`
+    golds are themselves web-evidenced. This splits the headline accuracy /
+    abstention / false-positive figures by that field so the self-report
+    contamination is visible (D22; docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md
+    section 1A; logic from evaluation/selfreport_decision_split.py).
+
+    Returns one dict per decision value (ordered confirm, complement, change,
+    then any others / `(none)`), each carrying `decision`, the match-status
+    counts, `accuracy` and `abstention_rate` over the same answerable
+    denominator as accuracy_summary, plus `n_fp` (a binary committed `yes` on a
+    `no` gold) and `fp_rate` over committed negative golds. Production runs only
+    (MAIN_RUNS_FILTER), ground-truth rows only.
+    """
+    with _conn() as conn:
+        rows = conn.execute(
+            f"""SELECT
+                  COALESCE(NULLIF(TRIM(gt.decision), ''), '(none)') AS decision,
+                  COUNT(*) AS n_finalised,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'match'
+                           THEN 1 ELSE 0 END) AS n_match,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'near_match'
+                           THEN 1 ELSE 0 END) AS n_near_match,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'differ'
+                           THEN 1 ELSE 0 END) AS n_differ,
+                  SUM(CASE WHEN ({_MATCH_STATUS_SQL}) = 'abstained'
+                           THEN 1 ELSE 0 END) AS n_abstained,
+                  SUM(CASE WHEN qs.answer_shape = 'binary'
+                            AND LOWER(TRIM(gt.response)) = 'no'
+                            AND LOWER(TRIM(f.final_answer)) = 'yes'
+                           THEN 1 ELSE 0 END) AS n_fp,
+                  SUM(CASE WHEN qs.answer_shape = 'binary'
+                            AND LOWER(TRIM(gt.response)) = 'no'
+                            AND f.final_answer IS NOT NULL
+                            AND LOWER(TRIM(f.final_answer)) NOT IN ('inconclusive', '')
+                           THEN 1 ELSE 0 END) AS n_committed_neg
+                FROM {_LATEST_FINALS} f
+                LEFT JOIN ground_truth gt
+                  ON gt.question_id = f.question_id
+                 AND gt.country_code = f.country_code
+                LEFT JOIN questions qs
+                  ON qs.question_id = f.question_id
+                WHERE {MAIN_RUNS_FILTER}
+                  AND gt.response IS NOT NULL AND TRIM(gt.response) <> ''
+                GROUP BY 1""",
+        ).fetchall()
+    order = {"confirm": 0, "complement": 1, "change": 2}
+    out = []
+    for r in rows:
+        n_match = int(r["n_match"] or 0)
+        n_near = int(r["n_near_match"] or 0)
+        n_differ = int(r["n_differ"] or 0)
+        n_abst = int(r["n_abstained"] or 0)
+        denom = n_match + n_near + n_differ + n_abst
+        n_neg = int(r["n_committed_neg"] or 0)
+        n_fp = int(r["n_fp"] or 0)
+        out.append({
+            "decision": r["decision"],
+            "n_finalised": int(r["n_finalised"] or 0),
+            "n_match": n_match,
+            "n_near_match": n_near,
+            "n_differ": n_differ,
+            "n_abstained": n_abst,
+            "accuracy": (n_match / denom) if denom else None,
+            "abstention_rate": (n_abst / denom) if denom else None,
+            "n_fp": n_fp,
+            "n_committed_neg": n_neg,
+            "fp_rate": (n_fp / n_neg) if n_neg else None,
+        })
+    out.sort(key=lambda d: order.get(d["decision"], 9))
+    return out
+
+
 def ground_truth_count() -> int:
     with _conn() as conn:
         row = conn.execute(
