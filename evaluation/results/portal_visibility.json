@@ -1,0 +1,467 @@
+{
+  "AL": {
+    "language": "sq",
+    "portal_url": "https://opendata.gov.al/",
+    "class": "waf",
+    "role": "DEV",
+    "has_route": true,
+    "api": {
+      "kind": "swagger",
+      "endpoint": "/swagger/v1/swagger.json"
+    },
+    "http": 200,
+    "visible_chars": 21,
+    "js_bundles": 5,
+    "error": null
+  },
+  "AT": {
+    "language": "de",
+    "portal_url": "https://www.data.gv.at/",
+    "class": "spa",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 0,
+    "js_bundles": 1,
+    "error": null
+  },
+  "BA": {
+    "language": "bs",
+    "portal_url": "https://odp.iddeea.gov.ba/",
+    "class": "spa",
+    "role": "HELD-OUT",
+    "has_route": false,
+    "api": null,
+    "http": 200,
+    "visible_chars": 25,
+    "js_bundles": 3,
+    "error": null
+  },
+  "BE": {
+    "language": "nl",
+    "portal_url": "https://data.gov.be/",
+    "class": "dead",
+    "role": "HELD-OUT",
+    "has_route": false,
+    "api": null,
+    "http": null,
+    "visible_chars": 0,
+    "js_bundles": 0,
+    "error": "ConnectionResetError"
+  },
+  "BG": {
+    "language": "bg",
+    "portal_url": "https://data.egov.bg/",
+    "class": "waf",
+    "role": "HELD-OUT",
+    "has_route": false,
+    "api": null,
+    "http": 403,
+    "visible_chars": 74,
+    "js_bundles": 0,
+    "error": "http 403"
+  },
+  "CH": {
+    "language": "de",
+    "portal_url": "https://opendata.swiss/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": {
+      "kind": "ckan",
+      "endpoint": "/api/3/action/package_search?rows=0"
+    },
+    "http": 200,
+    "visible_chars": 1438,
+    "js_bundles": 7,
+    "error": null
+  },
+  "CY": {
+    "language": "el",
+    "portal_url": "https://www.data.gov.cy/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": false,
+    "api": {
+      "kind": "dcat-json",
+      "endpoint": "/data.json"
+    },
+    "http": 200,
+    "visible_chars": 5573,
+    "js_bundles": 6,
+    "error": null
+  },
+  "CZ": {
+    "language": "cs",
+    "portal_url": "https://data.gov.cz/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 5435,
+    "js_bundles": 6,
+    "error": null
+  },
+  "DE": {
+    "language": "de",
+    "portal_url": "https://www.govdata.de/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 1993,
+    "js_bundles": 12,
+    "error": null
+  },
+  "DK": {
+    "language": "da",
+    "portal_url": "https://www.opendata.dk/",
+    "class": "waf",
+    "role": "-",
+    "has_route": false,
+    "api": null,
+    "http": 200,
+    "visible_chars": 937,
+    "js_bundles": 3,
+    "error": null
+  },
+  "EE": {
+    "language": "et",
+    "portal_url": "https://avaandmed.eesti.ee/",
+    "class": "waf",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 10,
+    "js_bundles": 5,
+    "error": null
+  },
+  "EL": {
+    "language": "el",
+    "portal_url": "https://data.gov.gr/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": {
+      "kind": "ckan",
+      "endpoint": "/api/3/action/package_search?rows=0"
+    },
+    "http": 200,
+    "visible_chars": 4682,
+    "js_bundles": 19,
+    "error": null
+  },
+  "ES": {
+    "language": "es",
+    "portal_url": "https://datos.gob.es/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": false,
+    "api": null,
+    "http": 200,
+    "visible_chars": 6890,
+    "js_bundles": 68,
+    "error": null
+  },
+  "FI": {
+    "language": "fi",
+    "portal_url": "https://www.avoindata.fi/",
+    "class": "static-ok",
+    "role": "HELD-OUT",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 2329,
+    "js_bundles": 1,
+    "error": null
+  },
+  "FR": {
+    "language": "fr",
+    "portal_url": "https://www.data.gouv.fr/",
+    "class": "static-ok",
+    "role": "DEV",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 4399,
+    "js_bundles": 1,
+    "error": null
+  },
+  "HR": {
+    "language": "hr",
+    "portal_url": "https://data.gov.hr/",
+    "class": "spa",
+    "role": "HELD-OUT",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 25,
+    "js_bundles": 2,
+    "error": null
+  },
+  "HU": {
+    "language": "hu",
+    "portal_url": "https://data.gov.hu/",
+    "class": "dead",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": null,
+    "visible_chars": 0,
+    "js_bundles": 0,
+    "error": "URLError"
+  },
+  "IE": {
+    "language": "en",
+    "portal_url": "https://data.gov.ie/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": {
+      "kind": "ckan",
+      "endpoint": "/api/3/action/package_search?rows=0"
+    },
+    "http": 200,
+    "visible_chars": 2040,
+    "js_bundles": 8,
+    "error": null
+  },
+  "IS": {
+    "language": "is",
+    "portal_url": "https://opingogn.is/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": false,
+    "api": null,
+    "http": 200,
+    "visible_chars": 815,
+    "js_bundles": 42,
+    "error": null
+  },
+  "IT": {
+    "language": "it",
+    "portal_url": "https://www.dati.gov.it/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": false,
+    "api": null,
+    "http": 200,
+    "visible_chars": 17490,
+    "js_bundles": 57,
+    "error": null
+  },
+  "LT": {
+    "language": "lt",
+    "portal_url": "https://data.gov.lt/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": false,
+    "api": null,
+    "http": 200,
+    "visible_chars": 2904,
+    "js_bundles": 5,
+    "error": null
+  },
+  "LU": {
+    "language": "fr",
+    "portal_url": "https://data.public.lu/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 6159,
+    "js_bundles": 10,
+    "error": null
+  },
+  "LV": {
+    "language": "lv",
+    "portal_url": "https://data.gov.lv/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": {
+      "kind": "ckan",
+      "endpoint": "/api/3/action/package_search?rows=0"
+    },
+    "http": 200,
+    "visible_chars": 9214,
+    "js_bundles": 21,
+    "error": null
+  },
+  "ME": {
+    "language": "sr",
+    "portal_url": "https://data.gov.me/",
+    "class": "static-ok",
+    "role": "HELD-OUT",
+    "has_route": true,
+    "api": {
+      "kind": "ckan",
+      "endpoint": "/api/3/action/package_search?rows=0"
+    },
+    "http": 200,
+    "visible_chars": 6172,
+    "js_bundles": 18,
+    "error": null
+  },
+  "MK": {
+    "language": "mk",
+    "portal_url": "https://data.gov.mk/",
+    "class": "dead",
+    "role": "HELD-OUT",
+    "has_route": false,
+    "api": null,
+    "http": null,
+    "visible_chars": 0,
+    "js_bundles": 0,
+    "error": "URLError"
+  },
+  "MT": {
+    "language": "en",
+    "portal_url": "https://data.gov.mt/",
+    "class": "waf",
+    "role": "DEV",
+    "has_route": false,
+    "api": null,
+    "http": 403,
+    "visible_chars": 58,
+    "js_bundles": 0,
+    "error": "http 403"
+  },
+  "NL": {
+    "language": "nl",
+    "portal_url": "https://data.overheid.nl/",
+    "class": "static-ok",
+    "role": "DEV",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 3733,
+    "js_bundles": 2,
+    "error": null
+  },
+  "NO": {
+    "language": "no",
+    "portal_url": "https://data.norge.no/",
+    "class": "static-ok",
+    "role": "DEV",
+    "has_route": false,
+    "api": {
+      "kind": "dcat-xml",
+      "endpoint": "/catalog.xml"
+    },
+    "http": 200,
+    "visible_chars": 1701,
+    "js_bundles": 15,
+    "error": null
+  },
+  "PL": {
+    "language": "pl",
+    "portal_url": "https://dane.gov.pl/",
+    "class": "waf",
+    "role": "-",
+    "has_route": false,
+    "api": null,
+    "http": 200,
+    "visible_chars": 649,
+    "js_bundles": 5,
+    "error": null
+  },
+  "PT": {
+    "language": "pt",
+    "portal_url": "https://dados.gov.pt/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 4736,
+    "js_bundles": 16,
+    "error": null
+  },
+  "RO": {
+    "language": "ro",
+    "portal_url": "https://data.gov.ro/",
+    "class": "dead",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": null,
+    "visible_chars": 0,
+    "js_bundles": 0,
+    "error": "URLError"
+  },
+  "RS": {
+    "language": "sr",
+    "portal_url": "https://data.gov.rs/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 6870,
+    "js_bundles": 1,
+    "error": null
+  },
+  "SE": {
+    "language": "sv",
+    "portal_url": "https://www.dataportal.se/",
+    "class": "spa",
+    "role": "HELD-OUT",
+    "has_route": true,
+    "api": null,
+    "http": 200,
+    "visible_chars": 0,
+    "js_bundles": 13,
+    "error": null
+  },
+  "SI": {
+    "language": "sl",
+    "portal_url": "https://podatki.gov.si/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": {
+      "kind": "ckan",
+      "endpoint": "/api/3/action/package_search?rows=0"
+    },
+    "http": 200,
+    "visible_chars": 2305,
+    "js_bundles": 24,
+    "error": null
+  },
+  "SK": {
+    "language": "sk",
+    "portal_url": "https://data.slovensko.sk/",
+    "class": "spa",
+    "role": "-",
+    "has_route": false,
+    "api": {
+      "kind": "swagger",
+      "endpoint": "/swagger/v1/swagger.json"
+    },
+    "http": 200,
+    "visible_chars": 77,
+    "js_bundles": 1,
+    "error": null
+  },
+  "UA": {
+    "language": "uk",
+    "portal_url": "https://data.gov.ua/",
+    "class": "static-ok",
+    "role": "-",
+    "has_route": true,
+    "api": {
+      "kind": "ckan",
+      "endpoint": "/api/3/action/package_search?rows=0"
+    },
+    "http": 200,
+    "visible_chars": 3682,
+    "js_bundles": 13,
+    "error": null
+  }
+}
