@@ -62,12 +62,14 @@ DIY_RENDER_TIMEOUT_S = 13.0
 # Wall-clock ceiling on the DIY network fetch/extract stage, per query (D43).
 # DIY is the sole provider on the 20x plan and must be fast. With the per-URL
 # timeouts above, the parallel fetch stage clears well within 30s in the normal
-# case. Exceeding it is treated as a real blocker, not a slow page: we stop the
-# this pair (D43 revised 2026-06-24); a BURST of them across the batch is logged
-# so the dispatch's systemic breaker can tell a single slow portal from a real
-# WAF/network block. The ceiling covers only the network stage where blockers
-# live; the Claude snippet-picker that follows is metered Claude latency, not a
-# blocker, so it is deliberately outside the window.
+# case. Exceeding it is a PER-PAIR event (D43 revised 2026-06-24): a single slow
+# national portal must not stop the batch, so we abandon the hung futures, keep
+# whatever returned in time, record a stall, and let this pair carry on with
+# partial evidence. A burst of stalls across the batch is what the dispatch's
+# systemic breaker watches to tell one slow portal from a real WAF/network
+# block. The ceiling covers only the network stage where blockers live; the
+# Claude snippet-picker that follows is metered Claude latency, not a blocker,
+# so it is deliberately outside the window.
 DIY_FETCH_DEADLINE_S = 30.0
 
 
