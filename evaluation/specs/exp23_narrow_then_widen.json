@@ -1,0 +1,112 @@
+{
+  "run_id": "exp23_narrow_then_widen",
+  "description": "EXP-23. Trusted-domain narrow-then-widen retrieval (SRCH-5/6/7) is the production default and has never been measured. The principal suspect for the 80% false-positive rate on NL negative golds is that narrowing guarantees every search returns portal-adjacent pages, which the Researcher then over-reads as positive evidence on questions whose true answer is 'no'. Three arms hold one variable (retrieval strategy): baseline_narrow_then_wide (production), wide_only (never narrow), narrow_only (always narrow, never widen so any wide_only gain is attributable to the widening step and not to the absence of narrowing). One experiment block per country so the class-balanced pair file matches the country's gold distribution. Dispatch waits for explicit go from Benjy; the design is locked when this spec is committed.",
+  "headline": false,
+  "global_parallel": 4,
+  "budget_calls": 12000,
+  "experiments": [
+    {
+      "experiment_id": "exp23_narrow_then_widen_nl",
+      "type": "retrieval",
+      "questions_from": "data/questions/nl_eval_pairs.json",
+      "countries": ["NL"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "adjudicator_selection": "standard",
+        "no_cache": true,
+        "researcher_model": "claude-opus-4-6",
+        "verifier_model": "claude-opus-4-6",
+        "adjudicator_model": "claude-opus-4-6",
+        "picker_model": "claude-opus-4-6"
+      },
+      "arms": [
+        { "condition_label": "baseline_narrow_then_wide", "knobs": {} },
+        { "condition_label": "wide_only", "knobs": { "search_strategy": "wide_only" } },
+        { "condition_label": "narrow_only", "knobs": { "search_strategy": "narrow_only" } }
+      ]
+    },
+    {
+      "experiment_id": "exp23_narrow_then_widen_mt",
+      "type": "retrieval",
+      "questions_from": "data/questions/malta_eval_pairs.json",
+      "countries": ["MT"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "adjudicator_selection": "standard",
+        "no_cache": true,
+        "researcher_model": "claude-opus-4-6",
+        "verifier_model": "claude-opus-4-6",
+        "adjudicator_model": "claude-opus-4-6",
+        "picker_model": "claude-opus-4-6"
+      },
+      "arms": [
+        { "condition_label": "baseline_narrow_then_wide", "knobs": {} },
+        { "condition_label": "wide_only", "knobs": { "search_strategy": "wide_only" } },
+        { "condition_label": "narrow_only", "knobs": { "search_strategy": "narrow_only" } }
+      ]
+    },
+    {
+      "experiment_id": "exp23_narrow_then_widen_al",
+      "type": "retrieval",
+      "questions_from": "data/questions/al_eval_pairs.json",
+      "countries": ["AL"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "adjudicator_selection": "standard",
+        "no_cache": true,
+        "researcher_model": "claude-opus-4-6",
+        "verifier_model": "claude-opus-4-6",
+        "adjudicator_model": "claude-opus-4-6",
+        "picker_model": "claude-opus-4-6"
+      },
+      "arms": [
+        { "condition_label": "baseline_narrow_then_wide", "knobs": {} },
+        { "condition_label": "wide_only", "knobs": { "search_strategy": "wide_only" } },
+        { "condition_label": "narrow_only", "knobs": { "search_strategy": "narrow_only" } }
+      ]
+    }
+  ],
+  "pre_flight_checks": [
+    "Trusted-domain registries: data/trusted_domains/NL.json exists and is non-empty (verified). data/trusted_domains/MT.json and data/trusted_domains/AL.json do NOT exist - they must be authored before the narrow_only and baseline_narrow_then_wide arms can produce a meaningful narrow pass on those countries. Without them, both arms collapse to wide_only on MT and AL and the experiment cannot test the hypothesis there.",
+    "Pair file: data/questions/al_eval_pairs.json does NOT exist. Generate using the same selection_rule as nl_eval_pairs.json and malta_eval_pairs.json: all AL binary `no`-gold questions plus a dimension-stratified size-matched sample of `yes`-gold questions, RNG seed 20260603.",
+    "Manipulation check: narrow_only and baseline_narrow_then_wide must show identical narrow-stage queries on pairs where narrow returned non-empty; the only divergence is the widening step. Confirm by diffing search_provider_calls across the two arms on a 5-pair smoke before reading endpoints.",
+    "Manipulation check: wide_only must issue 0 site-restricted queries on every pair (the search_start event payload's `trusted_domains` may still list them, but search_many must be called with include_domains=None). Confirm by inspecting walkthrough output on a 5-pair smoke.",
+    "Held-out countries (BA MK ME BG FI HR SE BE) must not appear in any arm. Confirmed: only NL, MT, AL."
+  ],
+  "endpoints": {
+    "primary": "False-positive rate on negative golds in the binary-commit subset, pooled and per country, Wilson CI.",
+    "co_primary": "Commit accuracy on the binary-commit subset, pooled and per country.",
+    "secondary": [
+      "Candidate recall (gold in any Researcher attempt)",
+      "Abstention rate",
+      "Per-class recall (yes-recall and no-recall)",
+      "Retries per pair",
+      "Fetched-page novelty (unique URLs reached across arms - confirms wide_only actually finds different evidence)",
+      "Cost per pair"
+    ],
+    "diagnostic": "Among the false positives in each arm, count how many cite a trusted-domain page vs a non-trusted one. Direct test of the over-trust hypothesis.",
+    "stratification": "ODMI dimension (Policy / Portal / Quality / Impact) and country."
+  },
+  "inference_rules": [
+    "If wide_only cuts negative-gold FP by >= 5 absolute points AND commit accuracy non-inferior (delta accuracy >= -0.02) on NL, narrow-then-widen is implicated as a FP cause. Promote wide_only to production default.",
+    "If wide_only's FP drop is concentrated in cases where the baseline FP source URL was a trusted-domain page, the over-trust mechanism is confirmed specifically.",
+    "If wide_only raises candidate recall on AL by >= 5 absolute points, narrow-first was also suppressing recall on thin-web. Independent second finding.",
+    "If neither holds (FP within +/- 2 points, recall within +/- 2 points), keep narrow_then_wide. Production default survives the test; SRCH-5/6 marked measured-and-defensible.",
+    "narrow_only is a control for attribution. Not adopted under any rule."
+  ]
+}

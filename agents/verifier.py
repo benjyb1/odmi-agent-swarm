@@ -486,6 +486,7 @@ def run_verifier(
     provider: str = "auto",
     num_queries: Optional[int] = None,
     verifier_search: VerifierSearchPolicy = "always",
+    picker_model: Optional[str] = None,
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> VerifierRunResult:
@@ -599,6 +600,7 @@ def run_verifier(
         on_step("search_start", {"queries": queries})
         search_results = search_many(
             queries, max_results_per_query=max_results_per_query, provider=provider,
+            picker_model=picker_model,
         )
         on_step("search_complete", {
             "n_results": len(search_results),

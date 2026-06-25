@@ -1,0 +1,286 @@
+{
+  "description": "Canonical Albania evaluation pair set for EXP-23 (R2/R3/R4; protocol section 0).",
+  "seed": 20260603,
+  "country_code": "AL",
+  "answer_shape": "binary",
+  "selection_rule": "All AL binary `no`-gold questions (minority class, not sampled), plus a dimension-stratified, size-matched sample of `yes`-gold binary questions drawn round-robin across Policy/Portal/Impact/Quality with RNG seed 20260603. Golds not exactly yes/no are excluded.",
+  "counts": {
+    "total": 44,
+    "by_class": {
+      "no": 22,
+      "yes": 22
+    },
+    "by_dimension": {
+      "Impact": 13,
+      "Policy": 11,
+      "Portal": 13,
+      "Quality": 7
+    }
+  },
+  "pairs": [
+    {
+      "question_id": "I10",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I11",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I13",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I2",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I22",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I8-a",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I9-a",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I9-b",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P15",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P21",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P3",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P6",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P7",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT16",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT36",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT39",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT40",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT43",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT6",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT7",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q19",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q4",
+      "country_code": "AL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "I1",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I5",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I7",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I8-b",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "I8-d",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P18",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P20",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P25",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P26-b",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P4",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "P8",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT17",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT23",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT34",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT35",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT44",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "PT8",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q1",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q11",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q15",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q23",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "Q8",
+      "country_code": "AL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    }
+  ]
+}

@@ -119,6 +119,7 @@ def diy_search(
     use_snippet_picker: bool = True,
     picker_max_chunks: int = PICKER_MAX_CHUNKS_DEFAULT,
     page_text_cap: int = PAGE_TEXT_CAP_DEFAULT,
+    picker_model: Optional[str] = None,
 ) -> List[SearchResult]:
     """Run the full DIY pipeline and return Tavily-shaped SearchResults.
 
@@ -244,6 +245,8 @@ def diy_search(
                 picker_kwargs["max_chunks"] = picker_max_chunks
             if page_text_cap != PAGE_TEXT_CAP_DEFAULT:
                 picker_kwargs["page_text_cap"] = page_text_cap
+            if picker_model is not None:
+                picker_kwargs["model"] = picker_model
             chunks, _ = pick_snippet(
                 query=query, url=r.url, page_text=text,
                 subtrio_id=subtrio_id,

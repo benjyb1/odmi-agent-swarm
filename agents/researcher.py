@@ -344,6 +344,9 @@ def _try_catalogue(
     )
 
 
+SEARCH_STRATEGIES = ("narrow_then_wide", "wide_only", "narrow_only")
+
+
 def run_researcher(
     input: ResearcherInput,
     *,
@@ -358,6 +361,8 @@ def run_researcher(
     page_text_cap: int = 16000,
     max_snippet_chars: int = 600,
     query_language: str = "bilingual",
+    search_strategy: str = "narrow_then_wide",
+    picker_model: Optional[str] = None,
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> ResearcherRunResult:
@@ -377,6 +382,10 @@ def run_researcher(
     `on_step(event, payload)` is the walkthrough callback. Set to
     something printing in the runner script when --walkthrough is on.
     """
+    if search_strategy not in SEARCH_STRATEGIES:
+        raise ValueError(
+            f"search_strategy must be one of {SEARCH_STRATEGIES}, got {search_strategy!r}"
+        )
     prompt_spec = researcher_prompt.variant(prompt_variant)
     on_step("start", {"question_id": input.question_id, "country": input.country_code})
 
@@ -416,25 +425,35 @@ def run_researcher(
     })
 
     # ----- Step 2: search -----
-    # First pass: narrow to the country's trusted domains so authoritative
-    # sources rank above generic ones. If nothing comes back (the answer
-    # may live on a domain we haven't whitelisted), fall back to a wide
-    # search.
+    # Default (`narrow_then_wide`, SRCH-5/6): narrow to the country's
+    # trusted domains so authoritative sources rank above generic ones,
+    # then widen on an empty first pass. `wide_only` skips the include
+    # list entirely (one wide pass, no widen). `narrow_only` keeps the
+    # include list but never widens, so EXP-23 can attribute any
+    # wide_only gain to the widening step rather than to the absence of
+    # narrowing.
     trusted = trusted_domains_for(input.country_code)
+    narrow_first = search_strategy in ("narrow_then_wide", "narrow_only")
     on_step("search_start", {"queries": queries, "trusted_domains": trusted})
     provider_calls: List[dict] = []
+    first_pass_include = trusted if (narrow_first and trusted) else None
     search_results = search_many(
         queries,
         max_results_per_query=max_results_per_query,
-        include_domains=trusted or None,
+        include_domains=first_pass_include,
         on_call=provider_calls.append,
         provider=provider,
         use_snippet_picker=use_snippet_picker,
         picker_max_chunks=picker_max_chunks,
         page_text_cap=page_text_cap,
+        picker_model=picker_model,
     )
     wide_fallback_used = False
-    if not search_results and trusted:
+    if (
+        not search_results
+        and trusted
+        and search_strategy == "narrow_then_wide"
+    ):
         on_step("search_widen", {"reason": "narrow search returned nothing"})
         search_results = search_many(
             queries,
@@ -444,6 +463,7 @@ def run_researcher(
             use_snippet_picker=use_snippet_picker,
             picker_max_chunks=picker_max_chunks,
             page_text_cap=page_text_cap,
+            picker_model=picker_model,
         )
         wide_fallback_used = True
     on_step("search_complete", {
