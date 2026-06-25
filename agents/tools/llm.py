@@ -57,11 +57,20 @@ for _stale in ("ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_CUSTOM_HEADERS"):
 # arithmetic (Q9). Numbers are intentionally hard-coded here so the
 # computed estimated_cost_usd column is reproducible regardless of
 # upstream pricing changes; refresh deliberately if/when pricing moves.
+#
+# Opus corrected 2026-06-25 from $15/$75 to $5/$25 per M. The old figure
+# was the Opus 3 / 4 / 4.1 rate; every Opus from 4.5 onward (4.5, 4.6,
+# 4.7, 4.8) is $5 input / $25 output per M (claude-api skill current-models
+# table). The swarm only ever logged claude-opus-4-6, so Opus rows written
+# before this date overstate by 3x; backfill the live DB with
+# scripts/backfill_opus_pricing.py.
 PRICING_USD_PER_M = {
     "claude-sonnet-4-6":          {"input": 3.0,  "output": 15.0},
     "claude-sonnet-4-5-20250929": {"input": 3.0,  "output": 15.0},
-    "claude-opus-4-6":            {"input": 15.0, "output": 75.0},
-    "claude-opus-4-5-20251101":   {"input": 15.0, "output": 75.0},
+    "claude-opus-4-8":            {"input": 5.0,  "output": 25.0},
+    "claude-opus-4-7":            {"input": 5.0,  "output": 25.0},
+    "claude-opus-4-6":            {"input": 5.0,  "output": 25.0},
+    "claude-opus-4-5-20251101":   {"input": 5.0,  "output": 25.0},
     "claude-haiku-4-5-20251001":  {"input": 1.0,  "output": 5.0},
     "claude-3-5-haiku-20241022":  {"input": 0.8,  "output": 4.0},
     # Mistral (EXP-9 cross-family arm). Published Mistral Large rate, in USD per
