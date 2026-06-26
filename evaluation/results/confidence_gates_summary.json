@@ -18,7 +18,7 @@
     "tnr": 0.24,
     "youden_j": 0.24
   },
-  "exp22_entailment_gate": {
+  "exp25_entailment_gate": {
     "arm": {
       "n_total": 50,
       "n_committed": 35,
@@ -45,7 +45,7 @@
       "adopt": false
     }
   },
-  "exp24_argue_opposite": {
+  "exp27_argue_opposite": {
     "arm": {
       "n_total": 50,
       "n_committed": 43,
