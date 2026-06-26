@@ -1,12 +1,12 @@
 {
   "run_id": "exp22_foreign_lang_al",
-  "global_parallel": 3,
+  "global_parallel": 6,
   "budget_calls": 8000,
   "experiments": [
     {
       "experiment_id": "exp22_foreign_lang_al",
       "type": "retrieval",
-      "questions_from": "data/questions/all_questions.json",
+      "questions_from": "data/questions/al_eval_48.json",
       "countries": ["AL"],
       "baseline_knobs": { "provider": "diy", "strategy": "verifier-disprove", "max_results_per_query": 5, "num_queries": 3, "max_retries": 3 },
       "arms": [
