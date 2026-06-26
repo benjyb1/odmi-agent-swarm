@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EXP-22 (entailment gate) and EXP-24 (argue-the-opposite) confirmatory replays.
+"""EXP-25 (entailment gate) and EXP-27 (argue-the-opposite) confirmatory replays.
 
 Both are frozen-evidence replays sharing ONE scoring pass: for each NL committed
 binary pair, a single production-Sonnet Verifier-side call scores how strongly
@@ -8,13 +8,13 @@ OPPOSITE answer (entailment_against). The two experiments are then two decision
 rules applied offline to the same scores, each compared against the production
 commit (the answer_confidence>=0.65 floor, i.e. the stored finalised outcome):
 
-  EXP-22 entailment_gate: keep the commit iff entailment_for >= 0.70.
-  EXP-24 argue_opposite:  keep the commit iff (for - against) >= 0.25.
+  EXP-25 entailment_gate: keep the commit iff entailment_for >= 0.70.
+  EXP-27 argue_opposite:  keep the commit iff (for - against) >= 0.25.
 
 Both gates can only turn a commit into an abstention, never flip a label, so the
 question is whether they abstain false positives faster than they abstain correct
-commits. Pre-registered in the `experiments` table (exp22_entailment_gate,
-exp24_argue_opposite) and docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md section 6.
+commits. Pre-registered in the `experiments` table (exp25_entailment_gate,
+exp27_argue_opposite) and docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md section 6.
 
 Endpoints (fixed pre-result): primary negative-gold FP rate per gate vs baseline,
 McNemar exact on the paired negative pairs; co-primary abstention rate and
@@ -51,8 +51,8 @@ MODEL = "claude-sonnet-4-6"  # production Verifier model; quota restored 2026-06
 RESULTS = Path(__file__).resolve().parent / "results" / "confidence_gates.jsonl"
 SUMMARY = Path(__file__).resolve().parent / "results" / "confidence_gates_summary.json"
 
-TAU_FOR = 0.70      # EXP-22 gate, fixed pre-result
-TAU_MARGIN = 0.25   # EXP-24 gate, fixed pre-result
+TAU_FOR = 0.70      # EXP-25 gate, fixed pre-result
+TAU_MARGIN = 0.25   # EXP-27 gate, fixed pre-result
 
 from pydantic import BaseModel, Field  # noqa: E402
 
@@ -250,9 +250,9 @@ def main():
     summary = dict(
         model=MODEL, n_scored=len(scored), snapshot_max_final_id=max_id,
         baseline=base,
-        exp22_entailment_gate=dict(arm=e22, mcnemar_b=b22, mcnemar_p=round(p22, 4),
+        exp25_entailment_gate=dict(arm=e22, mcnemar_b=b22, mcnemar_p=round(p22, 4),
                                    decision=adopt(base, e22, b22)),
-        exp24_argue_opposite=dict(arm=e24, mcnemar_b=b24, mcnemar_p=round(p24, 4),
+        exp27_argue_opposite=dict(arm=e24, mcnemar_b=b24, mcnemar_p=round(p24, 4),
                                   high_conf_fps_caught=hi_conf_caught_24,
                                   decision=adopt(base, e24, b24)))
     SUMMARY.write_text(json.dumps(summary, indent=2))
@@ -264,10 +264,10 @@ def main():
               f"CI[{e['fp_ci'][0]:.0%},{e['fp_ci'][1]:.0%}]) J={e['youden_j']:+.2f}")
     print(f"\n=== Results (n={len(scored)} committed pairs, {base['n_neg_committed']} negative golds) ===")
     row("baseline (0.65)", base)
-    row("EXP-22 for>=.70", e22)
-    print(f"     adoption: {summary['exp22_entailment_gate']['decision']}  McNemar p={p22:.3f} (b={b22})")
-    row("EXP-24 margin>=.25", e24)
-    print(f"     adoption: {summary['exp24_argue_opposite']['decision']}  McNemar p={p24:.3f} (b={b24})  hi-conf FPs caught={hi_conf_caught_24}")
+    row("EXP-25 for>=.70", e22)
+    print(f"     adoption: {summary['exp25_entailment_gate']['decision']}  McNemar p={p22:.3f} (b={b22})")
+    row("EXP-27 margin>=.25", e24)
+    print(f"     adoption: {summary['exp27_argue_opposite']['decision']}  McNemar p={p24:.3f} (b={b24})  hi-conf FPs caught={hi_conf_caught_24}")
     print(f"\nWrote {RESULTS}\nWrote {SUMMARY}")
 
 
