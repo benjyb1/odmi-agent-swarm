@@ -47,7 +47,7 @@ if "localhost" not in _base and "127.0.0.1" not in _base:
              f"proxy. Aborting to avoid real-API billing.")
 
 CANONICAL_DB = "/Users/benjyb/Desktop/MscProject/data/odmi.db"
-MODEL = "claude-opus-4-6"  # Sonnet exhausted; Opus served via the Max proxy (EXP-9, EXP-22 smoke)
+MODEL = "claude-opus-4-6"  # Sonnet exhausted; Opus served via the Max proxy (EXP-9, EXP-25 smoke)
 RESULTS = Path(__file__).resolve().parent / "results" / "nl_fp_audit.jsonl"
 
 from typing import Literal  # noqa: E402

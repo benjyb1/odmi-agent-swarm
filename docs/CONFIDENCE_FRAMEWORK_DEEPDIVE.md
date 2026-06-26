@@ -489,7 +489,7 @@ confirmatory primary per experiment (R8). Opus is permitted for these runs;
 Sonnet quota is exhausted, so the Researcher/Verifier calls would run on Opus and
 that is recorded in the receipts.
 
-### EXP-22, entailment-scored Verifier (one variable: entailment gate on/off)
+### EXP-25, entailment-scored Verifier (one variable: entailment gate on/off)
 
 - **Question.** Does gating the commit on an explicit Verifier entailment score
   cut the negative-gold false-positive rate without raising abstention beyond a
@@ -520,7 +520,7 @@ that is recorded in the receipts.
   prompt version that emits `entailment`, with a schema field and a unit test;
   the baseline prompt untouched.
 
-### EXP-23, self-consistency confidence (one variable: single vs N-sample)
+### EXP-26, self-consistency confidence (one variable: single vs N-sample)
 
 - **Question.** Does replacing the single self-reported confidence with the
   agreement rate over N independent answer samples predict correctness better and
@@ -544,10 +544,10 @@ that is recorded in the receipts.
   is reported as one (R12).
 - **Adoption rule.** Adopt iff AUROC rises above 0.65 AND the within-negative
   AUROC rises above 0.50 (it removes the anti-prediction) AND the cost rise is
-  justified by the FP reduction under the EXP-22 bar.
+  justified by the FP reduction under the EXP-25 bar.
 - **Registry.** `self_consistency_n5_v1`.
 
-### EXP-24, argue-the-opposite check (one variable: adversarial flip check on/off)
+### EXP-27, argue-the-opposite check (one variable: adversarial flip check on/off)
 
 - **Question.** Does an explicit "could this same evidence support the opposite
   label?" pass catch the confident false positive that the current adversarial
@@ -571,7 +571,7 @@ that is recorded in the receipts.
   points with an abstention rise under 10 points and no balanced-accuracy loss.
 - **Registry.** `argue_opposite_v1`.
 
-### EXP-25, decomposed and calibrated commit score (one variable: scalar vs decomposed-calibrated)
+### EXP-28, decomposed and calibrated commit score (one variable: scalar vs decomposed-calibrated)
 
 - **Question.** Does the 5.1 decomposed score (retrieval x entailment x source-
   independence), post-hoc calibrated on dev, gate better than the raw
@@ -634,7 +634,7 @@ bound while coverage stays above the current policy's. This turns "we picked 0.6
 and validated it downward" into "we can promise a negative-FP ceiling and report
 the coverage it costs", which is a stronger and more examinable claim. It depends
 on a score that is at least weakly predictive within each class, so it composes
-with 5.1/EXP-25 rather than standing alone.
+with 5.1/EXP-28 rather than standing alone.
 
 ### 7.3 Two-agent debate, commit on the margin
 
@@ -649,7 +649,7 @@ Confirming evidence: the debate margin separates correct commits from false
 positives where the scalar confidence (AUROC 0.55) does not, ideally with a
 within-negative AUROC well above 0.5. It is the most expensive option (two
 argued cases plus a judge per pair), so the bar is that it beats the cheaper
-EXP-22/24 on the same negative-gold FP endpoint, not merely that it beats the
+EXP-25/24 on the same negative-gold FP endpoint, not merely that it beats the
 scalar.
 
 ---
@@ -663,7 +663,7 @@ scalar.
    VAL-4 dial wired to nothing), the Verifier `substring_check_result`, and
    `verifier_confidence`. Report its AUROC and within-class AUROC against the 0.55
    `answer_confidence` baseline. If a combination of existing signals already
-   beats the scalar, EXP-25's new entailment call may be unnecessary; if it does
+   beats the scalar, EXP-28's new entailment call may be unnecessary; if it does
    not, that sizes the gap the entailment signal has to fill. Highest value, lowest
    cost. (Extends `evaluation/confidence_deepdive.py`.)
 2. **Negative-class recovery ceiling.** Replay the abstention trail to count how
@@ -679,18 +679,18 @@ scalar.
 
 ### QUOTA (Opus; Sonnet exhausted)
 
-5. **EXP-22, entailment-scored Verifier.** The single highest-leverage run:
+5. **EXP-25, entailment-scored Verifier.** The single highest-leverage run:
    adds the missing signal, frozen evidence so only the Verifier call is new,
    directly targets the negative-gold FP rate. Run after free step 1 confirms the
    stored signals do not already suffice.
-6. **EXP-24, argue-the-opposite.** Cheap second call, targets the same confident
-   false positive from a different angle; run alongside EXP-22 on the same NL set
+6. **EXP-27, argue-the-opposite.** Cheap second call, targets the same confident
+   false positive from a different angle; run alongside EXP-25 on the same NL set
    for a paired comparison.
-7. **EXP-23, self-consistency.** Five-sample agreement; run third because it is
+7. **EXP-26, self-consistency.** Five-sample agreement; run third because it is
    the costliest per pair and the prior (sampling stability helps) is the
    weakest.
-8. **EXP-25, decomposed and calibrated score.** Last, because it depends on the
-   entailment signal from EXP-22 and is the one design that spends the single
+8. **EXP-28, decomposed and calibrated score.** Last, because it depends on the
+   entailment signal from EXP-25 and is the one design that spends the single
    held-out measurement.
 
 ---
@@ -719,6 +719,6 @@ scalar.
 
 | Date | Change |
 |---|---|
-| 2026-06-24 | Created. Reproduced the pooled headline (1065 / 744 / 268 FP), decomposed it (NL-under-degraded-arms vs 88% production), refuted the catalogue-band theory, confirmed Theory 1 (FPs as confident as correct answers), showed the precision frontier is flat (no working single floor), and proved the mechanism (within-positive AUROC 0.84, within-negative 0.17; the confidence encodes the label, not correctness). Added the decomposed/class-aware/calibrated redesign, pre-registered EXP-22 to EXP-25, and the free-vs-quota do-next list. Analysis in `evaluation/confidence_deepdive.py`; SVG and JSON in `evaluation/results/`. |
-| 2026-06-24 | Step 1 (free): no stored signal beats answer_confidence (`evaluation/confidence_signals_replay.py`); all anti-predictive on the negative class. Step 2 (Opus smoke, `evaluation/exp22_entailment_smoke.py`): an explicit entailment score does not separate correct from false positives (0.74 vs 0.75) because the FPs carry genuinely strong evidence. Traced the FPs to source: the production Verifier passed 217/223 NL FPs after its own independent search. Added section 1A, the self-report reframe: ODMI is a country self-report questionnaire validated by Capgemini (`decision` confirm/complement/change, all dimensions), source-verified; swarm is 92% accurate on web-evidenced (`complement`) golds and 78% on accepted-self-report (`confirm`) golds, where the false positives sit. `evaluation/selfreport_decision_split.py`. |
-| 2026-06-25 | Confirmatory pass on production Sonnet (quota restored). **EXP-22 / EXP-24 both NULL and harmful** (`evaluation/confidence_gates.py`, NL n=50, 25 committed negative golds): the entailment gate raises the negative-gold FP rate 0.76 to 1.00 and halves Youden's J, the argue-opposite margin gate likewise, because the correct `no` commits are the low-entailment ones and abstain first while the confident FPs (entailment_for 0.74 vs correct 0.68) sail through. McNemar caught 3/19 and 2/19 FPs (p=0.25, 0.50), 0 high-confidence. Pre-registered `exp22_entailment_gate` / `exp24_argue_opposite`; EXP-23/25 held (same null mechanism; EXP-25 spends the frozen held-out set). **NL false-positive audit** (`evaluation/nl_fp_audit.py` + `nl_fp_audit_adversarial.py`, 22 questions over frozen evidence, two framings). Charitable pass: 1 genuine swarm error on Opus (PT25), 2 on Sonnet (I8-d, PT4), rest definitional/self-report — a ~5-9% error rate. Adversarial advocate pass (Opus told to defend the swarm's `yes` and argue ODMI's `no` is wrong): **0/22 gold_wrong** (the swarm is never vindicated), 11/22 clear over-reads with the gold standing, 11/22 genuinely ambiguous. So the genuine-error rate **brackets ~5% (charitable) to ~50% (strict over-read)** and is framing-dependent; the robust, framing-independent findings are that no NL FP is a case of the swarm being right against a stale gold, and the disagreements are strict-vs-loose question readings and self-report that no evidence gate can resolve. **Decision definitions confirmed** against the official 2022/2024 methodology (section 1A caveat resolved). **Dashboard**: `dashboard/lib/db.py::accuracy_by_decision` + Analytics self-report split surfaces the confirm/complement/change stratification; all 6 production FPs sit on `confirm` golds. Net: no evidence-grounded commit gate can catch the confident FPs; the answer is decision-stratified reporting + D22 staleness adjudication, not a better gate. |
+| 2026-06-24 | Created. Reproduced the pooled headline (1065 / 744 / 268 FP), decomposed it (NL-under-degraded-arms vs 88% production), refuted the catalogue-band theory, confirmed Theory 1 (FPs as confident as correct answers), showed the precision frontier is flat (no working single floor), and proved the mechanism (within-positive AUROC 0.84, within-negative 0.17; the confidence encodes the label, not correctness). Added the decomposed/class-aware/calibrated redesign, pre-registered EXP-25 to EXP-28, and the free-vs-quota do-next list. Analysis in `evaluation/confidence_deepdive.py`; SVG and JSON in `evaluation/results/`. |
+| 2026-06-24 | Step 1 (free): no stored signal beats answer_confidence (`evaluation/confidence_signals_replay.py`); all anti-predictive on the negative class. Step 2 (Opus smoke, `evaluation/exp25_entailment_smoke.py`): an explicit entailment score does not separate correct from false positives (0.74 vs 0.75) because the FPs carry genuinely strong evidence. Traced the FPs to source: the production Verifier passed 217/223 NL FPs after its own independent search. Added section 1A, the self-report reframe: ODMI is a country self-report questionnaire validated by Capgemini (`decision` confirm/complement/change, all dimensions), source-verified; swarm is 92% accurate on web-evidenced (`complement`) golds and 78% on accepted-self-report (`confirm`) golds, where the false positives sit. `evaluation/selfreport_decision_split.py`. |
+| 2026-06-25 | Confirmatory pass on production Sonnet (quota restored). **EXP-25 / EXP-27 both NULL and harmful** (`evaluation/confidence_gates.py`, NL n=50, 25 committed negative golds): the entailment gate raises the negative-gold FP rate 0.76 to 1.00 and halves Youden's J, the argue-opposite margin gate likewise, because the correct `no` commits are the low-entailment ones and abstain first while the confident FPs (entailment_for 0.74 vs correct 0.68) sail through. McNemar caught 3/19 and 2/19 FPs (p=0.25, 0.50), 0 high-confidence. Pre-registered `exp25_entailment_gate` / `exp27_argue_opposite`; EXP-26/25 held (same null mechanism; EXP-28 spends the frozen held-out set). **NL false-positive audit** (`evaluation/nl_fp_audit.py` + `nl_fp_audit_adversarial.py`, 22 questions over frozen evidence, two framings). Charitable pass: 1 genuine swarm error on Opus (PT25), 2 on Sonnet (I8-d, PT4), rest definitional/self-report — a ~5-9% error rate. Adversarial advocate pass (Opus told to defend the swarm's `yes` and argue ODMI's `no` is wrong): **0/22 gold_wrong** (the swarm is never vindicated), 11/22 clear over-reads with the gold standing, 11/22 genuinely ambiguous. So the genuine-error rate **brackets ~5% (charitable) to ~50% (strict over-read)** and is framing-dependent; the robust, framing-independent findings are that no NL FP is a case of the swarm being right against a stale gold, and the disagreements are strict-vs-loose question readings and self-report that no evidence gate can resolve. **Decision definitions confirmed** against the official 2022/2024 methodology (section 1A caveat resolved). **Dashboard**: `dashboard/lib/db.py::accuracy_by_decision` + Analytics self-report split surfaces the confirm/complement/change stratification; all 6 production FPs sit on `confirm` golds. Net: no evidence-grounded commit gate can catch the confident FPs; the answer is decision-stratified reporting + D22 staleness adjudication, not a better gate. |

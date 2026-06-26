@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EXP-22 smoke: does an explicit Verifier ENTAILMENT score separate correct
+"""EXP-25 smoke: does an explicit Verifier ENTAILMENT score separate correct
 commits from confident false positives, where answer_confidence cannot?
 
 The deep dive showed answer_confidence is a near-chance correctness ranker
@@ -9,7 +9,7 @@ probes the one thing nothing in the DB measures: P(the quoted evidence actually
 establishes the proposed answer), scored by an LLM that is NOT shown the gold.
 
 This is a FEASIBILITY SMOKE on a small, deliberately balanced NL sample, not the
-confirmatory EXP-22. The confirmatory run (full NL, fixed tau, adoption rule)
+confirmatory EXP-25. The confirmatory run (full NL, fixed tau, adoption rule)
 must be pre-registered first. The smoke exists to (a) prove the Opus path works,
 (b) check the entailment score discriminates before any large quota spend.
 
@@ -18,8 +18,8 @@ the real Anthropic API. Reads the canonical DB read-only; usage logging lands in
 the worktree DB (llm.py resolves its path relative to itself), so the canonical
 DB is never written.
 
-  uv run python evaluation/exp22_entailment_smoke.py --limit 1     # reachability
-  uv run python evaluation/exp22_entailment_smoke.py --limit 12    # the smoke
+  uv run python evaluation/exp25_entailment_smoke.py --limit 1     # reachability
+  uv run python evaluation/exp25_entailment_smoke.py --limit 12    # the smoke
 """
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ if "localhost" not in _base and "127.0.0.1" not in _base:
 
 CANONICAL_DB = "/Users/benjyb/Desktop/MscProject/data/odmi.db"
 MODEL = "claude-opus-4-6"  # Sonnet exhausted; Opus permitted (EXP-9 confirmed served)
-RESULTS = Path(__file__).resolve().parent / "results" / "exp22_entailment_smoke.jsonl"
+RESULTS = Path(__file__).resolve().parent / "results" / "exp25_entailment_smoke.jsonl"
 
 from pydantic import BaseModel, Field  # noqa: E402
 
@@ -182,8 +182,8 @@ def main():
                     user_message=build_user(c["q_text"], "Netherlands", c["proposed"],
                                             c["quote"], c["snippets"]),
                     output_schema=Entailment, model=MODEL, max_tokens=300,
-                    temperature=0.0, condition_label="exp22_entailment_smoke",
-                    usage_context=f"exp22_smoke:{c['qid']}:NL")
+                    temperature=0.0, condition_label="exp25_entailment_smoke",
+                    usage_context=f"exp25_smoke:{c['qid']}:NL")
                 rec = dict(qid=c["qid"], outcome=c["outcome"], gold=c["gold"],
                            proposed=c["proposed"], answer_confidence=c["answer_confidence"],
                            entailment_for=out.entailment_for,
