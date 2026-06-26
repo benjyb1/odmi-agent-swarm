@@ -778,6 +778,70 @@ secondary leaks directly; probe 3 confirms the diagnosis under dispatch; probe 4
 a confirmatory tidy-up. None of the high-value work is language work. It is
 retrieval-coverage work on a thin, walled, unindexed native web.
 
+## Experimental confirmation (2026-06-25): EXP-22 and the L2 replay
+
+The diagnosis above predicted that neither language channel is the binding
+constraint. Two pre-registered tests now confirm it causally.
+
+### EXP-22: the native-language query is a no-op on Albania
+
+A two-arm ablation on AL, identical except for the query language: (bilingual)
+the production prompt, one English plus one Albanian query; (English-only) the
+native query suppressed. One variable, `--no-cache`, DIY, disprove, 5 results,
+3 queries, 3 retries, Sonnet. Run on a seeded dimension-stratified 48-question
+subset (12 per dimension, 96 pairs) so it completed in one window. Pre-registered
+in the `experiments` table; spec `evaluation/specs/exp22_foreign_lang_al.json`;
+analysis `evaluation/analyze_exp22.py`.
+
+| Metric | bilingual | English-only |
+|---|---:|---:|
+| Candidate recall (gold reached in any attempt) | 46% | 48% |
+| Abstention | 62% | 54% |
+| Commit accuracy | 67% | 59% |
+| Albanian-language evidence share | 17% | 1% |
+
+Candidate-recall delta (bilingual minus English-only) is -2.1 points, with
+bilingual abstaining 8.3 points more. The adoption rule (keep bilingual only if it
+lifts recall by at least 5 points with no abstention rise) is not met; if anything
+the native query is marginally worse. The native-evidence share confirms the
+manipulation bit: the bilingual arm pulled Albanian evidence into 17% of attempts
+against the English-only arm's 1%, a seventeen-fold difference. Forcing that much
+more native evidence into the pipeline moved candidate recall by zero. The native
+query changes what is fetched and does not change what can be answered, because the
+answers are not on the Albanian web. AL's deficit is thin-web and structural, not
+foreign-language retrieval. Caveats: n=48 per arm (the -2.1 has a wide interval),
+AL only, and the two arms ran sequentially.
+
+### The L2 replay: translating evidence for entailment recovers nothing
+
+A read-only replay over 127 stored cases where the Verifier rejected
+native-language evidence on relevance (verdict fail, substring pass) across NL, NO
+and AL. Each case is re-judged for entailment twice with the same prompt, the only
+difference being the evidence quote: the original native text versus a DeepL
+English translation. The grounding gate is not re-run. Harness
+`evaluation/translate_replay.py`.
+
+Verdicts agree in 118 of 127 cases (93%). Translation flips one case from fail to
+pass (a recovery) and eight from pass to fail (English makes the Verifier slightly
+stricter). Of the single recovery, one is supported by the ODMI gold and none
+contradicts it, so the net movement toward ground truth is +1 of 127, about 0.8%.
+Translating native evidence into English for the entailment judgment recovers
+nothing. The Verifier already reads the native text; an English rendering does not
+change its mind.
+
+### The combined verdict
+
+Three independent tests, one conclusion. L1 (the Verifier under-credits native
+evidence) is refuted by the diagnosis. EXP-22 refutes the retrieval channel: the
+native query is a no-op on the hardest low-resource country. The L2 replay refutes
+the comprehension channel: translation recovers nothing. Language is not the
+binding constraint on the swarm's deficit; data availability is. The corollary for
+the dissertation is concrete: the production bilingual-query feature earns its
+place on mid and high-resource countries by surfacing native sources, but it does
+not rescue a thin-web low-resource estate, and a translation layer is not worth
+building on this evidence. The high-value work is the portal-reachability and
+structural-labelling track (section F), not language.
+
 ## FREE versus QUOTA do-next
 
 FREE (read-only, replay, or build-only with no dispatch; no Sonnet/Opus spend):
