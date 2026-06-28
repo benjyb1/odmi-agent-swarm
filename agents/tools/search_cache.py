@@ -118,9 +118,19 @@ def _serp_key(query: str, max_results: int, include_domains: Optional[List[str]]
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
-def _snippet_key(query: str, page_text: str) -> str:
+def _snippet_key(
+    query: str,
+    page_text: str,
+    picker_model: Optional[str] = None,
+) -> str:
+    # picker_model is part of the key because a different model picks
+    # different chunks from the same page. Production calls pass None
+    # (the picker runs on DEFAULT_MODEL), so old rows written before
+    # this argument existed still hit on the None branch. Experiments
+    # that pin a specific picker model write under a distinct key.
     page_hash = hashlib.sha256(page_text.encode()).hexdigest()
-    raw = f"{query}|{page_hash}"
+    model_part = picker_model or ""
+    raw = f"{query}|{page_hash}|{model_part}"
     return hashlib.sha256(raw.encode()).hexdigest()
 
 
@@ -285,12 +295,22 @@ def fetch_put(
 # ---- Snippet layer ----------------------------------------------------------
 
 
-def snippet_get(query: str, page_text: str) -> Optional[List[PickedChunk]]:
-    """Return cached PickedChunks if present and within TTL, else None."""
+def snippet_get(
+    query: str,
+    page_text: str,
+    picker_model: Optional[str] = None,
+) -> Optional[List[PickedChunk]]:
+    """Return cached PickedChunks if present and within TTL, else None.
+
+    ``picker_model`` is part of the cache key because a different model
+    picks different chunks from the same page text. Defaults to None so
+    production (picker on DEFAULT_MODEL) still hits the rows written
+    before this argument existed.
+    """
     if _READ_DISABLED:
         return None
     ensure_tables()
-    key = _snippet_key(query, page_text)
+    key = _snippet_key(query, page_text, picker_model)
     conn = _connect()
     try:
         cur = conn.execute(
@@ -309,10 +329,15 @@ def snippet_get(query: str, page_text: str) -> Optional[List[PickedChunk]]:
     return [PickedChunk(**d) for d in json.loads(chunks_json)]
 
 
-def snippet_put(query: str, page_text: str, chunks: List[PickedChunk]) -> None:
-    """Store picked chunks."""
+def snippet_put(
+    query: str,
+    page_text: str,
+    chunks: List[PickedChunk],
+    picker_model: Optional[str] = None,
+) -> None:
+    """Store picked chunks. ``picker_model`` is part of the cache key."""
     ensure_tables()
-    key = _snippet_key(query, page_text)
+    key = _snippet_key(query, page_text, picker_model)
     page_text_hash = hashlib.sha256(page_text.encode()).hexdigest()
     chunks_json = json.dumps([c.model_dump() for c in chunks])
     conn = _connect()

@@ -1622,7 +1622,7 @@ condition is "production" before the held-out run.
 MT, so SK, SI, and SE need their official-language codes added (sk, sl, sv) before
 dispatch. NL leaves the sample (it shared the mid / high cell with DE).
 
-### D43: DIY is the sole search provider; a 30s fetch-stage blocker stops the run
+### D43: DIY is the sole search provider; a 30s fetch-stage deadline (revised 2026-06-24: per-pair, not a batch stop)
 
 **Date:** 2026-06-09. Supersedes D36; retires the D20/D40/D41 cost-scarcity framing.
 
@@ -1662,6 +1662,26 @@ Cloudflare or WAF challenge, a hanging portal, a network fault) that a human
 must clear, so the run stops loudly rather than limping on or guessing from thin
 evidence. The stop is resumable: fix the blocker and re-dispatch, and the
 not-done set is recomputed.
+
+**Revised 2026-06-24 (per-pair, not a batch stop).** The raise-and-halt design
+described above is the original 2026-06-09 decision. It proved too blunt once
+multi-country batches were routine: one slow or WAF-guarded national portal would
+trip the 30s ceiling and tear down every other pair in the batch, including pairs
+already near completion. The fetch-stage timeout is now a per-pair event. On
+timeout the stage still abandons the hung futures (a single fetch cannot spin
+forever), but instead of raising `BlockerShutdown` it keeps whatever returned in
+time and lets that one pair carry on with partial evidence; the pair's own retry
+loop re-queries if the evidence is too thin. Each timeout is recorded via
+`_record_fetch_stall` in the `fetch_stage_timeouts` table, so a burst across the
+batch is still visible to a systemic breaker that can separate one slow portal
+from a batch-wide block. The `BlockerShutdown` propagation path is unchanged and
+still carries Claude's 429 to a clean, resumable stop (D20 layer 3); only the
+fetch-stage trigger was removed. Code: `agents/tools/search_diy.py` (commit
+`08629e4`). The fetch-stage-deadline test in `test_search_diy.py` was rewritten
+from `test_fetch_stage_deadline_raises_blocker` to
+`test_fetch_stage_deadline_returns_partial_no_blocker` accordingly (commit
+`6c1b09d`); the `BlockerShutdown` propagation test in `test_search_provider_arg.py`
+still stands (it covers Claude's 429 path, not the fetch stage).
 
 New / changed tests: the four D36 auto-fallback tests in
 `test_search_provider_arg.py` rewritten to the DIY-only contract, a
@@ -1931,12 +1951,52 @@ memory. Three artefacts:
    production-default change, a recurring unexplained pause, or an unexplained
    budget rise.
 
+### D49: Experiment-number reconciliation — two programmes collided at EXP-22/23/24
+
+**Date:** 2026-06-26.
+
+Two experiment programmes both on `origin/main` had independently claimed
+EXP-22, EXP-23 and EXP-24, so each number named two different experiments.
+
+- The **confidence-framework** deep dive (designed 2026-06-24/25, concluded null,
+  no production change, zero run data in the DB) registered EXP-22 entailment-
+  scored Verifier, EXP-23 self-consistency confidence, EXP-24 argue-the-opposite,
+  EXP-25 decomposed and calibrated commit score.
+- The **language/retrieval** programme (run data + analysis scripts) used EXP-22
+  foreign-language ablation (AL), EXP-23 trusted-domain narrow-then-widen, EXP-24
+  snippet-cap.
+
+Resolution: the language/retrieval programme keeps 22/23/24. It has 96 finalised
+rows under `exp22_foreign_lang_al`, two spec JSONs and several analysis scripts,
+so renumbering it would mean migrating run data. The confidence framework moves
+to the next free block:
+
+| Was | Now | Experiment |
+|---|---|---|
+| EXP-22 | EXP-25 | entailment-scored Verifier commit gate |
+| EXP-23 | EXP-26 | self-consistency confidence |
+| EXP-24 | EXP-27 | argue-the-opposite check |
+| EXP-25 | EXP-28 | decomposed and calibrated commit score |
+
+Applied in this change: renumbered `docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md`, the
+confidence section of `docs/EXPERIMENTS.md`, the confidence change-log entry
+below, `evaluation/confidence_gates.py` and `evaluation/nl_fp_audit.py`; renamed
+`evaluation/exp22_entailment_smoke.py` and its result `.jsonl` to `exp25_*`. The
+`experiments` table rows `exp22_entailment_gate` / `exp24_argue_opposite` rename
+to `exp25_*` / `exp27_*` on the canonical DB (no child rows; the binary DB
+diverges per worktree, so it is not committed here). The language/retrieval
+EXP-22/23/24 references are left as-is. EXP-25 to EXP-28 are reserved for the
+confidence framework.
+
 ## Change log
 
 | Date | Change |
 |---|---|
-| 2026-06-25 (Opus cost correction) | Corrected the Opus rate in `agents/tools/llm.py` `PRICING_USD_PER_M` from $15/$75 to $5/$25 per M input/output. The old figure was the Opus 3/4/4.1 rate; every Opus from 4.5 onward is $5/$25 (claude-api skill current-models table: Opus 4.6/4.7/4.8 all $5/$25). Both existing Opus entries (`claude-opus-4-6`, `claude-opus-4-5-20251101`) fixed and `claude-opus-4-7`/`claude-opus-4-8` added for forward safety; Sonnet ($3/$15) and Haiku ($1/$5) verified correct, unchanged. `estimated_cost_usd` is a notional API-equivalent under the flat CLIProxyAPI Max subscription (D1/Q9), not a real billing record, so historical rows are corrected rather than frozen, keeping the column reproducible from (tokens x rate). The swarm only ever logged `claude-opus-4-6` (637 rows on the canonical DB, was $37.95, becomes $12.65; the other 71k+ rows are Sonnet/Haiku and unaffected); per-experiment Opus costs in the dissertation were overstated 3x before this date. New idempotent `scripts/backfill_opus_pricing.py` recomputes the column from the rate table (dry-run by default, `--apply` to write); already run once against the canonical `data/odmi.db` (the binary DB diverges per worktree, so it is not committed). Doc table at D18 updated to $5/$25. New `tests/test_estimate_cost.py` pins the corrected rates and the 27-call batch arithmetic. SPEC doc fix only; no swarm behaviour change. |
+| 2026-06-26 (EXP number reconciliation) | D49 added. Two programmes both on `origin/main` had claimed EXP-22/23/24: language/retrieval (foreign-language ablation, narrow-then-widen, snippet-cap; run data) and the confidence-framework deep dive (entailment / self-consistency / argue-opposite / decomposed; null, no run data). Language/retrieval keeps 22/23/24; confidence framework renumbered to EXP-25/26/27/28 across the deep dive, `EXPERIMENTS.md`, this change log, `confidence_gates.py`, `nl_fp_audit.py`, and the renamed `exp25_entailment_smoke.py` (+ result jsonl). Canonical-DB `experiments` rows `exp22_entailment_gate` / `exp24_argue_opposite` renamed to `exp25_*` / `exp27_*` (not committed; DB diverges per worktree). |
+| 2026-06-25 (Opus cost correction) | Corrected the Opus rate in `agents/tools/llm.py` `PRICING_USD_PER_M` from $15/$75 to $5/$25 per M input/output. The old figure was the Opus 3/4/4.1 rate; every Opus from 4.5 onward is $5/$25 (claude-api skill current-models table: Opus 4.6/4.7/4.8 all $5/$25). Both existing Opus entries (`claude-opus-4-6`, `claude-opus-4-5-20251101`) fixed and `claude-opus-4-7`/`claude-opus-4-8` added for forward safety; Sonnet ($3/$15) and Haiku ($1/$5) verified correct, unchanged. `estimated_cost_usd` is a notional API-equivalent under the flat CLIProxyAPI Max subscription (D1/Q9), not a real billing record, so historical rows are corrected rather than frozen, keeping the column reproducible from (tokens x rate). The swarm only ever logged `claude-opus-4-6` (637 rows on the canonical DB, was $37.95, becomes $12.65; the other 71k+ rows are Sonnet/Haiku and unaffected); per-experiment Opus costs in the dissertation were overstated 3x before this date. New idempotent `scripts/backfill_opus_pricing.py` recomputes the column from the rate table (dry-run by default, `--apply` to write); already run once against the canonical `data/odmi.db` (the binary DB diverges per worktree, so it is not committed). Doc table at D18 updated to $5/$25. New `tests/test_estimate_cost.py` pins the corrected rates and the 27-call batch arithmetic. SPEC doc fix only; no swarm behaviour change. This resolves the stale-Opus-pricing item flagged in the 2026-06-25 confidence-experiments entry below. |
+| 2026-06-25 (confidence experiments + decision split) | Ran the pre-registered confidence experiments on production Sonnet (quota restored). **EXP-25 entailment gate and EXP-27 argue-the-opposite both NULL and harmful** (`evaluation/confidence_gates.py`, NL n=50, 25 committed negative golds): both *raise* the negative-gold FP rate (0.76 -> 1.00 for EXP-25, halving Youden's J) because the correct `no` commits are the low-entailment ones and abstain first while the confident FPs (entailment_for 0.74 vs correct 0.68) pass; the pre-registered adoption rule rejects both; McNemar caught 3/19 and 2/19 FPs (p=0.25, 0.50), 0 high-confidence. Confirms the deep dive's within-negative sign-flip end-to-end on the production model. **NL false-positive audit** (`evaluation/nl_fp_audit.py` + `nl_fp_audit_adversarial.py`, 22 questions over frozen evidence, two framings). Charitable pass: 1 genuine swarm error on Opus, 2 on Sonnet, rest definitional/self-report (~5-9%). Adversarial advocate pass (Opus told to argue the gold wrong): **0/22 gold_wrong** (swarm never vindicated), 11/22 over-reads (gold stands), 11/22 ambiguous. The genuine-error rate brackets ~5% (charitable) to ~50% (strict over-read), framing-dependent; robust finding is that no NL FP is the swarm-right-vs-stale-gold case, and the disagreements are strict-vs-loose question readings / self-report that no evidence gate resolves. **Decision taxonomy confirmed** against the official 2022/2024 ODMI methodology (2022 lists "Complement ... additional desk research" as a step; score/explanation signatures corroborate confirm/complement/change). **Decision-stratification shipped to the dashboard** (`dashboard/lib/db.py::accuracy_by_decision` + Analytics self-report split): all 6 production false positives sit on `confirm` golds. Pre-registered `exp25_entailment_gate` / `exp27_argue_opposite`; EXP-26/25 held (same null mechanism; EXP-28 spends the frozen held-out set). Reading: no evidence-grounded commit gate catches the confident FPs; the answer is decision-stratified reporting + D22 staleness adjudication, not a better gate. Flagged separately: `claude_usage_log` prices Opus at the stale $15/$75 per-Mtok rate (3x current), inflating dashboard GBP costs for Opus rows. Details in `docs/EXPERIMENTS.md` and `docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md`. |
 | 2026-06-24 (EXP-23 design lock + picker_model knob) | Pre-registered EXP-23 (trusted-domain narrow-then-widen retrieval, multi-country), the first measured test of the SRCH-5/6/7 production decisions. Three arms over NL+MT+AL (~156 binary-balanced pairs each, 468 total), one variable (retrieval strategy): `baseline_narrow_then_wide` (production), `wide_only` (skip the trusted-domain include list, one wide pass), `narrow_only` (include list but never widen on empty, the attribution control). Adoption rule declared at dispatch: promote wide_only only if it cuts NL negative-gold FP by >= 5pp AND commit accuracy is non-inferior (delta >= -0.02); narrow_only is never adopted. Side-finding rule: wide_only >= 5pp AL candidate-recall lift confirms narrow was suppressing thin-web recall. Diagnostic: among each arm's FPs, the share whose cited source URL hits a trusted domain (direct test of the over-trust hypothesis). Spec at `evaluation/specs/exp23_narrow_then_widen.json`. Three new knobs threaded end to end and tested at every layer: `--search-strategy {narrow_then_wide, wide_only, narrow_only}` and `--picker-model <model>` (the snippet picker hardwired DEFAULT_MODEL, so under Sonnet exhaustion the picker 429s mid-pair; the knob pins Opus across all arms, constant -> no within-experiment confound). Orchestrator `flag_map` updated to forward both new knobs (an unforwarded knob silently no-ops; this footgun is now documented in memory). MT and AL trusted_domain lists first-authored for this experiment (NL is hand-curated production); committed with provenance notes. AL eval pair file built with the same seed/dimension-stratified rule as Malta (`scripts/build_al_eval_pairs.py`, 44 pairs, 22 yes / 22 no). Manipulation-check (`evaluation/manipulation_check_exp23.py`) + analysis (`evaluation/analyze_exp23.py`) scripts written for the post-dispatch read. Sonnet quota exhausted at run time so all roles + picker pinned to Opus 4.6 across every arm. |
+| 2026-06-24 (D43 fetch-stage made per-pair; SPEC backfilled 2026-06-25) | Corrected the D43 fetch-stage rule: a stage that blows the 30s `DIY_FETCH_DEADLINE_S` ceiling is now a per-pair event, not a batch stop. `agents/tools/search_diy.py` abandons the hung futures and returns partial results instead of raising `BlockerShutdown` (commit `08629e4`, 2026-06-24 10:36), so one slow national portal can no longer halt a multi-country batch; the timeout is recorded in `fetch_stage_timeouts` via `_record_fetch_stall` for the systemic breaker. The fetch-stage-deadline test in `test_search_diy.py` was rewritten from `test_fetch_stage_deadline_raises_blocker` (assert raise) to `test_fetch_stage_deadline_returns_partial_no_blocker` (assert per-pair proceed, commit `6c1b09d`); the `BlockerShutdown` propagation test in `test_search_provider_arg.py` still stands (it covers Claude's 429 path, not the fetch stage). The D43 entry and heading were updated to record this revision, which had shipped in code on 2026-06-24 without a SPEC entry. Full suite 748 passing, 13 skipped. |
 | 2026-06-23 (next-experiment designs + DIY-only correction) | Pre-registered four experiment designs in `docs/EXPERIMENTS_NEXT.md` and the `experiments` table (analysis plans locked, dispatch-ready, open to revision before spend). Three are confirmatory re-tests of decisions made on thin/unrepresentative samples: **EXP-18** breadth r5/r10 on FR+AL+NL (EXP-17 breadth was one NL run driving a +17% system-wide cost), **EXP-19** verifier never/always on NL+MT+AL (EXP-14 turned on a 0.62 vs 0.58 FP margin at NL n=51; spec ready at `evaluation/specs/exp19_verifier_search_multicountry.json`), **EXP-20** chaining baseline/chained on NL+AL (EXP-7 was underpowered on Malta). The fourth, **EXP-21**, is the whole-system test: the frozen production architecture end-to-end on the D47 held-out 8, balance-aware + three-outcome, no adoption rule (it is the reported headline), gated on a config freeze and run after the re-tests. All DIY-only. **Correction (D43 reaffirmed):** the provider question is closed, DIY only; the stale Tavily->DIY->Brave fallback row in `ARCHITECTURE.md` was removed and the multilingual lever reframed as a DIY-internal recall question, not a provider comparison. EXP-1/4/5 (provider comparisons) are dead and will not be re-run. No tokens spent. |
 | 2026-06-23 (floor sweep, all countries) | Extended the EXP-10 floor sweep beyond Malta in response to the small-sample objection. New `evaluation/floor_sweep_all.py` pools the replay over every country with stored data (production rows for MT/NO/FR/EE/DE/RO + NL's production-config EXP-16 `standard` baseline for its 26 negative golds): pooled n=360 across 7 countries, 67 negative golds, 6x the Malta sample. **0.65 holds**: recovered-answer precision at 0.50 is 0.76 (vs Malta 0.75, so consistent), under the pre-registered 0.80 bar; negative-class FPR barely moves on lowering (0.37 -> 0.39). The three balanced countries (MT/NO/NL) all return 0.65; only yes-skewed FR/EE lean to 0.55, a base-rate artefact (no negatives to get wrong). `load_pairs` gained an optional `condition_label` arg to pull a single experiment arm as production-equivalent data; `ARCHITECTURE.md` floor row updated to the n=360 evidence. Free replay, no tokens. |
 | 2026-06-23 (EXP-10 floor sweep, free) | EXP-10 Malta failure audit + confidence-floor sweep run (free replay, `evaluation/malta_failure_audit.py`, MT n=60). **Keep the 0.65 floor**: the pre-registered rule rejects lowering (0.50 recovers 6 correct but at 0.75 precision, under the 0.80 bar; negative-class FPR flat at 0.13 across 0.65/0.55/0.50, so the floor is not the false-positive driver). Phase A taxonomy of 28 non-matches: 17 fixable (7 fetch 4xx/5xx, 6 below-floor, 4 other), 11 genuine wrong, 0 structural; the largest fixable bucket is retrieval-side. Confirms the binding precision control is well-set and the open gains are retrieval-side, not reasoning-wiring-side. `ARCHITECTURE.md` floor row marked confirmed. No tokens spent. Details in `docs/EXPERIMENTS.md`. |
