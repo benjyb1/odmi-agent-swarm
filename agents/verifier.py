@@ -487,6 +487,7 @@ def run_verifier(
     num_queries: Optional[int] = None,
     verifier_search: VerifierSearchPolicy = "always",
     picker_model: Optional[str] = None,
+    verifier_prompt_variant: str = "default",
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
 ) -> VerifierRunResult:
@@ -507,10 +508,31 @@ def run_verifier(
     NotImplementedError. The substring gate and all verdict post-processing
     are unchanged by this knob. See the VerifierSearchPolicy note above.
 
+    `verifier_prompt_variant` (EXP-B) selects the prompt body for the
+    `verifier-disprove` strategy. "default" (the production V4 prompt)
+    is byte-identical to historic behaviour; "structured" swaps in the
+    structured Step 3 fit-check (entity / scope / tense / metric /
+    scale). Only the `verifier-disprove` strategy honours this knob;
+    every other strategy raises if a non-default variant is passed.
+
     `on_step(event, payload)` is the walkthrough callback.
     """
     strategy = inp.strategy
-    spec = verifier_prompt.STRATEGIES[strategy]
+    if strategy == "verifier-disprove":
+        v = verifier_prompt.disprove_variant(verifier_prompt_variant)
+        spec = verifier_prompt._StrategySpec(
+            name=v.name, version=v.version, system=v.system,
+            description=v.description,
+        )
+    else:
+        if verifier_prompt_variant != "default":
+            raise ValueError(
+                f"verifier_prompt_variant={verifier_prompt_variant!r} is only "
+                f"defined for strategy='verifier-disprove'; strategy={strategy!r} "
+                f"does not accept variants. Use the default variant or change "
+                f"the strategy."
+            )
+        spec = verifier_prompt.STRATEGIES[strategy]
 
     on_step("start", {
         "question_id": inp.question_id,

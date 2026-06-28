@@ -45,6 +45,7 @@ from dataclasses import dataclass
 from typing import Callable, List, Optional
 
 from agents.models import ResearcherOutput, VerifierStrategy
+from agents.prompts._shared import FORBIDDEN_SOURCES_BULLETS
 
 
 # ============================================================
@@ -255,9 +256,9 @@ def build_user_message(
 # ============================================================
 
 _DISPROVE_NAME = "phase2_verifier_disprove"
-_DISPROVE_VERSION = 3
+_DISPROVE_VERSION = 4
 
-_DISPROVE_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
+_DISPROVE_SYSTEM = f"""You are the Adversarial Verifier in the ODMI Agent Swarm.
 
 Your job is to decide whether the Researcher's answer to an ODMI question
 should be accepted or rejected. Your default stance is scepticism. Before
@@ -272,18 +273,21 @@ is grounds for rejection.
 Your reasoning process (follow in order):
 
 1. Substring check. Python has already checked whether the evidence quote
-   appears verbatim in the cited source page. If the check failed, that is
-   strong evidence of fabrication or misquoting; weight it heavily toward
-   rejecting.
+   appears verbatim in the snippets the Researcher read. A failed check is
+   the deterministic fabrication gate: Python will override any pass verdict
+   to fail automatically when substring_check_result="fail", so you do not
+   need to weigh it. Treat a failed substring as fabrication and proceed to
+   step 2 only if your judgement is independently to reject for another
+   reason.
 
 2. Source authority. Is the cited URL authoritative for this claim? A blog
    post or consultancy summary is weaker than a government portal or official
-   legislation. ODMI's own publications and the EU Data Portal
-   (data.europa.eu, publications.europa.eu, op.europa.eu, archive
-   mirrors of those, and any URL containing "open-data-maturity" or
-   "odmi") are forbidden as sources because they are the ground truth
-   we are validating against. If the Researcher cites one of those,
-   reject with rejection_reason="forbidden_odmi_source".
+   legislation. ODMI's own publications and the EU Data Portal are
+   forbidden as sources because they are the ground truth we are
+   validating against. The forbidden sources are:
+{FORBIDDEN_SOURCES_BULLETS}
+   If the Researcher cites one of those, reject with
+   rejection_reason="forbidden_odmi_source".
 
 3. Evidence fit. Does the quoted passage actually answer the question asked?
    A quote about open-data strategy in general does not confirm a specific
@@ -474,6 +478,125 @@ Verdict.
   substring check failed (suggesting the quote may be unreliable).
   In that case explain in rejection_reason what was missing.
 """ + _SCHEMA_NOTE
+
+
+# ============================================================
+# EXP-B structured fit-check variant of `verifier-disprove`.
+# ============================================================
+#
+# Replaces Step 3 of the V4 disprove prompt with an explicit
+# per-dimension fit-check (entity / scope / tense / metric / scale).
+# Every other step and the schema-note are identical to V4. Selected
+# by `verifier_prompt_variant="structured"`. The `default` variant is
+# the unchanged V4 prompt above; the V4 row in `prompt_versions` is
+# never touched by this arm.
+
+_DISPROVE_STRUCTURED_NAME = "phase2_verifier_disprove_structured"
+_DISPROVE_STRUCTURED_VERSION = 1
+_DISPROVE_STRUCTURED_DESCRIPTION = (
+    "Verifier disprove structured (EXP-B). V4 system prompt with one "
+    "change: Step 3 (evidence fit) is restructured from a prose "
+    "question into an explicit per-dimension check (entity, scope, "
+    "tense, metric, scale/band). The verdict must cite the failing "
+    "dimension when verdict=fail, so the rejection is auditable. All "
+    "other steps, the forbidden-source list, the schema-note, and the "
+    "shape-aware answer space are byte-identical to V4."
+)
+
+_DISPROVE_STRUCTURED_SYSTEM = _DISPROVE_SYSTEM.replace(
+    """3. Evidence fit. Does the quoted passage actually answer the question asked?
+   A quote about open-data strategy in general does not confirm a specific
+   legal transposition. A quote that describes a planned policy does not
+   confirm an enacted one.""",
+    """3. Evidence fit. The quote can fail to support the answer along five
+   independent dimensions. Check each in order. If ANY dimension fails,
+   the verdict is fail and rejection_reason must name the failing
+   dimension and quote the mismatch.
+
+   (a) ENTITY: is the quote about the right country or the right
+       national body? A passage about Sweden is not evidence about
+       Finland; a passage about a regional portal is not evidence
+       about the national one.
+
+   (b) SCOPE: is the quote about the same scope the question asks
+       (national vs regional vs EU-level vs individual portal)? A
+       quote about EU-level policy does not confirm a national
+       transposition.
+
+   (c) TENSE / STATUS: is the quote about an enacted, current state
+       (the question asks "is there ..."), or about a planned,
+       proposed, draft, or historical state? A planned strategy is
+       not evidence of an enacted strategy.
+
+   (d) METRIC: does the quote name the same measurement the question
+       names (presence of a specific feature, existence of a specific
+       process, a specific percentage)? A quote about open-data
+       strategy in general does not confirm a specific legal
+       transposition or a specific metric.
+
+   (e) SCALE / BAND: for ordered-band questions, does the figure in
+       the quote actually map to the band the Researcher chose? 82%
+       does not map to ">90%"; a count of 5 does not map to ">10".
+
+   When ALL five dimensions pass, the evidence fits and you proceed
+   to step 4. Do not reject on stylistic grounds.""",
+)
+
+
+# ============================================================
+# Disprove variants (selected by --verifier-prompt-variant)
+# ============================================================
+#
+# The `verifier-disprove` strategy can be served by more than one
+# prompt body. The strategy_label on the per-run DB row stays
+# "verifier-disprove" across variants; only the `prompt_version_id`
+# distinguishes them. This mirrors the Researcher's variant pattern
+# (full / compressed / calibrated) and lets EXP-B test a new
+# disprove prompt without a schema migration on `phase2_verifier_runs`.
+
+
+@dataclass(frozen=True)
+class _DisproveVariant:
+    name: str
+    version: int
+    system: str
+    description: str
+
+
+_DISPROVE_VARIANTS: dict[str, _DisproveVariant] = {
+    "default": _DisproveVariant(
+        name=_DISPROVE_NAME,
+        version=_DISPROVE_VERSION,
+        system=_DISPROVE_SYSTEM,
+        description=(
+            "Verifier disprove V4 default variant: as registered in "
+            "STRATEGIES['verifier-disprove']. Step 3 is prose."
+        ),
+    ),
+    "structured": _DisproveVariant(
+        name=_DISPROVE_STRUCTURED_NAME,
+        version=_DISPROVE_STRUCTURED_VERSION,
+        system=_DISPROVE_STRUCTURED_SYSTEM,
+        description=_DISPROVE_STRUCTURED_DESCRIPTION,
+    ),
+}
+
+
+def disprove_variant(name: str = "default") -> _DisproveVariant:
+    """Return the disprove prompt variant for `name`.
+
+    `default` is the V4 prompt registered in `STRATEGIES`. `structured`
+    is the EXP-B Step-3 restructure. Any other value raises so a typo
+    in a dispatch cannot silently fall back to the baseline and
+    mislabel a run.
+    """
+    try:
+        return _DISPROVE_VARIANTS[name]
+    except KeyError:
+        raise ValueError(
+            f"unknown verifier disprove variant {name!r}; "
+            f"expected one of {sorted(_DISPROVE_VARIANTS)}"
+        ) from None
 
 
 # ============================================================
@@ -694,8 +817,19 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         version=_DISPROVE_VERSION,
         system=_DISPROVE_SYSTEM,
         description=(
-            "Verifier disprove V3: default sceptical stance. "
-            "Asks what is wrong with the claim before considering acceptance."
+            "Verifier disprove V4: default sceptical stance. V4 drops "
+            "the redundant prose telling the model to weight a "
+            "substring-fail toward rejection, because Python already "
+            "overrides any pass verdict to fail when the substring "
+            "check failed (agents/verifier.py hard grounding gate); "
+            "the prompt now states what code does. Step 2 reads the "
+            "canonical forbidden-source list from "
+            "`agents/prompts/_shared.py`, which adds the "
+            "europeandataportal.eu legacy redirect, archive mirrors, "
+            "and the `merged_responses` / `odm-questionnaire` URL "
+            "patterns that previously appeared only on the "
+            "Researcher's list. The four-step reasoning order and "
+            "every other rule are unchanged from V3."
         ),
     ),
     "verifier-tristate": _StrategySpec(

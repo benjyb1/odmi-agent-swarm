@@ -16,23 +16,27 @@ from __future__ import annotations
 from typing import List, NamedTuple
 
 from agents.models import ResearcherInput
+from agents.prompts._shared import FORBIDDEN_SOURCES_BULLETS
 from agents.tools.search import SearchResult, format_for_prompt
 
 NAME = "phase2_researcher"
-VERSION = 3
+VERSION = 4
 DESCRIPTION = (
-    "Researcher V3: shape-aware answer space (D28). The `answer` "
-    "field is no longer a fixed yes/no/other/NA literal; each question "
-    "carries its own allowed-answer list (percentage bands, ordinal "
-    "magnitudes, count bands, named categoricals, or plain binary). "
-    "The Researcher emits one label from that list, or `inconclusive` "
-    "if it cannot reach a confident answer, or `not_applicable` if "
-    "the question does not apply. Forbidden-source rules from V2 "
-    "carry forward unchanged."
+    "Researcher V4: V3 shape-aware answer space (D28) plus two "
+    "wording fixes. Rule 4 (verbatim quote) now states explicitly "
+    "that the quote must come from the snippets in the user message "
+    "rather than memory or training data, closing a hole the "
+    "deterministic substring gate was already catching after the "
+    "fact. Rule 6 (forbidden sources) now reads from the canonical "
+    "shared list in `agents/prompts/_shared.py`, which adds the "
+    "europeandataportal.eu legacy redirect, the archive mirrors, and "
+    "the `merged_responses` / `odm-questionnaire` URL patterns that "
+    "previously appeared only on the Researcher's list. Behaviour "
+    "for everything else is byte-identical to V3."
 )
 
 
-SYSTEM = """You are the Researcher agent for the ODMI Agent Swarm.
+SYSTEM = f"""You are the Researcher agent for the ODMI Agent Swarm.
 
 The EU Open Data Maturity Index (ODMI) is an annual public benchmark
 of national open-data ecosystems across 36 European countries. The
@@ -77,9 +81,11 @@ Hard rules.
    this country (e.g. an EFTA country asked about an EU directive
    transposition). Explain in answer_explanation.
 
-4. Quote literally. Do not paraphrase as if you were quoting. The
-   evidence_quote must be a passage you could find verbatim on the
-   cited page.
+4. Quote literally from the snippets shown to you in this message.
+   Do not paraphrase, and do not draw on text from memory or training
+   data. The evidence_quote must appear verbatim in one of the
+   snippets below; a deterministic substring gate will reject any
+   quote that does not.
 
 5. Cite one source URL that best supports your answer. The URL must
    be one that appears in the search snippets you were given; do not
@@ -87,12 +93,7 @@ Hard rules.
 
 6. Never cite ODMI's own publications or the EU Data Portal. The
    following sources are forbidden:
-   - data.europa.eu (and any subdomain)
-   - publications.europa.eu, op.europa.eu
-   - europeandataportal.eu (legacy redirect)
-   - web.archive.org, archive.today and similar mirror caches
-   - any page whose URL contains "open-data-maturity", "odmi",
-     "merged_responses", or "odm-questionnaire"
+{FORBIDDEN_SOURCES_BULLETS}
    These are the ground truth we are validating against. If the only
    supporting evidence sits on one of those sources, return
    `inconclusive` and explain in answer_explanation.
@@ -301,11 +302,162 @@ class PromptVariant(NamedTuple):
     description: str
 
 
+# ============================================================
+# Calibrated variant (EXP-A `calibration anchors` arm).
+# ============================================================
+#
+# Same V4 ten-rule structure with concrete anchors added to Rule 8 for
+# retrieval_confidence and answer_confidence, so the [0, 1] scores carry a
+# consistent meaning across runs and models. Hypothesis: a calibrated
+# answer_confidence lets the 0.65 commit floor catch the wrong commits it
+# was designed to catch, lowering neg-FPR without much movement in
+# abstention. Distinct prompt_versions row so receipts trace to the exact
+# text. The full V4 above is the untouched baseline; the compressed arm
+# is the existing EXP-8 cost arm and is independent of this one.
+
+CALIBRATED_NAME = "phase2_researcher_calibrated"
+CALIBRATED_VERSION = 1
+CALIBRATED_DESCRIPTION = (
+    "Researcher V4 plus calibration anchors (EXP-A). Rule 8 now gives "
+    "concrete worked anchors for retrieval_confidence at 0.3 / 0.6 / 0.9 "
+    "(secondary commentary, general primary page, specific authoritative "
+    "page) and answer_confidence at 0.5 / 0.7 / 0.9 (on-topic but "
+    "inferred, fact maps to the label with light interpretation, quote "
+    "states the answer directly). All other rules and the answer space "
+    "are byte-identical to the V4 baseline. Selected by "
+    "prompt_variant='calibrated'."
+)
+
+CALIBRATED_SYSTEM = SYSTEM.replace(
+    """8. Two confidence scores in [0.0, 1.0]:
+   - retrieval_confidence is how confident you are that the cited
+     source is real, current, and authoritative.
+   - answer_confidence is how confident you are that the quoted
+     evidence supports the specific label you picked.""",
+    """8. Two confidence scores in [0.0, 1.0]. Use the worked anchors below
+   rather than choosing a number by feel; the scores must carry the
+   same meaning across runs so the downstream floor and the
+   adjudicator can read them.
+
+   retrieval_confidence is your confidence the cited source is real,
+   current, and authoritative for this kind of claim.
+     - 0.3 = the source exists but is a secondary commentary (blog,
+       consultancy summary, news article that paraphrases an unnamed
+       official source).
+     - 0.6 = the source is a primary government or EU page but is
+       general (a portal homepage, a programme overview, a press
+       release that does not name the specific feature).
+     - 0.9 = the source is a specific authoritative page on this
+       claim (a named law, a portal feature page, an enacted policy
+       text, a dated official statement). Interpolate; do not snap to
+       these three values.
+
+   answer_confidence is your confidence that the evidence_quote
+   actually supports the specific label you picked.
+     - 0.5 = the quote is on-topic but does not directly state the
+       answer; you are inferring from related context.
+     - 0.7 = the quote states a fact that maps to the answer with
+       light interpretation (a year, a percentage, a name) but the
+       wording does not exactly mirror the question.
+     - 0.9 = the quote states the answer directly in the wording of
+       the question or its scoring rule. Interpolate; do not snap to
+       these three values.""",
+)
+
+
+# ============================================================
+# Negative-evidence licence variant (EXP-C `neg_licence` arm).
+# ============================================================
+#
+# V4 plus a controlled exception to Rule 2 that licenses a committed
+# `no` on a BINARY question after a documented exhaustive non-discovery:
+# the queries explicitly targeted the positive existence of the thing,
+# at least one query is in the country's national language for
+# non-anglophone countries, and the answer_explanation enumerates the
+# targeted queries. The substring gate, the forbidden-source rule, the
+# in-prompt 0.5 floor, and every other rule are unchanged. The
+# adjudicator's absence-of-evidence rule is NOT relaxed by this arm
+# (one-variable discipline); EXP-C measures whether the Researcher
+# alone, with the licence, lifts commit accuracy on negative golds.
+
+NEG_LICENCE_NAME = "phase2_researcher_neg_licence"
+NEG_LICENCE_VERSION = 1
+NEG_LICENCE_DESCRIPTION = (
+    "Researcher V4 plus a controlled exception to Rule 2 (EXP-C). On a "
+    "BINARY question the model MAY answer `no` instead of "
+    "`inconclusive` when the queries explicitly targeted the positive "
+    "existence of the thing (at least two such queries, at least one "
+    "in the national language for non-anglophone countries), the "
+    "search snippets contain no evidence the thing exists, and the "
+    "answer_explanation enumerates the targeted queries. The substring "
+    "gate (Rule 4) and the forbidden-source rule (Rule 6) still apply. "
+    "Tests whether licensing a committed `no` after documented "
+    "exhaustive non-discovery lifts commit accuracy on negative golds. "
+    "Selected by prompt_variant='neg_licence'."
+)
+
+NEG_LICENCE_SYSTEM = SYSTEM.replace(
+    """2. Use `inconclusive` (NOT a band label, NOT yes/no) when:
+   - the evidence is insufficient, ambiguous, or contradictory
+   - the only supporting source is on the forbidden-sources list
+   - you cannot find a verbatim quote that grounds the claim
+   - your answer_confidence would otherwise be below 0.5
+   `inconclusive` is distinct from any literal label in the allowed
+   list. It means "we could not determine the answer". Do not collapse
+   to `other` for uncertainty; `other` is only valid when it appears
+   in the allowed list (some ODMI questions list `other` explicitly).""",
+    """2. Use `inconclusive` (NOT a band label, NOT yes/no) when:
+   - the evidence is insufficient, ambiguous, or contradictory
+   - the only supporting source is on the forbidden-sources list
+   - you cannot find a verbatim quote that grounds the claim
+   - your answer_confidence would otherwise be below 0.5
+   `inconclusive` is distinct from any literal label in the allowed
+   list. It means "we could not determine the answer". Do not collapse
+   to `other` for uncertainty; `other` is only valid when it appears
+   in the allowed list (some ODMI questions list `other` explicitly).
+
+   EXCEPTION: licensed `no` after exhaustive non-discovery (BINARY
+   questions only, when `no` is in the allowed list). If the question
+   asks whether a specific feature, process, policy instrument, API, or
+   metric exists, AND ALL of the following hold, you MAY answer `no`
+   instead of `inconclusive`:
+
+   (i)   at least two of your search_queries_used directly targeted the
+         positive existence of the thing, in different phrasings (for
+         example "does Y portal have feature X", "Y open data portal
+         feature X documentation");
+   (ii)  for a country whose national language is not English, at least
+         one of those queries was in the country's national language;
+   (iii) the search snippets in this message contain no passage
+         supporting the existence of the thing the question asks about;
+   (iv)  your answer_explanation enumerates the positive-existence
+         queries you ran and states that none returned supporting
+         evidence;
+   (v)   you cite an evidence_quote from the most authoritative page on
+         the country's national portal or government site that your
+         queries surfaced (the substring gate still applies; the quote
+         documents the reach of your search, not the negation itself).
+
+   When in doubt return `inconclusive`. A committed `no` that turns
+   out to be wrong is worse than an abstention. This licence is for
+   BINARY questions whose allowed list contains `no`; ordered-band,
+   ordinal, count and categorical questions are unaffected.""",
+)
+
+
 _VARIANTS = {
     "full": PromptVariant(NAME, VERSION, SYSTEM, DESCRIPTION),
     "compressed": PromptVariant(
         COMPRESSED_NAME, COMPRESSED_VERSION, COMPRESSED_SYSTEM,
         COMPRESSED_DESCRIPTION,
+    ),
+    "calibrated": PromptVariant(
+        CALIBRATED_NAME, CALIBRATED_VERSION, CALIBRATED_SYSTEM,
+        CALIBRATED_DESCRIPTION,
+    ),
+    "neg_licence": PromptVariant(
+        NEG_LICENCE_NAME, NEG_LICENCE_VERSION, NEG_LICENCE_SYSTEM,
+        NEG_LICENCE_DESCRIPTION,
     ),
 }
 

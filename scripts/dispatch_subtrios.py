@@ -350,6 +350,7 @@ def dispatch(
     researcher_escalation_model: Optional[str] = None,
     verifier_escalation_model: Optional[str] = None,
     prompt_variant: str = "full",
+    verifier_prompt_variant: str = "default",
     parallel_limit: int = 4,
     max_retries: int = 3,
     provider: str = "auto",
@@ -549,6 +550,8 @@ def dispatch(
                         verifier_escalation_model]
             if prompt_variant and prompt_variant != "full":
                 cmd += ["--prompt-variant", prompt_variant]
+            if verifier_prompt_variant and verifier_prompt_variant != "default":
+                cmd += ["--verifier-prompt-variant", verifier_prompt_variant]
             if provider and provider != "auto":
                 cmd += ["--provider", provider]
             cmd += ["--max-results-per-query", str(max_results_per_query)]
@@ -821,9 +824,18 @@ def main() -> int:
                         help="EXP-8 model-fallback: Verifier model on a retry. "
                              "Unset = hold one model.")
     parser.add_argument("--prompt-variant", default="full",
-                        choices=["full", "compressed"],
-                        help="Researcher system prompt (EXP-8 prompt-compressed "
-                             "arm). 'full' baseline; 'compressed' is leaner.")
+                        choices=["full", "compressed", "calibrated",
+                                 "neg_licence"],
+                        help="Researcher system prompt. 'full' is the V4 "
+                             "baseline; 'compressed' is the EXP-8 cost arm; "
+                             "'calibrated' is the EXP-A confidence-anchor "
+                             "arm; 'neg_licence' is the EXP-C licensed-"
+                             "negative arm.")
+    parser.add_argument("--verifier-prompt-variant", default="default",
+                        choices=["default", "structured"],
+                        help="Verifier disprove prompt body. 'default' is "
+                             "V4 prose Step 3; 'structured' is EXP-B "
+                             "per-dimension fit-check.")
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--provider", default="auto",
@@ -962,6 +974,7 @@ def main() -> int:
         researcher_escalation_model=args.researcher_escalation_model,
         verifier_escalation_model=args.verifier_escalation_model,
         prompt_variant=args.prompt_variant,
+        verifier_prompt_variant=args.verifier_prompt_variant,
         parallel_limit=args.parallel,
         max_retries=args.max_retries,
         provider=args.provider,

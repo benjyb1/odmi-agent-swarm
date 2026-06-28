@@ -18,20 +18,20 @@ from agents.models import (
     ResearcherOutput,
     VerifierOutput,
 )
+from agents.prompts._shared import FORBIDDEN_SOURCES_BULLETS
 
 
 NAME = "phase2_adjudicator"
-VERSION = 4
+VERSION = 5
 DESCRIPTION = (
-    "Adjudicator V4: weighs three rounds of Researcher / Verifier output "
-    "after retries exhaust. Picks a winner or escalates to human review. "
-    "No web searches; the decision rests on evidence already gathered. "
-    "V3 (D28) makes the answer space per-question: adjudicator_answer "
-    "must be a label from the question's allowed list (or "
-    "'inconclusive' / 'not_applicable'), not a fixed yes/no/other/NA "
-    "literal. V4 (D36) explicitly prefers honest abstention over a "
-    "low-confidence label when the gathered evidence does not support a "
-    "confident commit."
+    "Adjudicator V5: V4 honest-abstention preference (D36) kept "
+    "unchanged. V5 reads the canonical forbidden-source list from "
+    "`agents/prompts/_shared.py`, which adds the "
+    "europeandataportal.eu legacy redirect, archive mirrors, and the "
+    "`merged_responses` / `odm-questionnaire` URL patterns that "
+    "previously appeared only on the Researcher's list. Verdicts, "
+    "answer space, confidence floor (0.6) and the absence-of-evidence "
+    "rule are byte-identical to V4."
 )
 
 
@@ -119,12 +119,12 @@ Read the full history below carefully. Pay particular attention to:
   reading.
 - Whether either agent's confidence trended up or down across retries.
 
-Forbidden sources. ODMI's own publications and the EU Data Portal
-(data.europa.eu, publications.europa.eu, op.europa.eu, archive mirrors
-of those, and any URL containing "open-data-maturity" or "odmi") are
-forbidden because they are the ground truth being validated. If either
-agent's only material evidence cites one of those sources, treat that
-evidence as void: in practice this usually means
+Forbidden sources. ODMI's own publications and the EU Data Portal are
+forbidden because they are the ground truth being validated. The
+forbidden sources are:
+__FORBIDDEN_SOURCES_PLACEHOLDER__
+If either agent's only material evidence cites one of those sources,
+treat that evidence as void: in practice this usually means
 adjudicator_verdict="neither" with adjudicator_answer set from any
 independent evidence in the history, or escalate_human if no
 independent evidence exists.
@@ -132,7 +132,7 @@ independent evidence exists.
 Do not rely on memorised ODMI rankings, country scores, or prior-year
 answers when picking a verdict. Decide only from the evidence the two
 agents actually gathered.
-"""
+""".replace("__FORBIDDEN_SOURCES_PLACEHOLDER__", FORBIDDEN_SOURCES_BULLETS)
 
 
 # ============================================================
@@ -144,16 +144,17 @@ agents actually gathered.
 # ============================================================
 
 FREE_NAME = "phase2_adjudicator_free"
-FREE_VERSION = 1
+FREE_VERSION = 2
 FREE_DESCRIPTION = (
-    "Adjudicator free-selection arm (EXP-16). Extends V4 with an "
-    "`attempt_correct` verdict that lets the Adjudicator commit the answer "
-    "from ANY of the up-to-four Researcher attempts by index, not only the "
-    "final attempt that `researcher_correct` is pinned to. The D44 rule "
-    "(absence of evidence is 'inconclusive', never 'no'), the "
-    "honest-abstention preference, and the confidence floor all still hold. "
-    "Selection-mode 'standard' keeps the V4 prompt and is byte-identical to "
-    "production; only the 'free' arm uses this prompt."
+    "Adjudicator free-selection arm (EXP-16). V2 tracks the V5 "
+    "standard prompt: the `attempt_correct` verdict is unchanged, but "
+    "the forbidden-source list now reads from the shared canonical "
+    "list in `agents/prompts/_shared.py` (mirrors the V4-to-V5 bump "
+    "on the standard arm). The D44 rule (absence of evidence is "
+    "'inconclusive', never 'no'), the honest-abstention preference, "
+    "and the confidence floor all still hold. Selection-mode "
+    "'standard' uses the V5 standard prompt; only the 'free' arm "
+    "uses this one."
 )
 
 # The free system prompt is the standard one with the verdict taxonomy and

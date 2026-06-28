@@ -1,0 +1,28 @@
+{
+  "run_id": "expC_held_neg_licence",
+  "headline": true,
+  "global_parallel": 4,
+  "budget_calls": 100000,
+  "experiments": [
+    {
+      "experiment_id": "expC_held_neg_licence",
+      "type": "accuracy",
+      "questions_from": "data/questions/expC_held_binary_60.json",
+      "countries": ["BA", "MK", "ME", "BG", "FI", "HR", "SE", "BE"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "snippet_picker": "on",
+        "verifier_search": "always",
+        "no_cache": true
+      },
+      "arms": [
+        { "condition_label": "baseline_full", "knobs": { "prompt_variant": "full" } },
+        { "condition_label": "neg_licence",   "knobs": { "prompt_variant": "neg_licence" } }
+      ]
+    }
+  ]
+}

@@ -969,6 +969,7 @@ def coordinate(
     researcher_escalation_model: Optional[str] = None,
     verifier_escalation_model: Optional[str] = None,
     prompt_variant: str = "full",
+    verifier_prompt_variant: str = "default",
     max_retries: int = 3,
     provider: str = "auto",
     max_results_per_query: int = 5,
@@ -1331,6 +1332,7 @@ def coordinate(
             num_queries=num_queries,
             verifier_search=verifier_search,
             picker_model=picker_model,
+            verifier_prompt_variant=verifier_prompt_variant,
         )
         cumulative_tokens_in += v_result.cumulative_input_tokens
         cumulative_tokens_out += v_result.cumulative_output_tokens
@@ -1578,10 +1580,21 @@ def main() -> int:
                         help="EXP-8 model-fallback: model used for the Verifier "
                              "on a retry. Unset = hold one model.")
     parser.add_argument("--prompt-variant", default="full",
-                        choices=["full", "compressed"],
-                        help="Researcher system prompt (EXP-8 prompt-compressed "
-                             "arm). 'full' is the baseline; 'compressed' drops "
-                             "examples and condenses instructions.")
+                        choices=["full", "compressed", "calibrated",
+                                 "neg_licence"],
+                        help="Researcher system prompt. 'full' is the V4 "
+                             "baseline; 'compressed' is the EXP-8 cost arm; "
+                             "'calibrated' is the EXP-A confidence-anchor arm; "
+                             "'neg_licence' is the EXP-C licensed-negative "
+                             "arm. All four register distinct prompt_versions "
+                             "rows so receipts trace cleanly.")
+    parser.add_argument("--verifier-prompt-variant", default="default",
+                        choices=["default", "structured"],
+                        help="Verifier disprove prompt body. 'default' is the "
+                             "V4 prose Step 3; 'structured' is the EXP-B "
+                             "per-dimension fit-check (entity / scope / tense "
+                             "/ metric / scale). Only valid when --strategy is "
+                             "verifier-disprove.")
     parser.add_argument("--max-retries", type=int, default=3)
     parser.add_argument("--provider", default="auto",
                         choices=["auto", "tavily", "brave", "diy", "serper_raw"],
@@ -1704,6 +1717,7 @@ def main() -> int:
             researcher_escalation_model=args.researcher_escalation_model,
             verifier_escalation_model=args.verifier_escalation_model,
             prompt_variant=args.prompt_variant,
+            verifier_prompt_variant=args.verifier_prompt_variant,
             max_retries=args.max_retries,
             provider=args.provider,
             max_results_per_query=args.max_results_per_query,
