@@ -125,6 +125,7 @@ def index_languages() -> list[str]:
 
 def verify_source() -> bool:
     """When on, re-verify every finalised quote against an independent
-    extraction of the cited PDF and drop any that does not reproduce. Off by
-    default (it adds a per-point PDF re-download); recommended on in production."""
-    return os.environ.get("WHO_VERIFY_SOURCE", "0").strip().lower() in ("1", "true", "yes", "on")
+    extraction of the cited PDF and drop any that does not reproduce. On by
+    default; set WHO_VERIFY_SOURCE=0 to disable (it adds a per-point PDF
+    re-download). The defensibility guarantee is worth the latency."""
+    return os.environ.get("WHO_VERIFY_SOURCE", "1").strip().lower() in ("1", "true", "yes", "on")

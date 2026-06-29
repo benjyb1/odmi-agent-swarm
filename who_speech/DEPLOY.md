@@ -64,7 +64,7 @@ These change the deployment; settle them before building.
 | `WHO_INDEX_ROOT` | `~/.who_speech/index` | durable index location; mount a volume |
 | `WHO_MAX_DOCS` | `25` | documents indexed per country |
 | `WHO_INDEX_LANGUAGES` | `en` | ISO codes to index; widen for native-language coverage |
-| `WHO_VERIFY_SOURCE` | `0` | re-verify each quote against an independent PDF extraction; drop non-reproducing points |
+| `WHO_VERIFY_SOURCE` | `1` | re-verify each quote against an independent PDF extraction; drop non-reproducing points (set `0` to disable) |
 | `WHO_MCP_TRANSPORT` | `streamable-http` | MCP transport for Copilot Studio |
 
 The model prompts were tuned against Claude. After switching to Azure OpenAI,
@@ -125,12 +125,12 @@ service as a REST API and register it as a Power Platform custom connector.
   permissive licence are used for retrieval but never quoted or redisplayed.
 - **Attribution/relevance gate.** A point is dropped unless the action is WHO's
   (not a government's, an NGO's or the Red Cross's) and it answers the question.
-- **Independent-source verification** (optional, `WHO_VERIFY_SOURCE=1`). After
-  the swarm finalises, each quote is re-checked against a fresh, independent
-  extraction (pypdf) of the cited PDF, tolerant of cosmetic extraction
-  artifacts; a point whose quote does not reproduce is dropped. This guards the
-  promise that a reader can find every quote in the document. Recommended on in
-  production (it adds a per-point PDF re-download).
+- **Independent-source verification** (on by default; `WHO_VERIFY_SOURCE=0` to
+  disable). After the swarm finalises, each quote is re-checked against a fresh,
+  independent extraction (pypdf) of the cited PDF, tolerant of cosmetic
+  extraction artifacts; a point whose quote does not reproduce is dropped. This
+  guards the promise that a reader can find every quote in the document. It adds
+  a per-point PDF re-download.
 - **Faithfulness harness.** `who_speech/faithfulness.py` decomposes each point
   into atomic claims and labels them against the cited quote, optionally with a
   second model family, to report a faithfulness rate. Run it on a sample before
