@@ -3,8 +3,16 @@
 Every value here is a decision backed by the pre-registered research pass
 (live IRIS probing + the extraction/retrieval literature). Grouped by build
 layer so each module reads its own constants.
+
+Constants are fixed methodological choices. The functions at the foot of the
+file read environment variables instead, so the deployable package can be
+repointed (model backend, index location, corpus breadth) in WHO's
+environment without a code change.
 """
 from __future__ import annotations
+
+import os
+from pathlib import Path
 
 # --- IRIS (WHO Institutional Repository, DSpace 7.6) -------------------------
 IRIS_API = "https://iris.who.int/server/api"
@@ -66,3 +74,50 @@ RERANK_KEEP = 100           # rerank the fused pool
 PASS_TO_LLM = 5             # final passages to the researcher (max 8)
 # Below this reranker probability, abstain rather than quote a weak passage.
 ABSTAIN_SCORE_FLOOR = 0.5
+
+
+# --- Deployment knobs (environment-driven, not methodological constants) -----
+# These let one container image run unchanged in WHO's environment. The model
+# backend in particular is the seam that decouples the swarm from any single
+# provider: "claude" routes through the local proxy used in development;
+# "azure_openai" routes to a deployment in WHO's tenant.
+
+def llm_backend() -> str:
+    """The model backend the swarm calls: "claude" (default) or "azure_openai"."""
+    return os.environ.get("WHO_LLM_BACKEND", "claude").strip().lower()
+
+
+def azure_openai_settings() -> dict[str, str]:
+    """Azure OpenAI connection settings, read from the environment.
+
+    Validated only when the azure_openai backend is actually used; in
+    development the keys are simply absent and the claude backend is used.
+    """
+    return {
+        "endpoint": os.environ.get("AZURE_OPENAI_ENDPOINT", ""),
+        "api_key": os.environ.get("AZURE_OPENAI_API_KEY", ""),
+        "deployment": os.environ.get("AZURE_OPENAI_DEPLOYMENT", ""),
+        "api_version": os.environ.get("AZURE_OPENAI_API_VERSION", "2024-10-21"),
+    }
+
+
+# Durable index location. The PoC cached indexes under /tmp (ephemeral); a
+# deployed service needs a path that survives a restart and can be mounted to
+# a volume. Override with WHO_INDEX_ROOT (e.g. a mounted Azure file share).
+_DEFAULT_INDEX_ROOT = Path.home() / ".who_speech" / "index"
+
+
+def index_root() -> str:
+    return os.environ.get("WHO_INDEX_ROOT", str(_DEFAULT_INDEX_ROOT))
+
+
+def max_docs() -> int:
+    """Documents indexed per country. The demo used 8; raise for real use."""
+    return int(os.environ.get("WHO_MAX_DOCS", "25"))
+
+
+def index_languages() -> list[str]:
+    """ISO language codes to index. Default English; widen for native-language
+    coverage once cross-lingual retrieval is validated."""
+    raw = os.environ.get("WHO_INDEX_LANGUAGES", "en")
+    return [x.strip() for x in raw.split(",") if x.strip()]

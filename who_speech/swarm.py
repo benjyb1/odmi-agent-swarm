@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from who_speech import config, prompts
+from who_speech import config, llm, prompts
 
 if TYPE_CHECKING:
     from who_speech.search import Passage, Retriever
@@ -61,6 +61,13 @@ class Adjudication(BaseModel):
     model_config = ConfigDict(extra="forbid")
     keep_indices: list[int] = Field(default_factory=list)
     abstain: bool = False
+    reason: str = ""
+
+
+class AttributionJudgement(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    is_who_action: bool
+    on_topic: bool
     reason: str = ""
 
 
@@ -110,9 +117,7 @@ def _passage_block(passages: list["Passage"]) -> str:
 
 
 def plan_research(query: str) -> list[str]:
-    from agents.tools.llm import call_for_structured
-
-    plan, _ = call_for_structured(
+    plan, _ = llm.structured(
         system=prompts.PLANNER_SYSTEM,
         user_message=f"Question: {query}",
         output_schema=ResearchPlan,
@@ -123,8 +128,6 @@ def plan_research(query: str) -> list[str]:
 
 
 def draft_point(query: str, aspect: str, passages: list["Passage"]) -> Optional[DraftedPoint]:
-    from agents.tools.llm import StructuredOutputError, call_for_structured
-
     if not passages:
         return None
     user = (
@@ -132,38 +135,58 @@ def draft_point(query: str, aspect: str, passages: list["Passage"]) -> Optional[
         f"Candidate passages:\n{_passage_block(passages)}"
     )
     try:
-        draft, _ = call_for_structured(
+        draft, _ = llm.structured(
             system=prompts.RESEARCHER_SYSTEM,
             user_message=user,
             output_schema=DraftedPoint,
             usage_context="who_speech:researcher",
             max_tokens=700,
         )
-    except StructuredOutputError:
+    except llm.StructuredOutputError:
         return None
     return draft
 
 
 def verify_point(point: str, quote: str) -> Optional[VerifierJudgement]:
-    from agents.tools.llm import StructuredOutputError, call_for_structured
-
     user = f"Speaking point: {point}\n\nCited verbatim quote:\n\"{quote}\""
     try:
-        judgement, _ = call_for_structured(
+        judgement, _ = llm.structured(
             system=prompts.VERIFIER_SYSTEM,
             user_message=user,
             output_schema=VerifierJudgement,
             usage_context="who_speech:verifier",
             max_tokens=400,
         )
-    except StructuredOutputError:
+    except llm.StructuredOutputError:
+        return None
+    return judgement
+
+
+def check_attribution(query: str, point: str, quote: str) -> Optional[AttributionJudgement]:
+    """Confirm the action is WHO's and the point answers the question.
+
+    Runs after the verifier. The verifier proves the quote supports the point;
+    this proves the point is about WHO and on-topic. Together they close the
+    misattribution gap that let a Red Cross action survive as if it were WHO's.
+    """
+    user = (
+        f"Question: {query}\n\nProposed point: {point}\n\n"
+        f"Cited verbatim quote:\n\"{quote}\""
+    )
+    try:
+        judgement, _ = llm.structured(
+            system=prompts.ATTRIBUTION_SYSTEM,
+            user_message=user,
+            output_schema=AttributionJudgement,
+            usage_context="who_speech:attribution",
+            max_tokens=300,
+        )
+    except llm.StructuredOutputError:
         return None
     return judgement
 
 
 def adjudicate(query: str, candidates: list[BriefingPoint]) -> Adjudication:
-    from agents.tools.llm import StructuredOutputError, call_for_structured
-
     if not candidates:
         return Adjudication(keep_indices=[], abstain=True, reason="no verified points")
     listed = "\n\n".join(
@@ -172,14 +195,14 @@ def adjudicate(query: str, candidates: list[BriefingPoint]) -> Adjudication:
     )
     user = f"Question: {query}\n\nVerified points:\n{listed}"
     try:
-        result, _ = call_for_structured(
+        result, _ = llm.structured(
             system=prompts.ADJUDICATOR_SYSTEM,
             user_message=user,
             output_schema=Adjudication,
             usage_context="who_speech:adjudicator",
             max_tokens=500,
         )
-    except StructuredOutputError:
+    except llm.StructuredOutputError:
         # On adjudicator failure, fall back to keeping all (verified) points.
         return Adjudication(keep_indices=list(range(len(candidates))), abstain=False,
                             reason="adjudicator parse failure; kept all verified")
@@ -220,6 +243,14 @@ def orchestrate(query: str, retriever: "Retriever", *, verbose: bool = True) -> 
                 print(f"[verifier reject] {aspect[:40]}: {reason}")
             continue
         if judgement.confidence < config.ABSTAIN_SCORE_FLOOR:
+            continue
+
+        # Attribution/relevance gate: the action must be WHO's and on-topic.
+        attribution = check_attribution(query, draft.point, draft.verbatim_quote)
+        if not attribution or not attribution.is_who_action or not attribution.on_topic:
+            if verbose:
+                why = attribution.reason[:60] if attribution else "attribution error"
+                print(f"[attribution reject] {aspect[:40]}: {why}")
             continue
 
         verified.append(

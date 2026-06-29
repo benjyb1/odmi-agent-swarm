@@ -51,6 +51,24 @@ point may only say what the quote itself establishes.
 Return JSON: {"supported": bool, "reason": str, "confidence": float}.
 """
 
+ATTRIBUTION_SYSTEM = """\
+You guard a WHO briefing against misattribution and drift. You are given the
+original question, a proposed speaking point, and the verbatim quote it cites.
+
+Judge two things, strictly:
+1. is_who_action: does the point describe something the World Health
+   Organization itself did, supported, found or recommended? Set false if the
+   actor is anyone else (a government, a ministry, the Red Cross, an NGO, a
+   donor), even when WHO published the document. Reporting another body's
+   action is not a WHO action.
+2. on_topic: does the point actually answer the question that was asked?
+
+A point passes only if both are true. Do not be charitable: if the quote does
+not make WHO the actor, set is_who_action false.
+
+Return JSON: {"is_who_action": bool, "on_topic": bool, "reason": str}.
+"""
+
 ADJUDICATOR_SYSTEM = """\
 You assemble the final WHO briefing pack. You are given the question and a
 numbered list of verified speaking points, each with its quote and source.
