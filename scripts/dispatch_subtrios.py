@@ -838,9 +838,11 @@ def main() -> int:
                              "per-dimension fit-check.")
     parser.add_argument("--parallel", type=int, default=4)
     parser.add_argument("--max-retries", type=int, default=3)
-    parser.add_argument("--provider", default="auto",
+    parser.add_argument("--provider", default="diy",
                         choices=["auto", "tavily", "brave", "diy", "serper_raw"],
-                        help="Search provider for the swarm (D27 experiment knob).")
+                        help="Search provider for the swarm. Production is DIY only "
+                             "(D43); 'auto' is an alias for 'diy'. tavily/brave are "
+                             "retained only to reproduce the EXP-1 provider comparison.")
     parser.add_argument("--max-results-per-query", type=int, default=5,
                         help="Results per search query (cost/recall knob).")
     parser.add_argument("--num-queries", type=int, default=None,

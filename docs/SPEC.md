@@ -1163,8 +1163,8 @@ mechanism D26 added is unchanged; only the fallback target changes).
 
 ## Current status
 
-> **Currency note (2026-06-23).** The authoritative live state is, in order:
-> the change log below (current to 2026-06-25), `docs/ARCHITECTURE.md` (the
+> **Currency note (2026-06-29).** The authoritative live state is, in order:
+> the change log below (current to 2026-06-29), `docs/ARCHITECTURE.md` (the
 > config ledger), and `docs/EXPERIMENTS.md` (the experiment board, EXP-10..21).
 > The "Built / Not yet built / Open questions" lists in this section are a
 > 2026-06-03 snapshot kept for continuity; where a later change-log entry
@@ -1988,10 +1988,46 @@ diverges per worktree, so it is not committed here). The language/retrieval
 EXP-22/23/24 references are left as-is. EXP-25 to EXP-28 are reserved for the
 confidence framework.
 
+### D50: neg_licence Researcher prompt variant — favoured, adoption deferred
+
+**Date:** 2026-06-29. Builds on the EXP-A/B/C prompt programme (commit `2c5b239`)
+and D47 (held-out freeze).
+
+The EXP-C negative-evidence-licence Researcher variant
+(`phase2_researcher_neg_licence`) is built, registered as its own
+`prompt_versions` row, and selectable with `--prompt-variant neg_licence`. It is
+**not** the production default; `full` remains live.
+
+**Evidence.** Two one-variable runs (prompt only):
+
+- NL dev (`expC_neg_evidence_licence`, n=51/arm, Opus, picker off, verifier_search
+  never): directional on all four endpoints (commit rate +2.0pp, commit accuracy
+  +4.7pp, neg-FPR -15.3pp, TN recall +3.8pp) and passes the pre-registered joint
+  non-inferiority rule, but on tiny cells: TN recall moves on a single pair
+  (2/26 -> 3/26), neg-FPR rests on 8-9 committed negatives, and the Wilson
+  intervals overlap.
+- Held-out (`expC_held_neg_licence`, partial 149 pairs/arm, Sonnet, picker on,
+  verifier_search always): TN recall 34 -> 50% on 119+ negative golds, commit
+  accuracy 50 -> 56%, neg-FPR flat 26 -> 25%. Powered and production-config.
+
+**Why deferred, not adopted.** The powered, production-config evidence is the
+held-out run, and the held-out 8 are the frozen EXP-21 headline set; adopting on
+it would let the held-out set shape production config and weaken EXP-21's
+independence. The dev run protects EXP-21 but is underpowered and was gathered
+under a non-production retrieval config (picker off, verifier_search never), so on
+its own it is too weak to set a production default. The clean path, a powered
+production-config dev confirmation (NL +/- AL, picker on, verifier_search always),
+is owed but blocked on Claude run budget.
+
+**Adoption gate.** Flip `--prompt-variant` default `full` -> `neg_licence` in
+`scripts/dispatch_subtrios.py` and `scripts/run_coordinator.py` once a powered
+production-config dev confirmation reproduces the direction at adequate power.
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-29 (config reconciliation + neg_licence decision) | D50 added: the EXP-C `neg_licence` Researcher variant is **favoured**, not adopted; the live `--prompt-variant` default stays `full`. NL dev (n=51/arm) is directional on all four endpoints and passes the joint non-inferiority rule but is underpowered (TN recall moves on one pair, 2/26 -> 3/26) and off-config (picker off, verifier_search never); the powered production-config signal is the partial held-out (149 pairs/arm, TN recall 34 -> 50%, neg-FPR flat), excluded from the adoption basis to keep the EXP-21 headline independent. Flip gated on a powered production-config dev confirm, currently blocked on run budget. Config alignment to D43: `--provider` default `auto` -> `diy` in `dispatch_subtrios.py` and `run_coordinator.py` (`auto` is an alias for `diy`, so behaviour-neutral), and the stale coordinator help string ("Default 'auto' = Tavily then Brave") corrected; `tavily`/`brave` kept in `choices` for EXP-1 reproduction. `ARCHITECTURE.md` reconciled: snippet-cap row -> kept (EXP-24 replay negative), retrieval-strategy row added (EXP-23 dispatched 2026-06-24 but Sonnet exhaustion left no canonical data; incumbent `narrow_then_wide` by default, no verdict), query-language row added (EXP-22 + L2 replay: language is not the binding constraint), Researcher prompt v3 -> V4, neg_licence favoured row, and an Adjudicator evidence-commit-gate row (EXP-25/27 null+harmful; the D37 floor remains the precision control). EXP-A (calibrated) and EXP-B (verifier `disprove_structured`) NL dev variants were run but are not adopted (defaults unchanged); full verdicts owed. No swarm behaviour change beyond the behaviour-neutral provider default. |
 | 2026-06-26 (EXP number reconciliation) | D49 added. Two programmes both on `origin/main` had claimed EXP-22/23/24: language/retrieval (foreign-language ablation, narrow-then-widen, snippet-cap; run data) and the confidence-framework deep dive (entailment / self-consistency / argue-opposite / decomposed; null, no run data). Language/retrieval keeps 22/23/24; confidence framework renumbered to EXP-25/26/27/28 across the deep dive, `EXPERIMENTS.md`, this change log, `confidence_gates.py`, `nl_fp_audit.py`, and the renamed `exp25_entailment_smoke.py` (+ result jsonl). Canonical-DB `experiments` rows `exp22_entailment_gate` / `exp24_argue_opposite` renamed to `exp25_*` / `exp27_*` (not committed; DB diverges per worktree). |
 | 2026-06-25 (Opus cost correction) | Corrected the Opus rate in `agents/tools/llm.py` `PRICING_USD_PER_M` from $15/$75 to $5/$25 per M input/output. The old figure was the Opus 3/4/4.1 rate; every Opus from 4.5 onward is $5/$25 (claude-api skill current-models table: Opus 4.6/4.7/4.8 all $5/$25). Both existing Opus entries (`claude-opus-4-6`, `claude-opus-4-5-20251101`) fixed and `claude-opus-4-7`/`claude-opus-4-8` added for forward safety; Sonnet ($3/$15) and Haiku ($1/$5) verified correct, unchanged. `estimated_cost_usd` is a notional API-equivalent under the flat CLIProxyAPI Max subscription (D1/Q9), not a real billing record, so historical rows are corrected rather than frozen, keeping the column reproducible from (tokens x rate). The swarm only ever logged `claude-opus-4-6` (637 rows on the canonical DB, was $37.95, becomes $12.65; the other 71k+ rows are Sonnet/Haiku and unaffected); per-experiment Opus costs in the dissertation were overstated 3x before this date. New idempotent `scripts/backfill_opus_pricing.py` recomputes the column from the rate table (dry-run by default, `--apply` to write); already run once against the canonical `data/odmi.db` (the binary DB diverges per worktree, so it is not committed). Doc table at D18 updated to $5/$25. New `tests/test_estimate_cost.py` pins the corrected rates and the 27-call batch arithmetic. SPEC doc fix only; no swarm behaviour change. This resolves the stale-Opus-pricing item flagged in the 2026-06-25 confidence-experiments entry below. |
 | 2026-06-25 (confidence experiments + decision split) | Ran the pre-registered confidence experiments on production Sonnet (quota restored). **EXP-25 entailment gate and EXP-27 argue-the-opposite both NULL and harmful** (`evaluation/confidence_gates.py`, NL n=50, 25 committed negative golds): both *raise* the negative-gold FP rate (0.76 -> 1.00 for EXP-25, halving Youden's J) because the correct `no` commits are the low-entailment ones and abstain first while the confident FPs (entailment_for 0.74 vs correct 0.68) pass; the pre-registered adoption rule rejects both; McNemar caught 3/19 and 2/19 FPs (p=0.25, 0.50), 0 high-confidence. Confirms the deep dive's within-negative sign-flip end-to-end on the production model. **NL false-positive audit** (`evaluation/nl_fp_audit.py` + `nl_fp_audit_adversarial.py`, 22 questions over frozen evidence, two framings). Charitable pass: 1 genuine swarm error on Opus, 2 on Sonnet, rest definitional/self-report (~5-9%). Adversarial advocate pass (Opus told to argue the gold wrong): **0/22 gold_wrong** (swarm never vindicated), 11/22 over-reads (gold stands), 11/22 ambiguous. The genuine-error rate brackets ~5% (charitable) to ~50% (strict over-read), framing-dependent; robust finding is that no NL FP is the swarm-right-vs-stale-gold case, and the disagreements are strict-vs-loose question readings / self-report that no evidence gate resolves. **Decision taxonomy confirmed** against the official 2022/2024 ODMI methodology (2022 lists "Complement ... additional desk research" as a step; score/explanation signatures corroborate confirm/complement/change). **Decision-stratification shipped to the dashboard** (`dashboard/lib/db.py::accuracy_by_decision` + Analytics self-report split): all 6 production false positives sit on `confirm` golds. Pre-registered `exp25_entailment_gate` / `exp27_argue_opposite`; EXP-26/25 held (same null mechanism; EXP-28 spends the frozen held-out set). Reading: no evidence-grounded commit gate catches the confident FPs; the answer is decision-stratified reporting + D22 staleness adjudication, not a better gate. Flagged separately: `claude_usage_log` prices Opus at the stale $15/$75 per-Mtok rate (3x current), inflating dashboard GBP costs for Opus rows. Details in `docs/EXPERIMENTS.md` and `docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md`. |
