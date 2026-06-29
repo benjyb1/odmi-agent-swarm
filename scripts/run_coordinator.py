@@ -389,9 +389,9 @@ def _finalise_after_adjudication(
         # a sub-floor `no` (e.g. R3 at 0.45) become a finalised commit. That
         # defeats the D37 abstain floor: we want an honest abstention on retry
         # exhaustion, not whichever guess the last Researcher attempt happened
-        # to produce. Keep the `escalated_adjudicator` terminal status, but
-        # write `inconclusive` as the answer so the headline metric is not
-        # polluted by a sub-floor fallback.
+        # to produce. Keep the `abstained_adjudicator` terminal status (D52,
+        # formerly `escalated_adjudicator`), but write `inconclusive` as the
+        # answer so the headline metric is not polluted by a sub-floor fallback.
         chosen = ResearcherOutput(
             answer="inconclusive",
             answer_explanation=(
@@ -403,7 +403,7 @@ def _finalise_after_adjudication(
             retrieval_confidence=last_researcher_output.retrieval_confidence,
             answer_confidence=last_researcher_output.answer_confidence,
         )
-        return ("escalated_adjudicator", chosen)
+        return ("abstained_adjudicator", chosen)
 
     # All resolved verdicts share the same finalisation logic: use the
     # Adjudicator's authoritative answer and evidence, not the raw researcher

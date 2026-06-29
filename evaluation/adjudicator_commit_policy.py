@@ -177,7 +177,7 @@ def main():
         allrows = [f for f in finals if f["country_code"] == cc
                    and (f["question_id"], cc) in gold]
         adjrows = [f for f in allrows if f["adjudicator_involved"]
-                   or f["terminal_status"].startswith("escalated")]
+                   or f["terminal_status"].startswith(("escalated", "abstained"))]
         if not allrows:
             continue
         block = {"n_all": len(allrows), "n_adjudication_tail": len(adjrows)}

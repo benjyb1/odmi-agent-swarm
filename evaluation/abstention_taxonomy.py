@@ -174,13 +174,15 @@ def main():
         last_ver = ver[-1] if ver else None
         ver_rej_all = " ".join((v["rejection_reason"] or "") for v in ver).lower()
 
-        # adjudicator signals. D51 renamed the abstain verdict from
-        # `escalate_human`; legacy rows keep the old string, so match both.
+        # adjudicator signals. D51/D52 renamed the abstain verdict
+        # (`escalate_human` -> `abstain`) and terminal status
+        # (`escalated_adjudicator` -> `abstained_adjudicator`); legacy rows
+        # keep the old strings, so match both.
         adj_verdicts = [a["adjudicator_verdict"] for a in adj]
         adj_abstained = (
             "abstain" in adj_verdicts
             or "escalate_human" in adj_verdicts
-            or f["terminal_status"] == "escalated_adjudicator"
+            or f["terminal_status"] in ("abstained_adjudicator", "escalated_adjudicator")
         )
 
         # confidence

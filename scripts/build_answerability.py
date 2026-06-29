@@ -11,7 +11,7 @@ to exclude any question. Three classes:
   questionnaire (monitoring, feedback sessions, knowledge exchange, body-level
   plans). No external public source exists, so the open web cannot confirm it.
   Matched by a transparent keyword rule below; this is a first pass meant for
-  human review, not a final taxonomy.
+  review, not a final taxonomy.
 - `web`        — everything else: answerable from public web evidence.
 
 Rationale: the swarm's headline accuracy mixes questions no external system

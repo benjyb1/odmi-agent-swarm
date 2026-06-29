@@ -82,8 +82,13 @@ AdjudicatorVerdict = Literal[
 TerminalStatus = Literal[
     "accepted_by_verifier",
     "accepted_by_adjudicator",
-    "escalated_captcha",
-    "escalated_adjudicator",
+    # D52: the swarm has no human-review stage. A pair that cannot be
+    # settled abstains; these are the abstention dispositions, renamed
+    # from the old `escalated_*` (which implied a handoff to a human that
+    # never existed). Legacy rows keep `escalated_*` and the DB CHECK
+    # still accepts them.
+    "abstained_captcha",
+    "abstained_adjudicator",
     "agent_failure",
 ]
 

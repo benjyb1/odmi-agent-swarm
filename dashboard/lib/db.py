@@ -125,7 +125,7 @@ _MATCH_STATUS_SQL = """
       -- not applicable. The swarm abstaining (`inconclusive`) or also saying
       -- n/a there is the correct outcome, so it scores `match`. A swarm that
       -- instead commits a real answer is not necessarily wrong: it may have
-      -- found evidence the assessors missed, so it is flagged for human review
+      -- found evidence the assessors missed, so it is flagged for review
       -- (`flag_review`) rather than scored `differ`, and is excluded from the
       -- accuracy denominator pending that review.
       WHEN REPLACE(LOWER(TRIM(gt.response)), '_', ' ') IN
@@ -411,7 +411,7 @@ def accuracy_summary() -> dict:
     experiment_id): a re-dispatched pair is counted once, never as both
     match and differ. `n_failed` is pairs with no swarm answer (empty /
     NULL final_answer); `n_flag_review` is a committed answer on an n/a
-    gold, held for human review. Both are excluded from the accuracy
+    gold, held for review. Both are excluded from the accuracy
     denominator. `n_no_truth` is now ground-truth-missing only.
 
     `accuracy` is exact matches / (matches + near_matches + differs +
@@ -455,7 +455,7 @@ def accuracy_summary() -> dict:
     n_flag_review = int(row["n_flag_review"] or 0)
     n_failed = int(row["n_failed"] or 0)
     n_no_truth = int(row["n_no_truth"] or 0)
-    # flag_review (committed on an n/a gold, pending human review) and n_failed
+    # flag_review (committed on an n/a gold, pending review) and n_failed
     # (no swarm answer produced) are excluded from the accuracy denominator:
     # neither is a scored right-or-wrong answer.
     denom = n_match + n_near_match + n_differ + n_abstained

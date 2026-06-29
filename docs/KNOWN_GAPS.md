@@ -1,7 +1,7 @@
 # Known Gaps
 
 This file is **operational** deferrals: things that break a run (resume,
-CAPTCHA, the human queue). For **correctness** failure modes (ways the swarm
+CAPTCHA). For **correctness** failure modes (ways the swarm
 commits a wrong answer while looking confident), see `docs/FAILURE_MODES.md` —
 that is the false-positive register and the attack list.
 
@@ -56,7 +56,7 @@ The fingerprint: open the Researcher's `source_url` in your browser. If it shows
 - In `agents/tools/fetch.py`: detect a known block-marker set (Cloudflare strings, reCAPTCHA, "Access Denied", "Bot detected", body-length < 200 chars after HTML stripping).
 - Mark the `FetchResult.failure_mode` with `"captcha_or_block"`.
 - In `agents/researcher.py` and `agents/verifier.py`: when this failure mode bubbles up, set `notes="captcha/block"`.
-- In `scripts/run_coordinator.py`: detect `notes` containing `"captcha/block"` and route the pair to `terminal_status="escalated_captcha"`. Combine with Gap #3 (CSV).
+- In `scripts/run_coordinator.py`: detect `notes` containing `"captcha/block"` and route the pair to `terminal_status="abstained_captcha"` (D52, formerly `escalated_captcha`). The pair finalises as an abstention; there is no human queue (see Gap #3, closed).
 
 Estimated ~100 lines across three files.
 
@@ -64,24 +64,13 @@ Estimated ~100 lines across three files.
 
 ---
 
-## 3. Human-queue CSV writer
+## 3. Human-queue CSV writer (closed, D52: not a gap)
 
-**Trigger condition.** The Coordinator writes a `phase2_final` row with `terminal_status IN ('escalated_captcha', 'escalated_adjudicator')`. Currently nothing else happens.
+This was scoped as a writer that would hand abstained pairs (`terminal_status IN ('abstained_captcha', 'abstained_adjudicator')`) to a human queue for review.
 
-**Symptom you'll see.**
-- The Home page's "Human queue" widget lists the pair but offers no way to act on it.
-- There's no per-batch artefact to hand off to the human reviewer.
-- The full history (researcher attempts, verifier counter-evidence, adjudicator reasoning) lives in five different tables and has to be reassembled by SQL.
+**Closed by design (D52).** The system has no human-review stage: a pair either commits an answer or abstains, and an abstention is itself the terminal state, recorded in `phase2_final` with the `abstained_*` status and an `inconclusive` answer. There is nothing to hand off, so no queue writer is needed. The Home page's "Abstentions" view surfaces these pairs for the researcher's own inspection during evaluation (the D22 disagreement glance), which is methodology, not a system feature.
 
-**Workaround today.** Ad hoc SQL against `phase2_final` joined to `phase2_researcher_runs` / `phase2_verifier_runs` / `phase2_adjudications`. Tedious but works.
-
-**What to build when it happens.** A writer that fires on the escalation branches in `coordinate()`:
-- Append one row to `data/human_queue/<batch_id>.csv` with: question_id, country_code, terminal_status, all Researcher attempts (concatenated), all Verifier counter-positions, Adjudicator reasoning if present, the suggested next action.
-- A "Human queue" section on the Home page that reads the latest CSV and renders each pending case with the source URLs as clickable links.
-
-Estimated ~50 lines plus the dashboard view. Easy once the column shape is decided, which requires actually seeing the first escalation to know what's useful.
-
-**Why deferred.** No `escalated_*` row exists yet. The P1/FR coordinator pass landed on `accepted_by_adjudicator`. Build the first time the Adjudicator escalates or the first captcha appears.
+The full per-pair history (Researcher attempts, Verifier counter-evidence, Adjudicator reasoning) is reassembled from `phase2_final` joined to `phase2_researcher_runs` / `phase2_verifier_runs` / `phase2_adjudications` when needed for that inspection.
 
 ---
 

@@ -236,8 +236,9 @@ under different prompt regimes.
 When the Researcher and Verifier disagree across all three retries, the
 Coordinator hands the case to an Adjudicator instead of marking the
 pair as rejected. The Adjudicator does not run new searches; it weighs
-the evidence already collected and either picks a winner or escalates
-to a human queue.
+the evidence already collected and either picks a winner or abstains
+(D51/D52: the verdict is `abstain` and the terminal status
+`abstained_adjudicator`; there is no human queue).
 
 Implementation: a Coordinator-internal LLM call, not a separately
 versioned agent file. Lives in the Coordinator module. Uses the same
@@ -2044,7 +2045,9 @@ re-register on the next run), the finalisation branch
 the evaluation scripts (`stack_attribution.py`, `abstention_taxonomy.py`, which
 coalesce the legacy string). The pair-level terminal status
 `escalated_adjudicator` is a separate axis and is **not** renamed; it still flags
-a pair the Adjudicator could not settle. Normative docs (`AGENT_DESIGN.md`,
+a pair the Adjudicator could not settle. (Superseded by D52: that terminal
+status is itself renamed `escalated_adjudicator` -> `abstained_adjudicator`.)
+Normative docs (`AGENT_DESIGN.md`,
 `ARCHITECTURE.md`, `ABSTENTION_TAXONOMY.md`, this spec) are updated; dated records
 (`PROMPT_AUDIT.md`, `EXPERIMENTS*.md`, `PROJECT_LOG.md`) keep `escalate_human` as
 the name in force when they were written.
@@ -2056,10 +2059,42 @@ adjudication rows preserved, idempotent, indexes and column order intact. The
 migration is owed against the canonical DB and run there after merge, not
 committed from a worktree (the binary DB diverges per worktree).
 
+### D52: Abstention terminal statuses renamed `escalated_*` -> `abstained_*`; no human-review stage
+
+**Date:** 2026-06-29. Extends D51.
+
+The system has no human-review stage. A pair either commits an answer or
+abstains, and an abstention is itself terminal. The old `escalated_captcha` /
+`escalated_adjudicator` terminal statuses implied a handoff to a human queue
+that was never built, so they are renamed to `abstained_captcha` /
+`abstained_adjudicator`. This supersedes the D51 note that the
+`escalated_adjudicator` status would stay.
+
+**Scope.** The `TerminalStatus` literal (`agents/models.py`), the finalisation
+return (`scripts/run_coordinator.py`), the `phase2_final.terminal_status` CHECK
+(`scripts/setup_sqlite.py`, admits `abstained_*`, retains `escalated_*` as
+legacy), the dashboard (the Home "Human queue" widget becomes an "Abstentions"
+view; Results path summaries and the Run Console pipeline chip drop the "human"
+framing), and the evaluation scripts (`adjudicator_commit_policy.py`,
+`abstention_taxonomy.py`, which match both names). KNOWN_GAPS gap #3 (the
+human-queue CSV writer) is closed as not-a-gap. The separate `flag_review`
+evaluation bucket (a committed answer on an n/a gold, held for the researcher's
+own review) and the D22 disagreement glance are methodology, not a system
+stage, and are unchanged beyond dropping the word "human" from their prose.
+
+**Data.** `scripts/migrate_terminal_status_to_abstained.py` widens the CHECK to
+admit `abstained_*`, keeps `escalated_*` as accepted legacy values, and converts
+the 313 `escalated_adjudicator` rows in `phase2_final` (plus 336
+`final_verdict` mirrors in `subtrio_status`) to `abstained_adjudicator`. Verified
+on a DB copy: 2,759 `phase2_final` rows preserved, UNIQUE and indexes intact,
+idempotent. Owed against the canonical DB and run there after merge, not
+committed from a worktree.
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-29 (escalated_* -> abstained_*) | D52 added: the abstention terminal statuses are renamed `escalated_captcha` -> `abstained_captcha` and `escalated_adjudicator` -> `abstained_adjudicator`. The system has no human-review stage; a pair commits an answer or abstains, and an abstention is terminal (the old `escalated_*` names implied a human queue that was never built). Supersedes the D51 note that `escalated_adjudicator` would stay. Touches `agents/models.py` (`TerminalStatus`), `scripts/run_coordinator.py`, the `scripts/setup_sqlite.py` CHECK (admits `abstained_*`, retains `escalated_*` as legacy), the dashboard (Home "Human queue" widget -> "Abstentions" view; Results/Run Console drop the "human" framing), and the evaluation scripts (`adjudicator_commit_policy.py` `.startswith` widened, `abstention_taxonomy.py` coalesces both). KNOWN_GAPS gap #3 (human-queue CSV writer) closed as not-a-gap; `flag_review` and the D22 disagreement glance kept (methodology, "human" dropped from prose). New `scripts/migrate_terminal_status_to_abstained.py` converts 313 `phase2_final` rows (+336 `subtrio_status` mirrors) to `abstained_adjudicator` (verified on a copy: 2,759 rows preserved, idempotent); owed against the canonical DB after merge. 759 tests pass. |
 | 2026-06-29 (escalate_human -> abstain) | D51 added: the Adjudicator's fourth verdict is renamed `escalate_human` -> `abstain`. No human is ever in the loop, so an unsettleable case is an abstention (finalises `inconclusive` under the D37 floor; pair-level terminal status `escalated_adjudicator` unchanged). Label-only: meaning, the 0.6 auto-promotion floor, answer space and absence-of-evidence rule all unchanged. Touches `agents/models.py` (`AdjudicatorVerdict`), `agents/adjudicator.py` (`promoted_to_abstain` telemetry), the registered prompt (standard v5 -> v6, free arm v2 -> v3), `scripts/run_coordinator.py`, the `scripts/setup_sqlite.py` CHECK (admits `abstain`, retains `escalate_human` as legacy), and the evaluation scripts (coalesce the legacy string). New `scripts/migrate_escalate_human_to_abstain.py` converts the 313 canonical `escalate_human` rows to `abstain` (verified on a copy: 1,190 rows preserved, idempotent); owed against the canonical DB after merge, not committed from a worktree. 759 tests pass. |
 | 2026-06-29 (config reconciliation + neg_licence decision) | D50 added: the EXP-C `neg_licence` Researcher variant is **favoured**, not adopted; the live `--prompt-variant` default stays `full`. NL dev (n=51/arm) is directional on all four endpoints and passes the joint non-inferiority rule but is underpowered (TN recall moves on one pair, 2/26 -> 3/26) and off-config (picker off, verifier_search never); the powered production-config signal is the partial held-out (149 pairs/arm, TN recall 34 -> 50%, neg-FPR flat), excluded from the adoption basis to keep the EXP-21 headline independent. Flip gated on a powered production-config dev confirm, currently blocked on run budget. Config alignment to D43: `--provider` default `auto` -> `diy` in `dispatch_subtrios.py` and `run_coordinator.py` (`auto` is an alias for `diy`, so behaviour-neutral), and the stale coordinator help string ("Default 'auto' = Tavily then Brave") corrected; `tavily`/`brave` kept in `choices` for EXP-1 reproduction. `ARCHITECTURE.md` reconciled: snippet-cap row -> kept (EXP-24 replay negative), retrieval-strategy row added (EXP-23 dispatched 2026-06-24 but Sonnet exhaustion left no canonical data; incumbent `narrow_then_wide` by default, no verdict), query-language row added (EXP-22 + L2 replay: language is not the binding constraint), Researcher prompt v3 -> V4, neg_licence favoured row, and an Adjudicator evidence-commit-gate row (EXP-25/27 null+harmful; the D37 floor remains the precision control). EXP-A (calibrated) and EXP-B (verifier `disprove_structured`) NL dev variants were run but are not adopted (defaults unchanged); full verdicts owed. No swarm behaviour change beyond the behaviour-neutral provider default. |
 | 2026-06-26 (EXP number reconciliation) | D49 added. Two programmes both on `origin/main` had claimed EXP-22/23/24: language/retrieval (foreign-language ablation, narrow-then-widen, snippet-cap; run data) and the confidence-framework deep dive (entailment / self-consistency / argue-opposite / decomposed; null, no run data). Language/retrieval keeps 22/23/24; confidence framework renumbered to EXP-25/26/27/28 across the deep dive, `EXPERIMENTS.md`, this change log, `confidence_gates.py`, `nl_fp_audit.py`, and the renamed `exp25_entailment_smoke.py` (+ result jsonl). Canonical-DB `experiments` rows `exp22_entailment_gate` / `exp24_argue_opposite` renamed to `exp25_*` / `exp27_*` (not committed; DB diverges per worktree). |
