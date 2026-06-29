@@ -24,8 +24,8 @@ from agents.tools.llm import StructuredOutputError, call_for_structured
 
 
 # Confidence threshold from AGENT_DESIGN §5.11.5: below this, the
-# verdict is auto-promoted to escalate_human regardless of the model's
-# nominal choice.
+# verdict is auto-promoted to abstain (D51, formerly escalate_human)
+# regardless of the model's nominal choice.
 LOW_CONFIDENCE_THRESHOLD = 0.6
 
 
@@ -36,7 +36,7 @@ class AdjudicatorRunResult:
     output: Optional[AdjudicatorOutput]
     failure_mode: Optional[str]
     usage: Optional[LLMUsage]
-    promoted_to_human: bool = False
+    promoted_to_abstain: bool = False
     notes: Optional[str] = None
 
     @property
@@ -144,7 +144,7 @@ def run_adjudicator(
 
     # D28: normalise / validate adjudicator_answer against the
     # question's allowed list. Only relevant when a winner verdict was
-    # picked (escalate_human can carry a null answer).
+    # picked (abstain can carry a null answer).
     note_parts: list[str] = []
     if output.adjudicator_answer is not None:
         shape = answer_shapes.QuestionShape(
@@ -171,21 +171,21 @@ def run_adjudicator(
                 f"not in allowed set"
             )
 
-    # Auto-promote low-confidence verdicts to escalate_human (§5.11.5).
+    # Auto-promote low-confidence verdicts to abstain (§5.11.5).
     promoted = False
     if (
-        output.adjudicator_verdict != "escalate_human"
+        output.adjudicator_verdict != "abstain"
         and output.adjudicator_confidence < LOW_CONFIDENCE_THRESHOLD
     ):
         output = output.model_copy(update={
-            "adjudicator_verdict": "escalate_human",
+            "adjudicator_verdict": "abstain",
         })
         promoted = True
 
     on_step("main_call_complete", {
         "verdict": output.adjudicator_verdict,
         "confidence": output.adjudicator_confidence,
-        "promoted_to_human": promoted,
+        "promoted_to_abstain": promoted,
         "input_tokens": usage.input_tokens,
         "output_tokens": usage.output_tokens,
         "cost_usd": usage.estimated_cost_usd,
@@ -205,6 +205,6 @@ def run_adjudicator(
         output=output,
         failure_mode=None,
         usage=usage,
-        promoted_to_human=promoted,
+        promoted_to_abstain=promoted,
         notes=notes,
     )

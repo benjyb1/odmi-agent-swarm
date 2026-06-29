@@ -3,7 +3,7 @@
 The exhaustive register of ways the swarm can **commit a wrong answer while
 presenting it as confidently answered** (not abstained). A false positive here
 is a correctness failure, distinct from the operational deferrals in
-`docs/KNOWN_GAPS.md` (resume, CAPTCHA, human queue).
+`docs/KNOWN_GAPS.md` (resume, CAPTCHA).
 
 **When the work is "let's start attacking the failure modes", this is the file.**
 Start here, pick from the attack list in Part C, and update the Status column as

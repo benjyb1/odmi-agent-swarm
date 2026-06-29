@@ -504,7 +504,7 @@ def slide_how_it_works(prs: Presentation) -> None:
     agent_box(
         x3, "ADJUDICATOR",
         "Fires only on retry exhaustion. Reads the full history. "
-        "Picks a winner or escalates to a human queue.",
+        "Picks a winner or abstains.",
         DANGER,
     )
 
@@ -541,8 +541,7 @@ def slide_how_it_works(prs: Presentation) -> None:
     set_text(
         body_l.text_frame,
         "Researcher retries up to 3× on Verifier rejection. After "
-        "that, Adjudicator decides. Confidence below 0.6 escalates "
-        "to a human queue.",
+        "that, Adjudicator decides. Confidence below 0.6 abstains.",
         size=10, colour=BODY,
     )
 

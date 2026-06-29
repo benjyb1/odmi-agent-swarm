@@ -3,7 +3,7 @@
 The Adjudicator fires only after the Researcher and Verifier have failed
 to converge across three retries. It does no new searches. Its job is
 to weigh the evidence already gathered and either pick a winner or
-escalate to human review.
+abstain.
 
 See AGENT_DESIGN.md section 5.11.
 """
@@ -22,16 +22,14 @@ from agents.prompts._shared import FORBIDDEN_SOURCES_BULLETS
 
 
 NAME = "phase2_adjudicator"
-VERSION = 5
+VERSION = 6
 DESCRIPTION = (
-    "Adjudicator V5: V4 honest-abstention preference (D36) kept "
-    "unchanged. V5 reads the canonical forbidden-source list from "
-    "`agents/prompts/_shared.py`, which adds the "
-    "europeandataportal.eu legacy redirect, archive mirrors, and the "
-    "`merged_responses` / `odm-questionnaire` URL patterns that "
-    "previously appeared only on the Researcher's list. Verdicts, "
-    "answer space, confidence floor (0.6) and the absence-of-evidence "
-    "rule are byte-identical to V4."
+    "Adjudicator V6: renames the fourth verdict from `escalate_human` "
+    "to `abstain` (D51). No human is ever in the loop in this automated "
+    "swarm, so the verdict is an abstention, not an escalation. The "
+    "verdict's meaning, the 0.6 auto-promotion floor, the answer space, "
+    "the forbidden-source list and the absence-of-evidence rule are "
+    "all byte-identical to V5; only the label changed."
 )
 
 
@@ -59,25 +57,26 @@ The four verdicts:
     state what it is in adjudicator_answer (chosen from the allowed
     list in the user message).
 
-- escalate_human
-    The case is too uncertain to settle without human judgement. Use
-    this when the question is genuinely ambiguous, when the cited
-    sources contradict each other in irreconcilable ways, or when both
-    agents have plausible but conflicting interpretations of a
-    definitional question.
+- abstain
+    The case is too uncertain to settle on the evidence gathered. Use
+    this when the question is ambiguous, when the cited sources
+    contradict each other in irreconcilable ways, or when both agents
+    have plausible but conflicting interpretations of a definitional
+    question. Abstaining records an honest "we could not decide"; it
+    finalises as 'inconclusive'.
 
 Confidence threshold: if your confidence in your verdict is below 0.6,
-your verdict will be auto-promoted to escalate_human. Do not pretend to
-be more confident than you are.
+your verdict will be auto-promoted to abstain. Do not pretend to be
+more confident than you are.
 
 Required output structure:
 
 {
-  "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "escalate_human",
+  "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "abstain",
   "adjudicator_answer":  string from the allowed list shown in the
                          user message, OR 'inconclusive', OR
                          'not_applicable', OR null (only when verdict
-                         is "escalate_human"),
+                         is "abstain"),
   "adjudicator_confidence": 0.0-1.0,
   "adjudicator_reasoning": string (at least 50 chars, explaining your
                                    verdict and which evidence weighed
@@ -96,7 +95,7 @@ Rules:
 - For ordered band shapes (percentage / ordinal / count), a single
   adjacent-band miss is still a real disagreement; do not split the
   difference.
-- For escalate_human, adjudicator_answer may be null.
+- For abstain, adjudicator_answer may be null.
 - chosen_source_url and chosen_evidence_quote must come from the
   evidence already gathered by the Researcher or Verifier; do not
   invent new ones.
@@ -126,7 +125,7 @@ __FORBIDDEN_SOURCES_PLACEHOLDER__
 If either agent's only material evidence cites one of those sources,
 treat that evidence as void: in practice this usually means
 adjudicator_verdict="neither" with adjudicator_answer set from any
-independent evidence in the history, or escalate_human if no
+independent evidence in the history, or abstain if no
 independent evidence exists.
 
 Do not rely on memorised ODMI rankings, country scores, or prior-year
@@ -144,17 +143,15 @@ agents actually gathered.
 # ============================================================
 
 FREE_NAME = "phase2_adjudicator_free"
-FREE_VERSION = 2
+FREE_VERSION = 3
 FREE_DESCRIPTION = (
-    "Adjudicator free-selection arm (EXP-16). V2 tracks the V5 "
-    "standard prompt: the `attempt_correct` verdict is unchanged, but "
-    "the forbidden-source list now reads from the shared canonical "
-    "list in `agents/prompts/_shared.py` (mirrors the V4-to-V5 bump "
-    "on the standard arm). The D44 rule (absence of evidence is "
-    "'inconclusive', never 'no'), the honest-abstention preference, "
-    "and the confidence floor all still hold. Selection-mode "
-    "'standard' uses the V5 standard prompt; only the 'free' arm "
-    "uses this one."
+    "Adjudicator free-selection arm (EXP-16). V3 tracks the V6 "
+    "standard prompt: the fourth verdict is renamed from `escalate_human` "
+    "to `abstain` (D51), matching the standard arm. The `attempt_correct` "
+    "verdict, the D44 absence-of-evidence rule (absence of evidence is "
+    "'inconclusive', never 'no'), the honest-abstention preference and "
+    "the confidence floor all still hold. Selection-mode 'standard' uses "
+    "the V6 standard prompt; only the 'free' arm uses this one."
 )
 
 # The free system prompt is the standard one with the verdict taxonomy and
@@ -163,8 +160,8 @@ SYSTEM_FREE = SYSTEM.replace(
     "decide which of the four verdicts below applies.\n\nThe four verdicts:",
     "decide which of the five verdicts below applies.\n\nThe five verdicts:",
 ).replace(
-    """- escalate_human
-    The case is too uncertain to settle without human judgement. Use""",
+    """- abstain
+    The case is too uncertain to settle on the evidence gathered. Use""",
     """- attempt_correct
     One of the Researcher's attempts (not necessarily the final one)
     reached the correct answer on the evidence it gathered. Set
@@ -176,11 +173,11 @@ SYSTEM_FREE = SYSTEM.replace(
     of the attempts' own answers (or an honest 'inconclusive'); do not
     synthesise a new answer here.
 
-- escalate_human
-    The case is too uncertain to settle without human judgement. Use""",
+- abstain
+    The case is too uncertain to settle on the evidence gathered. Use""",
 ).replace(
-    '  "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "escalate_human",',
-    '  "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "attempt_correct" | "escalate_human",\n'
+    '  "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "abstain",',
+    '  "adjudicator_verdict": "researcher_correct" | "verifier_correct" | "neither" | "attempt_correct" | "abstain",\n'
     '  "chosen_attempt":      integer (1-based attempt index, REQUIRED when\n'
     '                         verdict is "attempt_correct", else null),',
 ).replace(
@@ -289,7 +286,7 @@ def _answer_space_block(inp: AdjudicatorInput) -> str:
         f"`adjudicator_answer` MUST be one of:\n{bullets}\n"
         f"  - 'inconclusive'    (no confident answer can be reached)\n"
         f"  - 'not_applicable'  (question does not apply to this country)\n"
-        f"  - null              (only when verdict='escalate_human')"
+        f"  - null              (only when verdict='abstain')"
     )
 
 

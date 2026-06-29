@@ -240,7 +240,8 @@ CREATE TABLE phase2_adjudications (
                                     'researcher_correct',
                                     'verifier_correct',
                                     'neither',
-                                    'escalate_human',
+                                    'abstain',          -- D51
+                                    'escalate_human',   -- D51 legacy: pre-rename rows only
                                     'attempt_correct'
                                 )),
     adjudicator_answer          TEXT,
@@ -278,8 +279,10 @@ CREATE TABLE phase2_final (
     terminal_status             TEXT NOT NULL CHECK (terminal_status IN (
                                     'accepted_by_verifier',
                                     'accepted_by_adjudicator',
-                                    'escalated_captcha',
-                                    'escalated_adjudicator',
+                                    'abstained_captcha',        -- D52
+                                    'abstained_adjudicator',    -- D52
+                                    'escalated_captcha',        -- D52 legacy: pre-rename rows only
+                                    'escalated_adjudicator',    -- D52 legacy: pre-rename rows only
                                     'agent_failure'
                                 )),
 
@@ -371,7 +374,7 @@ CREATE TABLE language_confidence (
     benchmark_question  TEXT NOT NULL,
     native_accuracy     REAL,
     deepl_accuracy      REAL,
-    routing_decision    TEXT CHECK (routing_decision IN ('native', 'deepl', 'human_required')),
+    routing_decision    TEXT CHECK (routing_decision IN ('native', 'deepl', 'unsupported')),  -- D53: was 'human_required'; table is empty, clean replace
     tested_at           TEXT DEFAULT (datetime('now'))
 );
 

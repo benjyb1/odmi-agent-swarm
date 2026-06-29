@@ -113,7 +113,7 @@ def test_abstention_on_not_applicable_gold_scores_match(db):
 def test_committed_answer_on_na_gold_is_flagged_for_review(db):
     # ODMI marked the question n/a, but the swarm committed a real answer.
     # That is not necessarily wrong (the swarm may have found evidence the
-    # assessors missed), so it is flagged for human review, not scored differ.
+    # assessors missed), so it is flagged for review, not scored differ.
     _insert_question(db, "NA5", "binary", ["yes", "no", "not applicable"])
     _insert_pair(db, "NA5", swarm="yes", odmi="n/a")
     assert dict(_status(db))["NA5"] == "flag_review"

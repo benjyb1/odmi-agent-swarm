@@ -236,8 +236,9 @@ under different prompt regimes.
 When the Researcher and Verifier disagree across all three retries, the
 Coordinator hands the case to an Adjudicator instead of marking the
 pair as rejected. The Adjudicator does not run new searches; it weighs
-the evidence already collected and either picks a winner or escalates
-to a human queue.
+the evidence already collected and either picks a winner or abstains
+(D51/D52: the verdict is `abstain` and the terminal status
+`abstained_adjudicator`; there is no human queue).
 
 Implementation: a Coordinator-internal LLM call, not a separately
 versioned agent file. Lives in the Coordinator module. Uses the same
@@ -947,8 +948,9 @@ The Adjudicator records its authoritative answer in `adjudicator_answer`, with
 prompt requires them). The verdict label is attribution; the answer field is the
 answer. Finalisation now trusts it. The three resolved verdicts
 (`researcher_correct` / `verifier_correct` / `neither`) share one path that
-builds the final output from the Adjudicator's fields; only `escalate_human` (or
-an Adjudicator failure) keeps the last Researcher output. The logic is extracted
+builds the final output from the Adjudicator's fields; only `abstain` (D51,
+formerly `escalate_human`) or an Adjudicator failure keeps the last Researcher
+output. The logic is extracted
 into a pure helper, `_finalise_after_adjudication`, and unit-tested in isolation.
 
 Receipt: replayed against the stored rows, four pairs flip from `differ` to
@@ -1163,8 +1165,8 @@ mechanism D26 added is unchanged; only the fallback target changes).
 
 ## Current status
 
-> **Currency note (2026-06-23).** The authoritative live state is, in order:
-> the change log below (current to 2026-06-25), `docs/ARCHITECTURE.md` (the
+> **Currency note (2026-06-29).** The authoritative live state is, in order:
+> the change log below (current to 2026-06-29), `docs/ARCHITECTURE.md` (the
 > config ledger), and `docs/EXPERIMENTS.md` (the experiment board, EXP-10..21).
 > The "Built / Not yet built / Open questions" lists in this section are a
 > 2026-06-03 snapshot kept for continuity; where a later change-log entry
@@ -1988,10 +1990,131 @@ diverges per worktree, so it is not committed here). The language/retrieval
 EXP-22/23/24 references are left as-is. EXP-25 to EXP-28 are reserved for the
 confidence framework.
 
+### D50: neg_licence Researcher prompt variant — favoured, adoption deferred
+
+**Date:** 2026-06-29. Builds on the EXP-A/B/C prompt programme (commit `2c5b239`)
+and D47 (held-out freeze).
+
+The EXP-C negative-evidence-licence Researcher variant
+(`phase2_researcher_neg_licence`) is built, registered as its own
+`prompt_versions` row, and selectable with `--prompt-variant neg_licence`. It is
+**not** the production default; `full` remains live.
+
+**Evidence.** Two one-variable runs (prompt only):
+
+- NL dev (`expC_neg_evidence_licence`, n=51/arm, Opus, picker off, verifier_search
+  never): directional on all four endpoints (commit rate +2.0pp, commit accuracy
+  +4.7pp, neg-FPR -15.3pp, TN recall +3.8pp) and passes the pre-registered joint
+  non-inferiority rule, but on tiny cells: TN recall moves on a single pair
+  (2/26 -> 3/26), neg-FPR rests on 8-9 committed negatives, and the Wilson
+  intervals overlap.
+- Held-out (`expC_held_neg_licence`, partial 149 pairs/arm, Sonnet, picker on,
+  verifier_search always): TN recall 34 -> 50% on 119+ negative golds, commit
+  accuracy 50 -> 56%, neg-FPR flat 26 -> 25%. Powered and production-config.
+
+**Why deferred, not adopted.** The powered, production-config evidence is the
+held-out run, and the held-out 8 are the frozen EXP-21 headline set; adopting on
+it would let the held-out set shape production config and weaken EXP-21's
+independence. The dev run protects EXP-21 but is underpowered and was gathered
+under a non-production retrieval config (picker off, verifier_search never), so on
+its own it is too weak to set a production default. The clean path, a powered
+production-config dev confirmation (NL +/- AL, picker on, verifier_search always),
+is owed but blocked on Claude run budget.
+
+**Adoption gate.** Flip `--prompt-variant` default `full` -> `neg_licence` in
+`scripts/dispatch_subtrios.py` and `scripts/run_coordinator.py` once a powered
+production-config dev confirmation reproduces the direction at adequate power.
+
+### D51: Adjudicator `escalate_human` verdict renamed to `abstain`
+
+**Date:** 2026-06-29.
+
+The fourth Adjudicator verdict is renamed from `escalate_human` to `abstain`. No
+human is ever in the loop in this automated swarm, so the old name was a misnomer:
+when the Adjudicator cannot pick a winner it abstains, and the pair finalises as
+`inconclusive` under the D37 floor. The rename is label-only. The verdict's
+meaning, the 0.6 auto-promotion floor, the answer space and the
+absence-of-evidence rule are unchanged.
+
+**Scope.** The `AdjudicatorVerdict` literal (`agents/models.py`), the
+auto-promotion logic and the `promoted_to_abstain` telemetry field
+(`agents/adjudicator.py`), the registered Adjudicator prompt (standard
+`phase2_adjudicator` v5 -> v6, free arm `phase2_adjudicator_free` v2 -> v3; both
+re-register on the next run), the finalisation branch
+(`scripts/run_coordinator.py`), the schema CHECK (`scripts/setup_sqlite.py`), and
+the evaluation scripts (`stack_attribution.py`, `abstention_taxonomy.py`, which
+coalesce the legacy string). The pair-level terminal status
+`escalated_adjudicator` is a separate axis and is **not** renamed; it still flags
+a pair the Adjudicator could not settle. (Superseded by D52: that terminal
+status is itself renamed `escalated_adjudicator` -> `abstained_adjudicator`.)
+Normative docs (`AGENT_DESIGN.md`,
+`ARCHITECTURE.md`, `ABSTENTION_TAXONOMY.md`, this spec) are updated; dated records
+(`PROMPT_AUDIT.md`, `EXPERIMENTS*.md`, `PROJECT_LOG.md`) keep `escalate_human` as
+the name in force when they were written.
+
+**Data.** `scripts/migrate_escalate_human_to_abstain.py` widens the CHECK to admit
+`abstain`, keeps `escalate_human` as an accepted legacy value, and converts the
+313 existing `escalate_human` rows to `abstain`. Verified on a DB copy: 1,190
+adjudication rows preserved, idempotent, indexes and column order intact. The
+migration is owed against the canonical DB and run there after merge, not
+committed from a worktree (the binary DB diverges per worktree).
+
+### D52: Abstention terminal statuses renamed `escalated_*` -> `abstained_*`; no human-review stage
+
+**Date:** 2026-06-29. Extends D51.
+
+The system has no human-review stage. A pair either commits an answer or
+abstains, and an abstention is itself terminal. The old `escalated_captcha` /
+`escalated_adjudicator` terminal statuses implied a handoff to a human queue
+that was never built, so they are renamed to `abstained_captcha` /
+`abstained_adjudicator`. This supersedes the D51 note that the
+`escalated_adjudicator` status would stay.
+
+**Scope.** The `TerminalStatus` literal (`agents/models.py`), the finalisation
+return (`scripts/run_coordinator.py`), the `phase2_final.terminal_status` CHECK
+(`scripts/setup_sqlite.py`, admits `abstained_*`, retains `escalated_*` as
+legacy), the dashboard (the Home "Human queue" widget becomes an "Abstentions"
+view; Results path summaries and the Run Console pipeline chip drop the "human"
+framing), and the evaluation scripts (`adjudicator_commit_policy.py`,
+`abstention_taxonomy.py`, which match both names). KNOWN_GAPS gap #3 (the
+human-queue CSV writer) is closed as not-a-gap. The separate `flag_review`
+evaluation bucket (a committed answer on an n/a gold, held for the researcher's
+own review) and the D22 disagreement glance are methodology, not a system
+stage, and are unchanged beyond dropping the word "human" from their prose.
+
+**Data.** `scripts/migrate_terminal_status_to_abstained.py` widens the CHECK to
+admit `abstained_*`, keeps `escalated_*` as accepted legacy values, and converts
+the 313 `escalated_adjudicator` rows in `phase2_final` (plus 336
+`final_verdict` mirrors in `subtrio_status`) to `abstained_adjudicator`. Verified
+on a DB copy: 2,759 `phase2_final` rows preserved, UNIQUE and indexes intact,
+idempotent. Owed against the canonical DB and run there after merge, not
+committed from a worktree.
+
+### D53: LanguageRoute `human_required` renamed to `unsupported`
+
+**Date:** 2026-06-29. Extends D51/D52.
+
+The third `LanguageRoute` value, `human_required` (set when neither native Claude
+reading nor DeepL can handle a source language), is renamed to `unsupported`.
+There is no human-translation stage; a pair whose language cannot be processed
+abstains. The value has never been set in any logged run (every
+`language_route_used` row is `native`), so this is a clean rename with no data to
+migrate.
+
+**Scope.** The `LanguageRoute` literal (`agents/models.py`) and the
+`language_confidence.routing_decision` CHECK (`scripts/setup_sqlite.py`), plus
+`AGENT_DESIGN.md`. The `language_confidence` table is empty on the canonical DB,
+so its CHECK was rebuilt in place to admit `unsupported` (no rows to preserve, no
+legacy value retained).
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-06-29 (human_required -> unsupported) | D53 added: the third `LanguageRoute` value is renamed `human_required` -> `unsupported` (the route when neither native reading nor DeepL handles a source language; the pair then abstains, no human-translation stage). Never set in any logged run (all `language_route_used` rows are `native`), so a clean rename with no data migration and no legacy value retained. Touches `agents/models.py` (`LanguageRoute`), the `scripts/setup_sqlite.py` `language_confidence.routing_decision` CHECK, and `AGENT_DESIGN.md`. The empty canonical `language_confidence` table had its CHECK rebuilt in place. Housekeeping: the two D51/D52 canonical pre-migration backups were deleted after the migrations verified. 759 tests pass. |
+| 2026-06-29 (escalated_* -> abstained_*) | D52 added: the abstention terminal statuses are renamed `escalated_captcha` -> `abstained_captcha` and `escalated_adjudicator` -> `abstained_adjudicator`. The system has no human-review stage; a pair commits an answer or abstains, and an abstention is terminal (the old `escalated_*` names implied a human queue that was never built). Supersedes the D51 note that `escalated_adjudicator` would stay. Touches `agents/models.py` (`TerminalStatus`), `scripts/run_coordinator.py`, the `scripts/setup_sqlite.py` CHECK (admits `abstained_*`, retains `escalated_*` as legacy), the dashboard (Home "Human queue" widget -> "Abstentions" view; Results/Run Console drop the "human" framing), and the evaluation scripts (`adjudicator_commit_policy.py` `.startswith` widened, `abstention_taxonomy.py` coalesces both). KNOWN_GAPS gap #3 (human-queue CSV writer) closed as not-a-gap; `flag_review` and the D22 disagreement glance kept (methodology, "human" dropped from prose). New `scripts/migrate_terminal_status_to_abstained.py` converts 313 `phase2_final` rows (+336 `subtrio_status` mirrors) to `abstained_adjudicator` (verified on a copy: 2,759 rows preserved, idempotent); owed against the canonical DB after merge. 759 tests pass. |
+| 2026-06-29 (escalate_human -> abstain) | D51 added: the Adjudicator's fourth verdict is renamed `escalate_human` -> `abstain`. No human is ever in the loop, so an unsettleable case is an abstention (finalises `inconclusive` under the D37 floor; pair-level terminal status `escalated_adjudicator` unchanged). Label-only: meaning, the 0.6 auto-promotion floor, answer space and absence-of-evidence rule all unchanged. Touches `agents/models.py` (`AdjudicatorVerdict`), `agents/adjudicator.py` (`promoted_to_abstain` telemetry), the registered prompt (standard v5 -> v6, free arm v2 -> v3), `scripts/run_coordinator.py`, the `scripts/setup_sqlite.py` CHECK (admits `abstain`, retains `escalate_human` as legacy), and the evaluation scripts (coalesce the legacy string). New `scripts/migrate_escalate_human_to_abstain.py` converts the 313 canonical `escalate_human` rows to `abstain` (verified on a copy: 1,190 rows preserved, idempotent); owed against the canonical DB after merge, not committed from a worktree. 759 tests pass. |
+| 2026-06-29 (config reconciliation + neg_licence decision) | D50 added: the EXP-C `neg_licence` Researcher variant is **favoured**, not adopted; the live `--prompt-variant` default stays `full`. NL dev (n=51/arm) is directional on all four endpoints and passes the joint non-inferiority rule but is underpowered (TN recall moves on one pair, 2/26 -> 3/26) and off-config (picker off, verifier_search never); the powered production-config signal is the partial held-out (149 pairs/arm, TN recall 34 -> 50%, neg-FPR flat), excluded from the adoption basis to keep the EXP-21 headline independent. Flip gated on a powered production-config dev confirm, currently blocked on run budget. Config alignment to D43: `--provider` default `auto` -> `diy` in `dispatch_subtrios.py` and `run_coordinator.py` (`auto` is an alias for `diy`, so behaviour-neutral), and the stale coordinator help string ("Default 'auto' = Tavily then Brave") corrected; `tavily`/`brave` kept in `choices` for EXP-1 reproduction. `ARCHITECTURE.md` reconciled: snippet-cap row -> kept (EXP-24 replay negative), retrieval-strategy row added (EXP-23 dispatched 2026-06-24 but Sonnet exhaustion left no canonical data; incumbent `narrow_then_wide` by default, no verdict), query-language row added (EXP-22 + L2 replay: language is not the binding constraint), Researcher prompt v3 -> V4, neg_licence favoured row, and an Adjudicator evidence-commit-gate row (EXP-25/27 null+harmful; the D37 floor remains the precision control). EXP-A (calibrated) and EXP-B (verifier `disprove_structured`) NL dev variants were run but are not adopted (defaults unchanged); full verdicts owed. No swarm behaviour change beyond the behaviour-neutral provider default. |
 | 2026-06-26 (EXP number reconciliation) | D49 added. Two programmes both on `origin/main` had claimed EXP-22/23/24: language/retrieval (foreign-language ablation, narrow-then-widen, snippet-cap; run data) and the confidence-framework deep dive (entailment / self-consistency / argue-opposite / decomposed; null, no run data). Language/retrieval keeps 22/23/24; confidence framework renumbered to EXP-25/26/27/28 across the deep dive, `EXPERIMENTS.md`, this change log, `confidence_gates.py`, `nl_fp_audit.py`, and the renamed `exp25_entailment_smoke.py` (+ result jsonl). Canonical-DB `experiments` rows `exp22_entailment_gate` / `exp24_argue_opposite` renamed to `exp25_*` / `exp27_*` (not committed; DB diverges per worktree). |
 | 2026-06-25 (Opus cost correction) | Corrected the Opus rate in `agents/tools/llm.py` `PRICING_USD_PER_M` from $15/$75 to $5/$25 per M input/output. The old figure was the Opus 3/4/4.1 rate; every Opus from 4.5 onward is $5/$25 (claude-api skill current-models table: Opus 4.6/4.7/4.8 all $5/$25). Both existing Opus entries (`claude-opus-4-6`, `claude-opus-4-5-20251101`) fixed and `claude-opus-4-7`/`claude-opus-4-8` added for forward safety; Sonnet ($3/$15) and Haiku ($1/$5) verified correct, unchanged. `estimated_cost_usd` is a notional API-equivalent under the flat CLIProxyAPI Max subscription (D1/Q9), not a real billing record, so historical rows are corrected rather than frozen, keeping the column reproducible from (tokens x rate). The swarm only ever logged `claude-opus-4-6` (637 rows on the canonical DB, was $37.95, becomes $12.65; the other 71k+ rows are Sonnet/Haiku and unaffected); per-experiment Opus costs in the dissertation were overstated 3x before this date. New idempotent `scripts/backfill_opus_pricing.py` recomputes the column from the rate table (dry-run by default, `--apply` to write); already run once against the canonical `data/odmi.db` (the binary DB diverges per worktree, so it is not committed). Doc table at D18 updated to $5/$25. New `tests/test_estimate_cost.py` pins the corrected rates and the 27-call batch arithmetic. SPEC doc fix only; no swarm behaviour change. This resolves the stale-Opus-pricing item flagged in the 2026-06-25 confidence-experiments entry below. |
 | 2026-06-25 (confidence experiments + decision split) | Ran the pre-registered confidence experiments on production Sonnet (quota restored). **EXP-25 entailment gate and EXP-27 argue-the-opposite both NULL and harmful** (`evaluation/confidence_gates.py`, NL n=50, 25 committed negative golds): both *raise* the negative-gold FP rate (0.76 -> 1.00 for EXP-25, halving Youden's J) because the correct `no` commits are the low-entailment ones and abstain first while the confident FPs (entailment_for 0.74 vs correct 0.68) pass; the pre-registered adoption rule rejects both; McNemar caught 3/19 and 2/19 FPs (p=0.25, 0.50), 0 high-confidence. Confirms the deep dive's within-negative sign-flip end-to-end on the production model. **NL false-positive audit** (`evaluation/nl_fp_audit.py` + `nl_fp_audit_adversarial.py`, 22 questions over frozen evidence, two framings). Charitable pass: 1 genuine swarm error on Opus, 2 on Sonnet, rest definitional/self-report (~5-9%). Adversarial advocate pass (Opus told to argue the gold wrong): **0/22 gold_wrong** (swarm never vindicated), 11/22 over-reads (gold stands), 11/22 ambiguous. The genuine-error rate brackets ~5% (charitable) to ~50% (strict over-read), framing-dependent; robust finding is that no NL FP is the swarm-right-vs-stale-gold case, and the disagreements are strict-vs-loose question readings / self-report that no evidence gate resolves. **Decision taxonomy confirmed** against the official 2022/2024 ODMI methodology (2022 lists "Complement ... additional desk research" as a step; score/explanation signatures corroborate confirm/complement/change). **Decision-stratification shipped to the dashboard** (`dashboard/lib/db.py::accuracy_by_decision` + Analytics self-report split): all 6 production false positives sit on `confirm` golds. Pre-registered `exp25_entailment_gate` / `exp27_argue_opposite`; EXP-26/25 held (same null mechanism; EXP-28 spends the frozen held-out set). Reading: no evidence-grounded commit gate catches the confident FPs; the answer is decision-stratified reporting + D22 staleness adjudication, not a better gate. Flagged separately: `claude_usage_log` prices Opus at the stale $15/$75 per-Mtok rate (3x current), inflating dashboard GBP costs for Opus rows. Details in `docs/EXPERIMENTS.md` and `docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md`. |

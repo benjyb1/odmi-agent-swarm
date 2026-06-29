@@ -583,28 +583,31 @@ def render_coverage_summary() -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_human_queue() -> None:
+def render_abstentions() -> None:
     st.markdown(
         '<div class="odmi-card">'
-        '<div class="eyebrow">REVIEWER ACTION</div>'
-        '<h3>Human queue</h3>',
+        '<div class="eyebrow">OUTCOMES</div>'
+        '<h3>Abstentions</h3>',
         unsafe_allow_html=True,
     )
 
     finals = db.finals(limit=1000)
     if len(finals) == 0:
-        st.info("Nothing escalated yet.")
+        st.info("No pairs finalised yet.")
     else:
-        escalated = finals[finals["terminal_status"].isin([
+        # D52: abstained_* are the abstention dispositions; escalated_* are
+        # the pre-rename legacy strings, kept so old rows still surface.
+        abstained = finals[finals["terminal_status"].isin([
+            "abstained_captcha", "abstained_adjudicator",
             "escalated_captcha", "escalated_adjudicator",
         ])]
-        if len(escalated) == 0:
-            st.success("No escalations. The swarm has resolved every "
-                       "pair without needing a human.")
+        if len(abstained) == 0:
+            st.success("No abstentions. The swarm committed an answer on "
+                       "every pair.")
         else:
-            st.write(f"{len(escalated)} pair(s) escalated for review:")
+            st.write(f"{len(abstained)} pair(s) abstained:")
             st.dataframe(
-                escalated[[
+                abstained[[
                     "question_id", "country_code",
                     "terminal_status", "final_failure_reason",
                 ]].rename(columns={
@@ -635,7 +638,7 @@ with left:
     recent_runs_panel()
 with right:
     render_coverage_summary()
-    render_human_queue()
+    render_abstentions()
 
 st.markdown(
     '<div class="odmi-foot">'

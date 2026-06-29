@@ -17,7 +17,8 @@ points to a better value but production has not been switched yet. *baseline* =
 built and validated as a comparison point, not the default. *pending* = under test
 or owed.
 
-Last updated 2026-06-23 (after EXP-14, EXP-16, EXP-17 picker/breadth).
+Last updated 2026-06-29 (after EXP-22 language ablation, the EXP-25/27
+confidence-gate programme, and the EXP-A/B/C prompt programme).
 
 ## Search and retrieval
 
@@ -29,8 +30,10 @@ Last updated 2026-06-23 (after EXP-14, EXP-16, EXP-17 picker/breadth).
 | ... breadth finding | widen to ~10 | EXP-17 breadth (r10 > r5 on NL) | favoured, not switched |
 | Queries per attempt | 3 | default | adopted |
 | Page-text cap | 16,000 chars | D29 (extraction-ordering fix) | adopted |
-| Max chars per snippet | 600 | default; EXP-17 truncation arm owed | pending |
+| Max chars per snippet | 600 | EXP-24 snippet-cap replay: the cap is not binding on accuracy (negative) | kept |
 | Evidence deny-list | ODMI publications + data.europa.eu banned at every layer | D24 | adopted |
+| Retrieval strategy | narrow_then_wide | production default; EXP-23 (narrow-then-widen) dispatched 2026-06-24 but Sonnet exhaustion left no committed data in the canonical DB | pending (incumbent by default, no verdict) |
+| Query language | bilingual (English + native) | EXP-22 (AL foreign-language ablation) + L2 translate-before-entailment replay: language is not the binding constraint | kept |
 
 ## Researcher
 
@@ -38,7 +41,8 @@ Last updated 2026-06-23 (after EXP-14, EXP-16, EXP-17 picker/breadth).
 |---|---|---|---|
 | Catalogue routing | computed Quality questions route to the deterministic catalogue tool before web search | D30, D46 | adopted |
 | Portal registry | auto-discovered from a committed seed list, not hand-authored | D46 | adopted |
-| Prompt | v3, per-shape answer space | D28 | adopted |
+| Prompt | V4, per-shape answer space | D28 | adopted |
+| Prompt variant: neg_licence | not switched (live default `full`) | EXP-C: NL dev directional (n=51; TN recall +3.8pp, neg-FPR -15pp, commit acc +4.7pp) but underpowered and off-config; held-out powered (TN 34->50%) but excluded to keep EXP-21 clean (D50) | favoured |
 
 ## Verifier
 
@@ -53,9 +57,10 @@ Last updated 2026-06-23 (after EXP-14, EXP-16, EXP-17 picker/breadth).
 
 | Knob | Current value | Set by | Status |
 |---|---|---|---|
-| Candidate selection | standard (researcher_correct / verifier_correct / neither / escalate_human) | EXP-16 (free choice of any attempt gained nothing) | kept |
+| Candidate selection | standard (researcher_correct / verifier_correct / neither / abstain) | EXP-16 (free choice of any attempt gained nothing) | kept |
 | Finalisation answer | the Adjudicator's own answer, not the last Researcher output | D32 | adopted |
 | Commit-confidence floor | 0.65; abstain (`inconclusive`) below it | D37; confirmed by EXP-10 pooled over 7 countries (n=360, recovered-precision 0.76 at 0.50, under the 0.80 bar) | adopted |
+| Evidence commit gate | none beyond the D37 floor | EXP-25 entailment gate and EXP-27 argue-the-opposite both null+harmful (they raise negative-gold FP); no evidence-grounded gate catches the confident FPs | kept (the D37 floor is the precision control) |
 
 ## Retry loop
 

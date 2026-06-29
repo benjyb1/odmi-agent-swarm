@@ -4,8 +4,8 @@ The helper must:
 - Return ("accepted_by_adjudicator", ResearcherOutput with answer from the
   Adjudicator) for any resolved verdict (researcher_correct / verifier_correct
   / neither), ignoring the last researcher output.
-- Return ("escalated_adjudicator", last researcher output) when verdict is
-  escalate_human or the output is None.
+- Return ("abstained_adjudicator", last researcher output) when verdict is
+  abstain or the output is None.
 """
 
 from __future__ import annotations
@@ -42,7 +42,7 @@ def _make_adj_output(
 ) -> AdjudicatorOutput:
     return AdjudicatorOutput(
         adjudicator_verdict=verdict,  # type: ignore[arg-type]
-        adjudicator_answer=adj_answer if verdict != "escalate_human" else None,
+        adjudicator_answer=adj_answer if verdict != "abstain" else None,
         adjudicator_confidence=confidence,
         adjudicator_reasoning=reasoning,
         chosen_source_url=source_url,
@@ -112,17 +112,17 @@ def test_neither_uses_adjudicator_answer():
 
 
 # ---------------------------------------------------------------------------
-# Case 4: escalate_human — answer downgrades to inconclusive (D37 abstain floor).
+# Case 4: abstain — answer downgrades to inconclusive (D37 abstain floor).
 # ---------------------------------------------------------------------------
 
-def test_escalate_human_writes_inconclusive():
+def test_abstain_writes_inconclusive():
     """The Adjudicator could not pick a winner. Don't finalise the last
     Researcher's sub-floor guess as a real commit; abstain honestly. The
-    terminal status still flags human review.
+    terminal status stays abstained_adjudicator.
     """
     helper = _import_helper()
     adj = AdjudicatorOutput(
-        adjudicator_verdict="escalate_human",
+        adjudicator_verdict="abstain",
         adjudicator_answer=None,
         adjudicator_confidence=0.0,
         adjudicator_reasoning="B" * 55,
@@ -131,7 +131,7 @@ def test_escalate_human_writes_inconclusive():
 
     status, chosen = helper(adj, [last_r])
 
-    assert status == "escalated_adjudicator"
+    assert status == "abstained_adjudicator"
     assert chosen.answer == "inconclusive"
     # Source URL / evidence carry over so the audit trail stays intact.
     assert str(chosen.source_url) == str(last_r.source_url)
@@ -147,7 +147,7 @@ def test_none_output_writes_inconclusive():
 
     status, chosen = helper(None, [last_r])
 
-    assert status == "escalated_adjudicator"
+    assert status == "abstained_adjudicator"
     assert chosen.answer == "inconclusive"
 
 

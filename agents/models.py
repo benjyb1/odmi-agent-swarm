@@ -41,7 +41,11 @@ LegacyAnswerLiteral = Literal[
     "yes", "no", "other", "not_applicable", "inconclusive"
 ]
 RubricTier = Literal["Highly Likely", "Likely", "Unlikely", "Very Unlikely"]
-LanguageRoute = Literal["native", "deepl", "human_required"]
+# D53: `unsupported` (renamed from `human_required`) is the route when
+# neither native Claude reading nor DeepL can handle the language. There
+# is no human-translation stage; such a pair abstains. Never set in any
+# logged run to date (every row is `native`).
+LanguageRoute = Literal["native", "deepl", "unsupported"]
 VerifierStrategy = Literal[
     "verifier-disprove",
     "verifier-negation",
@@ -64,7 +68,13 @@ AdjudicatorVerdict = Literal[
     "researcher_correct",
     "verifier_correct",
     "neither",
-    "escalate_human",
+    # D51: the Adjudicator declines to commit a label because the case is
+    # too uncertain to settle on the evidence gathered. Renamed from the
+    # old `escalate_human`: no human is ever in the loop in this automated
+    # swarm, so the verdict is an abstention, not an escalation. Legacy
+    # rows keep `escalate_human` and the DB CHECK still accepts it, but no
+    # new run emits it.
+    "abstain",
     # EXP-16 free-selection arm only. `researcher_correct` is pinned to the
     # Researcher's FINAL attempt, so it cannot commit an earlier attempt that
     # happened to be right. `attempt_correct` lets the Adjudicator name ANY of
@@ -76,8 +86,13 @@ AdjudicatorVerdict = Literal[
 TerminalStatus = Literal[
     "accepted_by_verifier",
     "accepted_by_adjudicator",
-    "escalated_captcha",
-    "escalated_adjudicator",
+    # D52: the swarm has no human-review stage. A pair that cannot be
+    # settled abstains; these are the abstention dispositions, renamed
+    # from the old `escalated_*` (which implied a handoff to a human that
+    # never existed). Legacy rows keep `escalated_*` and the DB CHECK
+    # still accepts them.
+    "abstained_captcha",
+    "abstained_adjudicator",
     "agent_failure",
 ]
 
@@ -397,7 +412,7 @@ class AdjudicatorOutput(BaseModel):
         if picks_winner and self.adjudicator_answer is None:
             raise ValueError(
                 "adjudicator_answer is required when adjudicator_verdict "
-                "is not 'escalate_human'"
+                "is not 'abstain'"
             )
         # EXP-16: an attempt_correct verdict must name which attempt.
         if (

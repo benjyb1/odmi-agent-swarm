@@ -184,4 +184,4 @@ def test_adjudicator_prompt_carries_allowed_answers():
     assert "Answer space" in msg
     assert "'>90%'" in msg and "'51-70%'" in msg
     assert "'inconclusive'" in msg
-    assert "(only when verdict='escalate_human')" in msg
+    assert "(only when verdict='abstain')" in msg

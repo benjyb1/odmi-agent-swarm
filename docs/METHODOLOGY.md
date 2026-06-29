@@ -193,8 +193,8 @@ Three agents coordinated by a plain Python state machine (per D3,
 `scripts/run_coordinator.py`), running end-to-end:
 
 - **Coordinator.** Dispatches (question, country) pairs. Manages retries (max
-  3). Logs all parameters and outputs. Escalates CAPTCHA and access blocks to
-  a human queue without halting parallel pairs.
+  3). Logs all parameters and outputs. Abstains on CAPTCHA and access blocks
+  (no human queue) without halting parallel pairs.
 - **Researcher.** DIY web search (Serper SERP + trafilatura extraction, per
   D43), Playwright browser automation, and a
   source validator (domain authority check). Reads major EU languages
@@ -219,7 +219,7 @@ Output per (question, country) pair:
 - Vetted evidence quote.
 
 Termination rule: max 3 Coordinator-mediated retries per pair. Anything
-unresolved is flagged for human review.
+unresolved abstains (`inconclusive`).
 
 ---
 

@@ -528,8 +528,8 @@ def _stage_states(stage: str, final_verdict: str | None) -> tuple[str, str, str]
             return ("done", "done", "passed")
         if final_verdict in ("accepted_by_adjudicator",):
             return ("done", "done", "adjud_passed")
-        if final_verdict and final_verdict.startswith("escalated"):
-            return ("done", "done", "escalated")
+        if final_verdict and final_verdict.startswith(("abstained", "escalated")):
+            return ("done", "done", "abstained")
         return ("done", "done", "passed")
     if stage in ("failed", "interrupted_rate_limit", "orphaned"):
         return ("done", "failed", "failed")
@@ -545,7 +545,7 @@ def _pipeline_block(label: str, state: str, verdict: str | None = None) -> str:
         "passed":  ("#d1fae5", "#10b981", "✓ pass"),
         "adjud_passed": ("#ede9fe", "#7c3aed", "✓ adj"),
         "failed":  ("#fee2e2", "#dc2626", "✗"),
-        "escalated": ("#fef3c7", "#d97706", "→ human"),
+        "abstained": ("#fef3c7", "#d97706", "abstain"),
     }
     bg, border, icon = styles.get(state, styles["waiting"])
     text = label if state in ("waiting", "active") else f"{label} {icon}"

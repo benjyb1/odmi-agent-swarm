@@ -36,7 +36,7 @@ def _status_chip(status: str) -> str:
         emoji = "🟢"
     elif status.startswith("rejected_"):
         emoji = "🔴"
-    elif status.startswith("escalated_"):
+    elif status.startswith(("abstained_", "escalated_")):  # escalated_ = D52 legacy
         emoji = "🟡"
     else:
         emoji = "⚪"
@@ -55,13 +55,13 @@ def _path_summary(row: pd.Series) -> str:
             f"Researcher → Verifier failed {retries + 1}× → "
             "Adjudicator agreed with the Researcher."
         )
-    if row["terminal_status"] == "escalated_adjudicator":
+    if row["terminal_status"] in ("abstained_adjudicator", "escalated_adjudicator"):
         return (
             f"Researcher → Verifier failed {retries + 1}× → "
-            "Adjudicator unsure, escalated to human review."
+            "Adjudicator could not settle it, so the pair abstained."
         )
-    if row["terminal_status"] == "escalated_captcha":
-        return "Pipeline blocked by CAPTCHA / 403. Escalated to human review."
+    if row["terminal_status"] in ("abstained_captcha", "escalated_captcha"):
+        return "Pipeline blocked by CAPTCHA / 403, so the pair abstained."
     if row["terminal_status"] == "agent_failure":
         return "Agent threw an unrecoverable error during the run."
     if adjud:

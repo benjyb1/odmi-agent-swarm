@@ -116,7 +116,7 @@ class ResearcherOutput(BaseModel):
     search_queries_used: list[str]
     fetched_urls: list[HttpUrl]            # what Playwright actually fetched
     domain_trust_score: Optional[float] = None    # from source validator
-    language_route_used: Literal["native", "deepl", "human_required"]
+    language_route_used: Literal["native", "deepl", "unsupported"]
     notes: Optional[str] = None
 ```
 
@@ -136,7 +136,8 @@ class ResearcherOutput(BaseModel):
   the native-capable set (populated by Phase B pilot), the model reads
   source content directly. Otherwise the content is passed through
   DeepL via the Translator helper. If both fail, route is set to
-  `human_required` and the pair is flagged.
+  `unsupported` (D53) and the pair abstains; there is no
+  human-translation stage.
 - **Claude call** via CLIProxyAPI (per D1). Native tool use enabled.
   The model can call `web_search` and `fetch_url` directly; Python
   implements both as actual API calls.
@@ -173,10 +174,10 @@ not in the model.
 | `token_budget_exceeded` | Cumulative tokens over the cap | Cap the response, log it, set `notes="truncated"`. |
 | `timeout` | Wall-clock over 60 seconds | Kill the call. Write a row with whatever fields were populated and `notes="timeout"`. |
 | `domain_untrusted` | Source validator returns a score below threshold | Do not reject. Pass the score along to the Verifier and set `notes="untrusted domain"`. |
-| `language_failure` | DeepL returns garbage or rejects the content | Fall back to native Claude reading. If still bad, set `language_route_used="human_required"`. |
+| `language_failure` | DeepL returns garbage or rejects the content | Fall back to native Claude reading. If still bad, set `language_route_used="unsupported"` (D53) and abstain. |
 | `tool_loop` | Model calls the same tool with the same args twice consecutively | Reject the third identical call, force a final-answer prompt. |
 | `max_tool_calls` | More than 5 tool calls in one run | Force a final-answer prompt. |
-| `captcha_or_block` | Playwright detects CAPTCHA or 403 | Set `notes="captcha/block"`. The Coordinator escalates this pair to the human queue. |
+| `captcha_or_block` | Playwright detects CAPTCHA or 403 | Set `notes="captcha/block"`. The Coordinator finalises this pair as an abstention (`abstained_captcha`, D52). |
 
 ### 3.7 Prompt template (v1)
 
@@ -647,9 +648,9 @@ verifier → END                  if verdict=="pass"
 verifier → researcher           if verdict=="fail" AND retry_count<3
 verifier → adjudicator          if verdict=="fail" AND retry_count==3
 adjudicator → END               if adjudicator_verdict in {researcher_correct, verifier_correct, neither}
-adjudicator → human_queue       if adjudicator_verdict=="escalate_human"
-researcher → human_queue        if captcha_or_block detected
-human_queue → END               (always terminal for this pair)
+adjudicator → abstain           if adjudicator_verdict=="abstain"   # D51: renamed from escalate_human
+researcher → abstain            if captcha_or_block detected
+abstain → END                   (always terminal for this pair; D52: no human queue)
 ```
 
 These conditional transitions are expressed as plain Python branches in
@@ -682,9 +683,11 @@ For each pair, the Coordinator writes:
   dynamic routing between agents.
 - **Researcher, Verifier, Adjudicator** as state-machine steps.
 - **SQLite logger.** Implements the four write paths above.
-- **Human queue writer.** Appends to a `data/human_queue/<run_id>.csv`
-  for any pair that hits a CAPTCHA, access block, or
-  adjudicator-flagged escalation. Does not block other pairs.
+- **Abstention recorder.** A pair that hits a CAPTCHA, an access block,
+  or an Adjudicator abstention finalises as an abstention: its
+  `phase2_final` row carries the matching `abstained_*` terminal status
+  and an `inconclusive` answer (D52). There is no human-review stage and
+  no queue; abstaining does not block other pairs.
 
 ### 5.7 Success criteria
 
@@ -694,9 +697,10 @@ reaches a terminal state. A pair's terminal state is one of:
 - `accepted_by_verifier`: Verifier verdict was pass within 3 retries.
 - `accepted_by_adjudicator`: Adjudicator picked a winner after retries
   exhausted.
-- `escalated_captcha`: Researcher signalled CAPTCHA or access block.
-- `escalated_adjudicator`: Adjudicator could not pick a winner with
-  enough confidence.
+- `abstained_captcha`: Researcher signalled CAPTCHA or access block (D52,
+  formerly `escalated_captcha`).
+- `abstained_adjudicator`: Adjudicator could not pick a winner with
+  enough confidence (D52, formerly `escalated_adjudicator`).
 - `agent_failure`: any other failure mode that prevented termination.
 
 No infinite loops. No pair leaks past 3 retries (after which the
@@ -709,9 +713,9 @@ adjudicator decides or escalates).
 | `researcher_failure` | Researcher returns an unrecoverable error (e.g. schema_invalid after retry, timeout) | Treat as Verifier fail. Increment retry_count. Continue. |
 | `verifier_failure` | Verifier returns an unrecoverable error | Treat as Verifier fail. Increment retry_count. Continue. |
 | `max_retries_reached` | retry_count hits 3 with no accepted answer | Hand off to the Adjudicator (Section 5.10), not directly to END. |
-| `adjudicator_failure` | Adjudicator returns an unrecoverable error | Escalate to human queue with `final_failure_reason="adjudicator_failure"`. |
-| `adjudicator_low_confidence` | Adjudicator returns `escalate_human` | Write to human queue with the full history attached. |
-| `captcha_or_block` | Researcher's notes contain the CAPTCHA marker | Mark captcha_escalated=True. Write the pair to the human queue. |
+| `adjudicator_failure` | Adjudicator returns an unrecoverable error | Finalise as `agent_failure` with `final_failure_reason="adjudicator_failure"`. |
+| `adjudicator_low_confidence` | Adjudicator returns `abstain` (D51, formerly `escalate_human`) | Finalise as an abstention: `abstained_adjudicator` terminal status, `inconclusive` answer (D52). |
+| `captcha_or_block` | Researcher's notes contain the CAPTCHA marker | Mark captcha_escalated=True. Finalise as `abstained_captcha` (D52). |
 | `coordinator_crash` | Out of scope at this version | Manual rerun. A resume-from-state mechanism is deferred. |
 
 ### 5.9 Worked walkthrough: P1 / France, accept path
@@ -746,7 +750,7 @@ adjudicator decides or escalates).
 When the Researcher and Verifier disagree across all three retries, the
 Coordinator hands the case to the Adjudicator. The Adjudicator does not
 run new searches. Its job is to weigh the evidence already gathered and
-either pick a winner or escalate to human review.
+either pick a winner or abstain.
 
 The Adjudicator is implemented as a Coordinator-internal LLM call, not
 as a separately-versioned agent file. It lives in the Coordinator
@@ -779,7 +783,7 @@ class AdjudicatorOutput(BaseModel):
         "researcher_correct",
         "verifier_correct",
         "neither",
-        "escalate_human",
+        "abstain",                # D51: renamed from escalate_human
     ]
     adjudicator_answer: Optional[Literal["yes", "no", "other", "not_applicable"]]
     adjudicator_confidence: float            # 0.0-1.0
@@ -802,16 +806,17 @@ class AdjudicatorOutput(BaseModel):
    `verifier_correct`, or `neither`, then `adjudicator_answer`,
    `chosen_source_url`, and `chosen_evidence_quote` are populated.
 4. If `adjudicator_confidence < 0.6`, the verdict is auto-promoted to
-   `escalate_human` regardless of the model's nominal choice.
+   `abstain` (D51, formerly `escalate_human`) regardless of the model's
+   nominal choice.
 5. Within token budget (5000 input + 800 output) and wall-clock 30s.
 
 #### 5.11.6 Fallbacks
 
 | Code | Trigger | Handler |
 |---|---|---|
-| `schema_invalid` | Output fails Pydantic | One retry; if still fails, force `escalate_human`. |
-| `low_confidence` | adjudicator_confidence below 0.6 | Promote to `escalate_human`. |
-| `timeout` | 30 seconds | Force `escalate_human`. |
+| `schema_invalid` | Output fails Pydantic | One retry; if still fails, force `abstain`. |
+| `low_confidence` | adjudicator_confidence below 0.6 | Promote to `abstain`. |
+| `timeout` | 30 seconds | Force `abstain`. |
 
 #### 5.11.7 Prompt template (v1)
 
@@ -819,7 +824,7 @@ class AdjudicatorOutput(BaseModel):
 You are an adjudicator. A Researcher and a Verifier have failed to
 agree on the answer to an ODMI question after three attempts. Decide
 which of them is correct based on the evidence they collected, or
-escalate to human review if you cannot be confident.
+abstain if you cannot be confident.
 
 Question:
 {question_text}
@@ -846,11 +851,11 @@ Decide one of:
 - verifier_correct: the Verifier's counter-position is the right answer.
 - neither: both are wrong; the correct answer is something else (and
   you must say what).
-- escalate_human: the case is too uncertain to settle without human
-  judgement.
+- abstain: the case is too uncertain to settle on the evidence
+  gathered.
 
 Report adjudicator_confidence in [0.0, 1.0]. If your confidence is
-below 0.6 your verdict will be auto-promoted to escalate_human.
+below 0.6 your verdict will be auto-promoted to abstain.
 
 Return JSON matching AdjudicatorOutput.
 ```
@@ -881,9 +886,9 @@ counter-positions, and the question. It reasons that:
 - Confidence in either side is moderate, not high.
 - adjudicator_confidence = 0.55, below 0.6.
 
-Verdict auto-promoted to `escalate_human`. The pair is written to
-`data/human_queue/<run_id>.csv` with the full history attached for
-Benjy to review.
+Verdict auto-promoted to `abstain` (D51, formerly `escalate_human`). The
+pair finalises as `inconclusive` under the D37 floor, with terminal
+status `abstained_adjudicator` (D52) and the full history logged.
 
 ---
 

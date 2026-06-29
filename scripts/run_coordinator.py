@@ -383,14 +383,15 @@ def _finalise_after_adjudication(
     """
     last_researcher_output = researcher_outputs[-1]
 
-    if adj_output is None or adj_output.adjudicator_verdict == "escalate_human":
-        # The Adjudicator could not pick a winner. Returning the last
-        # Researcher output verbatim let a sub-floor `no` (e.g. R3 at 0.45)
-        # become a finalised commit. That defeats the D37 abstain floor: we
-        # want an honest abstention on retry exhaustion, not whichever guess
-        # the last Researcher attempt happened to produce. Keep the human-
-        # review terminal status, but write `inconclusive` as the answer so
-        # the headline metric is not polluted by a sub-floor fallback.
+    if adj_output is None or adj_output.adjudicator_verdict == "abstain":
+        # The Adjudicator abstained (D51, formerly escalate_human): it could
+        # not pick a winner. Returning the last Researcher output verbatim let
+        # a sub-floor `no` (e.g. R3 at 0.45) become a finalised commit. That
+        # defeats the D37 abstain floor: we want an honest abstention on retry
+        # exhaustion, not whichever guess the last Researcher attempt happened
+        # to produce. Keep the `abstained_adjudicator` terminal status (D52,
+        # formerly `escalated_adjudicator`), but write `inconclusive` as the
+        # answer so the headline metric is not polluted by a sub-floor fallback.
         chosen = ResearcherOutput(
             answer="inconclusive",
             answer_explanation=(
@@ -402,7 +403,7 @@ def _finalise_after_adjudication(
             retrieval_confidence=last_researcher_output.retrieval_confidence,
             answer_confidence=last_researcher_output.answer_confidence,
         )
-        return ("escalated_adjudicator", chosen)
+        return ("abstained_adjudicator", chosen)
 
     # All resolved verdicts share the same finalisation logic: use the
     # Adjudicator's authoritative answer and evidence, not the raw researcher
@@ -1596,10 +1597,12 @@ def main() -> int:
                              "/ metric / scale). Only valid when --strategy is "
                              "verifier-disprove.")
     parser.add_argument("--max-retries", type=int, default=3)
-    parser.add_argument("--provider", default="auto",
+    parser.add_argument("--provider", default="diy",
                         choices=["auto", "tavily", "brave", "diy", "serper_raw"],
-                        help="Search provider the Researcher and Verifier use "
-                             "(D27 experiment knob). Default 'auto' = Tavily then Brave.")
+                        help="Search provider the Researcher and Verifier use. "
+                             "Production is DIY only (D43); 'auto' is an alias for "
+                             "'diy'. tavily/brave are retained only to reproduce the "
+                             "EXP-1 provider comparison.")
     parser.add_argument("--max-results-per-query", type=int, default=5,
                         help="Results fetched per search query (cost/recall knob).")
     parser.add_argument("--num-queries", type=int, default=None,

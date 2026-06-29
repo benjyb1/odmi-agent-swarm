@@ -55,8 +55,8 @@ def test_is_committed():
     assert is_committed(_o(status="accepted_by_adjudicator", final="no")) is True
     # An abstention is not a commit even on a committed status.
     assert is_committed(_o(status="accepted_by_adjudicator", final="inconclusive")) is False
-    # An escalation is not a commit.
-    assert is_committed(_o(status="escalated_adjudicator", final="inconclusive")) is False
+    # An abstention is not a commit.
+    assert is_committed(_o(status="abstained_adjudicator", final="inconclusive")) is False
     assert is_committed(_o(status="agent_failure", final=None)) is False
 
 
@@ -73,7 +73,7 @@ def test_is_false_positive():
     # Committed and right.
     assert is_false_positive(_o(match="match")) is False
     # Abstained and wrong is not a false positive (no commit was made).
-    assert is_false_positive(_o(status="escalated_adjudicator",
+    assert is_false_positive(_o(status="abstained_adjudicator",
                                 final="inconclusive", match="differ")) is False
 
 
@@ -99,7 +99,7 @@ def test_arm_summary_balance_aware():
         _o("Q3", gold="no", final="no", match="match",
            status="accepted_by_verifier", calls=8),        # no recovered
         _o("Q4", gold="yes", final="inconclusive", match="differ",
-           status="escalated_adjudicator", calls=2),        # abstained
+           status="abstained_adjudicator", calls=2),        # abstained
     ]
     s = arm_summary(outcomes)
     assert s["n"] == 4
@@ -146,7 +146,7 @@ def _paired_fixture():
         _o("Q2", gold="no", final="yes", match="differ",
            status="accepted_by_verifier", calls=6),         # FP
         _o("Q3", gold="no", final="inconclusive", match="differ",
-           status="escalated_adjudicator", calls=8),         # abstained
+           status="abstained_adjudicator", calls=8),         # abstained
     ]
     chained = [
         _o("Q1", arm="chained", gold="yes", final="yes", match="match",
@@ -198,7 +198,7 @@ def test_joint_verdict_fails_when_false_positive_rises():
     # Chained recovers more but commits a fresh wrong answer on a no-gold pair.
     baseline = [
         _o("Q1", gold="yes", final="inconclusive", match="differ",
-           status="escalated_adjudicator", calls=6),         # abstained
+           status="abstained_adjudicator", calls=6),         # abstained
         _o("Q2", gold="no", final="no", match="match",
            status="accepted_by_verifier", calls=6),
     ]
@@ -317,7 +317,7 @@ def test_load_outcomes_dedups_duplicate_rows_within_arm(tmp_path):
         # A second, later baseline finalisation of the same pair, disagreeing.
         conn.execute(
             "INSERT INTO phase2_final VALUES (?,?,?,?,?,?)",
-            ("b1b", "Q1", "MT", "escalated_adjudicator", "no", "exp7"),
+            ("b1b", "Q1", "MT", "abstained_adjudicator", "no", "exp7"),
         )
         conn.execute(
             "INSERT INTO phase2_researcher_runs VALUES (?,?)", ("b1b", "baseline")

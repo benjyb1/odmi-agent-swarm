@@ -52,8 +52,9 @@ by the Verifier or the Adjudicator over the retry chain. So the dominant
 abstention is verification attrition, not retrieval emptiness.
 
 Of the 548 inconclusive finals, 491 reached the Adjudicator. 171 ended in
-`escalate_human` (the Adjudicator declined below its 0.6 self-escalation
-floor). The rest were ratified as `inconclusive` by the Adjudicator or passed
+`abstain` (D51, formerly `escalate_human`; the Adjudicator's confidence fell
+below its 0.6 auto-promotion floor). The rest were ratified as `inconclusive` by
+the Adjudicator or passed
 through with a Verifier verdict on an answer that was already `inconclusive` by
 that point.
 
