@@ -1,0 +1,24 @@
+# Runtime dependencies for the standalone WHO/Europe speech-writer service.
+#
+# These are deliberately kept out of the MSc project's pyproject.toml (the ODMI
+# dissertation does not depend on them). Pin exact versions at deploy time:
+# the quote-gate relies on a fixed docling toolchain for byte-deterministic
+# extraction, so docling in particular must be pinned, not floated.
+
+# Core (always needed)
+httpx>=0.27
+pydantic>=2.0
+python-dotenv>=1.0
+
+# Extraction + retrieval (open-source, permissively licensed; run locally)
+docling>=2.105          # pin exactly at deploy; see the determinism note above
+lancedb>=0.13
+sentence-transformers>=3.0
+
+# MCP server: the Copilot Studio integration surface
+mcp>=1.2
+
+# Model backend for WHO's tenant (azure_openai). The "claude" development
+# backend instead needs `anthropic` plus the parent ODMI repo's `agents`
+# package, and is not used in a standalone WHO deployment.
+openai>=1.40

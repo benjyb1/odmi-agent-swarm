@@ -28,9 +28,13 @@ IRIS EURO subtree  ->  Docling extraction  ->  provenance chunking
 | Docling extraction + provenance | `extract.py` | Built, verified live (page/bbox/charspan, deterministic hash, OCR gate) |
 | Chunking + LanceDB index | `index.py` | Built; end-to-end run via `demo.py` |
 | Hybrid retrieval + rerank + abstain | `search.py` | Built; end-to-end run via `demo.py` |
-| Agent swarm (researcher/verifier/adjudicator) | — | Not started; forks `agents/` |
-| Coordinator + briefing-pack assembly | — | Not started |
-| Faithfulness eval harness | — | Not started |
+| Agent swarm (researcher/verifier/attribution/adjudicator) | `swarm.py` | Built; attribution/relevance gate added (closes the misattribution gap) |
+| Model seam (Claude proxy / Azure OpenAI) | `llm.py` | Built; backend chosen by `WHO_LLM_BACKEND`. Azure path written, not yet live-validated |
+| Dual-format rendering (bullets / paragraphs) | `render.py` | Built; verbatim quotes always carried in a sources block |
+| Persistent per-country index + refresh | `build.py` | Built (dependency-injected, tested); durable index off `/tmp` |
+| MCP server (`who_brief` tool) | `server.py` | Built; handler tested. Live MCP run needs the `mcp` package |
+| Faithfulness eval harness | `faithfulness.py` | Built; atomic-claim, 3-way, quote-anchored, optional cross-family grader |
+| Packaging for handover | `Dockerfile`, `requirements.txt`, `DEPLOY.md` | Built; Copilot Studio deployment guide |
 
 ## Run
 

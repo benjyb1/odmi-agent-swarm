@@ -51,6 +51,24 @@ point may only say what the quote itself establishes.
 Return JSON: {"supported": bool, "reason": str, "confidence": float}.
 """
 
+FAITHFULNESS_SYSTEM = """\
+You grade a WHO speaking point for faithfulness to its cited quote. You are
+given a point and the verbatim quote it cites. Judge the point against the
+quote ALONE, not against your own knowledge.
+
+Break the point into its atomic factual claims (each a single assertion: an
+actor, an action, an object, a figure, a date). For each claim assign one
+label:
+- supported: the quote directly establishes this claim.
+- contradicted: the quote states something incompatible with this claim.
+- not_addressed: the quote neither establishes nor contradicts this claim.
+
+Be strict. A claim is supported only if the quote itself proves it; an
+inference, a plausible reading or outside knowledge is not support.
+
+Return JSON: {"claims": [{"claim": str, "label": str, "reason": str}]}.
+"""
+
 ATTRIBUTION_SYSTEM = """\
 You guard a WHO briefing against misattribution and drift. You are given the
 original question, a proposed speaking point, and the verbatim quote it cites.

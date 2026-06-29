@@ -87,17 +87,31 @@ North Macedonia gave strong, specific, on-target points. Two issues stand:
 - One query: `uv run --with docling --with lancedb --with sentence-transformers python -m who_speech.swarm kyrgyzstan_financing`
 - All five: `uv run --with docling --with lancedb --with sentence-transformers python -m who_speech.run_all`
 
+## Packaging for handover (built; see who_speech/DEPLOY.md)
+The swarm is now wrapped for deployment into a Copilot Studio space:
+- Model seam (`llm.py`): all swarm calls go through `structured()`, which
+  dispatches on `WHO_LLM_BACKEND` (claude proxy for dev, azure_openai for WHO).
+- Attribution/relevance gate (`swarm.check_attribution`): runs after the
+  verifier; drops a point unless the action is WHO's and on-topic. This closes
+  the Ukraine/Red Cross gap.
+- Dual-format output (`render.py`): bullets or speech paragraphs from one
+  verified set; verbatim quotes always carried in a sources block.
+- Persistent index + refresh (`build.py`, `python -m who_speech.build <country>`).
+- Faithfulness harness (`faithfulness.py`): atomic-claim, three-way,
+  quote-anchored, optional cross-family grader.
+- MCP server (`server.py`, tool `who_brief`) + `Dockerfile` + `requirements.txt`.
+- Unit tests: `tests/test_who_*.py` (run `uv run pytest tests/test_who_*.py`).
+
 ## Next steps (pick up here)
-1. (Recommended) Add a relevance/attribution check to the verifier or planner:
-   confirm the point's actor is WHO and that it answers the query, not just that
-   the quote supports it. Re-run Ukraine.
-2. Verify all nine points (only five were sampled) before anything reaches the
-   WHO contact.
-3. Decide the Ukraine point (drop or reframe) and, if Ukraine stays a demo
-   country, build a deeper index than the 8-document English slice.
-4. Not yet built: the faithfulness evaluation harness (atomic-claim, three-way
-   supported/contradicted/not-addressed, quote-anchored, plus a cross-family
-   Mistral check) and a briefing-pack UI.
+1. Validate the Azure OpenAI backend against a live deployment, and re-run the
+   faithfulness harness to confirm the model holds the verbatim/abstain line
+   after the swap.
+2. Run the faithfulness harness over a live run and verify all surviving points
+   (the original five-of-nine sample predates the attribution gate; re-run).
+3. Build a deeper index (raise `WHO_MAX_DOCS`, widen `WHO_INDEX_LANGUAGES`) for
+   the countries the WHO contact cares about, and validate native-language
+   retrieval before switching it on.
+4. Re-run Ukraine now the attribution gate exists; decide drop or reframe.
 
 Follow CLAUDE.md: UK English, no em dashes, worktree isolation for file changes,
 commit small and often.
