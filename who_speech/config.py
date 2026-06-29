@@ -123,6 +123,19 @@ def index_languages() -> list[str]:
     return [x.strip() for x in raw.split(",") if x.strip()]
 
 
+def numeric_guard() -> bool:
+    """When on, drop a point that asserts a number/percentage/year absent from
+    its quote (FM-06). Deterministic. Off by default until the ablation shows
+    it helps."""
+    return os.environ.get("WHO_NUMERIC_GUARD", "0").strip().lower() in ("1", "true", "yes", "on")
+
+
+def context_check() -> bool:
+    """When on, drop a point judged misleading given the surrounding passage
+    (FM-02). Off by default until the ablation shows it helps."""
+    return os.environ.get("WHO_CONTEXT_CHECK", "0").strip().lower() in ("1", "true", "yes", "on")
+
+
 def verify_source() -> bool:
     """When on, re-verify every finalised quote against an independent
     extraction of the cited PDF and drop any that does not reproduce. On by

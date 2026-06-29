@@ -51,6 +51,26 @@ point may only say what the quote itself establishes.
 Return JSON: {"supported": bool, "reason": str, "confidence": float}.
 """
 
+CONTEXT_SYSTEM = """\
+You guard a WHO briefing against quotes taken out of context. You are given a
+proposed point, the verbatim quote it cites, and the SURROUNDING PASSAGE the
+quote was drawn from.
+
+Decide whether the point is misleading once the surrounding context is taken
+into account. Set misleading=true if the passage, for example:
+- negates or contradicts the quoted clause nearby ("...did not...", "failed to");
+- makes the quoted action conditional, hypothetical, planned or recommended
+  rather than done;
+- attributes the statement to someone other than WHO, or reports another body's
+  view or a quoted source;
+- restricts the scope (a pilot, one region, one year, one sub-group) in a way
+  the point drops.
+
+If the point fairly represents the quote in its context, set misleading=false.
+
+Return JSON: {"misleading": bool, "reason": str}.
+"""
+
 FAITHFULNESS_SYSTEM = """\
 You grade a WHO speaking point for faithfulness to its cited quote. You are
 given a point and the verbatim quote it cites. Judge the point against the

@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from who_speech import config, llm, prompts
+from who_speech import config, guards, llm, prompts
 
 if TYPE_CHECKING:
     from who_speech.search import Passage, Retriever
@@ -252,6 +252,24 @@ def orchestrate(query: str, retriever: "Retriever", *, verbose: bool = True) -> 
                 why = attribution.reason[:60] if attribution else "attribution error"
                 print(f"[attribution reject] {aspect[:40]}: {why}")
             continue
+
+        # Numeric/date guard (FM-06): every figure in the point must be in the quote.
+        if config.numeric_guard():
+            ok, missing = guards.numbers_supported(draft.point, draft.verbatim_quote)
+            if not ok:
+                if verbose:
+                    print(f"[numeric reject] {aspect[:40]}: missing {missing}")
+                continue
+
+        # Context-faithfulness gate (FM-02): not misleading given the passage.
+        if config.context_check():
+            ctx = guards.check_context(
+                draft.point, draft.verbatim_quote, source.parent_text or source.text)
+            if ctx is None or ctx.misleading:
+                if verbose:
+                    why = ctx.reason[:50] if ctx else "context error"
+                    print(f"[context reject] {aspect[:40]}: {why}")
+                continue
 
         verified.append(
             BriefingPoint(
