@@ -41,7 +41,11 @@ LegacyAnswerLiteral = Literal[
     "yes", "no", "other", "not_applicable", "inconclusive"
 ]
 RubricTier = Literal["Highly Likely", "Likely", "Unlikely", "Very Unlikely"]
-LanguageRoute = Literal["native", "deepl", "human_required"]
+# D53: `unsupported` (renamed from `human_required`) is the route when
+# neither native Claude reading nor DeepL can handle the language. There
+# is no human-translation stage; such a pair abstains. Never set in any
+# logged run to date (every row is `native`).
+LanguageRoute = Literal["native", "deepl", "unsupported"]
 VerifierStrategy = Literal[
     "verifier-disprove",
     "verifier-negation",

@@ -116,7 +116,7 @@ class ResearcherOutput(BaseModel):
     search_queries_used: list[str]
     fetched_urls: list[HttpUrl]            # what Playwright actually fetched
     domain_trust_score: Optional[float] = None    # from source validator
-    language_route_used: Literal["native", "deepl", "human_required"]
+    language_route_used: Literal["native", "deepl", "unsupported"]
     notes: Optional[str] = None
 ```
 
@@ -136,7 +136,8 @@ class ResearcherOutput(BaseModel):
   the native-capable set (populated by Phase B pilot), the model reads
   source content directly. Otherwise the content is passed through
   DeepL via the Translator helper. If both fail, route is set to
-  `human_required` and the pair is flagged.
+  `unsupported` (D53) and the pair abstains; there is no
+  human-translation stage.
 - **Claude call** via CLIProxyAPI (per D1). Native tool use enabled.
   The model can call `web_search` and `fetch_url` directly; Python
   implements both as actual API calls.
@@ -173,7 +174,7 @@ not in the model.
 | `token_budget_exceeded` | Cumulative tokens over the cap | Cap the response, log it, set `notes="truncated"`. |
 | `timeout` | Wall-clock over 60 seconds | Kill the call. Write a row with whatever fields were populated and `notes="timeout"`. |
 | `domain_untrusted` | Source validator returns a score below threshold | Do not reject. Pass the score along to the Verifier and set `notes="untrusted domain"`. |
-| `language_failure` | DeepL returns garbage or rejects the content | Fall back to native Claude reading. If still bad, set `language_route_used="human_required"`. |
+| `language_failure` | DeepL returns garbage or rejects the content | Fall back to native Claude reading. If still bad, set `language_route_used="unsupported"` (D53) and abstain. |
 | `tool_loop` | Model calls the same tool with the same args twice consecutively | Reject the third identical call, force a final-answer prompt. |
 | `max_tool_calls` | More than 5 tool calls in one run | Force a final-answer prompt. |
 | `captcha_or_block` | Playwright detects CAPTCHA or 403 | Set `notes="captcha/block"`. The Coordinator finalises this pair as an abstention (`abstained_captcha`, D52). |

@@ -374,7 +374,7 @@ CREATE TABLE language_confidence (
     benchmark_question  TEXT NOT NULL,
     native_accuracy     REAL,
     deepl_accuracy      REAL,
-    routing_decision    TEXT CHECK (routing_decision IN ('native', 'deepl', 'human_required')),
+    routing_decision    TEXT CHECK (routing_decision IN ('native', 'deepl', 'unsupported')),  -- D53: was 'human_required'; table is empty, clean replace
     tested_at           TEXT DEFAULT (datetime('now'))
 );
 
