@@ -14,6 +14,7 @@ from __future__ import annotations
 from who_speech import llm, swarm
 from who_speech.search import Passage
 
+QUERY = "What has WHO done on financing?"
 QUOTE = "WHO supported the financing reform in 2021"
 PASSAGE_TEXT = f"In context, {QUOTE}, the report notes further detail."
 
@@ -45,7 +46,8 @@ def _scripted(attribution):
                 verbatim_quote=QUOTE, passage_index=0, confidence=0.9,
             ), {}
         if usage_context == "who_speech:verifier":
-            return swarm.VerifierJudgement(supported=True, reason="quote supports point", confidence=0.9), {}
+            return swarm.VerifierJudgement(
+                supported=True, reason="quote supports point", confidence=0.9), {}
         if usage_context == "who_speech:attribution":
             return attribution, {}
         if usage_context == "who_speech:adjudicator":
@@ -55,32 +57,28 @@ def _scripted(attribution):
     return fake
 
 
+def _run(monkeypatch, attribution):
+    monkeypatch.setattr(llm, "structured", _scripted(attribution))
+    return swarm.orchestrate(QUERY, _FakeRetriever([_passage(PASSAGE_TEXT)]), verbose=False)
+
+
 def test_point_describing_a_non_who_actor_is_dropped(monkeypatch):
-    monkeypatch.setattr(
-        llm, "structured",
-        _scripted(swarm.AttributionJudgement(
-            is_who_action=False, on_topic=True, reason="describes the Red Cross, not WHO")),
-    )
-    pack = swarm.orchestrate("What has WHO done on financing?", _FakeRetriever([_passage(PASSAGE_TEXT)]), verbose=False)
+    judgement = swarm.AttributionJudgement(
+        is_who_action=False, on_topic=True, reason="describes the Red Cross, not WHO")
+    pack = _run(monkeypatch, judgement)
     assert pack.points == []
     assert pack.abstained
 
 
 def test_who_action_on_topic_point_survives(monkeypatch):
-    monkeypatch.setattr(
-        llm, "structured",
-        _scripted(swarm.AttributionJudgement(is_who_action=True, on_topic=True, reason="WHO action")),
-    )
-    pack = swarm.orchestrate("What has WHO done on financing?", _FakeRetriever([_passage(PASSAGE_TEXT)]), verbose=False)
+    judgement = swarm.AttributionJudgement(is_who_action=True, on_topic=True, reason="WHO action")
+    pack = _run(monkeypatch, judgement)
     assert len(pack.points) == 1
     assert pack.points[0].point == "WHO supported a financing reform."
 
 
 def test_off_topic_point_is_dropped(monkeypatch):
-    monkeypatch.setattr(
-        llm, "structured",
-        _scripted(swarm.AttributionJudgement(is_who_action=True, on_topic=False, reason="off topic")),
-    )
-    pack = swarm.orchestrate("What has WHO done on financing?", _FakeRetriever([_passage(PASSAGE_TEXT)]), verbose=False)
+    judgement = swarm.AttributionJudgement(is_who_action=True, on_topic=False, reason="off topic")
+    pack = _run(monkeypatch, judgement)
     assert pack.points == []
     assert pack.abstained

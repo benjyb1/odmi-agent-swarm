@@ -17,7 +17,9 @@ def test_casefold_difference_still_matches():
 
 
 def test_paraphrase_does_not_match():
-    assert not quote_in_passage("WHO backed the reform programme", "WHO supported the reform programme")
+    assert not quote_in_passage(
+        "WHO backed the reform programme", "WHO supported the reform programme"
+    )
 
 
 def test_too_short_quote_is_rejected():

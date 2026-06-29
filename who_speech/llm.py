@@ -59,7 +59,9 @@ def structured(
     )
 
 
-def _claude_structured(*, system, user_message, output_schema, usage_context, max_tokens, temperature):
+def _claude_structured(
+    *, system, user_message, output_schema, usage_context, max_tokens, temperature
+):
     """Delegate to the project's CLIProxyAPI wrapper (development backend)."""
     from agents.tools.llm import StructuredOutputError as _ClaudeErr
     from agents.tools.llm import call_for_structured
@@ -78,7 +80,9 @@ def _claude_structured(*, system, user_message, output_schema, usage_context, ma
     return obj, {"backend": "claude", "usage": usage}
 
 
-def _azure_structured(*, system, user_message, output_schema, usage_context, max_tokens, temperature):
+def _azure_structured(
+    *, system, user_message, output_schema, usage_context, max_tokens, temperature
+):
     """Call an Azure OpenAI deployment with JSON-mode structured output.
 
     Written for the production target, but exercised live only once WHO's

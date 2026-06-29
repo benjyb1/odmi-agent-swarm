@@ -69,7 +69,8 @@ def test_abstained_pack_reports_abstained():
     out = server.run_brief(
         "France", "q", "paragraphs",
         retriever_factory=lambda db: object(),
-        orchestrate_fn=lambda q, r: BriefingPack(query="q", points=[], abstained=True, note="nothing solid"),
+        orchestrate_fn=lambda q, r: BriefingPack(
+            query="q", points=[], abstained=True, note="nothing solid"),
         render_fn=lambda pack, fmt: "no points",
         index_exists=lambda db: True,
     )

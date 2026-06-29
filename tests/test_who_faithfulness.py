@@ -15,7 +15,8 @@ from who_speech.swarm import BriefingPack, BriefingPoint
 
 
 def _point(point, quote="a verbatim quote"):
-    return BriefingPoint(point=point, quote=quote, citation="C", iris_url="U", page=1, confidence=0.8)
+    return BriefingPoint(
+        point=point, quote=quote, citation="C", iris_url="U", page=1, confidence=0.8)
 
 
 def _pack(points):
@@ -23,7 +24,9 @@ def _pack(points):
 
 
 def _grader_returning(mapping):
-    def grader(*, system, user_message, output_schema, usage_context, max_tokens=400):
+    def grader(
+        *, system, user_message, output_schema, usage_context, max_tokens=400
+    ):
         for text, grading in mapping.items():
             if text in user_message:
                 return grading, {}

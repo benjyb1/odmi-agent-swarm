@@ -16,13 +16,13 @@ guard against a single grader's blind spots (the cross-family check).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, Literal, Optional
+from typing import TYPE_CHECKING, Callable, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from who_speech import llm, prompts
 
-if False:  # typing only; avoids importing swarm at module load
+if TYPE_CHECKING:
     from who_speech.swarm import BriefingPack
 
 Label = Literal["supported", "contradicted", "not_addressed"]

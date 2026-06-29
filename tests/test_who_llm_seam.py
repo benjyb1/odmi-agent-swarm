@@ -38,7 +38,9 @@ def test_azure_backend_routes_to_azure_not_claude(monkeypatch):
         raise AssertionError("claude path must not be called when backend=azure_openai")
 
     monkeypatch.setattr(llm, "_claude_structured", boom)
-    monkeypatch.setattr(llm, "_azure_structured", lambda **kw: (Out(ok=True), {"backend": "azure_openai"}))
+    monkeypatch.setattr(
+        llm, "_azure_structured", lambda **kw: (Out(ok=True), {"backend": "azure_openai"})
+    )
     _obj, meta = llm.structured(system="s", user_message="u", output_schema=Out, usage_context="x")
     assert meta["backend"] == "azure_openai"
 
