@@ -647,7 +647,7 @@ verifier → END                  if verdict=="pass"
 verifier → researcher           if verdict=="fail" AND retry_count<3
 verifier → adjudicator          if verdict=="fail" AND retry_count==3
 adjudicator → END               if adjudicator_verdict in {researcher_correct, verifier_correct, neither}
-adjudicator → human_queue       if adjudicator_verdict=="escalate_human"
+adjudicator → human_queue       if adjudicator_verdict=="abstain"   # D51: renamed from escalate_human
 researcher → human_queue        if captcha_or_block detected
 human_queue → END               (always terminal for this pair)
 ```
@@ -710,7 +710,7 @@ adjudicator decides or escalates).
 | `verifier_failure` | Verifier returns an unrecoverable error | Treat as Verifier fail. Increment retry_count. Continue. |
 | `max_retries_reached` | retry_count hits 3 with no accepted answer | Hand off to the Adjudicator (Section 5.10), not directly to END. |
 | `adjudicator_failure` | Adjudicator returns an unrecoverable error | Escalate to human queue with `final_failure_reason="adjudicator_failure"`. |
-| `adjudicator_low_confidence` | Adjudicator returns `escalate_human` | Write to human queue with the full history attached. |
+| `adjudicator_low_confidence` | Adjudicator returns `abstain` (D51, formerly `escalate_human`) | Write to human queue with the full history attached. |
 | `captcha_or_block` | Researcher's notes contain the CAPTCHA marker | Mark captcha_escalated=True. Write the pair to the human queue. |
 | `coordinator_crash` | Out of scope at this version | Manual rerun. A resume-from-state mechanism is deferred. |
 
@@ -779,7 +779,7 @@ class AdjudicatorOutput(BaseModel):
         "researcher_correct",
         "verifier_correct",
         "neither",
-        "escalate_human",
+        "abstain",                # D51: renamed from escalate_human
     ]
     adjudicator_answer: Optional[Literal["yes", "no", "other", "not_applicable"]]
     adjudicator_confidence: float            # 0.0-1.0
@@ -802,16 +802,17 @@ class AdjudicatorOutput(BaseModel):
    `verifier_correct`, or `neither`, then `adjudicator_answer`,
    `chosen_source_url`, and `chosen_evidence_quote` are populated.
 4. If `adjudicator_confidence < 0.6`, the verdict is auto-promoted to
-   `escalate_human` regardless of the model's nominal choice.
+   `abstain` (D51, formerly `escalate_human`) regardless of the model's
+   nominal choice.
 5. Within token budget (5000 input + 800 output) and wall-clock 30s.
 
 #### 5.11.6 Fallbacks
 
 | Code | Trigger | Handler |
 |---|---|---|
-| `schema_invalid` | Output fails Pydantic | One retry; if still fails, force `escalate_human`. |
-| `low_confidence` | adjudicator_confidence below 0.6 | Promote to `escalate_human`. |
-| `timeout` | 30 seconds | Force `escalate_human`. |
+| `schema_invalid` | Output fails Pydantic | One retry; if still fails, force `abstain`. |
+| `low_confidence` | adjudicator_confidence below 0.6 | Promote to `abstain`. |
+| `timeout` | 30 seconds | Force `abstain`. |
 
 #### 5.11.7 Prompt template (v1)
 
@@ -846,11 +847,11 @@ Decide one of:
 - verifier_correct: the Verifier's counter-position is the right answer.
 - neither: both are wrong; the correct answer is something else (and
   you must say what).
-- escalate_human: the case is too uncertain to settle without human
-  judgement.
+- abstain: the case is too uncertain to settle on the evidence
+  gathered.
 
 Report adjudicator_confidence in [0.0, 1.0]. If your confidence is
-below 0.6 your verdict will be auto-promoted to escalate_human.
+below 0.6 your verdict will be auto-promoted to abstain.
 
 Return JSON matching AdjudicatorOutput.
 ```
@@ -881,9 +882,9 @@ counter-positions, and the question. It reasons that:
 - Confidence in either side is moderate, not high.
 - adjudicator_confidence = 0.55, below 0.6.
 
-Verdict auto-promoted to `escalate_human`. The pair is written to
-`data/human_queue/<run_id>.csv` with the full history attached for
-Benjy to review.
+Verdict auto-promoted to `abstain` (D51, formerly `escalate_human`). The
+pair finalises as `inconclusive` under the D37 floor, with terminal
+status `escalated_adjudicator` and the full history logged for review.
 
 ---
 

@@ -283,7 +283,7 @@ def adjudicator_value(qshape, gold, researcher, adjudications, finals) -> dict:
             (r for r in reversed(attempts) if is_definite(r["answer"])), None
         )
         last_ok = last_def is not None and answers_match(last_def["answer"], g, shape)
-        if a["adjudicator_verdict"] == "escalate_human" or not is_definite(a["adjudicator_answer"]):
+        if a["adjudicator_verdict"] in ("abstain", "escalate_human") or not is_definite(a["adjudicator_answer"]):
             flip[("last_" + ("correct" if last_ok else "not"), "adj_abstain")] += 1
             continue
         adj_ok = answers_match(a["adjudicator_answer"], g, shape)

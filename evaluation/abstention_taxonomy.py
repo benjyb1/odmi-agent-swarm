@@ -174,9 +174,14 @@ def main():
         last_ver = ver[-1] if ver else None
         ver_rej_all = " ".join((v["rejection_reason"] or "") for v in ver).lower()
 
-        # adjudicator signals
+        # adjudicator signals. D51 renamed the abstain verdict from
+        # `escalate_human`; legacy rows keep the old string, so match both.
         adj_verdicts = [a["adjudicator_verdict"] for a in adj]
-        escalated_human = "escalate_human" in adj_verdicts or f["terminal_status"] == "escalated_adjudicator"
+        adj_abstained = (
+            "abstain" in adj_verdicts
+            or "escalate_human" in adj_verdicts
+            or f["terminal_status"] == "escalated_adjudicator"
+        )
 
         # confidence
         ans_conf = f["final_answer_confidence"]
@@ -270,7 +275,7 @@ def main():
                 ret_conf=ret_conf,
                 retry_count=f["retry_count"],
                 ever_committed=ever_committed,
-                escalated_human=escalated_human,
+                adj_abstained=adj_abstained,
                 dimension=dim,
                 gt_resp=gt_resp,
                 gt_committed=gt_committed,
@@ -315,7 +320,7 @@ def main():
             fieldnames=[
                 "pair", "exp", "cat", "dimension", "terminal_status", "final_answer",
                 "ans_conf", "ret_conf", "retry_count", "ever_committed",
-                "escalated_human", "gt_resp", "gt_committed", "reason",
+                "adj_abstained", "gt_resp", "gt_committed", "reason",
                 "explan_snip", "notes_snip",
             ],
         )

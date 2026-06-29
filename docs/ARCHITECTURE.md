@@ -57,7 +57,7 @@ confidence-gate programme, and the EXP-A/B/C prompt programme).
 
 | Knob | Current value | Set by | Status |
 |---|---|---|---|
-| Candidate selection | standard (researcher_correct / verifier_correct / neither / escalate_human) | EXP-16 (free choice of any attempt gained nothing) | kept |
+| Candidate selection | standard (researcher_correct / verifier_correct / neither / abstain) | EXP-16 (free choice of any attempt gained nothing) | kept |
 | Finalisation answer | the Adjudicator's own answer, not the last Researcher output | D32 | adopted |
 | Commit-confidence floor | 0.65; abstain (`inconclusive`) below it | D37; confirmed by EXP-10 pooled over 7 countries (n=360, recovered-precision 0.76 at 0.50, under the 0.80 bar) | adopted |
 | Evidence commit gate | none beyond the D37 floor | EXP-25 entailment gate and EXP-27 argue-the-opposite both null+harmful (they raise negative-gold FP); no evidence-grounded gate catches the confident FPs | kept (the D37 floor is the precision control) |

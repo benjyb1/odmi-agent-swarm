@@ -383,14 +383,15 @@ def _finalise_after_adjudication(
     """
     last_researcher_output = researcher_outputs[-1]
 
-    if adj_output is None or adj_output.adjudicator_verdict == "escalate_human":
-        # The Adjudicator could not pick a winner. Returning the last
-        # Researcher output verbatim let a sub-floor `no` (e.g. R3 at 0.45)
-        # become a finalised commit. That defeats the D37 abstain floor: we
-        # want an honest abstention on retry exhaustion, not whichever guess
-        # the last Researcher attempt happened to produce. Keep the human-
-        # review terminal status, but write `inconclusive` as the answer so
-        # the headline metric is not polluted by a sub-floor fallback.
+    if adj_output is None or adj_output.adjudicator_verdict == "abstain":
+        # The Adjudicator abstained (D51, formerly escalate_human): it could
+        # not pick a winner. Returning the last Researcher output verbatim let
+        # a sub-floor `no` (e.g. R3 at 0.45) become a finalised commit. That
+        # defeats the D37 abstain floor: we want an honest abstention on retry
+        # exhaustion, not whichever guess the last Researcher attempt happened
+        # to produce. Keep the `escalated_adjudicator` terminal status, but
+        # write `inconclusive` as the answer so the headline metric is not
+        # polluted by a sub-floor fallback.
         chosen = ResearcherOutput(
             answer="inconclusive",
             answer_explanation=(

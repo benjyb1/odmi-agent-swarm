@@ -240,7 +240,8 @@ CREATE TABLE phase2_adjudications (
                                     'researcher_correct',
                                     'verifier_correct',
                                     'neither',
-                                    'escalate_human',
+                                    'abstain',          -- D51
+                                    'escalate_human',   -- D51 legacy: pre-rename rows only
                                     'attempt_correct'
                                 )),
     adjudicator_answer          TEXT,

@@ -64,7 +64,13 @@ AdjudicatorVerdict = Literal[
     "researcher_correct",
     "verifier_correct",
     "neither",
-    "escalate_human",
+    # D51: the Adjudicator declines to commit a label because the case is
+    # too uncertain to settle on the evidence gathered. Renamed from the
+    # old `escalate_human`: no human is ever in the loop in this automated
+    # swarm, so the verdict is an abstention, not an escalation. Legacy
+    # rows keep `escalate_human` and the DB CHECK still accepts it, but no
+    # new run emits it.
+    "abstain",
     # EXP-16 free-selection arm only. `researcher_correct` is pinned to the
     # Researcher's FINAL attempt, so it cannot commit an earlier attempt that
     # happened to be right. `attempt_correct` lets the Adjudicator name ANY of
@@ -397,7 +403,7 @@ class AdjudicatorOutput(BaseModel):
         if picks_winner and self.adjudicator_answer is None:
             raise ValueError(
                 "adjudicator_answer is required when adjudicator_verdict "
-                "is not 'escalate_human'"
+                "is not 'abstain'"
             )
         # EXP-16: an attempt_correct verdict must name which attempt.
         if (

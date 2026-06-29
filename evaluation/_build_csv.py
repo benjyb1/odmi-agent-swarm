@@ -21,7 +21,7 @@ C = {
  "347150a5-0014-457f-88a5-34cf00d6bfe5":("verifier_substring_gate_collapse","evidence_absent_or_self_report","inconclusive_collapse","medium",
    "I5: researcher rt0='yes' then rt1='inconclusive'; 1/2 substring fail. ODMI is a 4286-char self-report (Bothorel report). Found-then-abandoned."),
  "541a3b6e-57e5-4209-9fab-d2927865ad12":("verifier_substring_gate_collapse","zero_weight_descriptive","evidence_absent_or_self_report","medium",
-   "I8-a: researcher rt0='yes' (automated impact dashboards) then collapsed; verifier substring_check=fail; escalate_human. ODMI self-report cites data.gouv.fr/fr/dashboard (public). Zero score weight."),
+   "I8-a: researcher rt0='yes' (automated impact dashboards) then collapsed; verifier substring_check=fail; abstain. ODMI self-report cites data.gouv.fr/fr/dashboard (public). Zero score weight."),
  "1a39d65d-142f-457a-8315-32fe9413d510":("verifier_substring_gate_collapse","fetch_blocked_403","evidence_absent_or_self_report","medium",
    "P13 EE: researcher rt1='yes' then reverted; 3/3 substring fail, 403. ODMI self-report (expert community ~700 people) - a count not on open web; found-then-killed."),
  "cc48a133-680a-4302-ba97-7a96fda1cb18":("verifier_substring_gate_collapse","fetch_blocked_403","evidence_absent_or_self_report","high",
