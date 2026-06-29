@@ -121,3 +121,10 @@ def index_languages() -> list[str]:
     coverage once cross-lingual retrieval is validated."""
     raw = os.environ.get("WHO_INDEX_LANGUAGES", "en")
     return [x.strip() for x in raw.split(",") if x.strip()]
+
+
+def verify_source() -> bool:
+    """When on, re-verify every finalised quote against an independent
+    extraction of the cited PDF and drop any that does not reproduce. Off by
+    default (it adds a per-point PDF re-download); recommended on in production."""
+    return os.environ.get("WHO_VERIFY_SOURCE", "0").strip().lower() in ("1", "true", "yes", "on")

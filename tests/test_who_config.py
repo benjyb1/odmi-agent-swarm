@@ -31,3 +31,13 @@ def test_index_root_reads_env(monkeypatch):
 def test_index_languages_parse_csv(monkeypatch):
     monkeypatch.setenv("WHO_INDEX_LANGUAGES", "en, fr ,de")
     assert config.index_languages() == ["en", "fr", "de"]
+
+
+def test_verify_source_defaults_off(monkeypatch):
+    monkeypatch.delenv("WHO_VERIFY_SOURCE", raising=False)
+    assert config.verify_source() is False
+
+
+def test_verify_source_reads_env(monkeypatch):
+    monkeypatch.setenv("WHO_VERIFY_SOURCE", "1")
+    assert config.verify_source() is True

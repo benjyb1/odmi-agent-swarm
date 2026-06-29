@@ -69,6 +69,15 @@ def test_paragraphs_composer_prose_used_but_quotes_still_carried():
     assert "EXACT QUOTE TEXT." in out           # verbatim quote still carried
 
 
+def test_render_tidies_quote_for_display():
+    p = BriefingPoint(
+        point="P", quote="payments.\n•  Catastrophic spending",
+        citation="C", iris_url="U", page=1, confidence=0.5)
+    out = render_bullets(_pack([p]))
+    assert "payments. Catastrophic spending" in out
+    assert "•" not in out
+
+
 def test_render_rejects_unknown_format():
     with pytest.raises(ValueError):
         render(_pack([_point()]), "sonnet")

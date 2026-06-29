@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Callable, Optional
 
+from who_speech.verify import tidy_quote
+
 if TYPE_CHECKING:
     from who_speech.swarm import BriefingPack
 
@@ -34,7 +36,7 @@ def _source_lines(pack: "BriefingPack") -> list[str]:
     lines: list[str] = []
     for p in pack.points:
         loc = f" (p.{p.page})" if p.page else ""
-        lines.append(f'- "{p.quote}"\n  {p.citation}\n  {p.iris_url}{loc}')
+        lines.append(f'- "{tidy_quote(p.quote)}"\n  {p.citation}\n  {p.iris_url}{loc}')
     return lines
 
 
@@ -47,7 +49,7 @@ def render_bullets(pack: "BriefingPack") -> str:
         loc = f" (p.{p.page})" if p.page else ""
         blocks.append(
             f"- {p.point}\n"
-            f'  "{p.quote}"\n'
+            f'  "{tidy_quote(p.quote)}"\n'
             f"  {p.citation}\n"
             f"  {p.iris_url}{loc}"
         )

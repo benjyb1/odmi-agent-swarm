@@ -52,11 +52,15 @@ def run_brief(
     render_fn: Callable,
     index_exists: Callable,
     index_root: Optional[str] = None,
+    verify_fn: Optional[Callable] = None,
 ) -> dict:
     """Produce a briefing for a country, in the requested format.
 
     Returns a JSON-serialisable dict with status (ok / abstained / no_index),
     the rendered text, and the structured verified points with their sources.
+    When ``verify_fn`` is supplied, the pack passes through it before rendering
+    (the independent-source quote check), so points whose quotes do not
+    reproduce in the cited PDF are dropped.
     """
     if fmt not in render.FORMATS:
         raise ValueError(f"unknown format {fmt!r}; expected one of {render.FORMATS}")
@@ -70,6 +74,8 @@ def run_brief(
         }
     retriever = retriever_factory(db_path)
     pack = orchestrate_fn(question, retriever)
+    if verify_fn is not None:
+        pack = verify_fn(pack)
     text = render_fn(pack, fmt)
     status = "abstained" if (pack.abstained or not pack.points) else "ok"
     return {
@@ -79,10 +85,37 @@ def run_brief(
     }
 
 
+def _make_verify_fn(db_path: str):
+    """A verify_fn that re-checks each quote against an independent extraction
+    of the cited PDF and drops the points that do not reproduce."""
+    from who_speech import verify
+    from who_speech.iris import IrisClient
+    from who_speech.swarm import BriefingPack
+
+    def verify_fn(pack):
+        with IrisClient() as iris:
+            resolver = verify.make_source_resolver(db_path, iris)
+            result = verify.verify_pack(pack, source_text_for=resolver)
+        return BriefingPack(
+            query=pack.query, points=result.points,
+            abstained=not result.points,
+            note=pack.note if result.points else "no points reproduced in source",
+        )
+
+    return verify_fn
+
+
 def _real_brief(country: str, question: str, fmt: str = "bullets") -> dict:
     """run_brief wired to the real retrieval stack and swarm."""
+    from who_speech import config
+    from who_speech.build import index_path_for
+    from who_speech.countries import resolve_country
     from who_speech.search import Retriever
     from who_speech.swarm import orchestrate
+
+    verify_fn = None
+    if config.verify_source():
+        verify_fn = _make_verify_fn(index_path_for(resolve_country(country)))
 
     return run_brief(
         country, question, fmt,
@@ -90,6 +123,7 @@ def _real_brief(country: str, question: str, fmt: str = "bullets") -> dict:
         orchestrate_fn=lambda q, r: orchestrate(q, r, verbose=False),
         render_fn=lambda pack, f: render.render(pack, f),
         index_exists=_default_index_exists,
+        verify_fn=verify_fn,
     )
 
 

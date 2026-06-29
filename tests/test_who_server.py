@@ -77,6 +77,23 @@ def test_abstained_pack_reports_abstained():
     assert out["status"] == "abstained"
 
 
+def test_verify_fn_filters_points_and_can_force_abstain():
+    def verify_fn(pack):
+        return BriefingPack(
+            query=pack.query, points=[], abstained=True, note="failed source verification")
+
+    out = server.run_brief(
+        "France", "q", "bullets",
+        retriever_factory=lambda db: object(),
+        orchestrate_fn=lambda q, r: _pack_with_point(),
+        render_fn=lambda pack, fmt: "x",
+        index_exists=lambda db: True,
+        verify_fn=verify_fn,
+    )
+    assert out["status"] == "abstained"
+    assert out["points"] == []
+
+
 def test_invalid_format_raises():
     with pytest.raises(ValueError):
         server.run_brief(
