@@ -31,10 +31,13 @@ _TIDY_RE = re.compile("[•·●◦‣▪­​‌﻿]")
 
 
 def loose_norm(s: str) -> str:
-    """Artifact-tolerant normalisation: drop hyphens/bullets/zero-width, collapse
-    whitespace, casefold. For matching only, never for display."""
+    """Artifact-tolerant normalisation: drop hyphens/bullets/zero-width and ALL
+    whitespace, then casefold. Removing whitespace (not just collapsing it) is
+    what makes a line-break hyphen survive: pypdf renders "out-of- pocket"
+    (hyphen then space) where Docling joined "out-ofpocket"; both reduce to
+    "outofpocket". For matching only, never for display."""
     s = _DROP_RE.sub("", s or "")
-    return " ".join(s.split()).casefold()
+    return "".join(s.split()).casefold()
 
 
 def quote_reproduces(quote: str, source_text: str, min_len: int = 15) -> bool:

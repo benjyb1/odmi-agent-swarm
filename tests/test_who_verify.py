@@ -47,6 +47,14 @@ def test_reproduces_despite_dropped_bullet_and_newline():
     assert verify.quote_reproduces(quote, source) is True
 
 
+def test_reproduces_despite_linebreak_hyphen_with_space():
+    # pypdf renders a line-break hyphen as "out-of- pocket" (hyphen then space);
+    # Docling joined it to "out-ofpocket". Both must still match.
+    quote = "the majority of out-ofpocket payments"
+    source = "suggests the majority of out-of- pocket payments are incurred as a result"
+    assert verify.quote_reproduces(quote, source) is True
+
+
 def test_fabricated_quote_does_not_reproduce():
     quote = "WHO doubled the national health budget"
     assert verify.quote_reproduces(quote, "WHO supported the health budget review") is False
