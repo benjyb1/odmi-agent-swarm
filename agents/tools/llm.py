@@ -92,6 +92,18 @@ def _is_mistral(model: str) -> bool:
     return model.lower().startswith("mistral")
 
 
+def _rejects_temperature(model: str) -> bool:
+    """True for Claude 5 family models, which 400 on a `temperature` param.
+
+    Sonnet 5 / Fable 5 deprecate temperature entirely. Matching on the
+    family prefix (no date-suffix guessing) keeps every pre-5 model's
+    request byte-identical.
+    """
+    m = model.lower()
+    return m.startswith(("claude-sonnet-5", "claude-fable-5", "claude-opus-5",
+                         "claude-haiku-5", "claude-mythos-5"))
+
+
 def _mistral_structured_call(
     *,
     model: str,
@@ -322,15 +334,32 @@ def call_for_structured(
                 timeout_s=timeout_s,
             )
         else:
+            # CLIProxyAPI's Claude OAuth channel (7.2.45, observed 2026-07-01)
+            # REPLACES the API `system` param with the Claude Code system
+            # prompt, so any instructions sent as `system` never reach the
+            # model. Deliver the agent instructions in the user turn instead:
+            # the injected Claude Code prompt stays upstream, and our full
+            # prompt (persona, task, schema) arrives as the first thing the
+            # model reads. Verified empirically: system-only instructions were
+            # silently ignored by every model through the proxy.
+            folded_user = (
+                f"<instructions>\n{sys_text}\n</instructions>\n\n{user_text}"
+            )
+            create_kwargs = dict(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[{"role": "user", "content": folded_user}],
+                timeout=timeout_s,
+            )
+            # Claude 5 family models reject `temperature` outright
+            # (400: "`temperature` is deprecated for this model"). Omit it
+            # there; every pre-5 model keeps the explicit value so existing
+            # runs stay byte-identical.
+            if _rejects_temperature(model):
+                create_kwargs.pop("temperature")
             try:
-                response = client.messages.create(
-                    model=model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    system=sys_text,
-                    messages=[{"role": "user", "content": user_text}],
-                    timeout=timeout_s,
-                )
+                response = client.messages.create(**create_kwargs)
             except anthropic.RateLimitError as exc:
                 # Anthropic 429. Log a placeholder usage row, then raise the
                 # typed shutdown signal so the Coordinator can exit cleanly.
@@ -347,7 +376,13 @@ def call_for_structured(
                     f"Anthropic rate limit hit for model={model}: {exc}"
                 ) from exc
             served_model = response.model
-            raw_text = response.content[0].text if response.content else ""
+            # Claude 5 family responses can lead with a ThinkingBlock; take
+            # the text blocks only (a ThinkingBlock has no `.text`). Pre-5
+            # responses are a single TextBlock, so the join is byte-identical
+            # there.
+            raw_text = "".join(
+                getattr(block, "text", "") for block in (response.content or [])
+            )
             call_in = response.usage.input_tokens
             call_out = response.usage.output_tokens
 
