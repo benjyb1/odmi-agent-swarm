@@ -990,6 +990,7 @@ def coordinate(
     condition_label: str = "baseline",
     chained: bool = False,
     adjudicator_selection: str = "standard",
+    pipeline_mode: str = "trio",
     dry_run: bool = False,
     walkthrough: bool = False,
 ) -> tuple[str, Optional[ResearcherOutput]]:
@@ -1024,6 +1025,21 @@ def coordinate(
     Researcher's evidence. 'elective' is not built and raises
     NotImplementedError. The knob does not touch the substring gate or any
     verdict post-processing.
+
+    `pipeline_mode` (EXP-28) is the architecture-ablation knob. 'trio'
+    (the default) is byte-identical to production: Researcher, Verifier,
+    Adjudicator on retry exhaustion. 'no_adjudicator' runs the
+    Researcher-Verifier loop unchanged but terminates retry exhaustion in
+    an honest abstention (`abstained_no_adjudicator`) instead of calling
+    the Adjudicator; it delivers the EXP-15 design. 'researcher_only'
+    removes the verification layer entirely: the Researcher's answer
+    commits when it is a real label at or above the D37 confidence floor
+    (`accepted_researcher_only`); a sub-floor answer retries with a
+    floor-feedback message, an `inconclusive` retries per D35, and
+    exhaustion abstains (`abstained_researcher_only`). The honesty layer
+    (D35 abstention retries, D37 commit floor) is retained in every mode
+    because it is a distinct mechanism from the adversarial verification
+    layer under ablation.
 
     `search_strategy` (EXP-23) is the Researcher's retrieval strategy
     (SRCH-5/6). 'narrow_then_wide' (the default) is byte-identical to
@@ -1292,6 +1308,52 @@ def coordinate(
                   flush=True)
             continue
 
+        # --- EXP-28 researcher_only arm: no verification layer ---
+        # Commit iff the answer is a real label at or above the D37 floor.
+        # A sub-floor answer retries with the same floor-feedback message
+        # the trio uses on a sub-floor Verifier pass, so the Researcher
+        # prompt pressure is identical across arms. Exhaustion breaks to
+        # the post-loop abstention finaliser.
+        if pipeline_mode == "researcher_only":
+            _ro = last_researcher_output
+            if (not _is_abstention(_ro.answer)
+                    and (_ro.answer_confidence or 0.0) >= COMMIT_CONFIDENCE_FLOOR):
+                final_status = "accepted_researcher_only"
+                _upsert_subtrio_status(
+                    subtrio_id=subtrio_id, batch_id=batch_id,
+                    question_id=question_id, country_code=country_code,
+                    stage="done", final_verdict=final_status,
+                    cumulative_cost_usd=cumulative_cost,
+                    last_message="researcher_only commit (no verifier)",
+                    ended=True,
+                )
+                _save_final_row(
+                    run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
+                    final_output=_ro, terminal_status=final_status,
+                    retry_count=retry_count, adjudicator_involved=False,
+                    captcha_escalated=False,
+                    cumulative_input_tokens=cumulative_tokens_in,
+                    cumulative_output_tokens=cumulative_tokens_out,
+                    cumulative_wall_clock_ms=cumulative_wall,
+                    cumulative_cost_usd=cumulative_cost,
+                    final_failure_reason=None,
+                )
+                return final_status, _ro
+            if attempt < max_retries:
+                feedback = VerifierFeedback(
+                    rejection_reason=(
+                        f"The answer's confidence "
+                        f"({(_ro.answer_confidence or 0.0):.2f}) is below the "
+                        f"{COMMIT_CONFIDENCE_FLOOR} commit floor. Find stronger "
+                        f"evidence or commit only if the evidence clearly "
+                        f"supports a label."
+                    ),
+                )
+                print(f"  R{attempt+1} sub-floor in researcher_only mode, "
+                      f"retrying", flush=True)
+                continue
+            break  # exhausted -> post-loop abstention finaliser
+
         # --- Verifier stage ---
         _upsert_subtrio_status(
             subtrio_id=subtrio_id, batch_id=batch_id,
@@ -1463,6 +1525,49 @@ def coordinate(
 
         # Retries exhausted → Adjudicator.
         break
+
+    # --- EXP-28 ablation arms: no Adjudicator recovery ---
+    # researcher_only and no_adjudicator terminate retry exhaustion in an
+    # honest abstention. The written answer is `inconclusive` (mirroring the
+    # D52 abstained_adjudicator finalisation), so the headline metric is not
+    # polluted by whichever sub-floor guess the last attempt happened to
+    # produce.
+    if pipeline_mode in ("researcher_only", "no_adjudicator"):
+        final_status = (
+            "abstained_researcher_only" if pipeline_mode == "researcher_only"
+            else "abstained_no_adjudicator"
+        )
+        chosen = ResearcherOutput(
+            answer="inconclusive",
+            answer_explanation=(
+                last_researcher_output.answer_explanation[:300]
+                if last_researcher_output.answer_explanation else ""
+            ),
+            evidence_quote=last_researcher_output.evidence_quote or "",
+            source_url=str(last_researcher_output.source_url),
+            retrieval_confidence=last_researcher_output.retrieval_confidence,
+            answer_confidence=last_researcher_output.answer_confidence,
+        )
+        _upsert_subtrio_status(
+            subtrio_id=subtrio_id, batch_id=batch_id,
+            question_id=question_id, country_code=country_code,
+            stage="done", final_verdict=final_status,
+            cumulative_cost_usd=cumulative_cost,
+            last_message=f"retries exhausted; {pipeline_mode} arm abstains",
+            ended=True,
+        )
+        _save_final_row(
+            run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
+            final_output=chosen, terminal_status=final_status,
+            retry_count=retry_count, adjudicator_involved=False,
+            captcha_escalated=False,
+            cumulative_input_tokens=cumulative_tokens_in,
+            cumulative_output_tokens=cumulative_tokens_out,
+            cumulative_wall_clock_ms=cumulative_wall,
+            cumulative_cost_usd=cumulative_cost,
+            final_failure_reason=None,
+        )
+        return final_status, chosen
 
     # --- Adjudicator stage ---
     _upsert_subtrio_status(
@@ -1693,6 +1798,16 @@ def main() -> int:
              "(attempt_correct verdict), registering a separate prompt "
              "version (phase2_adjudicator_free).")
     parser.add_argument(
+        "--pipeline-mode", default="trio",
+        choices=["trio", "no_adjudicator", "researcher_only"],
+        help="EXP-28 architecture ablation. 'trio' (default) is "
+             "byte-identical to production. 'no_adjudicator' keeps the "
+             "Researcher-Verifier loop but abstains at retry exhaustion "
+             "instead of adjudicating (the EXP-15 design). "
+             "'researcher_only' removes the verification layer: commit on "
+             "a real label at or above the D37 floor, retry on sub-floor "
+             "or inconclusive, abstain on exhaustion.")
+    parser.add_argument(
         "--dry-run", action="store_true",
         help=(
             "Skip writes to subtrio_status, phase2_researcher_runs, "
@@ -1740,6 +1855,7 @@ def main() -> int:
             condition_label=args.condition_label,
             chained=args.chained,
             adjudicator_selection=args.adjudicator_selection,
+            pipeline_mode=args.pipeline_mode,
             dry_run=args.dry_run,
             walkthrough=args.walkthrough,
         )

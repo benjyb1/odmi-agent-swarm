@@ -50,6 +50,15 @@ def _path_summary(row: pd.Series) -> str:
     adjud = bool(row["adjudicator_involved"])
     if row["terminal_status"] == "accepted_by_verifier":
         return "Researcher → Verifier passed on first attempt."
+    if row["terminal_status"] == "accepted_researcher_only":
+        return "Researcher committed at the confidence floor (no Verifier; EXP-28 arm)."
+    if row["terminal_status"] == "abstained_researcher_only":
+        return "Researcher-only arm exhausted retries → abstained (EXP-28 arm)."
+    if row["terminal_status"] == "abstained_no_adjudicator":
+        return (
+            f"Researcher → Verifier failed {retries + 1}× → "
+            "abstained (no Adjudicator; EXP-28 arm)."
+        )
     if row["terminal_status"] == "accepted_by_adjudicator":
         return (
             f"Researcher → Verifier failed {retries + 1}× → "

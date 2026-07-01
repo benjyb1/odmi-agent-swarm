@@ -65,6 +65,10 @@ for _stale in ("ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_CUSTOM_HEADERS"):
 # before this date overstate by 3x; backfill the live DB with
 # scripts/backfill_opus_pricing.py.
 PRICING_USD_PER_M = {
+    # Sonnet 5 assumed at the standard Sonnet-tier rate (same as 4.5/4.6);
+    # arithmetic-equivalent only under the Max plan (D1). Correct deliberately
+    # if Anthropic publishes a different figure.
+    "claude-sonnet-5":            {"input": 3.0,  "output": 15.0},
     "claude-sonnet-4-6":          {"input": 3.0,  "output": 15.0},
     "claude-sonnet-4-5-20250929": {"input": 3.0,  "output": 15.0},
     "claude-opus-4-8":            {"input": 5.0,  "output": 25.0},
