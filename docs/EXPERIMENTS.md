@@ -33,6 +33,8 @@ run) · `running` · `done`.
 | EXP-20 | Retry chaining on committing countries (broadens EXP-7) | designed (2026-06-23), not run | NL+AL (commit more than Malta), DIY-only | re-tests baseline vs chained where recoveries are observable (Malta was 72-80% abstention, p=0.375). Promote chained to default only if balanced-acc up, FPR flat, calls/resolved <=+10%, McNemar p<0.05. Needs AL pair-set. `docs/EXPERIMENTS_NEXT.md` |
 | EXP-21 | Frozen headline whole-system evaluation | designed (2026-06-23), gated on config freeze | D47 held-out 8 (BA MK ME BG / FI HR SE BE), ~1,144 pairs, DIY-only | the whole-system end-to-end test: production architecture on unseen countries, balance-aware + three-outcome, stratified by dimension and resource. No adoption rule (it is the reported headline). Runs after EXP-18/19/20 land or are deferred, after the ARCHITECTURE.md freeze. `docs/EXPERIMENTS_NEXT.md` |
 | EXP-23 | Trusted-domain narrow-then-widen retrieval, multi-country (SRCH-5/6/7) | running (dispatched 2026-06-24) | NL+MT+AL, 156 binary-balanced pairs x 3 arms = 468 runs, DIY-only, Opus 4.6 across all roles + picker (Sonnet exhausted) | tests whether trusted-domain narrowing is the cause of the NL 80% false-positive rate on negative golds (the over-trust hypothesis) and/or suppresses recall on thin-web AL. Three arms: baseline_narrow_then_wide (production) vs wide_only (treatment) vs narrow_only (attribution control, so any wide_only gain attributes to the widening step rather than to the absence of narrowing). Promote wide_only only if FP cuts >=5pp on NL AND commit-acc non-inferior (delta >=-0.02). New knobs: `--search-strategy` (the variable under test) and `--picker-model` (constant across arms; pinned to Opus to dodge Sonnet 429s in the picker which is the largest LLM call inside a pair). MT and AL trusted-domain lists first-authored for this experiment; sanity-check before adopting upstream. Analysis: `evaluation/analyze_exp23.py`, manipulation check: `evaluation/manipulation_check_exp23.py`, spec: `evaluation/specs/exp23_narrow_then_widen.json` |
+| EXP-28 | Architecture ablation ladder: trio / no_adjudicator / researcher_only | running (dispatched 2026-07-01 overnight) | MT60+NL52+AL44 = 156 pairs x 3 arms, 78 negative golds/arm, all models pinned claude-sonnet-5, DIY-only | one knob (`pipeline_mode`). Isolates the Adjudicator (trio vs no_adjudicator, the owed EXP-15 design run live), the Verifier loop (no_adjudicator vs researcher_only), and the whole verification layer (trio vs researcher_only, the live counterpart of EXP-13a's replay: -27 correct / +16 wrong avoided / net -11). Characterisation, not optimisation: production trio stays regardless. Warm SHARED cache pre-registered as matched-evidence design. Pre-reg `docs/EXPERIMENTS_ARCH_ABLATION.md`; spec `evaluation/specs/exp28_architecture_ablation.json` |
+| EXP-29 | Sonnet 5 vs Sonnet 4.6 whole-stack model contrast | running (dispatched 2026-07-01 overnight, queued after EXP-28 arms) | same 156 pairs, single arm trio_s46; control is EXP-28/trio_s5 | first Sonnet 5 data in the project. Whole stack moves together (agents + picker). Adoption rule pre-registered: default switches to claude-sonnet-5 only if trio_s5 non-inferior on balanced accuracy (delta >= -0.02) AND no-gold FP rise <= 2pt. Transport caveat (D55): all within-night arms share the new instructions-in-user-turn transport; comparisons to pre-2026-07-01 runs cross a transport change |
 
 ---
 
@@ -584,7 +586,10 @@ Adjudicator contribution that the replay cannot settle. No held-out country is r
 pre-freeze. Endpoint: match / wrong / abstain
 attributable to the Adjudicator alone, balance-aware (R4).
 
-Result: pending (design only).
+Result: pending (design only). **Superseded 2026-07-01: the EXP-28
+`no_adjudicator_s5` arm runs this design live** (production verifier regime,
+since EXP-14 retained `always`), as part of the architecture ablation ladder.
+See EXP-28 below.
 
 ## EXP-16: Adjudicator free candidate selection
 
@@ -761,6 +766,26 @@ Honest limits: underpowered by construction — deduped to one row per question,
 holds only 25 committed negative golds (the deep dive's 266 were non-independent
 pooled-across-arms rows), so the McNemar tests are not powered for a small true
 effect; the direction and the mechanism, not the p-values, carry the result.
-EXP-26 (self-consistency, 5x cost) and EXP-28 (decomposed score, spends the frozen
-held-out measurement) are held: same target, same null mechanism, and EXP-28 must
-wait for a config lock.
+EXP-26 (self-consistency, 5x cost) and EXP-30 (decomposed score, renumbered from
+EXP-28 on 2026-07-01; spends the frozen held-out measurement) are held: same
+target, same null mechanism, and EXP-30 must wait for a config lock.
+
+
+## EXP-28 / EXP-29: architecture ablation ladder + model contrast (running, 2026-07-01 overnight)
+
+Full pre-registration in `docs/EXPERIMENTS_ARCH_ABLATION.md`; design summary on
+the board above. Dispatched via the orchestrator
+(`evaluation/runs/exp28_arch_ablation_20260701/`), arms sequential:
+trio_s5 -> no_adjudicator_s5 -> researcher_only_s5 -> trio_s46.
+
+Run notes (R12):
+- CLIProxyAPI was restarted before dispatch to expose `claude-sonnet-5`; the
+  restarted proxy drops the API `system` param, so agent instructions moved to
+  the user turn for every arm (D55). All within-night comparisons share the
+  new transport.
+- Four early trio_s5 pairs failed with total Verifier schema collapse before
+  the adaptive max_tokens retry landed (Claude 5 thinking blocks exhausting
+  the Verifier's 200/240-token budgets); their `phase2_final` rows were
+  deleted so the resume re-runs them on fixed code.
+
+Result: pending (analysis morning of 2026-07-02).
