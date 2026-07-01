@@ -308,6 +308,14 @@ def call_for_structured(
     cumulative_output_tokens = 0
     cumulative_wall_clock_ms = 0
 
+    # Adaptive output budget. Claude 5 family models can spend part of the
+    # completion on a thinking block, so a tight caller budget (the Verifier's
+    # 200/240-token calls) is sometimes exhausted before any text arrives and
+    # the parse fails on an empty or truncated string. When an attempt ends
+    # with stop_reason max_tokens, the retry runs with 4x the budget. Pre-5
+    # models virtually never hit this, so their behaviour is unchanged.
+    effective_max_tokens = max_tokens
+
     while attempt < 2:
         stricter = (
             "\n\nIMPORTANT: Respond with valid JSON only. "
@@ -347,7 +355,7 @@ def call_for_structured(
             )
             create_kwargs = dict(
                 model=model,
-                max_tokens=max_tokens,
+                max_tokens=effective_max_tokens,
                 temperature=temperature,
                 messages=[{"role": "user", "content": folded_user}],
                 timeout=timeout_s,
@@ -423,6 +431,11 @@ def call_for_structured(
         except Exception as exc:  # noqa: BLE001 - intentional broad catch with retry
             last_error = exc
             attempt += 1
+            # Budget-exhausted attempt (thinking block or verbose JSON ate the
+            # completion): give the retry real room instead of failing the
+            # same way twice.
+            if response is not None and getattr(response, "stop_reason", None) == "max_tokens":
+                effective_max_tokens = max_tokens * 4
 
     # Both attempts failed; surface a useful exception with the last raw
     # response so a debugger can read what the model actually said.
