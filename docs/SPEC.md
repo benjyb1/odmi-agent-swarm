@@ -2195,10 +2195,51 @@ run before 2026-07-01 used Sonnet 4.6 and must stay labelled as such
 (the D55 transport change is a second, independent confound on the same
 date — both apply to any 2026-07-01-onward run).
 
+### D57: Held-out exposure voided; EXP-31 is the single reported headline run
+
+**Date:** 2026-07-02. Directed by Benjy: the eight held-out countries are
+re-run in full on the final frozen config, once every config-changing
+experiment has finished.
+
+**The exposure.** The D47 "read exactly once" protocol has already been
+breached twice, on the record:
+
+1. `exp21_frozen_headline`, 2026-06-24: a partial overnight dispatch
+   finalised 301 pairs (FI 143/143, HR 59, SE 99) on a pre-freeze config
+   before being interrupted (power event; see `docs/OVERNIGHT_RUN_LOG.md`).
+2. `expC_held_neg_licence`, 2026-06-27/28: 627 finals across all eight
+   held-out countries as a neg_licence A/B replication. D50 explicitly
+   excluded this signal from the adoption basis, so no production config
+   choice has consumed held-out outcomes.
+
+**The ruling.** All held-out `phase2_final` rows prior to the freeze are void
+for reporting. They stay in the DB as audit trail. The headline run is
+re-registered under a fresh ID, `exp31_frozen_headline_v2`, dispatched only
+after the freeze gates in `docs/EXPERIMENTS_FINAL_PROGRAMME.md` are met. The
+dissertation discloses both exposures and the void ruling; the defensible
+claim becomes "no tuning decision consumed held-out outcomes" rather than
+"never read", and the disclosure paragraph is part of the evaluation chapter.
+
+**Consequences.**
+- EXP-21's registry entry and board row are closed as superseded by EXP-31.
+- EXP-31..35 are pre-registered in `docs/EXPERIMENTS_FINAL_PROGRAMME.md` and
+  the `experiments` table: EXP-31 (headline v2), EXP-32 (all-Haiku cost
+  point), EXP-33 (tiered models, the D18 hypothesis), EXP-34 (retrieval
+  strategy re-run on Sonnet 5; EXP-23 produced no Sonnet-usable data),
+  EXP-35 (single-agent self-critique arm, completing the EXP-28 ladder).
+- EXP-9 (`model_variants_mt`) is closed as stalled (21 of ~300 finals,
+  Sonnet 4.6 era, old Malta pair list, pre-D55 transport); superseded by
+  EXP-32/33 on the current battery. Rows stay as audit trail.
+- The cost/efficiency analyses (RQ5) are rebuilt over live data rather than
+  the June Malta batch: `evaluation/cost_report.py` computes the cost
+  surface, per-role attribution, and cost per committed-correct answer from
+  the canonical DB, with SVG figures under `docs/figures/`.
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-07-02 (D57: held-out void + final-report experiment programme) | D57 added: prior held-out exposure (exp21 partial 301 finals on FI/HR/SE 2026-06-24; expC_held_neg_licence 627 finals on all eight 2026-06-27/28) voided for reporting; the headline run re-registered as `exp31_frozen_headline_v2` with eight per-country sub-batches and eight explicit freeze gates. EXP-31..35 pre-registered in `docs/EXPERIMENTS_FINAL_PROGRAMME.md` + the `experiments` table (headline v2; all-Haiku cost point vs EXP-28 trio_s5 control; tiered Haiku-researcher/Sonnet-5-checker per D18; EXP-23 retrieval-strategy redo on Sonnet 5, config-changing so it blocks the freeze; single-agent self-critique pipeline_mode completing the EXP-28 ladder and answering the "why not one self-critiquing agent" probe). EXP-9 closed as stalled and superseded by EXP-32/33; EXP-8 formally parked. Cost analyses rebuilt over live data (`evaluation/cost_report.py`, SVGs in `docs/figures/`), replacing the June Malta-batch numbers. |
 | 2026-07-02 (Sonnet 5 default, code-level) | D56 added: `DEFAULT_MODEL` flipped `claude-sonnet-4-6` -> `claude-sonnet-5` in `agents/tools/llm.py`, `scripts/dispatch_subtrios.py::_read_default` fallback, and the dashboard `MODEL_OPTIONS` lists (Run Console, Models page), by Benjy's direct instruction rather than the EXP-29 pre-registered gate. Canonical DB `model_defaults` had already been updated by a parallel session the previous night; this lands the matching code change. 767 tests pass. |
 | 2026-07-01 (overnight: EXP-28/29 + Claude 5 transport + audit tools) | D54 and D55 added. **D54**: `pipeline_mode` architecture-ablation knob (trio / no_adjudicator / researcher_only) threaded coordinator -> dispatcher -> orchestrator flag_map, with the `phase2_final` CHECK widened via `scripts/migrate_pipeline_mode_statuses.py` (three new terminal statuses; owed against canonical DB after merge) and 8 new tests. EXP-28 (architecture ablation ladder, 156-pair dev battery MT60+NL52+AL44, 78 negative golds, Sonnet 5 pinned) and EXP-29 (Sonnet 4.6 whole-stack contrast, adoption rule declared) pre-registered in `docs/EXPERIMENTS_ARCH_ABLATION.md` + the `experiments` table and dispatched overnight via the orchestrator (`evaluation/runs/exp28_arch_ablation_20260701/`). **D55**: CLIProxyAPI 7.2.45 (restarted to expose `claude-sonnet-5`) replaces the API `system` param with the Claude Code system prompt, silently discarding all agent instructions; instructions now travel in the user turn (`<instructions>` block), Claude 5 calls omit `temperature`, text blocks are joined explicitly past thinking blocks, and structured-call retries run at 4x budget on a `max_tokens` stop. Early-run verifier collapses (4 pairs, pre-fix) had their `phase2_final` rows deleted for re-run on fixed code. New analysis tools: `evaluation/leakage_fingerprint_audit.py` (FM-14 content-level answer-key audit; main results 244 committed pairs -> 1 benign candidate at >=8 shared words) and `evaluation/risk_coverage.py` (D37 selective-prediction sweep + dependency-free SVG; main results n=368: floor 0.65 -> coverage 0.620 at strict precision 0.904, floor 0.70 -> 0.473 at 0.960). Report work: `docs/REPORT_DIRECTION_MEMO.md` (engineering/adversarial reframe, verified numbers) and red-text scaffolding edits in `~/Downloads/Preliminary Report - Claude overnight edits.docx`. |
 | 2026-06-29 (human_required -> unsupported) | D53 added: the third `LanguageRoute` value is renamed `human_required` -> `unsupported` (the route when neither native reading nor DeepL handles a source language; the pair then abstains, no human-translation stage). Never set in any logged run (all `language_route_used` rows are `native`), so a clean rename with no data migration and no legacy value retained. Touches `agents/models.py` (`LanguageRoute`), the `scripts/setup_sqlite.py` `language_confidence.routing_decision` CHECK, and `AGENT_DESIGN.md`. The empty canonical `language_confidence` table had its CHECK rebuilt in place. Housekeeping: the two D51/D52 canonical pre-migration backups were deleted after the migrations verified. 759 tests pass. |
