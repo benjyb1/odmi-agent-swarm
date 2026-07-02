@@ -1,7 +1,7 @@
 {
   "run_id": "exp28_arch_ablation_20260701",
   "global_parallel": 8,
-  "budget_calls": 14000,
+  "budget_calls": 32000,
   "experiments": [
     {
       "experiment_id": "exp28_arch_ablation",

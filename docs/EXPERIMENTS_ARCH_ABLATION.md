@@ -124,3 +124,22 @@ the model contrast.
 Idempotent resume via the orchestrator (re-running the spec skips finalised
 pairs per arm). Rate limits surface as clean interrupted-and-resumable
 shutdowns; the overnight harness re-runs the spec on wake.
+
+## Run-time deviations (R12, recorded as they happened)
+
+- 2026-07-02 00:03: trio_s5 arm done, 132/156 finalised, healthy (blocker
+  rate 0.071). Calls per pair ran ~57 against the 17-per-pair planning
+  worst case: the Sonnet 5 Verifier rejects at a high rate, so most pairs
+  ride the full retry ladder into adjudication (each round costs
+  researcher query-gen + picker + main plus verifier query-gen + main).
+  `budget_calls` raised 14,000 -> 32,000 in the spec on that evidence; the
+  ceiling was a planning artefact, and the elevated call rate is itself an
+  arm-level finding (verification is expensive on this model), not a fault.
+- 2026-07-01 ~23:00: the owed D51 migration (`escalate_human` -> `abstain`)
+  had never been applied to the committed DB, so every Sonnet 5 Adjudicator
+  `abstain` verdict crashed the pair on the phase2_adjudications CHECK
+  (stuck `adjudicating` orphans, no final row). Migration applied mid-arm
+  (1,197 rows preserved); crashed pairs re-run via the idempotent resume
+  sweep at the end of the run. agent_failure finals from the pre-fix
+  Verifier schema collapse were deleted (3 + 8 rows) so the sweep retries
+  them on fixed code.
