@@ -676,7 +676,7 @@ def _read_default(role: str) -> str:
             "SELECT model FROM model_defaults WHERE agent_role = ?",
             (role,),
         ).fetchone()
-    return row[0] if row else "claude-sonnet-4-6"
+    return row[0] if row else "claude-sonnet-5"
 
 
 def _batch_call_count(subtrio_ids: List[str]) -> int:

@@ -91,10 +91,11 @@ trio stays regardless. The pre-registered claims at stake:
 - The Adjudicator's marginal value: quantified by the `trio_s5` vs
   `no_adjudicator_s5` gap in coverage and in correct-recoveries (pairs the
   Adjudicator committed that match gold) vs wrong-recoveries.
-- Sonnet 5 adoption (EXP-29): switch the production default to
-  `claude-sonnet-5` only if `trio_s5` is non-inferior on balanced accuracy
-  (delta >= -0.02) AND does not raise the no-gold FP rate by more than 2
-  points; otherwise stay on 4.6.
+- Sonnet 5 adoption (EXP-29): **superseded 2026-07-01/02 by D56.** The
+  switch to `claude-sonnet-5` as `DEFAULT_MODEL` was made by Benjy's direct
+  instruction, not gated on this rule. EXP-29's `trio_s46` control arm still
+  runs and is reported below as a post-hoc characterisation of the switch
+  already made, not as a pass/fail gate.
 
 ## Cache policy (pre-registered R6 deviation)
 
