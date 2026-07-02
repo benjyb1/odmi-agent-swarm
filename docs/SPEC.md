@@ -2169,10 +2169,37 @@ transport change and are flagged per R12; the pre-registered EXP-28/29
 comparisons are all within-night and unaffected. `claude-sonnet-5` added to
 the pricing table at the standard Sonnet rate (notional, D1/Q9).
 
+### D56: `claude-sonnet-5` adopted as the default model, by direct instruction
+
+**Date:** 2026-07-01/02.
+
+Benjy's directive, given directly (not via the EXP-29 pre-registered
+adoption gate): "from now on we're only using sonnet 5 not sonnet 4.6 for
+the experiments and anything." This supersedes the EXP-29 non-inferiority
+rule in D54 as the adoption mechanism; EXP-29's Sonnet 4.6 control arm
+still runs and its numbers are reported, but the switch itself is a
+directed decision, not an empirically gated one. Recorded honestly per the
+project's evaluation standards: EXP-29 becomes a post-hoc characterisation
+of the switch already made, not a pre-registered gate that was passed.
+
+**Scope.** `DEFAULT_MODEL` in `agents/tools/llm.py`
+(`claude-sonnet-4-6` -> `claude-sonnet-5`); the `_read_default` fallback in
+`scripts/dispatch_subtrios.py`; `MODEL_OPTIONS` in
+`dashboard/pages/1_Run_Console.py` and `dashboard/pages/6_Models.py` gain
+`claude-sonnet-5` as the first (default-selected) option, `claude-sonnet-4-6`
+retained for comparison runs. The canonical `model_defaults` DB rows were
+updated directly in the canonical checkout by a parallel session
+(`claude/musing-villani-d7c805`, 2026-07-01 22:16) ahead of this code-level
+change landing; this entry brings the code in this branch in line. Any
+run before 2026-07-01 used Sonnet 4.6 and must stay labelled as such
+(the D55 transport change is a second, independent confound on the same
+date — both apply to any 2026-07-01-onward run).
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-07-02 (Sonnet 5 default, code-level) | D56 added: `DEFAULT_MODEL` flipped `claude-sonnet-4-6` -> `claude-sonnet-5` in `agents/tools/llm.py`, `scripts/dispatch_subtrios.py::_read_default` fallback, and the dashboard `MODEL_OPTIONS` lists (Run Console, Models page), by Benjy's direct instruction rather than the EXP-29 pre-registered gate. Canonical DB `model_defaults` had already been updated by a parallel session the previous night; this lands the matching code change. 767 tests pass. |
 | 2026-07-01 (overnight: EXP-28/29 + Claude 5 transport + audit tools) | D54 and D55 added. **D54**: `pipeline_mode` architecture-ablation knob (trio / no_adjudicator / researcher_only) threaded coordinator -> dispatcher -> orchestrator flag_map, with the `phase2_final` CHECK widened via `scripts/migrate_pipeline_mode_statuses.py` (three new terminal statuses; owed against canonical DB after merge) and 8 new tests. EXP-28 (architecture ablation ladder, 156-pair dev battery MT60+NL52+AL44, 78 negative golds, Sonnet 5 pinned) and EXP-29 (Sonnet 4.6 whole-stack contrast, adoption rule declared) pre-registered in `docs/EXPERIMENTS_ARCH_ABLATION.md` + the `experiments` table and dispatched overnight via the orchestrator (`evaluation/runs/exp28_arch_ablation_20260701/`). **D55**: CLIProxyAPI 7.2.45 (restarted to expose `claude-sonnet-5`) replaces the API `system` param with the Claude Code system prompt, silently discarding all agent instructions; instructions now travel in the user turn (`<instructions>` block), Claude 5 calls omit `temperature`, text blocks are joined explicitly past thinking blocks, and structured-call retries run at 4x budget on a `max_tokens` stop. Early-run verifier collapses (4 pairs, pre-fix) had their `phase2_final` rows deleted for re-run on fixed code. New analysis tools: `evaluation/leakage_fingerprint_audit.py` (FM-14 content-level answer-key audit; main results 244 committed pairs -> 1 benign candidate at >=8 shared words) and `evaluation/risk_coverage.py` (D37 selective-prediction sweep + dependency-free SVG; main results n=368: floor 0.65 -> coverage 0.620 at strict precision 0.904, floor 0.70 -> 0.473 at 0.960). Report work: `docs/REPORT_DIRECTION_MEMO.md` (engineering/adversarial reframe, verified numbers) and red-text scaffolding edits in `~/Downloads/Preliminary Report - Claude overnight edits.docx`. |
 | 2026-06-29 (human_required -> unsupported) | D53 added: the third `LanguageRoute` value is renamed `human_required` -> `unsupported` (the route when neither native reading nor DeepL handles a source language; the pair then abstains, no human-translation stage). Never set in any logged run (all `language_route_used` rows are `native`), so a clean rename with no data migration and no legacy value retained. Touches `agents/models.py` (`LanguageRoute`), the `scripts/setup_sqlite.py` `language_confidence.routing_decision` CHECK, and `AGENT_DESIGN.md`. The empty canonical `language_confidence` table had its CHECK rebuilt in place. Housekeeping: the two D51/D52 canonical pre-migration backups were deleted after the migrations verified. 759 tests pass. |
 | 2026-06-29 (escalated_* -> abstained_*) | D52 added: the abstention terminal statuses are renamed `escalated_captcha` -> `abstained_captcha` and `escalated_adjudicator` -> `abstained_adjudicator`. The system has no human-review stage; a pair commits an answer or abstains, and an abstention is terminal (the old `escalated_*` names implied a human queue that was never built). Supersedes the D51 note that `escalated_adjudicator` would stay. Touches `agents/models.py` (`TerminalStatus`), `scripts/run_coordinator.py`, the `scripts/setup_sqlite.py` CHECK (admits `abstained_*`, retains `escalated_*` as legacy), the dashboard (Home "Human queue" widget -> "Abstentions" view; Results/Run Console drop the "human" framing), and the evaluation scripts (`adjudicator_commit_policy.py` `.startswith` widened, `abstention_taxonomy.py` coalesces both). KNOWN_GAPS gap #3 (human-queue CSV writer) closed as not-a-gap; `flag_review` and the D22 disagreement glance kept (methodology, "human" dropped from prose). New `scripts/migrate_terminal_status_to_abstained.py` converts 313 `phase2_final` rows (+336 `subtrio_status` mirrors) to `abstained_adjudicator` (verified on a copy: 2,759 rows preserved, idempotent); owed against the canonical DB after merge. 759 tests pass. |

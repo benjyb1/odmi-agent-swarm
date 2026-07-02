@@ -84,7 +84,7 @@ PRICING_USD_PER_M = {
     "mistral-large-latest":       {"input": 2.0,  "output": 6.0},
 }
 
-DEFAULT_MODEL = "claude-sonnet-4-6"
+DEFAULT_MODEL = "claude-sonnet-5"
 
 
 def _is_mistral(model: str) -> bool:
