@@ -40,3 +40,25 @@ behind the MHPSS activities is the Red Cross, not WHO. The verifier now
 rejects it (attributed=false, relevant=false) and a re-run of the Ukraine
 query no longer produces it. Quote verification and attribution are separate
 gates; this point is the case that motivated the second gate.
+
+## AI-in-health pack (2026-07-02 run, 20-document topic slice)
+
+Funnel: 6 planned aspects -> 2 verifier rejections (faithfulness), 1
+quote-gate failure (not verbatim) -> 3 surviving points. Index:
+20 documents, 5,135 chunks, MeSH facets Artificial Intelligence /
+Digital Health / Telemedicine, CC-licensed English items only.
+
+All three quotes independently verified by pypdf re-extraction (different
+extractor from the pipeline's Docling), normalised string match, on
+2026-07-02. Each was found on exactly the page the pipeline cited.
+
+| # | Point | Source (handle) | Cited page | Method | Outcome |
+|---|---|---|---|---|---|
+| A1 | 2025 high-level events and capacity-building on AI, HIS, interoperability, EHRs | 10665/385249 | p.14 | pypdf re-extraction, normalised string match | Confirmed, PDF page 14 |
+| A2 | Member State survey: established AI projects and ongoing pilots | 10665/383509 | p.63 | pypdf re-extraction, normalised string match | Confirmed, PDF page 63 |
+| A3 | COVID-19 as catalyst for telemedicine adoption | 10665/381574 | p.8 | pypdf re-extraction, normalised string match | Confirmed, PDF page 8 |
+
+Note: quote A1 contains extraction artefacts ("highlevel", doubled spaces)
+carried verbatim from the pipeline's Docling text layer; the PDF's visual
+text reads "high-level". The normalised match is unaffected. Cosmetic only,
+but worth knowing before the document is shown externally.

@@ -24,13 +24,15 @@ from who_speech import config, prompts
 if TYPE_CHECKING:
     from who_speech.search import Passage, Retriever
 
-# The five demo queries (breadth across countries and activities).
+# The demo queries (breadth across countries and activities, plus one
+# thematic query for the July 2026 Shaping AI in Health conference).
 QUERIES: dict[str, str] = {
     "ukraine_emergency": "What has WHO done to support Ukraine's health system and refugees during the war?",
     "kazakhstan_phc": "What has WHO done with Kazakhstan to strengthen primary health care?",
     "kyrgyzstan_financing": "What has WHO done on hospital payment and health financing reform in Kyrgyzstan?",
     "north_macedonia_protection": "What does WHO's evidence say about out-of-pocket health spending and financial protection in North Macedonia?",
     "tajikistan_rehab": "What has WHO done to support rehabilitation and assistive technology in Tajikistan?",
+    "ai_digital_health": "What has WHO/Europe published on artificial intelligence and digital health in the European Region, and what has it done to support countries on them?",
 }
 
 
