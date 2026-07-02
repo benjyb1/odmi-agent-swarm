@@ -1978,7 +1978,7 @@ to the next free block:
 | EXP-22 | EXP-25 | entailment-scored Verifier commit gate |
 | EXP-23 | EXP-26 | self-consistency confidence |
 | EXP-24 | EXP-27 | argue-the-opposite check |
-| EXP-25 | EXP-28 | decomposed and calibrated commit score |
+| EXP-25 | EXP-28 (renumbered again to EXP-30 on 2026-07-01; the arch-ablation ladder claimed EXP-28 with run data) | decomposed and calibrated commit score |
 
 Applied in this change: renumbered `docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md`, the
 confidence section of `docs/EXPERIMENTS.md`, the confidence change-log entry
@@ -1987,7 +1987,7 @@ below, `evaluation/confidence_gates.py` and `evaluation/nl_fp_audit.py`; renamed
 `experiments` table rows `exp22_entailment_gate` / `exp24_argue_opposite` rename
 to `exp25_*` / `exp27_*` on the canonical DB (no child rows; the binary DB
 diverges per worktree, so it is not committed here). The language/retrieval
-EXP-22/23/24 references are left as-is. EXP-25 to EXP-28 are reserved for the
+EXP-22/23/24 references are left as-is. EXP-25 to EXP-27 plus EXP-30 are reserved for the
 confidence framework.
 
 ### D50: neg_licence Researcher prompt variant — favoured, adoption deferred
@@ -2107,10 +2107,73 @@ migrate.
 so its CHECK was rebuilt in place to admit `unsupported` (no rows to preserve, no
 legacy value retained).
 
+### D54: `pipeline_mode` architecture-ablation knob; EXP-28/29 pre-registered
+
+**Date:** 2026-07-01.
+
+The coordinator gains a `pipeline_mode` knob (`--pipeline-mode`, default
+`trio`) so the value of the verification layer can be measured live rather
+than by replay (EXP-13a). `trio` is byte-identical to production.
+`no_adjudicator` keeps the Researcher-Verifier loop but terminates retry
+exhaustion in an honest abstention (`abstained_no_adjudicator`); it delivers
+the owed EXP-15 design. `researcher_only` removes the verification layer:
+a real label at or above the D37 floor commits (`accepted_researcher_only`),
+a sub-floor answer retries with the same floor-feedback message the trio
+uses, and exhaustion abstains (`abstained_researcher_only`). The D35/D37
+honesty layer is retained in every mode: it is a distinct mechanism from the
+adversarial layer under ablation.
+
+**Scope.** `scripts/run_coordinator.py` (knob + loop logic),
+`scripts/dispatch_subtrios.py` (passthrough), `scripts/run_experiments.py`
+flag_map, `agents/models.py` TerminalStatus, dashboard Results page path
+summaries, `scripts/setup_sqlite.py` CHECK plus
+`scripts/migrate_pipeline_mode_statuses.py` (table rebuild, three new
+statuses; run against this worktree's DB, owed against canonical after
+merge). 8 new tests in `tests/test_pipeline_mode.py`.
+
+**EXP-28** (`exp28_arch_ablation`): the three arms over the 156-pair dev
+battery (MT 60 + NL 52 + AL 44, 78 negative golds), all models pinned
+`claude-sonnet-5`. **EXP-29** (`exp29_sonnet5_model`): the same trio and
+pairs on `claude-sonnet-4-6`, the model contrast; adoption rule
+pre-registered (switch default to Sonnet 5 only if non-inferior on balanced
+accuracy, delta >= -0.02, and no-gold FP rise <= 2 points). Warm SHARED
+cache across arms is pre-registered as a matched-evidence design choice
+(arms differ only downstream of retrieval). Full pre-registration in
+`docs/EXPERIMENTS_ARCH_ABLATION.md`.
+
+### D55: Claude 5 transport compatibility; agent instructions move to the user turn
+
+**Date:** 2026-07-01.
+
+Exposing `claude-sonnet-5` required a CLIProxyAPI restart, and the restarted
+proxy (7.2.45) REPLACES the API `system` parameter with the Claude Code
+system prompt on its Claude OAuth channel: every instruction the swarm sent
+as `system` was silently discarded, for every model. Verified empirically
+(a system-only instruction was ignored by both `claude-sonnet-4-6` and
+`claude-sonnet-5`; the query-gen model answered the ODMI question instead of
+generating queries). Three fixes in `agents/tools/llm.py`:
+
+1. Agent instructions (persona, task, schema) now travel in the user turn
+   inside an `<instructions>` block. Restores instruction delivery for all
+   models through the proxy.
+2. Claude 5 family models reject the `temperature` parameter (400); it is
+   omitted for the `claude-*-5` family, kept for every pre-5 model.
+3. Claude 5 responses can lead with a thinking block and can exhaust tight
+   caller budgets (the Verifier's 200/240-token calls) before any text:
+   text blocks are joined explicitly, and a structured-call retry runs at
+   4x budget when the failed attempt stopped on `max_tokens`.
+
+Consequences recorded honestly: any run before 2026-07-01 used the old
+transport (system param delivered), so cross-date comparisons cross a
+transport change and are flagged per R12; the pre-registered EXP-28/29
+comparisons are all within-night and unaffected. `claude-sonnet-5` added to
+the pricing table at the standard Sonnet rate (notional, D1/Q9).
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-07-01 (overnight: EXP-28/29 + Claude 5 transport + audit tools) | D54 and D55 added. **D54**: `pipeline_mode` architecture-ablation knob (trio / no_adjudicator / researcher_only) threaded coordinator -> dispatcher -> orchestrator flag_map, with the `phase2_final` CHECK widened via `scripts/migrate_pipeline_mode_statuses.py` (three new terminal statuses; owed against canonical DB after merge) and 8 new tests. EXP-28 (architecture ablation ladder, 156-pair dev battery MT60+NL52+AL44, 78 negative golds, Sonnet 5 pinned) and EXP-29 (Sonnet 4.6 whole-stack contrast, adoption rule declared) pre-registered in `docs/EXPERIMENTS_ARCH_ABLATION.md` + the `experiments` table and dispatched overnight via the orchestrator (`evaluation/runs/exp28_arch_ablation_20260701/`). **D55**: CLIProxyAPI 7.2.45 (restarted to expose `claude-sonnet-5`) replaces the API `system` param with the Claude Code system prompt, silently discarding all agent instructions; instructions now travel in the user turn (`<instructions>` block), Claude 5 calls omit `temperature`, text blocks are joined explicitly past thinking blocks, and structured-call retries run at 4x budget on a `max_tokens` stop. Early-run verifier collapses (4 pairs, pre-fix) had their `phase2_final` rows deleted for re-run on fixed code. New analysis tools: `evaluation/leakage_fingerprint_audit.py` (FM-14 content-level answer-key audit; main results 244 committed pairs -> 1 benign candidate at >=8 shared words) and `evaluation/risk_coverage.py` (D37 selective-prediction sweep + dependency-free SVG; main results n=368: floor 0.65 -> coverage 0.620 at strict precision 0.904, floor 0.70 -> 0.473 at 0.960). Report work: `docs/REPORT_DIRECTION_MEMO.md` (engineering/adversarial reframe, verified numbers) and red-text scaffolding edits in `~/Downloads/Preliminary Report - Claude overnight edits.docx`. |
 | 2026-06-29 (human_required -> unsupported) | D53 added: the third `LanguageRoute` value is renamed `human_required` -> `unsupported` (the route when neither native reading nor DeepL handles a source language; the pair then abstains, no human-translation stage). Never set in any logged run (all `language_route_used` rows are `native`), so a clean rename with no data migration and no legacy value retained. Touches `agents/models.py` (`LanguageRoute`), the `scripts/setup_sqlite.py` `language_confidence.routing_decision` CHECK, and `AGENT_DESIGN.md`. The empty canonical `language_confidence` table had its CHECK rebuilt in place. Housekeeping: the two D51/D52 canonical pre-migration backups were deleted after the migrations verified. 759 tests pass. |
 | 2026-06-29 (escalated_* -> abstained_*) | D52 added: the abstention terminal statuses are renamed `escalated_captcha` -> `abstained_captcha` and `escalated_adjudicator` -> `abstained_adjudicator`. The system has no human-review stage; a pair commits an answer or abstains, and an abstention is terminal (the old `escalated_*` names implied a human queue that was never built). Supersedes the D51 note that `escalated_adjudicator` would stay. Touches `agents/models.py` (`TerminalStatus`), `scripts/run_coordinator.py`, the `scripts/setup_sqlite.py` CHECK (admits `abstained_*`, retains `escalated_*` as legacy), the dashboard (Home "Human queue" widget -> "Abstentions" view; Results/Run Console drop the "human" framing), and the evaluation scripts (`adjudicator_commit_policy.py` `.startswith` widened, `abstention_taxonomy.py` coalesces both). KNOWN_GAPS gap #3 (human-queue CSV writer) closed as not-a-gap; `flag_review` and the D22 disagreement glance kept (methodology, "human" dropped from prose). New `scripts/migrate_terminal_status_to_abstained.py` converts 313 `phase2_final` rows (+336 `subtrio_status` mirrors) to `abstained_adjudicator` (verified on a copy: 2,759 rows preserved, idempotent); owed against the canonical DB after merge. 759 tests pass. |
 | 2026-06-29 (escalate_human -> abstain) | D51 added: the Adjudicator's fourth verdict is renamed `escalate_human` -> `abstain`. No human is ever in the loop, so an unsettleable case is an abstention (finalises `inconclusive` under the D37 floor; pair-level terminal status `escalated_adjudicator` unchanged). Label-only: meaning, the 0.6 auto-promotion floor, answer space and absence-of-evidence rule all unchanged. Touches `agents/models.py` (`AdjudicatorVerdict`), `agents/adjudicator.py` (`promoted_to_abstain` telemetry), the registered prompt (standard v5 -> v6, free arm v2 -> v3), `scripts/run_coordinator.py`, the `scripts/setup_sqlite.py` CHECK (admits `abstain`, retains `escalate_human` as legacy), and the evaluation scripts (coalesce the legacy string). New `scripts/migrate_escalate_human_to_abstain.py` converts the 313 canonical `escalate_human` rows to `abstain` (verified on a copy: 1,190 rows preserved, idempotent); owed against the canonical DB after merge, not committed from a worktree. 759 tests pass. |

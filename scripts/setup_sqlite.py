@@ -279,8 +279,11 @@ CREATE TABLE phase2_final (
     terminal_status             TEXT NOT NULL CHECK (terminal_status IN (
                                     'accepted_by_verifier',
                                     'accepted_by_adjudicator',
+                                    'accepted_researcher_only',  -- EXP-28 ablation
                                     'abstained_captcha',        -- D52
                                     'abstained_adjudicator',    -- D52
+                                    'abstained_researcher_only', -- EXP-28 ablation
+                                    'abstained_no_adjudicator',  -- EXP-28 ablation (EXP-15 design)
                                     'escalated_captcha',        -- D52 legacy: pre-rename rows only
                                     'escalated_adjudicator',    -- D52 legacy: pre-rename rows only
                                     'agent_failure'

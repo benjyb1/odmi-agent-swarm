@@ -8,6 +8,58 @@ Entries newest first.
 
 ---
 
+## 2026-07-01/02 — Overnight session: architecture ablation live (EXP-28/29), Claude 5 transport, report reframe
+
+Autonomous overnight run with a standing brief: shift the report toward the
+engineering and adversarial-verification contribution, and generate the live
+evidence the reframe needs.
+
+**The knob (D54).** `--pipeline-mode {trio, no_adjudicator, researcher_only}`
+through coordinator, dispatcher, and orchestrator flag_map, with the
+`phase2_final` CHECK widened by `scripts/migrate_pipeline_mode_statuses.py`
+(three new terminal statuses) and 8 new tests. `trio` is byte-identical to
+production; `no_adjudicator` is the owed EXP-15 design; `researcher_only`
+strips the verification layer while keeping the D35/D37 honesty layer.
+
+**The runs.** EXP-28 (three arms x 156 dev pairs: MT 60 + NL 52 + AL 44, 78
+negative golds per arm, everything pinned to `claude-sonnet-5`) and EXP-29
+(same trio and pairs on `claude-sonnet-4-6`, the whole-stack model contrast
+with a pre-registered adoption rule). Pre-registered in
+`docs/EXPERIMENTS_ARCH_ABLATION.md` and the `experiments` table before
+dispatch, launched detached via the orchestrator. Number collision found and
+resolved: the held decomposed-score design moved EXP-28 -> EXP-30 (never run,
+never registered; same reconciliation rule as D49).
+
+**The transport fight (D55).** Exposing `claude-sonnet-5` needed a CLIProxyAPI
+restart, and the restarted proxy replaces the API `system` param with the
+Claude Code system prompt: every agent instruction was silently discarded, for
+every model. Diagnosed from the query-gen model answering the ODMI question
+instead of generating queries; confirmed with a system-only instruction probe.
+Fixes in `agents/tools/llm.py`: instructions travel in the user turn, Claude 5
+calls omit `temperature` (400 otherwise), text blocks join past thinking
+blocks, and a structured-call retry runs at 4x budget on a `max_tokens` stop
+(Claude 5 thinking was exhausting the Verifier's 200/240-token calls; four
+early pairs collapsed pre-fix and their finals were cleared for re-run).
+Production note: any swarm run through the restarted proxy without this fix
+is silently instruction-less; merge before dispatching anything else.
+
+**Analysis tools.** `evaluation/leakage_fingerprint_audit.py` (FM-14
+content-level answer-key audit: longest shared word n-gram between committed
+evidence and the ODMI explanation; main results 244 pairs -> 1 benign
+candidate) and `evaluation/risk_coverage.py` (D37 selective-prediction sweep
++ SVG; main results n=368: floor 0.65 -> coverage 0.620 at strict precision
+0.904, floor 0.70 -> 0.473 at 0.960; the 0.65 -> 0.70 step buys 5.6 points of
+precision for 15 points of coverage, worth a pre-registered look).
+
+**Report.** `docs/REPORT_DIRECTION_MEMO.md` (restructure plan, verified
+numbers, literature pointers for the two empty sections, examiner-probe
+list) and red-text scaffolding in
+`~/Downloads/Preliminary Report - Claude overnight edits.docx` (11 additions,
+validated, red rendering confirmed).
+
+Results and the balance-aware analysis land in the morning; the run resumes
+idempotently if anything interrupts it overnight.
+
 ## 2026-06-10 — Session 24: portal discovery (D46); SPARQL and piveau adapters
 
 Built the portal-discovery tool so the D30 catalogue route no longer depends on

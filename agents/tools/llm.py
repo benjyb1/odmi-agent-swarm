@@ -65,6 +65,10 @@ for _stale in ("ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_CUSTOM_HEADERS"):
 # before this date overstate by 3x; backfill the live DB with
 # scripts/backfill_opus_pricing.py.
 PRICING_USD_PER_M = {
+    # Sonnet 5 assumed at the standard Sonnet-tier rate (same as 4.5/4.6);
+    # arithmetic-equivalent only under the Max plan (D1). Correct deliberately
+    # if Anthropic publishes a different figure.
+    "claude-sonnet-5":            {"input": 3.0,  "output": 15.0},
     "claude-sonnet-4-6":          {"input": 3.0,  "output": 15.0},
     "claude-sonnet-4-5-20250929": {"input": 3.0,  "output": 15.0},
     "claude-opus-4-8":            {"input": 5.0,  "output": 25.0},
@@ -86,6 +90,18 @@ DEFAULT_MODEL = "claude-sonnet-4-6"
 def _is_mistral(model: str) -> bool:
     """True for a Mistral model id, which routes off CLIProxyAPI (EXP-9)."""
     return model.lower().startswith("mistral")
+
+
+def _rejects_temperature(model: str) -> bool:
+    """True for Claude 5 family models, which 400 on a `temperature` param.
+
+    Sonnet 5 / Fable 5 deprecate temperature entirely. Matching on the
+    family prefix (no date-suffix guessing) keeps every pre-5 model's
+    request byte-identical.
+    """
+    m = model.lower()
+    return m.startswith(("claude-sonnet-5", "claude-fable-5", "claude-opus-5",
+                         "claude-haiku-5", "claude-mythos-5"))
 
 
 def _mistral_structured_call(
@@ -292,6 +308,14 @@ def call_for_structured(
     cumulative_output_tokens = 0
     cumulative_wall_clock_ms = 0
 
+    # Adaptive output budget. Claude 5 family models can spend part of the
+    # completion on a thinking block, so a tight caller budget (the Verifier's
+    # 200/240-token calls) is sometimes exhausted before any text arrives and
+    # the parse fails on an empty or truncated string. When an attempt ends
+    # with stop_reason max_tokens, the retry runs with 4x the budget. Pre-5
+    # models virtually never hit this, so their behaviour is unchanged.
+    effective_max_tokens = max_tokens
+
     while attempt < 2:
         stricter = (
             "\n\nIMPORTANT: Respond with valid JSON only. "
@@ -318,15 +342,32 @@ def call_for_structured(
                 timeout_s=timeout_s,
             )
         else:
+            # CLIProxyAPI's Claude OAuth channel (7.2.45, observed 2026-07-01)
+            # REPLACES the API `system` param with the Claude Code system
+            # prompt, so any instructions sent as `system` never reach the
+            # model. Deliver the agent instructions in the user turn instead:
+            # the injected Claude Code prompt stays upstream, and our full
+            # prompt (persona, task, schema) arrives as the first thing the
+            # model reads. Verified empirically: system-only instructions were
+            # silently ignored by every model through the proxy.
+            folded_user = (
+                f"<instructions>\n{sys_text}\n</instructions>\n\n{user_text}"
+            )
+            create_kwargs = dict(
+                model=model,
+                max_tokens=effective_max_tokens,
+                temperature=temperature,
+                messages=[{"role": "user", "content": folded_user}],
+                timeout=timeout_s,
+            )
+            # Claude 5 family models reject `temperature` outright
+            # (400: "`temperature` is deprecated for this model"). Omit it
+            # there; every pre-5 model keeps the explicit value so existing
+            # runs stay byte-identical.
+            if _rejects_temperature(model):
+                create_kwargs.pop("temperature")
             try:
-                response = client.messages.create(
-                    model=model,
-                    max_tokens=max_tokens,
-                    temperature=temperature,
-                    system=sys_text,
-                    messages=[{"role": "user", "content": user_text}],
-                    timeout=timeout_s,
-                )
+                response = client.messages.create(**create_kwargs)
             except anthropic.RateLimitError as exc:
                 # Anthropic 429. Log a placeholder usage row, then raise the
                 # typed shutdown signal so the Coordinator can exit cleanly.
@@ -343,7 +384,13 @@ def call_for_structured(
                     f"Anthropic rate limit hit for model={model}: {exc}"
                 ) from exc
             served_model = response.model
-            raw_text = response.content[0].text if response.content else ""
+            # Claude 5 family responses can lead with a ThinkingBlock; take
+            # the text blocks only (a ThinkingBlock has no `.text`). Pre-5
+            # responses are a single TextBlock, so the join is byte-identical
+            # there.
+            raw_text = "".join(
+                getattr(block, "text", "") for block in (response.content or [])
+            )
             call_in = response.usage.input_tokens
             call_out = response.usage.output_tokens
 
@@ -384,6 +431,11 @@ def call_for_structured(
         except Exception as exc:  # noqa: BLE001 - intentional broad catch with retry
             last_error = exc
             attempt += 1
+            # Budget-exhausted attempt (thinking block or verbose JSON ate the
+            # completion): give the retry real room instead of failing the
+            # same way twice.
+            if response is not None and getattr(response, "stop_reason", None) == "max_tokens":
+                effective_max_tokens = max_tokens * 4
 
     # Both attempts failed; surface a useful exception with the last raw
     # response so a debugger can read what the model actually said.

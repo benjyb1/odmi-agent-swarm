@@ -367,6 +367,7 @@ def dispatch(
     search_strategy: str = "narrow_then_wide",
     picker_model: Optional[str] = None,
     adjudicator_selection: str = "standard",
+    pipeline_mode: str = "trio",
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: Optional[str] = None,
@@ -601,6 +602,11 @@ def dispatch(
                 # EXP-16 free attempt-selection arm; default 'standard', so the
                 # baseline batch is byte-identical to production.
                 cmd += ["--adjudicator-selection", adjudicator_selection]
+            if pipeline_mode and pipeline_mode != "trio":
+                # EXP-28 architecture ablation. Only forwarded when it differs
+                # from the 'trio' production default, so the baseline
+                # subprocess invocation is byte-identical.
+                cmd += ["--pipeline-mode", pipeline_mode]
             if experiment_id:
                 cmd += ["--experiment-id", experiment_id]
             if condition_label:
@@ -919,6 +925,14 @@ def main() -> int:
                              "is byte-identical to production. 'free' lets the "
                              "Adjudicator commit ANY of the up-to-four "
                              "Researcher attempts' answers by index.")
+    parser.add_argument("--pipeline-mode", default="trio",
+                        choices=["trio", "no_adjudicator", "researcher_only"],
+                        help="EXP-28 architecture ablation forwarded to each "
+                             "run_coordinator subprocess. 'trio' (default) is "
+                             "byte-identical to production. 'no_adjudicator' "
+                             "abstains at retry exhaustion instead of "
+                             "adjudicating. 'researcher_only' removes the "
+                             "verification layer entirely.")
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
                         help="Tag every child row with this experiment_id (D27). "
@@ -993,6 +1007,7 @@ def main() -> int:
         search_strategy=args.search_strategy,
         picker_model=args.picker_model,
         adjudicator_selection=args.adjudicator_selection,
+        pipeline_mode=args.pipeline_mode,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
         condition_label=args.condition_label,

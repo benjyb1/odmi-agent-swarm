@@ -78,6 +78,8 @@ confidence-gate programme, and the EXP-A/B/C prompt programme).
 | Researcher / Verifier / Adjudicator | Sonnet (`claude-sonnet-4-6`) | default | adopted |
 | Routing | CLIProxyAPI on localhost:8317 (Claude Max), no direct API billing | D1 | adopted |
 | Model-variant comparison (Haiku / Opus / tiered / Mistral) | undecided | EXP-9 (status stale, needs re-check / re-run) | pending |
+| Sonnet 5 vs Sonnet 4.6 (whole stack) | undecided; adoption rule pre-registered | EXP-29 (running 2026-07-01 overnight) | pending |
+| Instruction transport | agent instructions in the user turn (`<instructions>` block); the proxy's Claude OAuth channel replaces the API `system` param with the Claude Code system prompt | D55 (2026-07-01, CLIProxyAPI 7.2.45) | adopted (forced by the proxy) |
 
 ## Coordinator and evaluation
 
@@ -90,6 +92,7 @@ confidence-gate programme, and the EXP-A/B/C prompt programme).
 | Dev set | NL, MT, NO, FR, AL | D47 | adopted |
 | Held-out eval set (frozen) | BA, MK, ME, BG, FI, HR, SE, BE | D47 | adopted |
 | Cost guard | no soft limit; runaway breakers only | D40, D41 | adopted |
+| Pipeline mode | `trio` (production); `no_adjudicator` / `researcher_only` are evaluation-only ablation arms | D54, EXP-28 (running 2026-07-01 overnight) | adopted (default unchanged) |
 
 ## Open levers (what the remaining experiments are still chasing)
 

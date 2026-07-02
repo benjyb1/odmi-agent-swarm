@@ -86,6 +86,9 @@ AdjudicatorVerdict = Literal[
 TerminalStatus = Literal[
     "accepted_by_verifier",
     "accepted_by_adjudicator",
+    # EXP-28 architecture ablation: a researcher_only commit (real label at
+    # or above the D37 floor, no verification layer).
+    "accepted_researcher_only",
     # D52: the swarm has no human-review stage. A pair that cannot be
     # settled abstains; these are the abstention dispositions, renamed
     # from the old `escalated_*` (which implied a handoff to a human that
@@ -93,6 +96,10 @@ TerminalStatus = Literal[
     # still accepts them.
     "abstained_captcha",
     "abstained_adjudicator",
+    # EXP-28 ablation arms: retry exhaustion without an Adjudicator
+    # terminates in an honest abstention.
+    "abstained_researcher_only",
+    "abstained_no_adjudicator",
     "agent_failure",
 ]
 
