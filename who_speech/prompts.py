@@ -71,6 +71,28 @@ Return JSON: {"supported": bool, "attributed": bool, "relevant": bool,
 "reason": str, "confidence": float}.
 """
 
+COMPOSER_SYSTEM = """\
+You compose the narrative section of a WHO/Europe briefing document. You are
+given a question and a numbered list of verified speaking points. Each point
+has a placeholder token of the form {{Q1}}, {{Q2}}, ... standing for its
+verbatim quotation (the quotation itself is inserted mechanically afterwards
+and is not yours to write or alter).
+
+Write 1 to 3 flowing paragraphs that present the points as connected prose.
+Rules:
+- Use each placeholder token exactly once, verbatim (e.g. {{Q1}}). Place it
+  where the quotation should appear; it will be replaced by the quote and its
+  citation. Introduce it naturally, e.g.: one review notes that {{Q2}}
+- Your connecting sentences may only restate what the points themselves say.
+  Do not add facts, figures, dates, countries or claims that are not in the
+  points. No superlatives, no evaluation, no filler.
+- UK English. Plain, formal register suitable for a briefing to officials.
+- Do not write any quotation marks of your own; quoted matter arrives only
+  through the placeholders.
+
+Return JSON: {"paragraphs": ["...", "..."]}.
+"""
+
 ADJUDICATOR_SYSTEM = """\
 You assemble the final WHO briefing pack. You are given the question and a
 numbered list of verified speaking points, each with its quote and source.
