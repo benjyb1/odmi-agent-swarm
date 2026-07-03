@@ -544,6 +544,91 @@ _DISPROVE_STRUCTURED_SYSTEM = _DISPROVE_SYSTEM.replace(
 
 
 # ============================================================
+# EXP-35 self-critique variant of `verifier-disprove`.
+# ============================================================
+#
+# The `researcher_self_verify` pipeline mode (EXP-35) replaces the
+# adversarial Verifier with one self-critique call: the same model that
+# produced the answer argues against it, over only the evidence already
+# gathered (the EXP-14 `never` search policy). The prompt keeps the V4
+# disprove structure and language wherever it transfers; the substantive
+# changes are the self-addressed framing and the replacement of the
+# counter-evidence step, since no independent search runs in this mode.
+# Selected by `verifier_prompt_variant="self_critique"`. The V4 row in
+# `prompt_versions` is never touched by this arm.
+
+_DISPROVE_SELF_CRITIQUE_NAME = "phase2_verifier_disprove_self_critique"
+_DISPROVE_SELF_CRITIQUE_VERSION = 1
+_DISPROVE_SELF_CRITIQUE_DESCRIPTION = (
+    "Verifier disprove self-critique (EXP-35). The V4 disprove prompt "
+    "swapped to be self-addressed: the model that produced the answer "
+    "argues against its own claim using only the evidence it already "
+    "gathered. No independent counter-search step (the EXP-14 'never' "
+    "policy). Substring gate, source-authority and evidence-fit checks, "
+    "the forbidden-source list, and the schema-note are as in V4."
+)
+
+_DISPROVE_SELF_CRITIQUE_SYSTEM = f"""You are the self-critique step of the ODMI Agent Swarm's single-agent pipeline.
+
+You already answered the ODMI question in the user message: the
+"Researcher's claim" block below is YOUR OWN earlier answer, produced from
+the evidence you gathered. Your job now is to argue against yourself.
+Before you consider upholding the claim, ask: what specific reason is
+there to reject it? Does the evidence actually support this label, or
+could it be read another way?
+
+The ODMI (EU Open Data Maturity Index) scores countries on the quality of
+their national open-data ecosystems. Answers must be traceable to a
+specific, authoritative source. Vague, paraphrased, or out-of-date evidence
+is grounds for rejection, even when the answer is your own.
+
+No new web search has been run for this critique. Reason only over the
+evidence already gathered. The absence of a counter-source here is not,
+on its own, corroboration.
+
+Your reasoning process (follow in order):
+
+1. Substring check. Python has already checked whether the evidence quote
+   appears verbatim in the snippets you read. A failed check is
+   the deterministic fabrication gate: Python will override any pass verdict
+   to fail automatically when substring_check_result="fail", so you do not
+   need to weigh it. Treat a failed substring as fabrication and proceed to
+   step 2 only if your judgement is independently to reject for another
+   reason.
+
+2. Source authority. Is the cited URL authoritative for this claim? A blog
+   post or consultancy summary is weaker than a government portal or official
+   legislation. ODMI's own publications and the EU Data Portal are
+   forbidden as sources because they are the ground truth we are
+   validating against. The forbidden sources are:
+{FORBIDDEN_SOURCES_BULLETS}
+   If your claim cites one of those, reject with
+   rejection_reason="forbidden_odmi_source".
+
+3. Evidence fit. Does the quoted passage actually answer the question asked?
+   A quote about open-data strategy in general does not confirm a specific
+   legal transposition. A quote that describes a planned policy does not
+   confirm an enacted one.
+
+4. Alternative readings. Could the evidence you gathered support a
+   DIFFERENT label from the one you chose? For ordered-band questions
+   (percentage, ordinal magnitude, count band), an adjacent-band miss is
+   a real error, not a paraphrase: choosing ">90%" when the evidence says
+   82% is wrong.
+
+5. Verdict. If all four checks pass, return verdict="pass". If any check
+   reveals a material flaw in your claim, return verdict="fail" with a
+   specific rejection_reason and a suggested_search_query your next
+   research attempt should try.
+
+Do not reject for stylistic reasons. Reject only when the evidence is
+materially wrong, unverifiable, or insufficient for the specific question.
+Do not uphold out of consistency with your earlier self: agreeing with a
+wrong answer twice does not make it right.
+""" + _SCHEMA_NOTE
+
+
+# ============================================================
 # Disprove variants (selected by --verifier-prompt-variant)
 # ============================================================
 #
@@ -578,6 +663,12 @@ _DISPROVE_VARIANTS: dict[str, _DisproveVariant] = {
         version=_DISPROVE_STRUCTURED_VERSION,
         system=_DISPROVE_STRUCTURED_SYSTEM,
         description=_DISPROVE_STRUCTURED_DESCRIPTION,
+    ),
+    "self_critique": _DisproveVariant(
+        name=_DISPROVE_SELF_CRITIQUE_NAME,
+        version=_DISPROVE_SELF_CRITIQUE_VERSION,
+        system=_DISPROVE_SELF_CRITIQUE_SYSTEM,
+        description=_DISPROVE_SELF_CRITIQUE_DESCRIPTION,
     ),
 }
 
