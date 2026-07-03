@@ -44,7 +44,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from agents.adjudicator import run_adjudicator
 from agents.errors import (
     EXIT_CODE_RATE_LIMITED, EXIT_CODE_BLOCKER,
-    RateLimitedShutdown, BlockerShutdown,
+    AuthUnavailableShutdown, RateLimitedShutdown, BlockerShutdown,
 )
 from agents.tools import answer_shapes
 from agents.models import (
@@ -1860,14 +1860,21 @@ def main() -> int:
             walkthrough=args.walkthrough,
         )
     except RateLimitedShutdown as exc:
-        print(f"\n[RATE LIMITED] {exc}", file=sys.stderr)
+        # AuthUnavailableShutdown subclasses this so it shares the whole
+        # shutdown contract (same subtrio_status stage, same exit code, same
+        # dispatcher global-stop-and-resume), but the DB row should say what
+        # actually happened rather than defaulting every subclass to the 429
+        # label.
+        is_auth = isinstance(exc, AuthUnavailableShutdown)
+        print(f"\n[{'AUTH UNAVAILABLE' if is_auth else 'RATE LIMITED'}] {exc}",
+              file=sys.stderr)
         _upsert_subtrio_status(
             subtrio_id=subtrio_id, batch_id=batch_id,
             question_id=args.question_id, country_code=args.country_code.upper(),
             stage="interrupted_rate_limit",
             final_verdict="interrupted_rate_limit",
             last_message=str(exc)[:200],
-            final_failure_reason="anthropic_rate_limit",
+            final_failure_reason="auth_unavailable" if is_auth else "anthropic_rate_limit",
             ended=True,
         )
         return EXIT_CODE_RATE_LIMITED

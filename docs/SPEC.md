@@ -2235,11 +2235,53 @@ claim becomes "no tuning decision consumed held-out outcomes" rather than
   surface, per-role attribution, and cost per committed-correct answer from
   the canonical DB, with SVG figures under `docs/figures/`.
 
+### D58: 503 `auth_unavailable` handled as a resumable shutdown, not a crash
+
+**Date:** 2026-07-02/03.
+
+Found live during the EXP-28 rerun: the `researcher_only_s5` arm came back
+from `arm_health` unhealthy (finalise_rate 0.353, 100+ pairs stuck at
+`subtrio_status.stage='researching'` with no `phase2_final` row). Root
+cause was not a bug in the `researcher_only` pipeline_mode logic (D54):
+under concurrent-window load, CLIProxyAPI's shared Claude Max auth-file
+pool has no session free for a given model and returns a 503
+`auth_unavailable`, which the SDK surfaces as `anthropic.InternalServerError`.
+That propagated uncaught through `call_for_structured`, crashing the
+coordinator subprocess mid-stage with no DB update at all — the
+subtrio_status row was silently orphaned and the pair vanished from both
+the health check and the idempotent resume set, indistinguishable from a
+pair that was simply still running.
+
+**Fix.** `agents/errors.py` adds `AuthUnavailableShutdown(RateLimitedShutdown)`:
+same shape as a 429 (transient shared-capacity exhaustion, not a caller
+bug), so it reuses the entire tested 429 contract — same
+`EXIT_CODE_RATE_LIMITED`, same dispatcher global-stop-and-resume — via
+subclassing, with no changes needed to `dispatch_subtrios.py` or
+`run_experiments.py`. `agents/tools/llm.py::call_for_structured` catches
+`anthropic.InternalServerError` (any 5xx from the proxy/upstream, not only
+the literal `auth_unavailable` message) alongside the existing
+`RateLimitError` catch, logs a `claude_usage_log` row
+(`rate_limited=True`), and raises the new subclass.
+`scripts/run_coordinator.py`'s `except RateLimitedShutdown` block branches
+on `isinstance(exc, AuthUnavailableShutdown)` to write an honest
+`final_failure_reason` (`auth_unavailable` vs `anthropic_rate_limit`)
+rather than mislabelling every subclass as a plain rate limit. Verified
+live: replayed the exact crash (`Q23:MT`, `researcher_only_s5` knobs)
+against the real proxy under load — the same 503 now prints
+`[AUTH UNAVAILABLE]` and reaches the clean `interrupted_rate_limit` path
+instead of an uncaught traceback. 3 new tests
+(`tests/test_auth_unavailable_shutdown.py`); 770 pass.
+
+**Scope note.** The Mistral call path (`_mistral_structured_call`, the
+EXP-9 cross-family arm) is not wrapped in this try/except and keeps the
+same gap; out of scope here since no current experiment exercises it.
+
 ## Change log
 
 | Date | Change |
 |---|---|
 | 2026-07-02 (D57: held-out void + final-report experiment programme) | D57 added: prior held-out exposure (exp21 partial 301 finals on FI/HR/SE 2026-06-24; expC_held_neg_licence 627 finals on all eight 2026-06-27/28) voided for reporting; the headline run re-registered as `exp31_frozen_headline_v2` with eight per-country sub-batches and eight explicit freeze gates. EXP-31..35 pre-registered in `docs/EXPERIMENTS_FINAL_PROGRAMME.md` + the `experiments` table (headline v2; all-Haiku cost point vs EXP-28 trio_s5 control; tiered Haiku-researcher/Sonnet-5-checker per D18; EXP-23 retrieval-strategy redo on Sonnet 5, config-changing so it blocks the freeze; single-agent self-critique pipeline_mode completing the EXP-28 ladder and answering the "why not one self-critiquing agent" probe). EXP-9 closed as stalled and superseded by EXP-32/33; EXP-8 formally parked. Cost analyses rebuilt over live data (`evaluation/cost_report.py`, SVGs in `docs/figures/`), replacing the June Malta-batch numbers. |
+| 2026-07-03 (D58: 503 auth_unavailable handled cleanly) | D58 added: a CLIProxyAPI 503 `auth_unavailable` (shared Claude Max auth-file pool exhausted under concurrent-window load) was crashing the coordinator subprocess uncaught mid-stage, silently orphaning `subtrio_status` rows with no `phase2_final` write — found live when the `researcher_only_s5` EXP-28 arm came back unhealthy (finalise_rate 0.353). `AuthUnavailableShutdown(RateLimitedShutdown)` added to `agents/errors.py`; `agents/tools/llm.py::call_for_structured` catches `anthropic.InternalServerError` alongside the existing `RateLimitError` catch and raises it; `scripts/run_coordinator.py` records an honest `final_failure_reason` (`auth_unavailable` vs `anthropic_rate_limit`). Reuses the whole 429 shutdown contract via subclassing, so `dispatch_subtrios.py`/`run_experiments.py` needed no changes. Verified live against the real proxy under load, not just mocked. 3 new tests, 770 pass. Mistral call path (EXP-9) knowingly left with the same gap, out of scope. |
 | 2026-07-02 (Sonnet 5 default, code-level) | D56 added: `DEFAULT_MODEL` flipped `claude-sonnet-4-6` -> `claude-sonnet-5` in `agents/tools/llm.py`, `scripts/dispatch_subtrios.py::_read_default` fallback, and the dashboard `MODEL_OPTIONS` lists (Run Console, Models page), by Benjy's direct instruction rather than the EXP-29 pre-registered gate. Canonical DB `model_defaults` had already been updated by a parallel session the previous night; this lands the matching code change. 767 tests pass. |
 | 2026-07-01 (overnight: EXP-28/29 + Claude 5 transport + audit tools) | D54 and D55 added. **D54**: `pipeline_mode` architecture-ablation knob (trio / no_adjudicator / researcher_only) threaded coordinator -> dispatcher -> orchestrator flag_map, with the `phase2_final` CHECK widened via `scripts/migrate_pipeline_mode_statuses.py` (three new terminal statuses; owed against canonical DB after merge) and 8 new tests. EXP-28 (architecture ablation ladder, 156-pair dev battery MT60+NL52+AL44, 78 negative golds, Sonnet 5 pinned) and EXP-29 (Sonnet 4.6 whole-stack contrast, adoption rule declared) pre-registered in `docs/EXPERIMENTS_ARCH_ABLATION.md` + the `experiments` table and dispatched overnight via the orchestrator (`evaluation/runs/exp28_arch_ablation_20260701/`). **D55**: CLIProxyAPI 7.2.45 (restarted to expose `claude-sonnet-5`) replaces the API `system` param with the Claude Code system prompt, silently discarding all agent instructions; instructions now travel in the user turn (`<instructions>` block), Claude 5 calls omit `temperature`, text blocks are joined explicitly past thinking blocks, and structured-call retries run at 4x budget on a `max_tokens` stop. Early-run verifier collapses (4 pairs, pre-fix) had their `phase2_final` rows deleted for re-run on fixed code. New analysis tools: `evaluation/leakage_fingerprint_audit.py` (FM-14 content-level answer-key audit; main results 244 committed pairs -> 1 benign candidate at >=8 shared words) and `evaluation/risk_coverage.py` (D37 selective-prediction sweep + dependency-free SVG; main results n=368: floor 0.65 -> coverage 0.620 at strict precision 0.904, floor 0.70 -> 0.473 at 0.960). Report work: `docs/REPORT_DIRECTION_MEMO.md` (engineering/adversarial reframe, verified numbers) and red-text scaffolding edits in `~/Downloads/Preliminary Report - Claude overnight edits.docx`. |
 | 2026-06-29 (human_required -> unsupported) | D53 added: the third `LanguageRoute` value is renamed `human_required` -> `unsupported` (the route when neither native reading nor DeepL handles a source language; the pair then abstains, no human-translation stage). Never set in any logged run (all `language_route_used` rows are `native`), so a clean rename with no data migration and no legacy value retained. Touches `agents/models.py` (`LanguageRoute`), the `scripts/setup_sqlite.py` `language_confidence.routing_decision` CHECK, and `AGENT_DESIGN.md`. The empty canonical `language_confidence` table had its CHECK rebuilt in place. Housekeeping: the two D51/D52 canonical pre-migration backups were deleted after the migrations verified. 759 tests pass. |

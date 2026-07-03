@@ -34,7 +34,7 @@ import anthropic
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from agents.errors import RateLimitedShutdown
+from agents.errors import AuthUnavailableShutdown, RateLimitedShutdown
 from agents.models import LLMUsage
 
 # Load env once at import. Override the shell so stale globals do not win.
@@ -382,6 +382,30 @@ def call_for_structured(
                 )
                 raise RateLimitedShutdown(
                     f"Anthropic rate limit hit for model={model}: {exc}"
+                ) from exc
+            except anthropic.InternalServerError as exc:
+                # Any 5xx from CLIProxyAPI/upstream. The concrete case
+                # observed 2026-07-02 was a 503 `auth_unavailable` (the
+                # shared Claude Max auth-file pool had no session free for
+                # this model under concurrent-window load), but every
+                # InternalServerError gets the same treatment: it is not a
+                # bug in the caller, so it must never crash the process
+                # uncaught. AuthUnavailableShutdown (a RateLimitedShutdown
+                # subclass) reuses the whole 429 shutdown contract. Before
+                # this, a 503 propagated uncaught and crashed the
+                # coordinator subprocess mid-stage with no DB update at all,
+                # silently orphaning the subtrio_status row.
+                _log_claude_usage(
+                    model=model,
+                    input_tokens=0,
+                    output_tokens=0,
+                    estimated_cost_usd=None,
+                    rate_limited=True,
+                    context=usage_context,
+                    subtrio_id=subtrio_id,
+                )
+                raise AuthUnavailableShutdown(
+                    f"CLIProxyAPI auth/capacity unavailable for model={model}: {exc}"
                 ) from exc
             served_model = response.model
             # Claude 5 family responses can lead with a ThinkingBlock; take
