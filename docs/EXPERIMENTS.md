@@ -8,6 +8,39 @@ human-readable view, updated whenever an experiment changes state.
 **Status values:** `planned` (designed, not scheduled) · `queued` (next to
 run) · `running` · `done`.
 
+## Config-freeze gate (critical path to EXP-31 headline)
+
+> **Superseded 2026-07-09:** Sonnet 5 was officially cut; production is
+> claude-sonnet-4-6 only. EXP-34 as specced (pinned Sonnet 5) is void and off the
+> gate until re-pinned to 4.6. The July D54/D55 transport was reverted on another
+> branch to restore June behaviour. A 10% pilot attempt spent nothing (blocked by
+> a Sonnet/Opus account rate-limit cooldown, then cut).
+
+The work that must land before the production config is frozen and the held-out
+headline run (EXP-31) is dispatched. Everything not on this list is post-freeze
+or cut. Ordering matters: the two free analyses run first, because if either
+flips it changes what EXP-34 and the freeze look like. Proposed 2026-07-09 from
+Fable's critical-path analysis; EXP-34 slim (2 arms) and the EXP-29 drop are
+awaiting Benjy's "go".
+
+| # | Item | Type | Spend | Blocks freeze? | Status |
+|---|---|---|---|---|---|
+| 1 | EXP-19 verifier counter-search | analyse (275 finals exist) | 0 tokens | yes | to do (run first) |
+| 2 | EXP-20 retry chaining | analyse (212 finals exist) | 0 tokens | yes | to do (run first) |
+| 3 | EXP-34 retrieval strategy | run, slim 2 arms (baseline vs wide_only), NL+AL | ~130-190 pairs, ~6-9k calls | yes (prime NL-FP suspect) | VOID as specced (Sonnet 5 cut 2026-07-09); re-pin to 4.6 before running |
+| 4 | EXP-18 retrieval breadth | decide, no run | 0 | yes | decide: keep r5 |
+| 5 | EXP-C / D50 neg-evidence licence | decide, no run | 0 | yes | decide: defer, keep full |
+| 6 | Housekeeping: ARCHITECTURE.md freeze tag · SE catalogue route · deny-list audit clean · resume behaviour verified | gates | 0 | yes | to do |
+
+**Not on the gate (post-freeze or cut):** EXP-28 researcher_only arm (~90 pairs
+left, stalled on D58 auth bug) is characterisation for the report's ablation
+table, not a config decision: the production trio stays regardless, so it does
+not block the freeze or EXP-31. Finish it before write-up, not before dispatch.
+EXP-29 (Sonnet-4.6 contrast) proposed dropped from the gate, D56 already chose
+Sonnet 5; run one arm later for the "why Sonnet 5" defence. EXP-32/33 (Haiku,
+tiered) run after EXP-31. EXP-35 (self-critique) post-freeze characterisation.
+EXP-31 is the headline the freeze unlocks, not a gate item.
+
 | ID | Experiment | Status | Scope | Result (short) |
 |---|---|---|---|---|
 | EXP-1 | DIY vs Tavily, adjudicated (refreshed) | done | FR, 90 pairs | DIY wins 89% of 55 decided pairs (49/6/1), Wilson CI [78,95], p<1e-4; 42/45 = 93% [82,98] under strict both-orientation exclusion; leads all 3 dimensions |
@@ -34,7 +67,12 @@ run) · `running` · `done`.
 | EXP-21 | Frozen headline whole-system evaluation | designed (2026-06-23), gated on config freeze | D47 held-out 8 (BA MK ME BG / FI HR SE BE), ~1,144 pairs, DIY-only | the whole-system end-to-end test: production architecture on unseen countries, balance-aware + three-outcome, stratified by dimension and resource. No adoption rule (it is the reported headline). Runs after EXP-18/19/20 land or are deferred, after the ARCHITECTURE.md freeze. `docs/EXPERIMENTS_NEXT.md` |
 | EXP-23 | Trusted-domain narrow-then-widen retrieval, multi-country (SRCH-5/6/7) | running (dispatched 2026-06-24) | NL+MT+AL, 156 binary-balanced pairs x 3 arms = 468 runs, DIY-only, Opus 4.6 across all roles + picker (Sonnet exhausted) | tests whether trusted-domain narrowing is the cause of the NL 80% false-positive rate on negative golds (the over-trust hypothesis) and/or suppresses recall on thin-web AL. Three arms: baseline_narrow_then_wide (production) vs wide_only (treatment) vs narrow_only (attribution control, so any wide_only gain attributes to the widening step rather than to the absence of narrowing). Promote wide_only only if FP cuts >=5pp on NL AND commit-acc non-inferior (delta >=-0.02). New knobs: `--search-strategy` (the variable under test) and `--picker-model` (constant across arms; pinned to Opus to dodge Sonnet 429s in the picker which is the largest LLM call inside a pair). MT and AL trusted-domain lists first-authored for this experiment; sanity-check before adopting upstream. Analysis: `evaluation/analyze_exp23.py`, manipulation check: `evaluation/manipulation_check_exp23.py`, spec: `evaluation/specs/exp23_narrow_then_widen.json` |
 | EXP-28 | Architecture ablation ladder: trio / no_adjudicator / researcher_only | running (dispatched 2026-07-01 overnight) | MT60+NL52+AL44 = 156 pairs x 3 arms, 78 negative golds/arm, all models pinned claude-sonnet-5, DIY-only | one knob (`pipeline_mode`). Isolates the Adjudicator (trio vs no_adjudicator, the owed EXP-15 design run live), the Verifier loop (no_adjudicator vs researcher_only), and the whole verification layer (trio vs researcher_only, the live counterpart of EXP-13a's replay: -27 correct / +16 wrong avoided / net -11). Characterisation, not optimisation: production trio stays regardless. Warm SHARED cache pre-registered as matched-evidence design. Pre-reg `docs/EXPERIMENTS_ARCH_ABLATION.md`; spec `evaluation/specs/exp28_architecture_ablation.json` |
-| EXP-29 | Sonnet 5 vs Sonnet 4.6 whole-stack model contrast | running (dispatched 2026-07-01 overnight, queued after EXP-28 arms) | same 156 pairs, single arm trio_s46; control is EXP-28/trio_s5 | first Sonnet 5 data in the project. Whole stack moves together (agents + picker). Adoption rule pre-registered: default switches to claude-sonnet-5 only if trio_s5 non-inferior on balanced accuracy (delta >= -0.02) AND no-gold FP rise <= 2pt. Transport caveat (D55): all within-night arms share the new instructions-in-user-turn transport; comparisons to pre-2026-07-01 runs cross a transport change |
+| EXP-29 | Sonnet 5 vs Sonnet 4.6 whole-stack model contrast | running (dispatched 2026-07-01 overnight, queued after EXP-28 arms) | same 156 pairs, single arm trio_s46; control is EXP-28/trio_s5 | first Sonnet 5 data in the project. Whole stack moves together (agents + picker). Adoption rule pre-registered: default switches to claude-sonnet-5 only if trio_s5 non-inferior on balanced accuracy (delta >= -0.02) AND no-gold FP rise <= 2pt. Transport caveat (D55): all within-night arms share the new instructions-in-user-turn transport; comparisons to pre-2026-07-01 runs cross a transport change. NOT a freeze gate (proposed drop 2026-07-09): D56 already chose Sonnet 5; run one arm later for the "why Sonnet 5" defence |
+| EXP-31 | Frozen headline run v2, held-out 8 (supersedes EXP-21 per D57) | designed, gated on config freeze | D47 held-out 8 (BA MK ME BG / FI HR SE BE), DIY-only, frozen Sonnet-5 config | the reported headline. Unlocked once the freeze gate above clears. No adoption rule (it is the measurement). |
+| EXP-32 | All-Haiku whole-stack cost point | planned (post-freeze) | dev set, RQ5 cost frontier | runs after EXP-31; characterises the cheap end of the model frontier |
+| EXP-33 | Tiered models: Haiku researcher-side, Sonnet 5 checker-side (D18) | planned (post-freeze) | dev set, RQ5 cost frontier | runs after EXP-31; tests whether tiering holds accuracy at lower cost |
+| EXP-34 | Trusted-domain narrow-then-widen verdict (EXP-23 redo) | designed 2026-07-09; VOID as specced (Sonnet 5 cut same day); re-pin to claude-sonnet-4-6 before running | NL+AL, slim 2 arms (baseline_narrow_then_wide vs wide_only), DIY-only | Rerun of EXP-23 (which ran on Opus 4.6). Prime suspect for the NL 80% negative-gold FP rate. Slimmed: drop MT (language confound) and narrow_only (attribution control, only needed to explain a null). ~130-190 pairs. Promote wide_only only if FP cuts >=5pp on NL AND commit-acc non-inferior (delta >=-0.02). Nothing to resume: the 58 exp23 NL rows are Opus 4.6 under a different experiment_id. 10% pilot (spec `evaluation/specs/exp34_pilot_nl.json`, pair-sets nl_pilot10/24) was staged and dry-run-clean but spent nothing (Sonnet 5 rate-limited, then the run was cut) |
+| EXP-35 | Single-agent self-critique arm (completes the EXP-28 ladder) | planned (post-freeze) | dev set | characterisation, not config; runs after freeze |
 
 ---
 
