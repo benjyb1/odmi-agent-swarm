@@ -1,0 +1,34 @@
+{
+  "run_id": "exp28_s46_rerun_5pct",
+  "global_parallel": 2,
+  "budget_calls": 1500,
+  "experiments": [
+    {
+      "experiment_id": "exp28_s46_rerun",
+      "type": "accuracy",
+      "pairs": [
+        "I12:NL",
+        "I17:NL",
+        "I2:NL",
+        "I14:MT",
+        "I22:MT",
+        "I1:MT",
+        "I10:AL",
+        "I1:AL"
+      ],
+      "baseline_knobs": {
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "provider": "diy"
+      },
+      "arms": [
+        {
+          "condition_label": "trio_s46",
+          "knobs": {}
+        }
+      ]
+    }
+  ]
+}
