@@ -52,10 +52,8 @@ BLOCKED_DOMAINS: tuple[str, ...] = (
 # write-ups of the ODMI ranking, and Capgemini's own report-hosting
 # pages.
 BLOCKED_PATH_FRAGMENTS: tuple[str, ...] = (
-    "/open-data-maturity",
+    "open-data-maturity",
     "/odmi",
-    "open-data-maturity-report",
-    "open-data-maturity-index",
     "2025_odm_questionnaire",
     "2024_odm_questionnaire",
     "merged_responses",

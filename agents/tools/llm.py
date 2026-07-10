@@ -84,7 +84,7 @@ PRICING_USD_PER_M = {
     "mistral-large-latest":       {"input": 2.0,  "output": 6.0},
 }
 
-DEFAULT_MODEL = "claude-sonnet-5"
+DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 def _is_mistral(model: str) -> bool:
@@ -342,22 +342,20 @@ def call_for_structured(
                 timeout_s=timeout_s,
             )
         else:
-            # CLIProxyAPI's Claude OAuth channel (7.2.45, observed 2026-07-01)
-            # REPLACES the API `system` param with the Claude Code system
-            # prompt, so any instructions sent as `system` never reach the
-            # model. Deliver the agent instructions in the user turn instead:
-            # the injected Claude Code prompt stays upstream, and our full
-            # prompt (persona, task, schema) arrives as the first thing the
-            # model reads. Verified empirically: system-only instructions were
-            # silently ignored by every model through the proxy.
-            folded_user = (
-                f"<instructions>\n{sys_text}\n</instructions>\n\n{user_text}"
-            )
+            # Pre-July transport restored (2026-07-09, D61). The proxy's
+            # cloak feature is disabled globally (`disable-claude-cloak-mode:
+            # true` in cliproxyapi.conf), so the API `system` param reaches
+            # Claude as-is with no Claude Code prompt injected. This is the
+            # exact call shape every pre-2026-07-01 run used, so the baseline
+            # matches the validated June dev experiments. (The D55 user-turn
+            # folding was a workaround for proxy 7.2.45's cloak; with cloak
+            # off it is removed.)
             create_kwargs = dict(
                 model=model,
+                system=sys_text,
                 max_tokens=effective_max_tokens,
                 temperature=temperature,
-                messages=[{"role": "user", "content": folded_user}],
+                messages=[{"role": "user", "content": user_text}],
                 timeout=timeout_s,
             )
             # Claude 5 family models reject `temperature` outright
