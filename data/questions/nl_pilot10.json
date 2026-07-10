@@ -1,0 +1,82 @@
+{
+  "description": "EXP-34 Sonnet-5 pilot subset of nl_eval_pairs.json (10 pairs, 6 no + 4 yes, dimension round-robin, deterministic).",
+  "seed": 20260603,
+  "country_code": "NL",
+  "answer_shape": "binary",
+  "selection_rule": "Dimension round-robin (deterministic) from nl_eval_pairs.json, no-gold weighted. pilot10 subset of pilot24 for idempotent resume.",
+  "counts": {
+    "total": 10,
+    "by_class": {
+      "no": 6,
+      "yes": 4
+    },
+    "by_dimension": {
+      "Impact": 3,
+      "Policy": 3,
+      "Portal": 2,
+      "Quality": 2
+    }
+  },
+  "pairs": [
+    {
+      "question_id": "I12",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P10-a",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT16",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q20",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "I17",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P10-b",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "I2",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P15",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT13",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q1",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    }
+  ]
+}

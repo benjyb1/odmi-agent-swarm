@@ -45,6 +45,11 @@ def test_known_forbidden_hosts(url: str) -> None:
     [
         # Path-fragment catches third-party republishing of ODMI material.
         "https://capgemini.com/blog/open-data-maturity-2024",
+        # D60: the slug may carry a prefix before "open-data-maturity"
+        # (here "2025-"), so the fragment must match without a leading
+        # slash. This national-portal page reporting the 2025 ODMI results
+        # slipped the old "/open-data-maturity" fragment.
+        "https://digitalskills.mdia.gov.mt/article/2025-open-data-maturity-highlights-progress-in-the-eu-countries/",
         "https://media.example.com/path/open-data-maturity-report-2024.pdf",
         "https://datos.gob.es/en/etiquetas/open-data-maturity",
         # Path-fragment catches ODMI factsheet PDFs by filename.
@@ -69,8 +74,11 @@ def test_blocked_path_fragments(url: str) -> None:
         "https://ec.europa.eu/info/open-data",
         "https://example.gov.fr/some/page",
         # Open-data Wikipedia article uses underscores, not the
-        # blocked `/open-data-maturity` slug.
+        # blocked `open-data-maturity` slug.
         "https://en.wikipedia.org/wiki/Open_data_in_Estonia",
+        # D60 must not over-block generic open-data pages: the ODMI-specific
+        # compound "open-data-maturity" differs from a plain "open-data" slug.
+        "https://example.com/open-data-portal-launch",
     ],
 )
 def test_legitimate_urls_pass(url: str) -> None:
@@ -114,4 +122,4 @@ def test_deny_list_includes_data_europa_eu() -> None:
     # Belt-and-braces: pin the primary leak source so a future edit can't
     # silently remove it.
     assert "data.europa.eu" in BLOCKED_DOMAINS
-    assert "/open-data-maturity" in BLOCKED_PATH_FRAGMENTS
+    assert "open-data-maturity" in BLOCKED_PATH_FRAGMENTS

@@ -33,6 +33,29 @@ class RateLimitedShutdown(RuntimeError):
     """
 
 
+class AuthUnavailableShutdown(RateLimitedShutdown):
+    """CLIProxyAPI returned a 503 `auth_unavailable` (observed 2026-07-02).
+
+    The shared Claude Max auth-file pool has no session available for the
+    requested model, typically because several concurrent windows are
+    drawing on the same subscription. This is the same shape of problem as
+    a 429 (transient shared-capacity exhaustion, not a bug in the caller),
+    so it subclasses `RateLimitedShutdown` and reuses its whole contract:
+    caught by the same `except RateLimitedShutdown` handlers, same
+    `EXIT_CODE_RATE_LIMITED`, same dispatcher global-stop-and-resume
+    behaviour. It exists as a distinct subclass only so the Coordinator can
+    record an honest `final_failure_reason` (`auth_unavailable`, not
+    `anthropic_rate_limit`) — the DB row should say what actually happened.
+
+    Before this was added, the 503 propagated as an uncaught
+    `anthropic.InternalServerError`, crashing the coordinator subprocess
+    with no DB update at all: the subtrio_status row was orphaned mid-stage
+    and no phase2_final row was ever written, so the pair silently vanished
+    from both the health check and the resume set until someone happened to
+    query subtrio_status for stuck rows.
+    """
+
+
 class BlockerShutdown(BaseException):
     """The DIY fetch stage exceeded its wall-clock ceiling (D43).
 

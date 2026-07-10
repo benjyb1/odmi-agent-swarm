@@ -676,7 +676,7 @@ def _read_default(role: str) -> str:
             "SELECT model FROM model_defaults WHERE agent_role = ?",
             (role,),
         ).fetchone()
-    return row[0] if row else "claude-sonnet-5"
+    return row[0] if row else "claude-sonnet-4-6"
 
 
 def _batch_call_count(subtrio_ids: List[str]) -> int:
@@ -926,13 +926,17 @@ def main() -> int:
                              "Adjudicator commit ANY of the up-to-four "
                              "Researcher attempts' answers by index.")
     parser.add_argument("--pipeline-mode", default="trio",
-                        choices=["trio", "no_adjudicator", "researcher_only"],
-                        help="EXP-28 architecture ablation forwarded to each "
-                             "run_coordinator subprocess. 'trio' (default) is "
-                             "byte-identical to production. 'no_adjudicator' "
-                             "abstains at retry exhaustion instead of "
-                             "adjudicating. 'researcher_only' removes the "
-                             "verification layer entirely.")
+                        choices=["trio", "no_adjudicator", "researcher_only",
+                                 "researcher_self_verify"],
+                        help="EXP-28/35 architecture ablation forwarded to "
+                             "each run_coordinator subprocess. 'trio' "
+                             "(default) is byte-identical to production. "
+                             "'no_adjudicator' abstains at retry exhaustion "
+                             "instead of adjudicating. 'researcher_only' "
+                             "removes the verification layer entirely. "
+                             "'researcher_self_verify' (EXP-35) swaps the "
+                             "Verifier for one no-search self-critique call "
+                             "on the Researcher's own model.")
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
                         help="Tag every child row with this experiment_id (D27). "

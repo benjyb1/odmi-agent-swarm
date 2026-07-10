@@ -1,0 +1,166 @@
+{
+  "description": "EXP-34 Sonnet-5 pilot subset of nl_eval_pairs.json (24 pairs, 14 no + 10 yes, dimension round-robin, deterministic).",
+  "seed": 20260603,
+  "country_code": "NL",
+  "answer_shape": "binary",
+  "selection_rule": "Dimension round-robin (deterministic) from nl_eval_pairs.json, no-gold weighted. pilot10 subset of pilot24 for idempotent resume.",
+  "counts": {
+    "total": 24,
+    "by_class": {
+      "no": 14,
+      "yes": 10
+    },
+    "by_dimension": {
+      "Impact": 7,
+      "Policy": 7,
+      "Portal": 5,
+      "Quality": 5
+    }
+  },
+  "pairs": [
+    {
+      "question_id": "I12",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P10-a",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT16",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q20",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "I17",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P10-b",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT21",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q23",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "I22",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P5",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT24",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q4",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "I27",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P6",
+      "country_code": "NL",
+      "gold_class": "no",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "I2",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P15",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT13",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q1",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "I23",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P17",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    },
+    {
+      "question_id": "PT17",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Portal"
+    },
+    {
+      "question_id": "Q14",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Quality"
+    },
+    {
+      "question_id": "I5",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Impact"
+    },
+    {
+      "question_id": "P23",
+      "country_code": "NL",
+      "gold_class": "yes",
+      "dimension": "Policy"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "run_id": "exp34_retrieval_strategy_s5_nl_pilot",
+  "description": "EXP-34 pilot. Sonnet-5 redo of EXP-23 narrow-then-widen, slim 2 arms (baseline_narrow_then_wide vs wide_only), NL only for the staged pilot. Step 1 runs nl_pilot10 (10% of the full 192 arm-pair design); analyse for obvious breakage; if healthy, questions_from is expanded to nl_pilot24 (25%) and the spec re-run (idempotent resume). One variable: search_strategy. Nothing to resume from EXP-23: those 58 rows are Opus 4.6 under a different experiment_id.",
+  "headline": false,
+  "global_parallel": 3,
+  "budget_calls": 2500,
+  "experiments": [
+    {
+      "experiment_id": "exp34_retrieval_strategy_s5",
+      "type": "retrieval",
+      "questions_from": "data/questions/nl_pilot10.json",
+      "countries": ["NL"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "adjudicator_selection": "standard",
+        "no_cache": true,
+        "researcher_model": "claude-sonnet-5",
+        "verifier_model": "claude-sonnet-5",
+        "adjudicator_model": "claude-sonnet-5",
+        "picker_model": "claude-sonnet-5"
+      },
+      "arms": [
+        { "condition_label": "baseline_narrow_then_wide", "knobs": {} },
+        { "condition_label": "wide_only", "knobs": { "search_strategy": "wide_only" } }
+      ]
+    }
+  ]
+}

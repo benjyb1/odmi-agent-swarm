@@ -11,6 +11,13 @@ The knob must satisfy three contracts:
 3. `no_adjudicator` runs the Researcher-Verifier loop unchanged but
    terminates retry exhaustion in `abstained_no_adjudicator` (the EXP-15
    design) without ever calling the Adjudicator.
+4. `researcher_self_verify` (EXP-35) replaces the adversarial Verifier
+   with one self-critique call: same model as the Researcher attempt, no
+   independent web search (`verifier_search='never'`), the self-addressed
+   disprove prompt variant. Upheld commits as
+   `accepted_researcher_self_verify`; a rejection retries the Researcher
+   with the critique as feedback; exhaustion abstains as
+   `abstained_researcher_self_verify`. No Adjudicator, ever.
 
 All agent calls are faked; `dry_run=True` keeps the DB untouched.
 """
@@ -80,6 +87,7 @@ class _Calls:
         self.researcher = 0
         self.verifier = 0
         self.adjudicator = 0
+        self.verifier_kwargs = []
 
 
 @pytest.fixture()
@@ -92,6 +100,7 @@ def calls(monkeypatch):
 
     def fake_verifier(inp, **kwargs):
         c.verifier += 1
+        c.verifier_kwargs.append(kwargs)
         return c.verifier_factory()
 
     def fake_adjudicator(inp, **kwargs):
@@ -176,6 +185,63 @@ class TestNoAdjudicator:
         # Verifier ran on every attempt; the Adjudicator never fired.
         assert calls.verifier == 2
         assert calls.adjudicator == 0
+
+
+class TestResearcherSelfVerify:
+    def test_critique_upholds_commits(self, calls):
+        status, output = _coordinate("researcher_self_verify")
+        assert status == "accepted_researcher_self_verify"
+        assert output.answer == "yes"
+        assert calls.researcher == 1
+        assert calls.verifier == 1
+        assert calls.adjudicator == 0
+
+    def test_critique_call_config(self, calls):
+        """The critique call is the Researcher's own model, no independent
+        search, and the self-addressed disprove prompt variant."""
+        rc.coordinate(
+            question_id="P1",
+            country_code="FR",
+            pipeline_mode="researcher_self_verify",
+            researcher_model="claude-model-r",
+            verifier_model="claude-model-v",
+            max_retries=1,
+            experiment_id=f"test-{uuid.uuid4()}",
+            condition_label=f"test-{uuid.uuid4()}",
+            dry_run=True,
+        )
+        kw = calls.verifier_kwargs[0]
+        assert kw["model"] == "claude-model-r"
+        assert kw["verifier_search"] == "never"
+        assert kw["verifier_prompt_variant"] == "self_critique"
+
+    def test_critique_reject_retries_then_commits(self, calls):
+        verdicts = iter(["fail", "pass"])
+        calls.verifier_factory = lambda: _verifier_result(verdict=next(verdicts))
+        status, output = _coordinate("researcher_self_verify", max_retries=2)
+        assert status == "accepted_researcher_self_verify"
+        assert output.answer == "yes"
+        assert calls.researcher == 2
+        assert calls.verifier == 2
+        assert calls.adjudicator == 0
+
+    def test_exhaustion_abstains_without_adjudicator(self, calls):
+        calls.verifier_factory = lambda: _verifier_result(verdict="fail")
+        status, output = _coordinate("researcher_self_verify", max_retries=1)
+        assert status == "abstained_researcher_self_verify"
+        assert output.answer == "inconclusive"
+        # Critique ran on every attempt; the Adjudicator never fired.
+        assert calls.verifier == 2
+        assert calls.adjudicator == 0
+
+    def test_self_critique_prompt_variant_registered(self):
+        """EXP-35 engineering precondition: the self-critique prompt is a
+        registered disprove variant with its own prompt_versions identity."""
+        from agents.prompts import verifier as vp
+        v = vp.disprove_variant("self_critique")
+        assert v.name == "phase2_verifier_disprove_self_critique"
+        assert v.name != vp.disprove_variant("default").name
+        assert "your own" in v.system.lower()
 
 
 class TestOrchestratorFlagMap:

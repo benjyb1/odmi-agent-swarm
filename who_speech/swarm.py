@@ -24,13 +24,15 @@ from who_speech import config, prompts
 if TYPE_CHECKING:
     from who_speech.search import Passage, Retriever
 
-# The five demo queries (breadth across countries and activities).
+# The demo queries (breadth across countries and activities, plus one
+# thematic query for the July 2026 Shaping AI in Health conference).
 QUERIES: dict[str, str] = {
     "ukraine_emergency": "What has WHO done to support Ukraine's health system and refugees during the war?",
     "kazakhstan_phc": "What has WHO done with Kazakhstan to strengthen primary health care?",
     "kyrgyzstan_financing": "What has WHO done on hospital payment and health financing reform in Kyrgyzstan?",
     "north_macedonia_protection": "What does WHO's evidence say about out-of-pocket health spending and financial protection in North Macedonia?",
     "tajikistan_rehab": "What has WHO done to support rehabilitation and assistive technology in Tajikistan?",
+    "ai_digital_health": "What has WHO/Europe published on artificial intelligence and digital health in the European Region, and what has it done to support countries on them?",
 }
 
 
@@ -53,8 +55,27 @@ class DraftedPoint(BaseModel):
 class VerifierJudgement(BaseModel):
     model_config = ConfigDict(extra="forbid")
     supported: bool
+    attributed: bool = False
+    relevant: bool = False
     reason: str = ""
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    @property
+    def passed(self) -> bool:
+        """A point survives only if all three checks pass."""
+        return self.supported and self.attributed and self.relevant
+
+    def failed_checks(self) -> str:
+        fails = [
+            name
+            for name, ok in (
+                ("faithfulness", self.supported),
+                ("attribution", self.attributed),
+                ("relevance", self.relevant),
+            )
+            if not ok
+        ]
+        return "+".join(fails) or "none"
 
 
 class Adjudication(BaseModel):
@@ -144,10 +165,17 @@ def draft_point(query: str, aspect: str, passages: list["Passage"]) -> Optional[
     return draft
 
 
-def verify_point(point: str, quote: str) -> Optional[VerifierJudgement]:
+def verify_point(
+    query: str, point: str, quote: str, source_title: str = ""
+) -> Optional[VerifierJudgement]:
     from agents.tools.llm import StructuredOutputError, call_for_structured
 
-    user = f"Speaking point: {point}\n\nCited verbatim quote:\n\"{quote}\""
+    user = (
+        f"Question the briefing must answer: {query}\n\n"
+        f"Speaking point: {point}\n\n"
+        f"Cited verbatim quote:\n\"{quote}\"\n\n"
+        f"Source document title: {source_title or '(unknown)'}"
+    )
     try:
         judgement, _ = call_for_structured(
             system=prompts.VERIFIER_SYSTEM,
@@ -207,16 +235,29 @@ def orchestrate(query: str, retriever: "Retriever", *, verbose: bool = True) -> 
             continue
         source = passages[draft.passage_index]
 
+        # Licence gate: quote only from CC-licensed items. Non-CC passages are
+        # retrievable context but must never surface as quotes.
+        rights = (source.rights or "").upper()
+        if not any(m.upper() in rights for m in config.QUOTABLE_LICENCE_MARKERS):
+            if verbose:
+                print(f"[licence-gate FAIL] {aspect[:50]} (rights: {source.rights or 'none'})")
+            continue
+
         # Deterministic quote-gate against the passage actually read.
         if not quote_in_passage(draft.verbatim_quote, source.text):
             if verbose:
                 print(f"[quote-gate FAIL] {aspect[:50]} (quote not verbatim)")
             continue
 
-        judgement = verify_point(draft.point, draft.verbatim_quote)
-        if not judgement or not judgement.supported:
+        judgement = verify_point(
+            query, draft.point, draft.verbatim_quote, source_title=source.citation
+        )
+        if not judgement or not judgement.passed:
             if verbose:
-                reason = judgement.reason[:60] if judgement else "verifier error"
+                if judgement:
+                    reason = f"{judgement.failed_checks()}: {judgement.reason[:80]}"
+                else:
+                    reason = "verifier error"
                 print(f"[verifier reject] {aspect[:40]}: {reason}")
             continue
         if judgement.confidence < config.ABSTAIN_SCORE_FLOOR:

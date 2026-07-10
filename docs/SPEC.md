@@ -2171,6 +2171,9 @@ the pricing table at the standard Sonnet rate (notional, D1/Q9).
 
 ### D56: `claude-sonnet-5` adopted as the default model, by direct instruction
 
+**Superseded by D59 (2026-07-09).** The official default reverts to
+`claude-sonnet-4-6` after Sonnet 5 collapsed coverage on the EXP-28 control arm.
+
 **Date:** 2026-07-01/02.
 
 Benjy's directive, given directly (not via the EXP-29 pre-registered
@@ -2195,10 +2198,217 @@ run before 2026-07-01 used Sonnet 4.6 and must stay labelled as such
 (the D55 transport change is a second, independent confound on the same
 date — both apply to any 2026-07-01-onward run).
 
+### D57: Held-out exposure voided; EXP-31 is the single reported headline run
+
+**Date:** 2026-07-02. Directed by Benjy: the eight held-out countries are
+re-run in full on the final frozen config, once every config-changing
+experiment has finished.
+
+**The exposure.** The D47 "read exactly once" protocol has already been
+breached twice, on the record:
+
+1. `exp21_frozen_headline`, 2026-06-24: a partial overnight dispatch
+   finalised 301 pairs (FI 143/143, HR 59, SE 99) on a pre-freeze config
+   before being interrupted (power event; see `docs/OVERNIGHT_RUN_LOG.md`).
+2. `expC_held_neg_licence`, 2026-06-27/28: 627 finals across all eight
+   held-out countries as a neg_licence A/B replication. D50 explicitly
+   excluded this signal from the adoption basis, so no production config
+   choice has consumed held-out outcomes.
+
+**The ruling.** All held-out `phase2_final` rows prior to the freeze are void
+for reporting. They stay in the DB as audit trail. The headline run is
+re-registered under a fresh ID, `exp31_frozen_headline_v2`, dispatched only
+after the freeze gates in `docs/EXPERIMENTS_FINAL_PROGRAMME.md` are met. The
+dissertation discloses both exposures and the void ruling; the defensible
+claim becomes "no tuning decision consumed held-out outcomes" rather than
+"never read", and the disclosure paragraph is part of the evaluation chapter.
+
+**Consequences.**
+- EXP-21's registry entry and board row are closed as superseded by EXP-31.
+- EXP-31..35 are pre-registered in `docs/EXPERIMENTS_FINAL_PROGRAMME.md` and
+  the `experiments` table: EXP-31 (headline v2), EXP-32 (all-Haiku cost
+  point), EXP-33 (tiered models, the D18 hypothesis), EXP-34 (retrieval
+  strategy re-run on Sonnet 5; EXP-23 produced no Sonnet-usable data),
+  EXP-35 (single-agent self-critique arm, completing the EXP-28 ladder).
+- EXP-9 (`model_variants_mt`) is closed as stalled (21 of ~300 finals,
+  Sonnet 4.6 era, old Malta pair list, pre-D55 transport); superseded by
+  EXP-32/33 on the current battery. Rows stay as audit trail.
+- The cost/efficiency analyses (RQ5) are rebuilt over live data rather than
+  the June Malta batch: `evaluation/cost_report.py` computes the cost
+  surface, per-role attribution, and cost per committed-correct answer from
+  the canonical DB, with SVG figures under `docs/figures/`.
+
+### D58: 503 `auth_unavailable` handled as a resumable shutdown, not a crash
+
+**Date:** 2026-07-02/03.
+
+Found live during the EXP-28 rerun: the `researcher_only_s5` arm came back
+from `arm_health` unhealthy (finalise_rate 0.353, 100+ pairs stuck at
+`subtrio_status.stage='researching'` with no `phase2_final` row). Root
+cause was not a bug in the `researcher_only` pipeline_mode logic (D54):
+under concurrent-window load, CLIProxyAPI's shared Claude Max auth-file
+pool has no session free for a given model and returns a 503
+`auth_unavailable`, which the SDK surfaces as `anthropic.InternalServerError`.
+That propagated uncaught through `call_for_structured`, crashing the
+coordinator subprocess mid-stage with no DB update at all — the
+subtrio_status row was silently orphaned and the pair vanished from both
+the health check and the idempotent resume set, indistinguishable from a
+pair that was simply still running.
+
+**Fix.** `agents/errors.py` adds `AuthUnavailableShutdown(RateLimitedShutdown)`:
+same shape as a 429 (transient shared-capacity exhaustion, not a caller
+bug), so it reuses the entire tested 429 contract — same
+`EXIT_CODE_RATE_LIMITED`, same dispatcher global-stop-and-resume — via
+subclassing, with no changes needed to `dispatch_subtrios.py` or
+`run_experiments.py`. `agents/tools/llm.py::call_for_structured` catches
+`anthropic.InternalServerError` (any 5xx from the proxy/upstream, not only
+the literal `auth_unavailable` message) alongside the existing
+`RateLimitError` catch, logs a `claude_usage_log` row
+(`rate_limited=True`), and raises the new subclass.
+`scripts/run_coordinator.py`'s `except RateLimitedShutdown` block branches
+on `isinstance(exc, AuthUnavailableShutdown)` to write an honest
+`final_failure_reason` (`auth_unavailable` vs `anthropic_rate_limit`)
+rather than mislabelling every subclass as a plain rate limit. Verified
+live: replayed the exact crash (`Q23:MT`, `researcher_only_s5` knobs)
+against the real proxy under load — the same 503 now prints
+`[AUTH UNAVAILABLE]` and reaches the clean `interrupted_rate_limit` path
+instead of an uncaught traceback. 3 new tests
+(`tests/test_auth_unavailable_shutdown.py`); 770 pass.
+
+**Scope note.** The Mistral call path (`_mistral_structured_call`, the
+EXP-9 cross-family arm) is not wrapped in this try/except and keeps the
+same gap; out of scope here since no current experiment exercises it.
+
+### D59: revert to `claude-sonnet-4-6` as the official default; Sonnet 5 kept only as a labelled comparison
+
+**Date:** 2026-07-09. Directed by Benjy. Supersedes D56.
+
+**The finding that forces it.** EXP-28's `trio_s5` arm is the production
+architecture with nothing changed but the model (Sonnet 5). It performed far
+below the Sonnet 4.6 baseline: coverage 0.27 against roughly 0.85 on 4.6, worst
+on the thin-web countries (Malta 7 of 60 committed, 0.12, against 0.72 in the
+June 4.6 baseline), at about 3x the cost per pair (GBP 0.141 vs 0.05). It is not
+a crash. The verifier verdicts are healthy and the researcher finds evidence
+(candidate recall 0.60), but Sonnet 5 stays under the D37 0.65 confidence floor
+on sparse evidence, runs the retry loop to exhaustion (mean 2.9 of 3 on Malta),
+and abstains. Both the researcher (more `inconclusive` answers) and the verifier
+(more `fail` verdicts on committed `yes`) turned more conservative.
+
+**The decision.** The official default reverts to `claude-sonnet-4-6`, the model
+every June development experiment ran on (EXP-14/16/17/19/20, the Malta baseline,
+the verifier programme). Reverting aligns the frozen headline config with the
+validated model and makes the dissertation's completed-experiment labelling
+consistent, since those results are all 4.6. Sonnet 5 stays selectable in the
+dashboard as a labelled comparison arm, so the coverage collapse can be reported
+as evidence rather than hidden.
+
+**Scope.** `DEFAULT_MODEL` in `agents/tools/llm.py` and the `_read_default`
+fallback in `scripts/dispatch_subtrios.py` reverted `claude-sonnet-5` ->
+`claude-sonnet-4-6`; `MODEL_OPTIONS` in the two dashboard pages reordered so 4.6
+is first (default-selected), 5 retained; `model_defaults` DB rows set to 4.6 for
+all three roles in the canonical and this worktree DB via the new idempotent
+`scripts/set_default_model.py`. The picker falls back to `DEFAULT_MODEL`, so the
+whole stack returns to 4.6. The Sonnet 5 pricing row and the `_rejects_temperature`
+Claude-5 detector are retained (harmless; needed when Sonnet 5 runs as a
+comparison).
+
+**Caveat this does not fix (important).** This reverts the model, not the D55
+transport. CLIProxyAPI 7.2.45 still forces agent instructions into the user turn
+for every model, so 4.6 now runs on the new transport too. If the coverage
+collapse was transport-driven rather than model-driven, reverting the model alone
+will not restore it. The first 4.6 run under the current transport is therefore
+the model-vs-transport test the `trio_s46` pilot was designed to be: coverage
+back near 0.72 means Sonnet 5 was the cause (model); coverage still near 0.27
+means the transport change is implicated and needs a plumbing fix, not a model
+swap.
+
+**Consequences for the programme.** EXP-31..35 were pinned to `claude-sonnet-5`
+(D57 final programme); the frozen headline (EXP-31) and the dev-battery re-runs
+move to 4.6. EXP-28's Sonnet 5 rows (`trio_s5` etc.) become a labelled
+"Sonnet 5 collapsed coverage" characterisation, not the architecture-ablation
+result; the ablation ladder needs re-running on 4.6 to be valid. EXP-29's
+Sonnet 4.6 arm is now the config itself, not a contrast.
+
+**Availability note.** At decision time the proxy was returning
+`auth_unavailable` for all models (the swarm had not dispatched since
+2026-07-03), so 4.6 availability through CLIProxyAPI is verified on the first
+call after the proxy re-authenticates, before any run is trusted.
+
+### D60: deny-list path fragment broadened to catch prefixed ODMI-result slugs
+
+**Date:** 2026-07-09. Extends D24 (the hard ban on ODMI publications as evidence).
+
+**The gap.** `BLOCKED_PATH_FRAGMENTS` in `agents/tools/blocked_domains.py` held
+`/open-data-maturity` with a leading slash. `is_blocked` is a substring test, so
+a slug that carries a prefix before the compound, such as
+`/article/2025-open-data-maturity-highlights-progress-in-the-eu-countries/`, did
+not match (the slash sits before `2025`, not before `open`). Found in the
+2026-07-09 pilot pre-flight: a Malta national-portal page reporting the 2025 ODMI
+results was used as a Researcher source and reached one finalised pair; the
+D24 audit script did not flag it because the fragment did not match. This is the
+FM-14 content-leakage class: a page carrying ODMI's own answers entering the
+evidence for the signal we predict.
+
+**The fix.** The fragment is broadened to the bare compound `open-data-maturity`
+(the two now-redundant longer variants `open-data-maturity-report` /
+`open-data-maturity-index` are removed, subsumed). The compound is
+ODMI-specific, so it does not over-block generic open-data pages: a plain
+`open-data-portal` slug, `data.gov.mt` datasets, the Wikipedia `Open_data_*`
+articles, and the `eur-lex` High-Value-Datasets regulation all still pass
+(pinned in `tests/test_blocked_domains.py`). Domain blocking stays the primary
+defence; the path fragment is the secondary guard. `/odmi` keeps its leading
+slash and carries the same latent prefix risk, but a bare `odmi` fragment would
+over-match, so it is left as is and the domain-level block covers the ODMI hosts.
+
+**Scope and audit.** One-line change in `blocked_domains.py`; two regression
+tests added (the prefixed slug blocks, a generic open-data slug passes); the
+pinned-fragment belt-and-braces test updated to the new string. 41 deny-list
+tests pass. One pilot pair (`exp29_sonnet5_model`) is retro-flagged as touching
+the now-blocked URL and is excluded from any reported figure and re-run clean.
+`check_data_leakage.py` remains the pre-run and post-run gate for EXP-31; it
+inherits the broadened fragment automatically.
+
+### D61: pre-July transport fully restored (proxy cloak disabled + system param), so the baseline matches June
+
+**Date:** 2026-07-09. Completes D59 (Sonnet 4.6 revert) by removing the July
+transport change (D55) entirely, not just the model.
+
+**Why D59 was not enough.** D55's user-turn instruction folding was a workaround
+for CLIProxyAPI 7.2.45's "cloak" feature, which disguises non-Claude-Code clients
+as Claude Code and rewrites the `system` prompt. That is a proxy behaviour, not a
+model one, so reverting the model (D59) left the July transport in place: the
+2026-07-09 diagnostic pilot ran on Sonnet 4.6 but with the cloak still active, so
+its numbers are not the clean pre-July baseline (Malta coverage 0.35 vs June 0.72;
+NL over-committing). The requirement is that this experiment's baseline is the
+exact configuration of the validated June dev runs.
+
+**The restoration (two halves).**
+1. **Proxy:** `disable-claude-cloak-mode: true` added to
+   `/opt/homebrew/etc/cliproxyapi.conf` (backed up to `.bak-precloak`). The proxy
+   now passes the API `system` prompt to Claude as-is, with no Claude Code prompt
+   injected. Returns a 429 cooldown (not 401) after the flip, confirming the Max
+   auth still works; the disguise was not load-bearing for auth.
+2. **Code:** the D55 user-turn folding in `agents/tools/llm.py::call_for_structured`
+   is reverted to the pre-July call shape (`system=sys_text`, clean user message).
+   No test pinned the folding; 19 llm/model tests pass. The Claude-5-only
+   temperature-omit and thinking-block handling stay but are inert on 4.6.
+
+**Verification gate (owed before any run).** The combined change is verified with
+one call once the Max quota recovers: a `system`-only instruction must be
+honoured end to end (auth works AND our system prompt reaches the model). Only
+after that passes does any EXP-28 dispatch start. If Sonnet 5 is ever run as a
+labelled comparison, cloak-off means it too uses the plain `system` param.
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-07-09 (pre-July transport restored, D61) | D61 added, completing D59: the July transport change (D55) is removed so the baseline matches the validated June runs exactly. Root cause was proxy-side, not the model: CLIProxyAPI 7.2.45's "cloak" feature disguises non-Claude-Code clients and rewrites the `system` prompt, so the D59 model revert left the July transport active and the 2026-07-09 pilot ran on the wrong config (Malta coverage 0.35 vs June 0.72; NL over-committing) and is discarded as a baseline. Fix: (1) `disable-claude-cloak-mode: true` in `cliproxyapi.conf` (backed up; 429-not-401 after the flip confirms Max auth still works), (2) reverted the D55 user-turn folding in `llm.py` to the pre-July `system`-param call shape (no test pinned the folding; 19 llm/model tests pass). Verification owed before any run: one `system`-only call must be honoured end to end once the Max quota recovers from the pilot's rate-limit cooldown. No experiment dispatches until that passes. |
+| 2026-07-09 (deny-list gap closed, D60) | D60 added, extending D24: the `BLOCKED_PATH_FRAGMENTS` entry `/open-data-maturity` (leading slash) let a prefixed slug through `is_blocked`'s substring test, so `/article/2025-open-data-maturity-highlights-...` (a Malta national-portal page reporting the 2025 ODMI results) was used as a Researcher source and reached one finalised pair without the D24 audit flagging it. Broadened the fragment to bare `open-data-maturity` (removed the two subsumed longer variants); verified it blocks the leak and the europa.eu/croatia page while still passing generic open-data slugs, `data.gov.mt` datasets, Wikipedia `Open_data_*`, and the eur-lex HVD regulation. Two regression tests added, the pinned-fragment test updated; 41 deny-list tests pass. Found in the 2026-07-09 pilot pre-flight; 1 pilot pair retro-flagged and excluded/re-run. `check_data_leakage.py` inherits the fix as the EXP-31 pre/post gate. |
+| 2026-07-09 (revert to Sonnet 4.6, D59) | D59 added, superseding D56: the official default reverts `claude-sonnet-5` -> `claude-sonnet-4-6` after EXP-28's `trio_s5` control (production architecture, model-only change) collapsed coverage to 0.27 (Malta 0.12 vs June 4.6 0.72) at ~3x cost, running retries to exhaustion and abstaining below the 0.65 floor. Reverted `DEFAULT_MODEL` (`agents/tools/llm.py`) and the `_read_default` fallback (`scripts/dispatch_subtrios.py`); reordered dashboard `MODEL_OPTIONS` so 4.6 is default-selected, 5 retained as a labelled comparison; set `model_defaults` to 4.6 for all three roles in the canonical and worktree DBs via the new idempotent `scripts/set_default_model.py`. Whole stack (incl. picker, which falls back to `DEFAULT_MODEL`) returns to 4.6. Sonnet 5 pricing row and `_rejects_temperature` retained. Caveat recorded: this reverts the model, not the D55 transport (instructions still travel in the user turn for all models), so the first 4.6 run is the model-vs-transport test; and 4.6 availability through CLIProxyAPI is unverified until the proxy re-authenticates (it was returning `auth_unavailable` at decision time, swarm idle since 2026-07-03). EXP-31..35 move to 4.6; the Sonnet 5 EXP-28 rows become a labelled characterisation. 34 model-related tests pass. |
+| 2026-07-02 (EXP-35 pipeline mode built) | The `researcher_self_verify` pipeline_mode (the EXP-35 engineering precondition) is built: the Researcher answers as normal, then one self-critique call runs on the same model the Researcher attempt used, under the self-addressed disprove framing, with no independent counter-search (the EXP-14 `never` policy) and no Adjudicator ever. Upheld commits as `accepted_researcher_self_verify`; a rejection re-enters the existing `VerifierFeedback` retry path; exhaustion abstains as `abstained_researcher_self_verify` via the D54 finaliser. D35 abstention retries and the D37 0.65 floor are untouched, and trio / no_adjudicator / researcher_only are byte-identical (the new branches only activate on the new mode). Prompt registered as `phase2_verifier_disprove_self_critique` v1, a third `disprove_variant` alongside default/structured, so `prompt_versions` receipts hold. `phase2_final` CHECK widened via `scripts/migrate_self_verify_statuses.py` (two new statuses; owed against the canonical DB after merge). 5 new tests in `tests/test_pipeline_mode.py`; 772 pass. Spec written to `evaluation/specs/exp35_self_critique.json` (single arm `self_verify_s5`, the EXP-28 156-pair battery verbatim, all four models pinned `claude-sonnet-5`, budget_calls 8000 sized from EXP-28's observed ~51 calls/pair); dry-run preflight passed. Not dispatched. |
+| 2026-07-02 (D57: held-out void + final-report experiment programme) | D57 added: prior held-out exposure (exp21 partial 301 finals on FI/HR/SE 2026-06-24; expC_held_neg_licence 627 finals on all eight 2026-06-27/28) voided for reporting; the headline run re-registered as `exp31_frozen_headline_v2` with eight per-country sub-batches and eight explicit freeze gates. EXP-31..35 pre-registered in `docs/EXPERIMENTS_FINAL_PROGRAMME.md` + the `experiments` table (headline v2; all-Haiku cost point vs EXP-28 trio_s5 control; tiered Haiku-researcher/Sonnet-5-checker per D18; EXP-23 retrieval-strategy redo on Sonnet 5, config-changing so it blocks the freeze; single-agent self-critique pipeline_mode completing the EXP-28 ladder and answering the "why not one self-critiquing agent" probe). EXP-9 closed as stalled and superseded by EXP-32/33; EXP-8 formally parked. Cost analyses rebuilt over live data (`evaluation/cost_report.py`, SVGs in `docs/figures/`), replacing the June Malta-batch numbers. |
+| 2026-07-03 (D58: 503 auth_unavailable handled cleanly) | D58 added: a CLIProxyAPI 503 `auth_unavailable` (shared Claude Max auth-file pool exhausted under concurrent-window load) was crashing the coordinator subprocess uncaught mid-stage, silently orphaning `subtrio_status` rows with no `phase2_final` write — found live when the `researcher_only_s5` EXP-28 arm came back unhealthy (finalise_rate 0.353). `AuthUnavailableShutdown(RateLimitedShutdown)` added to `agents/errors.py`; `agents/tools/llm.py::call_for_structured` catches `anthropic.InternalServerError` alongside the existing `RateLimitError` catch and raises it; `scripts/run_coordinator.py` records an honest `final_failure_reason` (`auth_unavailable` vs `anthropic_rate_limit`). Reuses the whole 429 shutdown contract via subclassing, so `dispatch_subtrios.py`/`run_experiments.py` needed no changes. Verified live against the real proxy under load, not just mocked. 3 new tests, 770 pass. Mistral call path (EXP-9) knowingly left with the same gap, out of scope. |
 | 2026-07-02 (Sonnet 5 default, code-level) | D56 added: `DEFAULT_MODEL` flipped `claude-sonnet-4-6` -> `claude-sonnet-5` in `agents/tools/llm.py`, `scripts/dispatch_subtrios.py::_read_default` fallback, and the dashboard `MODEL_OPTIONS` lists (Run Console, Models page), by Benjy's direct instruction rather than the EXP-29 pre-registered gate. Canonical DB `model_defaults` had already been updated by a parallel session the previous night; this lands the matching code change. 767 tests pass. |
 | 2026-07-01 (overnight: EXP-28/29 + Claude 5 transport + audit tools) | D54 and D55 added. **D54**: `pipeline_mode` architecture-ablation knob (trio / no_adjudicator / researcher_only) threaded coordinator -> dispatcher -> orchestrator flag_map, with the `phase2_final` CHECK widened via `scripts/migrate_pipeline_mode_statuses.py` (three new terminal statuses; owed against canonical DB after merge) and 8 new tests. EXP-28 (architecture ablation ladder, 156-pair dev battery MT60+NL52+AL44, 78 negative golds, Sonnet 5 pinned) and EXP-29 (Sonnet 4.6 whole-stack contrast, adoption rule declared) pre-registered in `docs/EXPERIMENTS_ARCH_ABLATION.md` + the `experiments` table and dispatched overnight via the orchestrator (`evaluation/runs/exp28_arch_ablation_20260701/`). **D55**: CLIProxyAPI 7.2.45 (restarted to expose `claude-sonnet-5`) replaces the API `system` param with the Claude Code system prompt, silently discarding all agent instructions; instructions now travel in the user turn (`<instructions>` block), Claude 5 calls omit `temperature`, text blocks are joined explicitly past thinking blocks, and structured-call retries run at 4x budget on a `max_tokens` stop. Early-run verifier collapses (4 pairs, pre-fix) had their `phase2_final` rows deleted for re-run on fixed code. New analysis tools: `evaluation/leakage_fingerprint_audit.py` (FM-14 content-level answer-key audit; main results 244 committed pairs -> 1 benign candidate at >=8 shared words) and `evaluation/risk_coverage.py` (D37 selective-prediction sweep + dependency-free SVG; main results n=368: floor 0.65 -> coverage 0.620 at strict precision 0.904, floor 0.70 -> 0.473 at 0.960). Report work: `docs/REPORT_DIRECTION_MEMO.md` (engineering/adversarial reframe, verified numbers) and red-text scaffolding edits in `~/Downloads/Preliminary Report - Claude overnight edits.docx`. |
 | 2026-06-29 (human_required -> unsupported) | D53 added: the third `LanguageRoute` value is renamed `human_required` -> `unsupported` (the route when neither native reading nor DeepL handles a source language; the pair then abstains, no human-translation stage). Never set in any logged run (all `language_route_used` rows are `native`), so a clean rename with no data migration and no legacy value retained. Touches `agents/models.py` (`LanguageRoute`), the `scripts/setup_sqlite.py` `language_confidence.routing_decision` CHECK, and `AGENT_DESIGN.md`. The empty canonical `language_confidence` table had its CHECK rebuilt in place. Housekeeping: the two D51/D52 canonical pre-migration backups were deleted after the migrations verified. 759 tests pass. |

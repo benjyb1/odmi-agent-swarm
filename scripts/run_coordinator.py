@@ -44,7 +44,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from agents.adjudicator import run_adjudicator
 from agents.errors import (
     EXIT_CODE_RATE_LIMITED, EXIT_CODE_BLOCKER,
-    RateLimitedShutdown, BlockerShutdown,
+    AuthUnavailableShutdown, RateLimitedShutdown, BlockerShutdown,
 )
 from agents.tools import answer_shapes
 from agents.models import (
@@ -1039,7 +1039,14 @@ def coordinate(
     exhaustion abstains (`abstained_researcher_only`). The honesty layer
     (D35 abstention retries, D37 commit floor) is retained in every mode
     because it is a distinct mechanism from the adversarial verification
-    layer under ablation.
+    layer under ablation. 'researcher_self_verify' (EXP-35) swaps the
+    separate Verifier agent for one self-critique call: the same model
+    the Researcher attempt used, no independent counter-search (the
+    EXP-14 'never' policy), the self-addressed disprove prompt variant.
+    An upheld answer commits (`accepted_researcher_self_verify`); a
+    rejection feeds the critique back through the normal retry path;
+    exhaustion abstains (`abstained_researcher_self_verify`) and the
+    Adjudicator is never called.
 
     `search_strategy` (EXP-23) is the Researcher's retrieval strategy
     (SRCH-5/6). 'narrow_then_wide' (the default) is byte-identical to
@@ -1355,6 +1362,24 @@ def coordinate(
             break  # exhausted -> post-loop abstention finaliser
 
         # --- Verifier stage ---
+        # EXP-35 researcher_self_verify: the critique call is the same
+        # model the Researcher attempt used, never runs its own web
+        # search (the EXP-14 'never' policy), and carries the
+        # self-addressed disprove prompt variant. Every other mode is
+        # byte-identical to before the knob existed.
+        self_verify = pipeline_mode == "researcher_self_verify"
+        if self_verify:
+            v_model = _model_for_attempt(
+                researcher_model, researcher_escalation_model, attempt,
+            )
+            v_search = "never"
+            v_prompt_variant = "self_critique"
+        else:
+            v_model = _model_for_attempt(
+                verifier_model, verifier_escalation_model, attempt,
+            )
+            v_search = verifier_search
+            v_prompt_variant = verifier_prompt_variant
         _upsert_subtrio_status(
             subtrio_id=subtrio_id, batch_id=batch_id,
             question_id=question_id, country_code=country_code,
@@ -1385,17 +1410,14 @@ def coordinate(
                     last_message=f"V{_att + 1} · {e}",
                 )
 
-        v_model = _model_for_attempt(
-            verifier_model, verifier_escalation_model, attempt,
-        )
         v_result = run_verifier(
             v_inp, subtrio_id=subtrio_id, on_step=_v_step,
             model=v_model,
             provider=provider, max_results_per_query=max_results_per_query,
             num_queries=num_queries,
-            verifier_search=verifier_search,
+            verifier_search=v_search,
             picker_model=picker_model,
-            verifier_prompt_variant=verifier_prompt_variant,
+            verifier_prompt_variant=v_prompt_variant,
         )
         cumulative_tokens_in += v_result.cumulative_input_tokens
         cumulative_tokens_out += v_result.cumulative_output_tokens
@@ -1461,13 +1483,19 @@ def coordinate(
             last_researcher_output.answer,
             last_researcher_output.answer_confidence,
         ):
-            final_status = "accepted_by_verifier"
+            final_status = (
+                "accepted_researcher_self_verify" if self_verify
+                else "accepted_by_verifier"
+            )
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,
                 question_id=question_id, country_code=country_code,
                 stage="done", final_verdict=final_status,
                 cumulative_cost_usd=cumulative_cost,
-                last_message="verifier passed",
+                last_message=(
+                    "self-critique upheld" if self_verify
+                    else "verifier passed"
+                ),
                 ended=True,
             )
             _save_final_row(
@@ -1526,17 +1554,20 @@ def coordinate(
         # Retries exhausted → Adjudicator.
         break
 
-    # --- EXP-28 ablation arms: no Adjudicator recovery ---
-    # researcher_only and no_adjudicator terminate retry exhaustion in an
-    # honest abstention. The written answer is `inconclusive` (mirroring the
-    # D52 abstained_adjudicator finalisation), so the headline metric is not
-    # polluted by whichever sub-floor guess the last attempt happened to
-    # produce.
-    if pipeline_mode in ("researcher_only", "no_adjudicator"):
-        final_status = (
-            "abstained_researcher_only" if pipeline_mode == "researcher_only"
-            else "abstained_no_adjudicator"
-        )
+    # --- EXP-28/35 ablation arms: no Adjudicator recovery ---
+    # researcher_only, no_adjudicator and researcher_self_verify terminate
+    # retry exhaustion in an honest abstention. The written answer is
+    # `inconclusive` (mirroring the D52 abstained_adjudicator
+    # finalisation), so the headline metric is not polluted by whichever
+    # sub-floor guess the last attempt happened to produce.
+    if pipeline_mode in (
+        "researcher_only", "no_adjudicator", "researcher_self_verify",
+    ):
+        final_status = {
+            "researcher_only": "abstained_researcher_only",
+            "no_adjudicator": "abstained_no_adjudicator",
+            "researcher_self_verify": "abstained_researcher_self_verify",
+        }[pipeline_mode]
         chosen = ResearcherOutput(
             answer="inconclusive",
             answer_explanation=(
@@ -1799,14 +1830,18 @@ def main() -> int:
              "version (phase2_adjudicator_free).")
     parser.add_argument(
         "--pipeline-mode", default="trio",
-        choices=["trio", "no_adjudicator", "researcher_only"],
-        help="EXP-28 architecture ablation. 'trio' (default) is "
+        choices=["trio", "no_adjudicator", "researcher_only",
+                 "researcher_self_verify"],
+        help="EXP-28/35 architecture ablation. 'trio' (default) is "
              "byte-identical to production. 'no_adjudicator' keeps the "
              "Researcher-Verifier loop but abstains at retry exhaustion "
              "instead of adjudicating (the EXP-15 design). "
              "'researcher_only' removes the verification layer: commit on "
              "a real label at or above the D37 floor, retry on sub-floor "
-             "or inconclusive, abstain on exhaustion.")
+             "or inconclusive, abstain on exhaustion. "
+             "'researcher_self_verify' (EXP-35) replaces the Verifier "
+             "with one self-critique call on the Researcher's own model, "
+             "no independent search; no Adjudicator.")
     parser.add_argument(
         "--dry-run", action="store_true",
         help=(
@@ -1860,14 +1895,21 @@ def main() -> int:
             walkthrough=args.walkthrough,
         )
     except RateLimitedShutdown as exc:
-        print(f"\n[RATE LIMITED] {exc}", file=sys.stderr)
+        # AuthUnavailableShutdown subclasses this so it shares the whole
+        # shutdown contract (same subtrio_status stage, same exit code, same
+        # dispatcher global-stop-and-resume), but the DB row should say what
+        # actually happened rather than defaulting every subclass to the 429
+        # label.
+        is_auth = isinstance(exc, AuthUnavailableShutdown)
+        print(f"\n[{'AUTH UNAVAILABLE' if is_auth else 'RATE LIMITED'}] {exc}",
+              file=sys.stderr)
         _upsert_subtrio_status(
             subtrio_id=subtrio_id, batch_id=batch_id,
             question_id=args.question_id, country_code=args.country_code.upper(),
             stage="interrupted_rate_limit",
             final_verdict="interrupted_rate_limit",
             last_message=str(exc)[:200],
-            final_failure_reason="anthropic_rate_limit",
+            final_failure_reason="auth_unavailable" if is_auth else "anthropic_rate_limit",
             ended=True,
         )
         return EXIT_CODE_RATE_LIMITED

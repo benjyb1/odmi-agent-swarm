@@ -34,7 +34,7 @@ import anthropic
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-from agents.errors import RateLimitedShutdown
+from agents.errors import AuthUnavailableShutdown, RateLimitedShutdown
 from agents.models import LLMUsage
 
 # Load env once at import. Override the shell so stale globals do not win.
@@ -84,7 +84,7 @@ PRICING_USD_PER_M = {
     "mistral-large-latest":       {"input": 2.0,  "output": 6.0},
 }
 
-DEFAULT_MODEL = "claude-sonnet-5"
+DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 def _is_mistral(model: str) -> bool:
@@ -342,22 +342,20 @@ def call_for_structured(
                 timeout_s=timeout_s,
             )
         else:
-            # CLIProxyAPI's Claude OAuth channel (7.2.45, observed 2026-07-01)
-            # REPLACES the API `system` param with the Claude Code system
-            # prompt, so any instructions sent as `system` never reach the
-            # model. Deliver the agent instructions in the user turn instead:
-            # the injected Claude Code prompt stays upstream, and our full
-            # prompt (persona, task, schema) arrives as the first thing the
-            # model reads. Verified empirically: system-only instructions were
-            # silently ignored by every model through the proxy.
-            folded_user = (
-                f"<instructions>\n{sys_text}\n</instructions>\n\n{user_text}"
-            )
+            # Pre-July transport restored (2026-07-09, D61). The proxy's
+            # cloak feature is disabled globally (`disable-claude-cloak-mode:
+            # true` in cliproxyapi.conf), so the API `system` param reaches
+            # Claude as-is with no Claude Code prompt injected. This is the
+            # exact call shape every pre-2026-07-01 run used, so the baseline
+            # matches the validated June dev experiments. (The D55 user-turn
+            # folding was a workaround for proxy 7.2.45's cloak; with cloak
+            # off it is removed.)
             create_kwargs = dict(
                 model=model,
+                system=sys_text,
                 max_tokens=effective_max_tokens,
                 temperature=temperature,
-                messages=[{"role": "user", "content": folded_user}],
+                messages=[{"role": "user", "content": user_text}],
                 timeout=timeout_s,
             )
             # Claude 5 family models reject `temperature` outright
@@ -382,6 +380,30 @@ def call_for_structured(
                 )
                 raise RateLimitedShutdown(
                     f"Anthropic rate limit hit for model={model}: {exc}"
+                ) from exc
+            except anthropic.InternalServerError as exc:
+                # Any 5xx from CLIProxyAPI/upstream. The concrete case
+                # observed 2026-07-02 was a 503 `auth_unavailable` (the
+                # shared Claude Max auth-file pool had no session free for
+                # this model under concurrent-window load), but every
+                # InternalServerError gets the same treatment: it is not a
+                # bug in the caller, so it must never crash the process
+                # uncaught. AuthUnavailableShutdown (a RateLimitedShutdown
+                # subclass) reuses the whole 429 shutdown contract. Before
+                # this, a 503 propagated uncaught and crashed the
+                # coordinator subprocess mid-stage with no DB update at all,
+                # silently orphaning the subtrio_status row.
+                _log_claude_usage(
+                    model=model,
+                    input_tokens=0,
+                    output_tokens=0,
+                    estimated_cost_usd=None,
+                    rate_limited=True,
+                    context=usage_context,
+                    subtrio_id=subtrio_id,
+                )
+                raise AuthUnavailableShutdown(
+                    f"CLIProxyAPI auth/capacity unavailable for model={model}: {exc}"
                 ) from exc
             served_model = response.model
             # Claude 5 family responses can lead with a ThinkingBlock; take
