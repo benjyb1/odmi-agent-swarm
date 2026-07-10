@@ -36,7 +36,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT))
@@ -54,9 +54,24 @@ PROMPT_VERSION = "closed_book_v1"
 class ClosedBookAnswer(BaseModel):
     answer: str = Field(description="Exactly one label from the allowed set, "
                                     "or 'inconclusive' if you do not recall it.")
-    known: bool = Field(description="True only if you actually recall this "
+    known: bool = Field(default=False,
+                        description="True only if you actually recall this "
                                     "country's situation, not a general prior.")
-    rationale: str = Field(description="One short sentence, 40 words max.")
+    rationale: str = Field(default="", description="One short sentence, 40 words max.")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _tolerate_synonyms(cls, data):
+        # The model sometimes names the calibration field `recalled` (or omits
+        # it). Map the common synonyms onto `known` so a single wording slip
+        # does not fail the whole structured call.
+        if isinstance(data, dict):
+            if "known" not in data:
+                for alt in ("recalled", "recall", "know", "is_known", "confident"):
+                    if alt in data:
+                        data["known"] = data[alt]
+                        break
+        return data
 
 
 def _now() -> str:
@@ -128,6 +143,41 @@ def _select_sample(conn: sqlite3.Connection) -> list[dict]:
     return sample
 
 
+# The class-balanced dev battery (NL52 + MT60 + AL44 = 156 pairs, ~50/50
+# yes/no) used by EXP-28/31. On a balanced set the majority-class floor is
+# ~0.5, so it is the honest universe for the RQ1 floor (the natural 20%
+# sample is yes-heavy and inflates the floor to 0.68).
+BATTERY_FILES = [
+    "data/questions/nl_eval_pairs.json",
+    "data/questions/malta_eval_pairs.json",
+    "data/questions/al_eval_pairs.json",
+]
+
+
+def _select_battery(conn: sqlite3.Connection) -> list[dict]:
+    want: list[tuple[str, str]] = []
+    for path in BATTERY_FILES:
+        spec = json.loads((_REPO_ROOT / path).read_text())
+        want.extend((p["question_id"], p["country_code"]) for p in spec["pairs"])
+    out: list[dict] = []
+    for qid, cc in want:
+        r = conn.execute(
+            """SELECT g.question_id, g.country_code, g.country_name, g.dimension,
+                      g.response AS gt_response, g.decision,
+                      q.question_text, q.allowed_answers, q.answer_shape
+               FROM ground_truth g JOIN questions q ON q.question_id=g.question_id
+               WHERE g.question_id=? AND g.country_code=?""",
+            (qid, cc)).fetchone()
+        if r is None:
+            raise SystemExit(f"battery pair {qid}/{cc} missing from ground_truth")
+        cols = ["question_id", "country_code", "country_name", "dimension",
+                "gt_response", "decision", "question_text", "allowed_answers",
+                "answer_shape"]
+        out.append(dict(zip(cols, r)))
+    out.sort(key=lambda x: (x["country_code"], x["question_id"]))
+    return out
+
+
 def classify(final: str | None, gt: str | None) -> str:
     """Python mirror of dashboard/lib/db.py::_MATCH_STATUS_SQL (essentials)."""
     if gt is None or gt.strip() == "":
@@ -179,17 +229,24 @@ def main() -> None:
                     help="SQLite path. Point at the canonical checkout DB so "
                          "results persist where the dashboard reads them, not "
                          "the diverging worktree copy.")
+    ap.add_argument("--battery", action="store_true",
+                    help="Run over the class-balanced 156-pair dev battery "
+                         "(NL52+MT60+AL44) instead of the 20%% dev sample. The "
+                         "honest RQ1 floor: majority-class ~0.5, not yes-heavy.")
     args = ap.parse_args()
 
-    run_id = args.run_id or f"cb_{datetime.now(timezone.utc):%Y%m%d}"
+    universe = "156-pair balanced battery" if args.battery \
+        else f"20% of {len(DEV_COUNTRIES)}x143 dev"
+    run_id = args.run_id or (
+        f"cb_battery_{datetime.now(timezone.utc):%Y%m%d}" if args.battery
+        else f"cb_{datetime.now(timezone.utc):%Y%m%d}")
 
     conn = sqlite3.connect(args.db, timeout=30.0)
-    sample = _select_sample(conn)
+    sample = _select_battery(conn) if args.battery else _select_sample(conn)
     if args.limit:
         sample = sample[: args.limit]
 
-    print(f"run_id={run_id}  sample={len(sample)} pairs "
-          f"(20% of {len(DEV_COUNTRIES)}x143 dev)")
+    print(f"run_id={run_id}  sample={len(sample)} pairs ({universe})")
     by_cc: dict[str, int] = {}
     for r in sample:
         by_cc[r["country_code"]] = by_cc.get(r["country_code"], 0) + 1
@@ -232,10 +289,17 @@ def main() -> None:
             answer, known, raw = parsed.answer, parsed.known, parsed.model_dump_json()
             in_t, out_t, cost = (usage.input_tokens, usage.output_tokens,
                                  usage.estimated_cost_usd)
-        except Exception as exc:  # noqa: BLE001
-            print(f"  [{i}/{len(sample)}] {rec['country_code']} "
-                  f"{rec['question_id']} ERROR {type(exc).__name__}: {exc}")
+        except llm.RateLimitedShutdown:
+            # Quota / auth cooldown: stop so the resumable runner can retry
+            # the whole invocation later; already-logged pairs are skipped.
             raise
+        except Exception as exc:  # noqa: BLE001
+            # A single unparseable pair must not sink the run. Leave it
+            # unlogged so a resume retries it, and carry on.
+            print(f"  [{i}/{len(sample)}] {rec['country_code']} "
+                  f"{rec['question_id']} SKIP {type(exc).__name__}: "
+                  f"{str(exc)[:120]}")
+            continue
         status = classify(answer, rec["gt_response"])
         counts[status] = counts.get(status, 0) + 1
         conn.execute(

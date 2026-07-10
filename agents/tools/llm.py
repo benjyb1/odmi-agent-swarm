@@ -342,20 +342,23 @@ def call_for_structured(
                 timeout_s=timeout_s,
             )
         else:
-            # Pre-July transport restored (2026-07-09, D61). The proxy's
-            # cloak feature is disabled globally (`disable-claude-cloak-mode:
-            # true` in cliproxyapi.conf), so the API `system` param reaches
-            # Claude as-is with no Claude Code prompt injected. This is the
-            # exact call shape every pre-2026-07-01 run used, so the baseline
-            # matches the validated June dev experiments. (The D55 user-turn
-            # folding was a workaround for proxy 7.2.45's cloak; with cloak
-            # off it is removed.)
+            # D62: instructions travel in the user turn (D55 folding restored).
+            # The mandatory CLIProxyAPI cloak (`disable-claude-cloak-mode:
+            # false`) must stay on - Anthropic 429s undisguised Sonnet/Opus
+            # OAuth - and with the cloak on the proxy REPLACES the API `system`
+            # param with the Claude Code prompt, silently discarding anything
+            # sent as `system`. The D61 pre-July `system`-param shape therefore
+            # loses the agent prompt and schema (observed as
+            # query_gen_schema_invalid on every pair). Fold the full prompt into
+            # the user turn so it reaches the model regardless of the cloak.
+            folded_user = (
+                f"<instructions>\n{sys_text}\n</instructions>\n\n{user_text}"
+            )
             create_kwargs = dict(
                 model=model,
-                system=sys_text,
                 max_tokens=effective_max_tokens,
                 temperature=temperature,
-                messages=[{"role": "user", "content": user_text}],
+                messages=[{"role": "user", "content": folded_user}],
                 timeout=timeout_s,
             )
             # Claude 5 family models reject `temperature` outright
