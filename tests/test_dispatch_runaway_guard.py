@@ -23,6 +23,11 @@ import scripts.dispatch_subtrios as ds
 class _FakeProc:
     def wait(self):
         return 0
+    returncode = 0
+
+    def communicate(self, *a, **kw):
+        self.returncode = self.wait()
+        return (b'', b'')
 
     def poll(self):
         return 0

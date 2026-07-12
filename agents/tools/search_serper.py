@@ -11,6 +11,7 @@ query, capped at 8 to avoid Brave-style operator-limit failures.
 from __future__ import annotations
 
 import os
+import threading
 from typing import List, Optional
 
 import httpx
@@ -19,6 +20,18 @@ from agents.tools.search import SearchResult
 
 _ENDPOINT = "https://google.serper.dev/search"
 _INCLUDE_DOMAIN_CAP = 8
+
+# Wall-clock backstop for the whole SERP request. httpx's 20s timeout only
+# covers connect/read once a socket exists; OS-level DNS resolution
+# (getaddrinfo) runs before it and can block forever after a sleep/wake or
+# network handover. Observed 2026-07-10..12: ~26 pairs hung indefinitely at
+# `search_start` with no error trail. Must stay above the httpx timeout so it
+# only fires on hangs the client timeout cannot see.
+SERPER_WALL_CLOCK_DEADLINE_S = 45.0
+
+
+class SerperDeadlineError(RuntimeError):
+    """The Serper request exceeded the wall-clock deadline (likely a DNS hang)."""
 
 
 def _build_query(query: str, include_domains: Optional[List[str]]) -> str:
@@ -46,10 +59,36 @@ def serper_search(
     # Serper's `num` parameter is capped at 20 per request by the upstream API.
     body = {"q": q, "num": min(max_results, 20)}
 
-    with httpx.Client(timeout=20.0) as client:
-        response = client.post(_ENDPOINT, headers=headers, json=body)
-        response.raise_for_status()
-        payload = response.json()
+    # The request runs in a daemon thread so the caller can enforce a
+    # wall-clock deadline. A thread stuck in getaddrinfo cannot be killed,
+    # but the pair now fails loudly instead of hanging the coordinator
+    # subprocess, and a daemon thread never blocks interpreter exit
+    # (a ThreadPoolExecutor worker would, via its atexit join).
+    outcome: dict = {}
+    done = threading.Event()
+
+    def _do_post() -> None:
+        try:
+            with httpx.Client(timeout=20.0) as client:
+                response = client.post(_ENDPOINT, headers=headers, json=body)
+                response.raise_for_status()
+                outcome["payload"] = response.json()
+        except BaseException as exc:  # noqa: BLE001 - re-raised in the caller
+            outcome["error"] = exc
+        finally:
+            done.set()
+
+    worker = threading.Thread(target=_do_post, daemon=True, name="serper-post")
+    worker.start()
+    if not done.wait(timeout=SERPER_WALL_CLOCK_DEADLINE_S):
+        raise SerperDeadlineError(
+            f"Serper SERP call exceeded {SERPER_WALL_CLOCK_DEADLINE_S:.0f}s "
+            f"wall-clock deadline (query={q[:80]!r}); likely an OS-level "
+            "DNS hang after sleep/wake."
+        )
+    if "error" in outcome:
+        raise outcome["error"]
+    payload = outcome["payload"]
 
     out: List[SearchResult] = []
     for r in payload.get("organic", [])[:max_results]:
