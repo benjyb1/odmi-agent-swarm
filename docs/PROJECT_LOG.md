@@ -8,6 +8,51 @@ Entries newest first.
 
 ---
 
+## 2026-07-12 — Suspected post-D62 commit-accuracy regression: comparator artefact, not a transport effect
+
+The full EXP-29 4.6 battery (156 pairs, `trio_s46`, D62 user-turn transport,
+run 2026-07-10..12) appeared to trade precision for coverage against each
+pair's most recent June result: coverage 0.46 -> 0.56, commit-accuracy
+0.76 -> 0.64. Investigated as a possible D62 transport regression (folded
+instructions weakening the D37 floor). It is not one.
+
+**Mechanism.** The "most recent June row" comparator rule is config-blind.
+For all 52 NL pairs the last June run was the late-June Opus-4-6 prompt
+experiments (expA/expB/expC), and Opus on NL commits far less and far more
+precisely (cov 0.46-0.60, acc 0.71-0.82 across six arms) than Sonnet-4-6
+ever has (cov 0.81-0.92, acc 0.56-0.64 across eight June arms). MT and AL,
+whose June comparators were already Sonnet-4-6, show no shift at all.
+Holding the comparator model fixed at `claude-sonnet-4-6` collapses the
+regression: June cov 0.603 / acc 0.646 vs now cov 0.559 / acc 0.645
+(n=136; per-country flat, all Wilson intervals overlapping). Script:
+`evaluation/exp29_transport_regression_check.py`.
+
+**Hypotheses ruled out.**
+- Folding bug (H3): dumped the real folded Adjudicator prompt; the 0.6
+  floor, abstention rules, forbidden-source list and schema all arrive
+  intact inside `<instructions>`, with the user message cleanly separated.
+- Calibration drift (H4): committed-answer confidence June-s46 mean 0.733
+  (median 0.72) vs now 0.743 (median 0.72); wrong-commit confidence flat.
+- Same-evidence verdict flips (H1): of 33 answer divergences between the
+  s46 June comparators and now, only 5 share a URL and 8 a domain; the
+  transitions are symmetric (match->abstained 10 vs abstained->match 7,
+  differ->abstained 9 vs abstained->differ 6). Retrieval run-to-run
+  variance, no directional shift.
+
+**Implication for EXP-31.** June-vs-now deltas must compare like-for-like
+configs (model above all); the R12 transport flag on June comparisons stays,
+but no evidence blocks the 4.6 + user-turn transport as the headline config.
+
+**Side fix (separate commit).** The 42-hour sleep/wake window hung ~26 pairs
+at `search_start`: OS-level DNS resolution blocks before httpx's 20s timeout
+applies, and `dispatch_subtrios.py` only recognised exit codes 42/BLOCKER,
+so the deaths left no trail. Added `SERPER_WALL_CLOCK_DEADLINE_S = 45.0`
+(daemon-thread guard raising `SerperDeadlineError` in
+`agents/tools/search_serper.py`) and an unknown-exit-code log line with a
+stderr tail in the dispatcher (`communicate()` instead of `wait()`, which
+also removes a pipe-buffer deadlock risk). Tests:
+`tests/test_search_serper_deadline.py`; suite 782 pass.
+
 ## 2026-07-01/02 — Overnight session: architecture ablation live (EXP-28/29), Claude 5 transport, report reframe
 
 Autonomous overnight run with a standing brief: shift the report toward the
