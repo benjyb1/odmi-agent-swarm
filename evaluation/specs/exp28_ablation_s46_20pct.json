@@ -1,0 +1,65 @@
+{
+  "run_id": "exp28_ablation_s46_20pct",
+  "global_parallel": 2,
+  "budget_calls": 1200,
+  "experiments": [
+    {
+      "experiment_id": "exp29_sonnet5_model",
+      "type": "accuracy",
+      "pairs": [
+        "I10:AL",
+        "I12:NL",
+        "I14:MT",
+        "I1:MT",
+        "I22:AL",
+        "I22:MT",
+        "I2:NL",
+        "I6:MT",
+        "I8-a:AL",
+        "I8-b:NL",
+        "I8-d:MT",
+        "I9-b:AL",
+        "P10-b:NL",
+        "P13:MT",
+        "P21:AL",
+        "P28:NL",
+        "P4:AL",
+        "P4:MT",
+        "P8:NL",
+        "PT10:MT",
+        "PT16:AL",
+        "PT18:MT",
+        "PT21:NL",
+        "PT28:MT",
+        "PT34:NL",
+        "PT35:AL",
+        "PT39:MT",
+        "PT43:AL",
+        "PT4:MT",
+        "PT4:NL",
+        "Q20:NL"
+      ],
+      "baseline_knobs": {
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "provider": "diy"
+      },
+      "arms": [
+        {
+          "condition_label": "no_adjudicator_s46",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        },
+        {
+          "condition_label": "researcher_only_s46",
+          "knobs": {
+            "pipeline_mode": "researcher_only"
+          }
+        }
+      ]
+    }
+  ]
+}

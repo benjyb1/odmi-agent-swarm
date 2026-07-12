@@ -1,0 +1,58 @@
+{
+  "run_id": "exp28_ablation_live_check",
+  "global_parallel": 2,
+  "budget_calls": 200,
+  "experiments": [
+    {
+      "experiment_id": "exp29_sonnet5_model",
+      "type": "accuracy",
+      "pairs": [
+        "I14:MT",
+        "I12:NL",
+        "I13:AL",
+        "I22:MT",
+        "I23:MT",
+        "I4:MT"
+      ],
+      "baseline_knobs": {
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "provider": "diy"
+      },
+      "arms": [
+        {
+          "condition_label": "no_adjudicator_s46",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp29_sonnet5_model",
+      "type": "accuracy",
+      "pairs": [
+        "I9-b:MT",
+        "PT10:MT",
+        "PT17:MT"
+      ],
+      "baseline_knobs": {
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "provider": "diy"
+      },
+      "arms": [
+        {
+          "condition_label": "researcher_only_s46",
+          "knobs": {
+            "pipeline_mode": "researcher_only"
+          }
+        }
+      ]
+    }
+  ]
+}

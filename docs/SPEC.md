@@ -2399,10 +2399,66 @@ honoured end to end (auth works AND our system prompt reaches the model). Only
 after that passes does any EXP-28 dispatch start. If Sonnet 5 is ever run as a
 labelled comparison, cloak-off means it too uses the plain `system` param.
 
+### D63: EXP-28 architecture-ablation table filled by zero-cost replay of the trio run, not fresh dispatch; underlying rows subsequently lost to operator error
+
+**Date:** 2026-07-12. Companion to the 2026-07-12 D62-regression change-log entry
+below (same 156-pair `trio_s46` run; this entry covers the `no_adjudicator` and
+`researcher_only` arms of the same experiment).
+
+**Method.** `no_adjudicator` and `researcher_only` outcomes are fully derivable
+from the trio run's own `phase2_researcher_runs`/`phase2_verifier_runs` rows:
+the Researcher/Verifier loop runs byte-identically across all three
+`pipeline_mode` values up to the point they diverge (`scripts/run_coordinator.py`
+~L1310-1470). `no_adjudicator` differs from `trio` only at retry-exhaustion (an
+Adjudicator call becomes an automatic `abstained_no_adjudicator`); if a trio
+pair was `accepted_by_verifier`, the Adjudicator was never reached and
+`no_adjudicator`'s answer is identical by construction, no replay needed.
+`researcher_only` is simply the first Researcher attempt whose answer is not
+an abstention and whose confidence clears the D37 0.65 commit floor
+(`COMMIT_CONFIDENCE_FLOOR`), which is saved for every attempt of every trio
+pair regardless of `pipeline_mode`. Avoided a ~300-pair fresh dispatch this
+way (flagged after one was drafted and briefly launched -- ~9 pairs ran before
+being caught and killed; those 9 were kept and used as the live-check sample
+below instead of being wasted).
+
+**Results (156-pair replay).** `trio` (actual): 52.6% coverage / 64.6%
+commit-accuracy. `no_adjudicator` (replayed): 42.3% / 65.2%. `researcher_only`
+(replayed): 46.8% / 65.8%. Commit-accuracy is flat across all three arms --
+the Verifier and Adjudicator are not adding precision on this battery; the
+full trio's only measurable value over the ablated arms is coverage (+10pt
+over `no_adjudicator`, +6pt over `researcher_only`). Consistent with the
+2026-06-25 confidence-experiments finding that no evidence gate catches the
+confident FPs.
+
+**Live-check (9 targeted pairs, real dispatch, not reused).** 8/9 matched the
+replay's prediction exactly. The one miss (`I22:MT`) was not a replay-logic
+error: a fresh `no_adjudicator` dispatch retrieved genuinely different search
+evidence than the trio run had for the same pair (different source URLs,
+committed on attempt 2 instead of reaching retry-exhaustion), so the D54
+"warm shared cache" design does not hold 100% of the time across arms
+dispatched in separate invocations. Read the replay table as a reliable
+directional result, not an exact one -- roughly a 1-in-9 chance any single
+replayed pair's outcome would differ under a genuinely fresh live run.
+
+**Data-loss caveat (why this cannot be re-verified from the DB right now).**
+The 156-pair `trio_s46` dataset this replay depends on was never committed to
+canonical `data/odmi.db` (worktree DBs diverge by convention and are not
+committed; backfill was owed but not done before the loss below), and was
+subsequently destroyed in the source worktree by a `git checkout --
+data/odmi.db` run during an unrelated rebase attempt, which silently reverted
+the live, uncommitted working file to a stale pre-session commit. No WAL file
+or local Time Machine snapshot survived to recover it. The numbers in this
+entry are transcribed from the analysis performed in-session before the loss,
+not independently re-verifiable against the DB as of this commit. Re-running
+the 156-pair `trio_s46` battery (`evaluation/specs/exp29_s46_100pct_cumulative.json`,
+already registered) would restore a requeryable dataset; until then, treat
+this section as a documented finding, not a live number.
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-07-12 (D63: ablation table via replay; underlying data subsequently lost) | See D63 above. Ablation table (`no_adjudicator`/`researcher_only`) filled by zero-cost replay of the existing `trio_s46` run rather than a ~300-pair fresh dispatch; replay validated on 9 live-dispatched pairs (8/9 exact match, one miss traced to a cross-arm cache-sharing gap, not a logic error). The underlying 156-pair dataset was subsequently destroyed by an accidental `git checkout -- data/odmi.db` in the source worktree (discarded uncommitted work, no recovery path); this entry documents the finding from the in-session analysis, not a re-queryable result. New eval specs preserved: `exp28_ablation_s46_full.json`, `exp28_ablation_s46_20pct.json`, `exp28_ablation_live_check.json`, `exp29_s46_10pct_pilot.json`/`_25pct_`/`_50pct_`/`_100pct_cumulative`/`_100pct_final.json` (the incremental dispatch trail and the canonical 156-pair pair list for this experiment). |
 | 2026-07-12 (post-D62 "regression" resolved as comparator artefact) | The EXP-29 4.6 battery (156 pairs, `trio_s46`, D62 user-turn transport, run 2026-07-10..12) looked like a commit-accuracy regression against each pair's most recent pre-July result (cov 0.46 -> 0.56, acc 0.76 -> 0.64). Root cause is the comparator rule, not the transport: the config-blind "most recent June row" gave all 52 NL pairs the late-June Opus-4-6 arms (expA/B/C; NL cov 0.46-0.60, acc 0.71-0.82) as their baseline, while Sonnet-4-6 has always run NL at cov 0.81-0.92 / acc 0.56-0.64 (eight June arms). Holding the comparator at `claude-sonnet-4-6`: June cov 0.603 / acc 0.646 vs now 0.559 / 0.645 (n=136, per-country flat, Wilson intervals overlapping). Folding bug, calibration drift and same-evidence verdict flips all ruled out (folded prompt dumps clean with the 0.6 floor and abstention rules intact; committed-answer confidence 0.733 vs 0.743, medians equal; 28 of 33 answer divergences cite different evidence, transitions symmetric). Script: `evaluation/exp29_transport_regression_check.py`; write-up in PROJECT_LOG 2026-07-12. Rule going forward: pre/post deltas compare like-for-like configs, model above all. Separately, the sleep/wake search hang (~26 pairs stuck at `search_start`, no error trail) got a 45s wall-clock guard on the Serper call (`SerperDeadlineError`, daemon thread - OS DNS resolution blocks before httpx's 20s timeout applies) and `dispatch_subtrios.py` now logs unknown child exit codes with a stderr tail instead of dropping them. |
 | 2026-07-10 (closed-book baseline) | New dev-only probe `evaluation/closed_book_baseline.py`: with retrieval disabled, what share of the 2025 answers does bare `claude-sonnet-4-6` (D59) reproduce from parametric memory? No existing `pipeline_mode` arm approximates this (`researcher_only` still searches). Universe = 20% of the full dev set, dimension-stratified within NL/MT/NO/FR/AL, seed 20260709, 145 pairs; rows in `closed_book_answers` (full prompt + raw response for replay), `--db` targets the canonical DB, resumable. Run `cb_20260709` (£0.33, user-turn transport): match rate **0.493** vs an always-`yes` majority-class floor of **0.681** - the bare model scores BELOW the trivial floor, so it is not carrying the 2025 answer key (contamination bound low; replaces the "structurally impossible" overclaim with a number). Well-calibrated (self-report known=true 0.877, known=false 0.177; abstains 22.8%); weakest on Quality (0.267) and `change` golds (0.190). RQ1 head-to-head on the 69 cb pairs that have a main-run (`experiment_id IS NULL`) final: swarm 0.567 vs closed-book 0.478 (+0.089 retrieval gain), but both sit under this yes-heavy subset's 0.739 always-yes floor because both abstain - which is why the definitive RQ1 read belongs on the class-balanced 156-pair battery (majority floor ~0.5), not the natural-distribution sample. |
 | 2026-07-10 (freeze-gate free items cleared) | Cleared the five zero-token freeze-gate items (`docs/EXPERIMENTS.md` gate table 1/2/4/5/6); only EXP-34 (item 3) and the D61 `system`-only verification call remain before the config can be frozen and EXP-31 dispatched. **EXP-19 (verifier counter-search, `analyze_phase1.py`):** keep `always`, config not flipped. The pooled rule mechanically favours `never` (acc 0.67 vs 0.63, FPR 0.30 vs 0.41, cheaper) but the never arm under-finalised on AL (5 vs 26 pairs), so the pooled marginal is composition-confounded by survivorship on the hard thin-web country; within-country never wins NL (0.71 vs 0.60) but loses MT (0.40 vs 0.70, FPR 0.67 vs 0.50) and is untested on AL, paired McNemar null (n=38, p=1.00). Inconclusive on the multi-country flip; keep `always`, consistent with EXP-14. **EXP-20 (retry chaining, `chaining_analysis.py` + `analyze_phase1.py`):** keep `baseline`, chaining not promoted. Against EXP-20's four-part promotion rule: bal_acc up (0.355 vs 0.320) but FPR not flat (0.387 vs 0.346, +0.041) and McNemar not significant (n=48, p=0.500), calls/resolved +7.5% (within +10%); two of four fail. The looser EXP-7 non-inferiority framing in `chaining_analysis.py` prints "passes" but does not govern. Result `evaluation/results/chaining_exp20_chaining_committing.json`. **EXP-18:** keep r5 (r10 rested on one NL run at +17% cost, never confirmed multi-country). **EXP-C / D50:** defer neg_licence, keep the full Researcher prompt. **Housekeeping:** SE catalogue route configured + verified (sparql on dataportal.se, 2026-06-10, D24-compliant); deny-list/leakage audit clean (244 committed pairs, 1 benign bundesregierung strategy-page candidate, matches prior baseline); resume behaviour verified (38 dispatch/resume tests pass). ARCHITECTURE.md freeze tag deliberately NOT yet applied. Net effect: no production config knob flips; EXP-31 dispatch remains gated on EXP-34 (re-pinned to 4.6) and the D61 verification call. All analyses zero-token, read-only against the worktree DB. |
