@@ -316,6 +316,11 @@ def test_dispatch_forwards_only_non_default(monkeypatch):
     class _FakeProc:
         def wait(self):
             return 0
+        returncode = 0
+
+        def communicate(self, *a, **kw):
+            self.returncode = self.wait()
+            return (b'', b'')
         def poll(self):
             return 0
 

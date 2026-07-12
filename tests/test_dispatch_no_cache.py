@@ -227,6 +227,11 @@ class TestDispatchWiring:
         class _FakeProc:
             def wait(self):
                 return 0
+            returncode = 0
+
+            def communicate(self, *a, **kw):
+                self.returncode = self.wait()
+                return (b'', b'')
 
         def fake_popen(cmd, **kw):
             captured_cmds.append(list(cmd))
@@ -260,6 +265,11 @@ class TestDispatchWiring:
         class _FakeProc:
             def wait(self):
                 return 0
+            returncode = 0
+
+            def communicate(self, *a, **kw):
+                self.returncode = self.wait()
+                return (b'', b'')
 
         def fake_popen(cmd, **kw):
             captured_cmds.append(list(cmd))
