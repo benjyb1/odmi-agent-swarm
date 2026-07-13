@@ -1,0 +1,55 @@
+{
+  "run_id": "d50_neg_licence_confirm_20260713_mt45",
+  "global_parallel": 8,
+  "budget_calls": 2000,
+  "experiments": [
+    {
+      "experiment_id": "d50_neg_licence_confirm",
+      "type": "accuracy",
+      "questions_from": "data/questions/nl_eval_pairs.json",
+      "countries": ["NL"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "snippet_picker": "on",
+        "search_strategy": "narrow_then_wide",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6"
+      },
+      "arms": [
+        { "condition_label": "baseline_full", "knobs": { "prompt_variant": "full" } },
+        { "condition_label": "neg_licence", "knobs": { "prompt_variant": "neg_licence" } }
+      ]
+    },
+    {
+      "experiment_id": "d50_neg_licence_confirm",
+      "type": "accuracy",
+      "questions_from": "data/questions/malta_eval_pairs_d50_45.json",
+      "countries": ["MT"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "snippet_picker": "on",
+        "search_strategy": "narrow_then_wide",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6"
+      },
+      "arms": [
+        { "condition_label": "baseline_full", "knobs": { "prompt_variant": "full" } },
+        { "condition_label": "neg_licence", "knobs": { "prompt_variant": "neg_licence" } }
+      ]
+    }
+  ]
+}

@@ -39,8 +39,19 @@ higher-resource).
 1. EXP-18 (breadth), EXP-19 (verifier search), EXP-20 (chaining) verdicts.
 2. EXP-34 retrieval-strategy verdict (EXP-23 produced no Sonnet-usable data).
 3. D50 neg_licence adopt-or-defer decision.
-4. EXP-28/29 land (model family and pipeline mode are config).
-5. ARCHITECTURE.md freeze commit, tagged; models per D56 (`claude-sonnet-5`).
+4. EXP-28/29 land. **Status 2026-07-12: neither has landed as pre-registered.**
+   EXP-28 has data for only 1 of 3 arms (`trio_s5`, 99 pairs, now a
+   superseded-model artefact per D59); EXP-29 never dispatched (0 rows).
+   Per D59 the model choice (4.6) is already decided on the `trio_s5`
+   coverage-collapse evidence, so this gate is satisfied for the *model*
+   question without EXP-28/29 completing; the *pipeline_mode* (architecture
+   ablation) question they were meant to answer is still open and does not
+   block EXP-31 (production stays `trio` regardless per D45) but does block
+   the dissertation's architecture-ablation chapter. Re-run on 4.6 post-freeze.
+5. ARCHITECTURE.md freeze commit, tagged; models per D59 (`claude-sonnet-4-6`,
+   reverted from D56's `claude-sonnet-5` after the EXP-28 `trio_s5` coverage
+   collapse). Transport per D62 (cloak-safe user-turn fold; D61's cloak-off
+   path is dead).
 6. SE catalogue route: restore `SE.json` or document web-only routing.
 7. Deny-list audit (`check_data_leakage.py`) clean before and after.
 8. Resume-from-interruption behaviour verified (the 2026-06-24 attempt died to
@@ -56,6 +67,39 @@ Disagreements pass through the D22 staleness-adjudication band and are
 reported as a bracket. FM-14 content-leakage fingerprint audit runs over the
 committed evidence post-run.
 
+**Mid-run bug and partial-run rule (added 2026-07-12, pre-EXP-31 audit —
+this gap had no written rule; D57 was precedent, not a pre-registered
+procedure).** The freeze locks a commit SHA (D47); the run is eight
+independent per-country sub-batches, so the SHA-lock is enforced per
+sub-batch, not only per whole-run.
+
+- **A crash** (rate limit, `auth_unavailable`, infra failure, power event)
+  does not void anything. Resume from the same frozen SHA via the existing
+  idempotent resume path (skips already-finalised pairs, D58, verified per
+  gate 8). No new commit, no new experiment_id.
+- **A correctness bug found after some countries have finished but before
+  all eight have dispatched:** countries already finalised under the frozen
+  SHA are not touched *unless* the bug plausibly affected their correctness
+  (not just a crash on later pairs) — if it did, those pairs are voided and
+  re-run under the D57 precedent (void for reporting, keep as audit trail,
+  fresh id, disclosure paragraph). If the bug only affects not-yet-dispatched
+  countries, the fix lands as a new commit, a new SHA is tagged, remaining
+  countries dispatch under a new experiment_id suffix (e.g. `_v3`), and the
+  report discloses both configurations explicitly (dates, SHAs, what changed
+  between them) rather than presenting the merged set as one uniform run —
+  the same disclosure discipline D57 already applies to the two pre-freeze
+  exposures.
+- **A bug found after all eight countries have finalised, before write-up:**
+  full D57 treatment — void the affected rows for reporting, keep them as
+  audit trail, re-register a fresh experiment_id, fix, re-run, disclose.
+- **Partial, permanent stop** (e.g. a hard budget or time cutoff before all
+  eight countries finish): the headline is reported on whatever countries
+  did complete, explicitly labelled as a partial n with the missing
+  countries named and the reason stated — never silently presented as the
+  full ~1,144-pair design. This follows the project's existing disclosure
+  ethos (D57, the D22 staleness-adjudication stance) rather than inventing a
+  new one for this case.
+
 ---
 
 ## EXP-32 `exp32_model_haiku` — all-Haiku whole-stack cost point
@@ -65,9 +109,13 @@ cost-quality frontier when the whole stack moves to it?
 
 **Design.** Single arm `haiku_h45`: researcher = verifier = adjudicator =
 picker = query-gen = `claude-haiku-4-5-20251001`. Pre-registered control:
-EXP-28 `trio_s5` (identical knobs, identical pairs, only the model family
-differs). Same encoding pattern as EXP-29: the model contrast is its own
-experiment so the one-variable preflight stays honest.
+originally EXP-28 `trio_s5` (identical knobs, identical pairs, only the model
+family differs). **Stale per D59 (2026-07-12 flag):** `trio_s5` is a
+collapsed-coverage artefact on a now-cut model, not a valid production
+baseline. The control needs a `trio_s46` re-run of EXP-28 (currently 0 rows)
+before this comparison means anything; do not compare `haiku_h45` against
+`trio_s5` in the report. Same encoding pattern as EXP-29: the model contrast
+is its own experiment so the one-variable preflight stays honest.
 
 **Sample.** The committed 156-pair dev battery (MT 60 + NL 52 + AL 44,
 78 negative golds), warm shared cache as in EXP-28.
@@ -89,10 +137,12 @@ in the DB as audit trail and are excluded from all reporting.
 **Question.** Does "cheap generator, expensive checker" hold: can Haiku do the
 retrieval-side grunt work while Sonnet 5 keeps the verification quality?
 
-**Design.** Single arm `tiered_h45_s5`: researcher, researcher query-gen and
+**Design.** Single arm `tiered_h45_s46`: researcher, researcher query-gen and
 snippet picker on `claude-haiku-4-5-20251001` (the picker is the largest
 single spend line, and it is researcher-side); verifier and adjudicator on
-`claude-sonnet-5`. Control: EXP-28 `trio_s5`, same pairs, same knobs.
+`claude-sonnet-4-6` (re-pinned per D59; the `claude-sonnet-5` original is
+void, model cut 2026-07-09). Control: EXP-28 `trio_s46` (needs a 4.6 re-run
+first — the existing `trio_s5` has 0 rows on 4.6), same pairs, same knobs.
 
 **Sample.** The 156-pair dev battery, as EXP-32.
 
@@ -107,30 +157,45 @@ same degraded evidence), but interpret with EXP-32 in hand.
 
 ---
 
-## EXP-34 `exp34_retrieval_strategy_s5` — trusted-domain narrow-then-widen verdict, Sonnet 5
+## EXP-34 `exp34_retrieval_strategy_s46` — trusted-domain narrow-then-widen verdict, Sonnet 4.6
 
 **Question.** Is trusted-domain narrowing (SRCH-5/6/7) helping, hurting, or
 inert? Re-run of the EXP-23 design on the production model family.
 
-**Why a re-run.** EXP-23 dispatched 2026-06-24 under Sonnet exhaustion with
-every role and the picker pinned to Opus 4.6, so it cannot inform the
-Sonnet-5 production config (SPEC change log 2026-06-29: "no canonical data").
-The narrowing strategy remains the largest production component with no
-measured verdict. This is config-changing and therefore blocks the freeze
-(EXP-31 gate 2).
+**Why a re-run, twice over.** EXP-23 (dispatched 2026-06-24 per the original
+plan) has DB rows that don't match that description — 167 `phase2_researcher_runs`
+rows under `exp23_narrow_then_widen_nl`, all `claude-sonnet-5`, NL only, dated
+2026-07-02 — so whichever record is right, it does not inform the production
+config. The first re-run attempt (`exp34_retrieval_strategy_s5`, pinned
+Sonnet 5) is itself void: Sonnet 5 was cut 2026-07-09 (D59). **Re-pinned
+2026-07-12** to `exp34_retrieval_strategy_s46`
+(`evaluation/specs/exp34_pilot_nl_s46.json`, all roles + picker on
+`claude-sonnet-4-6`, registered in the `experiments` table). Per the D62 commit
+message its diagnostic pilot finalised 20/20 across both arms — the first
+working 4.6 data point under the post-D55 transport — though that result is
+not yet queryable in every worktree's copy of the DB; verify against canonical
+before citing it. The narrowing strategy remains the largest production
+component with no measured verdict. This is config-changing and therefore
+blocks the freeze (EXP-31 gate 2).
 
-**Design.** Identical to EXP-23: three arms, one knob (`--search-strategy`):
-`baseline_narrow_then_wide` (production) vs `wide_only` (treatment) vs
-`narrow_only` (attribution control, never adopted). All roles and the picker
-pinned `claude-sonnet-5`.
+**Design.** Slimmed from EXP-23's three arms to two (`narrow_only` dropped,
+never adopted in any prior run): one knob (`--search-strategy`),
+`baseline_narrow_then_wide` (production) vs `wide_only` (treatment). All roles
+and the picker pinned `claude-sonnet-4-6`. Step 1 runs `nl_pilot10` (10%
+behaviour check); if healthy, expands to `nl_pilot24` (25%) via idempotent
+resume.
 
-**Sample.** The 156-pair dev battery per arm (468 runs).
+**Sample.** NL only. `nl_pilot10` then `nl_pilot24` (up to 25% of the original
+156-pair-per-arm design), not the full multi-country battery.
 
 **Adoption rule (unchanged from EXP-23).** Promote `wide_only` only if it cuts
 NL negative-gold FP by >= 5 points AND commit accuracy is non-inferior
-(delta >= -0.02). Side-finding rule: a >= 5-point AL candidate-recall lift on
-`wide_only` confirms narrowing suppresses thin-web recall. Diagnostic: share
-of each arm's FPs whose cited URL hits a trusted domain.
+(delta >= -0.02). Diagnostic: share of each arm's FPs whose cited URL hits a
+trusted domain. **Not testable in the slimmed NL-only pilot:** the original
+side-finding rule (a >= 5-point AL candidate-recall lift on `wide_only`
+confirms narrowing suppresses thin-web recall) needs the AL arm this re-pin
+dropped; defer to a follow-up if the NL result is directional but the
+AL-suppression mechanism needs confirming.
 
 ---
 
@@ -143,11 +208,15 @@ self-critiquing agent" is currently only half answered: EXP-28's
 model a self-critique pass.
 
 **Design.** New `pipeline_mode` value `researcher_self_verify` (engineering
-precondition: coordinator branch + versioned prompt). One agent answers, then
-critiques its own answer under the disprove framing before commit; the D35
-abstention retries and D37 0.65 floor are held as in every EXP-28 arm. Single
-arm `self_verify_s5`, all knobs and models as EXP-28 `trio_s5`. Controls:
-EXP-28 `trio_s5` and `researcher_only_s5`, paired on the same pairs.
+precondition: coordinator branch + versioned prompt, already built). One agent
+answers, then critiques its own answer under the disprove framing before
+commit; the D35 abstention retries and D37 0.65 floor are held as in every
+EXP-28 arm. Single arm `self_verify_s46` (re-pinned per D59; the built spec
+`evaluation/specs/exp35_self_critique.json` still pins `claude-sonnet-5` in
+every role field and needs the same 4.6 re-pin as EXP-34 before dispatch).
+Controls: EXP-28 `trio_s46` and `researcher_only_s46`, paired on the same
+pairs — both currently 0 rows on 4.6, so this experiment is blocked on the
+EXP-28 re-run, not just its own re-pin.
 
 **Sample.** The 156-pair dev battery.
 

@@ -622,7 +622,7 @@ def run_verifier(
         on_step("search_start", {"queries": queries})
         search_results = search_many(
             queries, max_results_per_query=max_results_per_query, provider=provider,
-            picker_model=picker_model,
+            picker_model=picker_model, subtrio_id=subtrio_id,
         )
         on_step("search_complete", {
             "n_results": len(search_results),

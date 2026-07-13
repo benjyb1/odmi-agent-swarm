@@ -137,6 +137,15 @@ def compute(
         print(f"[catalogue] {question_id}/{cc} not computable: {exc}", file=sys.stderr)
         return None
 
+    if result.denominator is not None and result.denominator == 0:
+        # A zero denominator means nothing to measure (e.g. no datasets in
+        # the relevant subset), not "0% of datasets qualify". Emitting the
+        # bottom band here would be a confident, wrong answer at 0.95
+        # confidence (_try_catalogue). Fall back to web search instead.
+        print(f"[catalogue] {question_id}/{cc} zero-denominator metric; "
+              "falling back to web", file=sys.stderr)
+        return None
+
     comp = CatalogueComputation(
         question_id=question_id,
         country_code=cc,

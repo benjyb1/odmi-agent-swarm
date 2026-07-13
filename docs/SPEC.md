@@ -1,6 +1,6 @@
 # ODMI Agent Swarm — Living Spec
 
-Last updated: 2026-06-23
+Last updated: 2026-07-12
 
 Single source of truth for project state. Updated every session. All numbered
 decisions go in here so they can be referenced as "per D7" elsewhere in the
@@ -1542,6 +1542,17 @@ without re-introducing the friction D40 removed.
 
 ### D42: Nine-country held-out evaluation matrix (3×3 maturity × language-resource)
 
+**Numbering collision (flagged 2026-07-12 pre-EXP-31 audit).** "D42" was
+independently assigned twice: this entry (2026-06-09, the evaluation matrix)
+and a second, unrelated D42 below at "Concurrency consumes the shared budget
+linearly" (2026-06-04, chronologically earlier despite its later position in
+this file). Both are cross-referenced from code comments and other docs
+(`run_coordinator.py`, `run_experiments.py`, `docs/EXPERIMENT_RUNBOOK.md`,
+`docs/PROJECT_LOG.md` Session 21) with enough surrounding context to
+disambiguate, so neither is renumbered retroactively — that would touch
+history across ~10 files for a citation-clarity fix. Anyone citing "D42" in
+new writing should name the subject, not just the number.
+
 **Superseded by D47 (2026-06-22).** Kept as audit trail. The 3×3 maturity ×
 language matrix is replaced by the base-rate-stratified held-out set; the body
 below records the original design and rationale.
@@ -1694,6 +1705,10 @@ blocker-propagation test there, and a direct fetch-stage-deadline test in
 
 ### D42: Concurrency consumes the shared budget linearly (a correction)
 
+**Numbering collision.** See the disambiguation note on the other D42 entry
+above ("Nine-country held-out evaluation matrix", 2026-06-09) — same number,
+independently assigned, not renumbered.
+
 **Date:** 2026-06-04. Corrects `EXPERIMENTS_PROTOCOL.md` section 10. Follows D40,
 D41.
 
@@ -1721,6 +1736,42 @@ Sequencing arms is therefore a cleanliness choice keyed on
 note accordingly; no code change.
 
 ---
+
+### D44: Adjudicator abstains instead of committing "no" on absence of evidence
+
+**Date:** 2026-06-10 (`70ed63c`, following same-day `88c6c61`). **Missing from
+this register until the 2026-07-12 pre-EXP-31 audit** — the rule shipped in
+code and prompts on 2026-06-10 (referenced by D46 below, by D51/D52, by
+`docs/VERIFIER_FINDINGS.md`, `docs/PROMPT_AUDIT.md`, and three other docs) but
+was never written up here. Backfilled from the commit and its call sites, not
+from a contemporaneous note; treat the date as the implementation date, not a
+design-discussion date.
+
+Two paired rules, both landing in the same v4 Adjudicator prompt bump:
+
+- **Prompt rule** (`agents/prompts/adjudicator.py:103,108`): prefer an honest
+  `inconclusive` over guessing a label to break a Researcher/Verifier tie, and
+  "absence of evidence is not evidence of `no`" — only answer a negative label
+  when the evidence positively shows the thing is absent or false, never
+  convert "we could not find it" into "no".
+- **Structural backstop** (`scripts/run_coordinator.py:436-443`): if the
+  Adjudicator commits a negative label with no supporting evidence quote
+  (`chosen_evidence_quote` under the 10-char minimum), the coordinator
+  overrides the answer to `inconclusive` regardless of what the prompt
+  produced. The prompt is the primary guard; this is the code-level fallback
+  for when it doesn't hold.
+
+Rationale: an ODMI question's `no` and "we found no evidence either way" are
+different claims. A failure to find a publicly-documented feature does not
+prove the feature is absent — the country may simply not publish evidence of
+it. Conflating the two inflates confident-wrong commits on exactly the
+internal-practice / self-report question families where public evidence is
+structurally thin (see `docs/ABSTENTION_TAXONOMY.md`, the "no asymmetry").
+
+This is the mechanism behind the D37 floor's honest-abstention framing and is
+retained unmodified through EXP-11..13 (D45) and the D50 neg_licence proposal,
+which explicitly licenses committing `no` only under stated conditions that do
+not weaken this backstop.
 
 ### D46: Portal discovery replaces hand-authored catalogue registries
 
@@ -2370,6 +2421,18 @@ inherits the broadened fragment automatically.
 
 ### D61: pre-July transport fully restored (proxy cloak disabled + system param), so the baseline matches June
 
+**Superseded in part by D62 (2026-07-10).** The cloak-disabled half of this
+decision did not hold: Anthropic 429s undisguised Sonnet/Opus OAuth traffic
+(Haiku passes undisguised, which is the tell that this is a disguise problem,
+not quota exhaustion), so the cloak must stay ON permanently. With the cloak
+on, CLIProxyAPI rewrites the API `system` param to the Claude Code prompt and
+silently discards agent instructions sent that way — exactly the D55 problem
+D61 believed it had retired. D62 keeps D61's model-baseline goal (matching the
+validated June behaviour) but reaches it by folding instructions into the user
+turn in a way that survives the cloak, not by disabling the cloak. Do not
+re-attempt the cloak-disabled / system-param transport in any future session;
+it is permanently dead. See D62 below.
+
 **Date:** 2026-07-09. Completes D59 (Sonnet 4.6 revert) by removing the July
 transport change (D55) entirely, not just the model.
 
@@ -2399,6 +2462,47 @@ honoured end to end (auth works AND our system prompt reaches the model). Only
 after that passes does any EXP-28 dispatch start. If Sonnet 5 is ever run as a
 labelled comparison, cloak-off means it too uses the plain `system` param.
 
+**This gate never passed as written; superseded by D62 below.** The
+`system`-only verification call failed: with the cloak on (which it has to
+be — see D62), the API `system` param never reaches the model, so a
+`system`-only instruction is never honoured. D61's premise (cloak off, plain
+`system` param) turned out to be unrunnable in production.
+
+### D62: agent instructions folded into the user turn, cloak-safe
+
+**Date:** 2026-07-10 (`b6f5eb6`). Supersedes the transport half of D61; keeps
+D61's goal (a 4.6 baseline that reproduces validated June behaviour).
+
+**The problem, live.** D61 assumed the proxy cloak would stay off, so it sent
+the full agent prompt and schema via the API `system` param. The cloak cannot
+stay off (see the D61 annotation above: Anthropic 429s undisguised Sonnet/Opus
+OAuth calls). With the cloak back on, CLIProxyAPI 7.2.45 replaces the `system`
+param with its own Claude Code prompt, silently discarding everything D61 put
+there. Observed directly: the EXP-34 4.6 pilot came back **10/10
+`agent_failure`**, every one `query_gen_schema_invalid` (the Researcher never
+saw its own instructions, so it could not even form a query), and the
+closed-book battery's abstention framing collapsed (**0% vs the expected
+22.4%** — an agent with no instructions cannot know it is allowed to abstain).
+
+**The fix.** `agents/tools/llm.py::call_for_structured` folds the full prompt
+and schema into the user turn inside an `<instructions>` block, so the
+instructions reach the model regardless of what the cloak does to `system`.
+This is the same direction as D55's original workaround, now understood as the
+permanent shape rather than a July-only patch to be reverted. 13
+insertions/10 deletions, one file.
+
+**Verification.** The EXP-34 4.6 pilot re-run finalises **20/20** across both
+arms with the abstention framing restored, matching the pre-July shape D61 was
+trying to reach. This is the evidence base for treating EXP-34's re-pinned
+spec (`evaluation/specs/exp34_pilot_nl_s46.json`, registered as
+`exp34_retrieval_strategy_s46`) as running under a working transport, and the
+first `claude-sonnet-4-6` data point under any post-D55 transport.
+
+**Standing rule.** The cloak stays ON permanently. Any future proxy/transport
+change must be tested against this failure mode (silent instruction discard,
+not a loud error) before being trusted — the 10/10 `agent_failure` and the
+abstention-rate collapse are the two cheap tripwires that caught it here and
+should be re-checked after any CLIProxyAPI upgrade.
 ### D63: EXP-28 architecture-ablation table filled by zero-cost replay of the trio run, not fresh dispatch; underlying rows subsequently lost to operator error
 
 **Date:** 2026-07-12. Companion to the 2026-07-12 D62-regression change-log entry
@@ -2458,6 +2562,7 @@ this section as a documented finding, not a live number.
 
 | Date | Change |
 |---|---|
+| 2026-07-12 (pre-EXP-31 audit, Phase 0) | D62 registered (had shipped in code on 2026-07-10, `b6f5eb6`, with no SPEC entry until this audit); D44 backfilled (shipped 2026-06-10, `70ed63c`/`88c6c61`, also missing); D61 annotated as superseded-in-part by D62; the D42 numbering collision flagged in place (not renumbered, ~10 files cross-reference both). Two bugs fixed: `invalid_answer_shape` now retries instead of silently committing an off-schema answer as a guaranteed differ (`run_coordinator.py`); a catalogue metric with a zero denominator now falls back to web search instead of confidently emitting the bottom percentage band at 0.95 confidence (`compute.py`). Dead `claude-sonnet-5` removed from the two dashboard model pickers. `exp34_retrieval_strategy_s46` registered in the (worktree-local) `experiments` table — was unregistered, would have hard-failed runbook preflight gate 6. EXP-10 floor-sweep replay re-run at 0.65/0.60/0.55/0.50 on MT (n=60, free, no dispatch): **0.65 held** — 0 pairs recover at 0.60 (identical to 0.65), 0.55 recovers 3 at 0.67 precision and 0.50 recovers 8 at 0.75 precision, both under the 0.80 adoption bar; NL (n=3) too small to inform. Purged ~11,014 SERP + ~1,928 fetch + ~29,104 snippet cache rows keyed to the exact queries/URLs the voided `exp21_frozen_headline` and `expC_held_neg_licence` held-out runs touched (worktree DB only; backed up first), closing the stale-cache-reuse risk flagged for EXP-31. All DB changes are on this worktree's copy of `data/odmi.db` and are **not** committed; the canonical checkout needs the same registration + purge run before EXP-34/EXP-31 dispatch from there. |
 | 2026-07-12 (D63: ablation table via replay; underlying data subsequently lost) | See D63 above. Ablation table (`no_adjudicator`/`researcher_only`) filled by zero-cost replay of the existing `trio_s46` run rather than a ~300-pair fresh dispatch; replay validated on 9 live-dispatched pairs (8/9 exact match, one miss traced to a cross-arm cache-sharing gap, not a logic error). The underlying 156-pair dataset was subsequently destroyed by an accidental `git checkout -- data/odmi.db` in the source worktree (discarded uncommitted work, no recovery path); this entry documents the finding from the in-session analysis, not a re-queryable result. New eval specs preserved: `exp28_ablation_s46_full.json`, `exp28_ablation_s46_20pct.json`, `exp28_ablation_live_check.json`, `exp29_s46_10pct_pilot.json`/`_25pct_`/`_50pct_`/`_100pct_cumulative`/`_100pct_final.json` (the incremental dispatch trail and the canonical 156-pair pair list for this experiment). |
 | 2026-07-12 (post-D62 "regression" resolved as comparator artefact) | The EXP-29 4.6 battery (156 pairs, `trio_s46`, D62 user-turn transport, run 2026-07-10..12) looked like a commit-accuracy regression against each pair's most recent pre-July result (cov 0.46 -> 0.56, acc 0.76 -> 0.64). Root cause is the comparator rule, not the transport: the config-blind "most recent June row" gave all 52 NL pairs the late-June Opus-4-6 arms (expA/B/C; NL cov 0.46-0.60, acc 0.71-0.82) as their baseline, while Sonnet-4-6 has always run NL at cov 0.81-0.92 / acc 0.56-0.64 (eight June arms). Holding the comparator at `claude-sonnet-4-6`: June cov 0.603 / acc 0.646 vs now 0.559 / 0.645 (n=136, per-country flat, Wilson intervals overlapping). Folding bug, calibration drift and same-evidence verdict flips all ruled out (folded prompt dumps clean with the 0.6 floor and abstention rules intact; committed-answer confidence 0.733 vs 0.743, medians equal; 28 of 33 answer divergences cite different evidence, transitions symmetric). Script: `evaluation/exp29_transport_regression_check.py`; write-up in PROJECT_LOG 2026-07-12. Rule going forward: pre/post deltas compare like-for-like configs, model above all. Separately, the sleep/wake search hang (~26 pairs stuck at `search_start`, no error trail) got a 45s wall-clock guard on the Serper call (`SerperDeadlineError`, daemon thread - OS DNS resolution blocks before httpx's 20s timeout applies) and `dispatch_subtrios.py` now logs unknown child exit codes with a stderr tail instead of dropping them. |
 | 2026-07-10 (closed-book baseline) | New dev-only probe `evaluation/closed_book_baseline.py`: with retrieval disabled, what share of the 2025 answers does bare `claude-sonnet-4-6` (D59) reproduce from parametric memory? No existing `pipeline_mode` arm approximates this (`researcher_only` still searches). Universe = 20% of the full dev set, dimension-stratified within NL/MT/NO/FR/AL, seed 20260709, 145 pairs; rows in `closed_book_answers` (full prompt + raw response for replay), `--db` targets the canonical DB, resumable. Run `cb_20260709` (£0.33, user-turn transport): match rate **0.493** vs an always-`yes` majority-class floor of **0.681** - the bare model scores BELOW the trivial floor, so it is not carrying the 2025 answer key (contamination bound low; replaces the "structurally impossible" overclaim with a number). Well-calibrated (self-report known=true 0.877, known=false 0.177; abstains 22.8%); weakest on Quality (0.267) and `change` golds (0.190). RQ1 head-to-head on the 69 cb pairs that have a main-run (`experiment_id IS NULL`) final: swarm 0.567 vs closed-book 0.478 (+0.089 retrieval gain), but both sit under this yes-heavy subset's 0.739 always-yes floor because both abstain - which is why the definitive RQ1 read belongs on the class-balanced 156-pair battery (majority floor ~0.5), not the natural-distribution sample. |

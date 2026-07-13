@@ -1315,6 +1315,23 @@ def coordinate(
                   flush=True)
             continue
 
+        # An answer outside the question's allowed set cannot ever match
+        # ground truth. Retry rather than let it fall through to the
+        # Verifier and commit as a guaranteed differ. Same fall-through-on-
+        # final-attempt shape as the abstention branch above.
+        if (r_result.failure_mode == "invalid_answer_shape"
+                and attempt < max_retries):
+            feedback = VerifierFeedback(
+                rejection_reason=(
+                    f"The Researcher's answer {r_result.output.answer!r} is "
+                    "not one of the allowed labels for this question. Retry "
+                    "and commit to a label from the allowed set."
+                ),
+            )
+            print(f"  R{attempt+1} invalid_answer_shape -> retrying",
+                  flush=True)
+            continue
+
         # --- EXP-28 researcher_only arm: no verification layer ---
         # Commit iff the answer is a real label at or above the D37 floor.
         # A sub-floor answer retries with the same floor-feedback message
