@@ -51,9 +51,18 @@ DEV = {"NL", "MT", "NO", "FR", "AL"}
 # Experiment types whose endpoint is contaminated by a warm shared cache.
 CACHE_MUST_BE_OFF = {"retrieval", "cost"}
 
-# Worst-case Claude calls per pair (a normal pair is ~5; the retry ceiling is
-# ~17). Used for the budget guard so an arm cannot silently overrun.
-CALLS_PER_PAIR_WORST = 17
+# Worst-case Claude calls per pair. Used for the budget guard and the
+# per-dispatch --max-calls cap so an arm cannot silently overrun.
+#
+# Corrected 2026-07-13 from 17 -> 45. The old 17 counted only the four core
+# agent calls (Researcher/Verifier query-gen + main) x the retry ceiling and
+# silently omitted the snippet picker, which fires once per fetched page and is
+# ~80% of real call volume under the current production config (picker on,
+# verifier_search=always, num_queries=3). Measured on the d50_neg_licence_confirm
+# run: ~43 calls/pair (5,836 logged calls / 135 finalised pairs). The 17 figure
+# capped dispatches at ~40% of the work they were sized for. See the picker
+# subtrio_id logging fix (same date) which first made the true count visible.
+CALLS_PER_PAIR_WORST = 45
 
 # Health thresholds. An arm that breaches either comes back as a PAUSE: the run
 # stops so a human or the experiment agent can diagnose before more is spent.

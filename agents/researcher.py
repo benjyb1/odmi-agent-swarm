@@ -447,6 +447,7 @@ def run_researcher(
         picker_max_chunks=picker_max_chunks,
         page_text_cap=page_text_cap,
         picker_model=picker_model,
+        subtrio_id=subtrio_id,
     )
     wide_fallback_used = False
     if (
@@ -464,6 +465,7 @@ def run_researcher(
             picker_max_chunks=picker_max_chunks,
             page_text_cap=page_text_cap,
             picker_model=picker_model,
+            subtrio_id=subtrio_id,
         )
         wide_fallback_used = True
     on_step("search_complete", {

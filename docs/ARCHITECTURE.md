@@ -42,7 +42,7 @@ confidence-gate programme, and the EXP-A/B/C prompt programme).
 | Catalogue routing | computed Quality questions route to the deterministic catalogue tool before web search | D30, D46 | adopted |
 | Portal registry | auto-discovered from a committed seed list, not hand-authored | D46 | adopted |
 | Prompt | V4, per-shape answer space | D28 | adopted |
-| Prompt variant: neg_licence | not switched (live default `full`) | EXP-C: NL dev directional (n=51; TN recall +3.8pp, neg-FPR -15pp, commit acc +4.7pp) but underpowered and off-config; held-out powered (TN 34->50%) but excluded to keep EXP-21 clean (D50) | favoured |
+| Prompt variant: neg_licence | not switched (live default `full`) | REJECTED by the powered on-config confirm (`d50_neg_licence_confirm`, NL52+MT45, Sonnet 4.6, picker on, verifier_search always, 2026-07-13): pooled TN recall +0.05 (0.24->0.29) but neg-gold FPR +0.09 (0.29->0.38), commit_acc -0.06 (0.71->0.65), McNemar p=1.00; per-country worse (MT: no TN gain, +0.11 FPR, 2 new wrong-`no`-on-yes). The earlier "favoured" call rested on an underpowered off-config NL run + excluded held-out data; it does not survive. Adoption rule (TN up, neg-FPR flat <=+0.05) not met. | kept baseline |
 
 ## Verifier
 

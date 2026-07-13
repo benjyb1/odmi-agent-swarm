@@ -165,15 +165,15 @@
     "Q8:AL"
    ],
    "baseline_knobs": {
-    "researcher_model": "claude-sonnet-5",
-    "verifier_model": "claude-sonnet-5",
-    "adjudicator_model": "claude-sonnet-5",
-    "picker_model": "claude-sonnet-5",
+    "researcher_model": "claude-sonnet-4-6",
+    "verifier_model": "claude-sonnet-4-6",
+    "adjudicator_model": "claude-sonnet-4-6",
+    "picker_model": "claude-sonnet-4-6",
     "provider": "diy"
    },
    "arms": [
     {
-     "condition_label": "self_verify_s5",
+     "condition_label": "self_verify_s46",
      "knobs": {
       "pipeline_mode": "researcher_self_verify"
      }
