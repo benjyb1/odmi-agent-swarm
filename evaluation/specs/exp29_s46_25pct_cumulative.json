@@ -1,0 +1,66 @@
+{
+  "run_id": "exp29_s46_25pct_cumulative",
+  "global_parallel": 2,
+  "budget_calls": 450,
+  "experiments": [
+    {
+      "experiment_id": "exp29_sonnet5_model",
+      "type": "accuracy",
+      "pairs": [
+        "I10:AL",
+        "I11:AL",
+        "I12:NL",
+        "I14:MT",
+        "I17:NL",
+        "I1:AL",
+        "I1:MT",
+        "I22:MT",
+        "I22:NL",
+        "I23:MT",
+        "I2:NL",
+        "P21:AL",
+        "P4:MT",
+        "PT13:NL",
+        "PT35:MT",
+        "PT39:AL",
+        "I2:MT",
+        "I8-b:MT",
+        "I9:MT",
+        "P5:MT",
+        "PT15:MT",
+        "PT26:MT",
+        "PT39:MT",
+        "PT5:MT",
+        "Q19:MT",
+        "I23:NL",
+        "I7:NL",
+        "P10-a:NL",
+        "P24:NL",
+        "P7:NL",
+        "PT21:NL",
+        "PT34:NL",
+        "PT4:NL",
+        "I13:AL",
+        "I8-a:AL",
+        "P15:AL",
+        "P3:AL",
+        "PT16:AL",
+        "PT36:AL",
+        "PT7:AL"
+      ],
+      "baseline_knobs": {
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "provider": "diy"
+      },
+      "arms": [
+        {
+          "condition_label": "trio_s46",
+          "knobs": {}
+        }
+      ]
+    }
+  ]
+}

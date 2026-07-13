@@ -1,0 +1,42 @@
+{
+  "run_id": "exp29_s46_10pct_pilot",
+  "global_parallel": 2,
+  "budget_calls": 300,
+  "experiments": [
+    {
+      "experiment_id": "exp29_sonnet5_model",
+      "type": "accuracy",
+      "pairs": [
+        "I10:AL",
+        "I12:NL",
+        "I14:MT",
+        "I17:NL",
+        "I1:AL",
+        "I1:MT",
+        "I22:MT",
+        "I2:NL",
+        "I23:MT",
+        "P4:MT",
+        "PT35:MT",
+        "I22:NL",
+        "PT13:NL",
+        "I11:AL",
+        "P21:AL",
+        "PT39:AL"
+      ],
+      "baseline_knobs": {
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "provider": "diy"
+      },
+      "arms": [
+        {
+          "condition_label": "trio_s46",
+          "knobs": {}
+        }
+      ]
+    }
+  ]
+}

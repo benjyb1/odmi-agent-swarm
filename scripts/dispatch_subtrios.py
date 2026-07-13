@@ -617,7 +617,11 @@ def dispatch(
                 cmd, cwd=str(REPO_ROOT),
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             )
-            job.exit_code = job.process.wait()
+            # communicate() drains both pipes (wait() alone can deadlock a
+            # child that fills the 64KB pipe buffer) and keeps stderr for the
+            # unknown-exit trail below.
+            _stdout, stderr_bytes = job.process.communicate()
+            job.exit_code = job.process.returncode
             if job.exit_code == EXIT_CODE_RATE_LIMITED:
                 log(f"!! RATE LIMIT on {job.question_id}/{job.country_code}")
                 rate_limited = True
@@ -626,6 +630,19 @@ def dispatch(
                 log(f"!! DIY BLOCKER (>30s fetch) on "
                     f"{job.question_id}/{job.country_code} - stopping batch")
                 blocked = True
+            elif job.exit_code != 0:
+                # Any other non-zero exit used to vanish with no trail: the
+                # 2026-07-10..12 exp29 run lost ~26 pairs to search-stage
+                # hangs (post-sleep DNS) that died without a logged code.
+                # Log the code and a stderr tail so the pair is visibly
+                # failed and can be re-dispatched.
+                tail = ""
+                if stderr_bytes:
+                    tail = stderr_bytes.decode("utf-8", errors="replace")
+                    tail = tail.strip().replace("\n", " | ")[-400:]
+                log(f"!! UNEXPECTED EXIT code={job.exit_code} on "
+                    f"{job.question_id}/{job.country_code} "
+                    f"subtrio={job.subtrio_id[:8]} stderr_tail={tail!r}")
         finally:
             sem.release()
 

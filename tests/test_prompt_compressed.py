@@ -144,6 +144,11 @@ def _neutralise_dispatch(ds, monkeypatch, captured):
     class _FakeProc:
         def wait(self):
             return 0
+        returncode = 0
+
+        def communicate(self, *a, **kw):
+            self.returncode = self.wait()
+            return (b'', b'')
 
     monkeypatch.setattr(ds.subprocess, "Popen",
                         lambda cmd, **kw: captured.append(list(cmd)) or _FakeProc())
