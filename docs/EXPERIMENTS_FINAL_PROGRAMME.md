@@ -45,6 +45,21 @@ higher-resource).
 7. Deny-list audit (`check_data_leakage.py`) clean before and after.
 8. Resume-from-interruption behaviour verified (the 2026-06-24 attempt died to
    a power event mid-run).
+9. **Held-out cache purge.** `search_cache_{serp,fetch,snippet}` for the eight
+   held-out countries must read cold before dispatch, or the run silently
+   reuses evidence from the voided `exp21_frozen_headline` /
+   `expC_held_neg_licence` exposures (same rows this pre-registration already
+   discloses as voided for reporting, at C.1 above). Executed 2026-07-13 on
+   the canonical DB (backup `data/odmi.db.bak-preheldoutpurge-20260713-153926`):
+   3,962 fetch rows, 11,014 SERP rows, 29,104 snippet rows deleted (URL/query
+   match against the actual held-out fetched_urls / search_queries_used in
+   `phase2_researcher_runs` and `phase2_verifier_runs`), verified zero
+   remaining, VACUUM 646MB -> 539MB. **Any other checkout or worktree used to
+   dispatch EXP-31 needs its own purge** (or a fresh copy of the purged
+   canonical DB) - this is not fixed globally by one DB's purge. `--no-cache`
+   (`_READ_DISABLED`, EXP-2) remains the belt-and-braces backstop regardless of
+   purge state. See `SNIPPET_PICKER_CACHE_ANALYSIS.md` section 2d/2e for the
+   full audit trail and SQL.
 
 **Endpoints (no adoption rule; this is the reported headline).**
 Balance-aware per-class recall with Wilson intervals, balanced accuracy,

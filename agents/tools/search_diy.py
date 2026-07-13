@@ -122,6 +122,7 @@ def diy_search(
     picker_max_chunks: int = PICKER_MAX_CHUNKS_DEFAULT,
     page_text_cap: int = PAGE_TEXT_CAP_DEFAULT,
     picker_model: Optional[str] = None,
+    exclude_urls: Optional[set] = None,
 ) -> List[SearchResult]:
     """Run the full DIY pipeline and return Tavily-shaped SearchResults.
 
@@ -136,6 +137,16 @@ def diy_search(
       for a non-confident page (the confident-top-hit path still returns one).
     - ``page_text_cap`` (default 16000): characters of cleaned page text the
       picker sees before truncation.
+
+    ``exclude_urls`` (default None): URLs already emitted earlier in the
+    same ``search_many`` call. ``search_many`` dedups its final output by
+    URL, so a page fetched again under a later, divergent query would be
+    picked here and then discarded there regardless - the pick's output
+    never reaches the caller either way. Skipping the pick for it is
+    therefore byte-identical to current behaviour and saves the LLM call.
+    A URL whose earlier appearance was itself dropped (empty fetch or empty
+    pick) is not in ``exclude_urls`` - it never reached ``out`` - so it is
+    picked again here exactly as it is today.
     """
 
     # 1. SERP (cached)
@@ -218,6 +229,12 @@ def diy_search(
     out: List[SearchResult] = []
     for r, text in fetched:
         if not text:
+            continue
+        if exclude_urls and r.url in exclude_urls:
+            # Already emitted for an earlier query in this search_many call;
+            # search_many's own dedup would discard a re-pick of this URL,
+            # so skip the pick entirely rather than pay for a result that
+            # gets thrown away (Rank-1 cache-viability finding).
             continue
 
         if not use_snippet_picker:

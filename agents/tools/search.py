@@ -183,6 +183,7 @@ def search(
     picker_max_chunks: int = 3,
     page_text_cap: int = 16000,
     picker_model: Optional[str] = None,
+    exclude_urls: Optional[set] = None,
 ) -> List[SearchResult]:
     """Run one search, dispatching to the requested provider(s).
 
@@ -267,6 +268,7 @@ def search(
                 picker_max_chunks=picker_max_chunks,
                 page_text_cap=page_text_cap,
                 picker_model=picker_model,
+                exclude_urls=exclude_urls,
             )
             _emit("diy", t0, results, ok=True, error=None)
             return _scrub_blocked(results)
@@ -302,6 +304,7 @@ def search(
             picker_max_chunks=picker_max_chunks,
             page_text_cap=page_text_cap,
             picker_model=picker_model,
+            exclude_urls=exclude_urls,
         )
         _PROVIDER_USAGE_COUNTERS["diy"] += 1
         scrubbed = _scrub_blocked(results)
@@ -332,6 +335,12 @@ def search_many(
     ``page_text_cap``) are also forwarded; they default to current
     production behaviour and only affect the DIY pipeline.
     See ``search()`` for full provider semantics and ``on_call`` behaviour.
+
+    ``seen`` (URLs already emitted by an earlier query this call) is passed
+    to each ``search()`` call as ``exclude_urls`` so the DIY picker skips a
+    page already emitted this call instead of picking it and having it
+    discarded here by the dedup below (cache-viability Rank 1). Output is
+    unchanged either way; only the redundant LLM call is avoided.
     """
     seen: set[str] = set()
     out: List[SearchResult] = []
@@ -347,6 +356,7 @@ def search_many(
             picker_max_chunks=picker_max_chunks,
             page_text_cap=page_text_cap,
             picker_model=picker_model,
+            exclude_urls=seen,
         ):
             if r.url in seen:
                 continue

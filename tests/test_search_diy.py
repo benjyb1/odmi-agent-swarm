@@ -299,6 +299,109 @@ def test_diy_fetch_cache_hit_skips_fetch_html(mock_layers, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# exclude_urls: within-call pre-pick dedup (cache-viability Rank 1)
+# ---------------------------------------------------------------------------
+
+def test_diy_skips_pick_for_excluded_url(mock_layers, monkeypatch):
+    """A URL already emitted for an earlier query this search_many call must
+    not be picked again; it is simply absent from this call's output, exactly
+    as if search_many's own dedup had discarded it."""
+    pick_calls = []
+
+    def counting_picker(*, query, url, page_text, subtrio_id=None):
+        pick_calls.append(url)
+        return ([PickedChunk(text=f"chunk for {url}", score=0.9)], LLMUsage(
+            input_tokens=1, output_tokens=1, wall_clock_ms=1,
+            estimated_cost_usd=0.0, model_version="test",
+            prompt_version_id=None, condition_label="t", raw_response="{}",
+        ))
+
+    monkeypatch.setattr("agents.tools.search_diy.pick_snippet", counting_picker)
+
+    from agents.tools.search_diy import diy_search
+    out = diy_search("test query", exclude_urls={"https://a.example"})
+
+    assert pick_calls == ["https://b.example"], (
+        "excluded URL must not reach the picker"
+    )
+    assert [r.url for r in out] == ["https://b.example"], (
+        "excluded URL must be absent from output, matching what search_many "
+        "would have kept after its own dedup"
+    )
+
+
+def test_diy_reruns_pick_when_no_exclude_urls_given(mock_layers):
+    """exclude_urls defaults to None: behaviour is unchanged from before the
+    dedup fix existed."""
+    from agents.tools.search_diy import diy_search
+    out = diy_search("test query")
+    assert len(out) == 2
+
+
+def test_search_many_skips_pick_for_url_shared_across_queries(monkeypatch, tmp_path):
+    """End-to-end: two divergent queries both surface https://a.example.
+    search_many must dedup its OUTPUT by URL either way (existing
+    behaviour); the fix under test is that the SECOND query's diy_search
+    call must not spend an LLM picker call on the URL the first query
+    already emitted, because that pick would only be thrown away."""
+    import agents.tools.search_cache as cache_mod
+    monkeypatch.setattr(cache_mod, "_DB_PATH", tmp_path / "test_diy.db")
+    monkeypatch.setattr(cache_mod, "_TABLES_ENSURED", False)
+    monkeypatch.setattr(cache_mod, "_READ_DISABLED", False)
+
+    from agents.tools.fetch import FetchResult
+
+    def fake_serper(query, **kw):
+        # Both queries surface the same shared URL plus one unique URL each.
+        unique_url = f"https://unique-{query}.example"
+        return [
+            SearchResult(title="Shared", url="https://a.example", snippet="s",
+                         score=1.0, provider="serper"),
+            SearchResult(title="Unique", url=unique_url, snippet="s",
+                         score=0.5, provider="serper"),
+        ]
+
+    monkeypatch.setattr("agents.tools.search_diy.serper_search", fake_serper)
+    monkeypatch.setattr(
+        "agents.tools.search_diy.fetch_html",
+        lambda url, **kw: FetchResult(url=url, backend="httpx", status_code=200,
+                                       content=f"FETCHED:{url}", truncated=False,
+                                       failure_mode=None),
+    )
+    monkeypatch.setattr(
+        "agents.tools.search_diy.extract_text",
+        lambda content, url, is_html=True: content,
+    )
+
+    pick_calls = []
+
+    def counting_picker(*, query, url, page_text, subtrio_id=None):
+        pick_calls.append((query, url))
+        return ([PickedChunk(text=f"chunk for {url}", score=0.9)], LLMUsage(
+            input_tokens=1, output_tokens=1, wall_clock_ms=1,
+            estimated_cost_usd=0.0, model_version="test",
+            prompt_version_id=None, condition_label="t", raw_response="{}",
+        ))
+
+    monkeypatch.setattr("agents.tools.search_diy.pick_snippet", counting_picker)
+
+    from agents.tools.search import search_many
+    out = search_many(["query-one", "query-two"], provider="diy")
+
+    shared_picks = [c for c in pick_calls if c[1] == "https://a.example"]
+    assert len(shared_picks) == 1, (
+        "the shared URL must be picked once total across both queries, not "
+        "once per query"
+    )
+    urls_out = {r.url for r in out}
+    assert urls_out == {
+        "https://a.example",
+        "https://unique-query-one.example",
+        "https://unique-query-two.example",
+    }, "final deduped output must still contain the shared URL and both uniques"
+
+
+# ---------------------------------------------------------------------------
 # 30s fetch-stage ceiling (D43)
 # ---------------------------------------------------------------------------
 
