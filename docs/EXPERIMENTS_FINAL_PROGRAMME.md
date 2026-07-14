@@ -39,15 +39,20 @@ higher-resource).
 1. EXP-18 (breadth), EXP-19 (verifier search), EXP-20 (chaining) verdicts.
 2. EXP-34 retrieval-strategy verdict (EXP-23 produced no Sonnet-usable data).
 3. D50 neg_licence adopt-or-defer decision.
-4. EXP-28/29 land. **Status 2026-07-12: neither has landed as pre-registered.**
-   EXP-28 has data for only 1 of 3 arms (`trio_s5`, 99 pairs, now a
-   superseded-model artefact per D59); EXP-29 never dispatched (0 rows).
-   Per D59 the model choice (4.6) is already decided on the `trio_s5`
-   coverage-collapse evidence, so this gate is satisfied for the *model*
-   question without EXP-28/29 completing; the *pipeline_mode* (architecture
-   ablation) question they were meant to answer is still open and does not
-   block EXP-31 (production stays `trio` regardless per D45) but does block
-   the dissertation's architecture-ablation chapter. Re-run on 4.6 post-freeze.
+4. EXP-28/29 land. **Status 2026-07-13: neither landed as pre-registered, but
+   the model/pipeline questions they were meant to answer are settled by other
+   means, so this does not block EXP-36.** EXP-28 has data for only 1 of 3 arms
+   (`trio_s5`, 99 pairs, a superseded-model artefact per D59); its original
+   `exp29_sonnet5_model` ID stalled near-empty, but the same question was
+   re-run under the renamed `trio_s46` incremental battery (156 pairs,
+   2026-07-10..12, D62 transport), which completed and closed (D63) before its
+   data was lost to an accidental `git checkout -- data/odmi.db`. Per D59 the
+   model choice (4.6) is already decided on the `trio_s5` coverage-collapse
+   evidence, so this gate is satisfied for the *model* question without a
+   re-run; the *pipeline_mode* (architecture ablation) question is still open
+   for the dissertation's ablation chapter (production stays `trio` regardless
+   per D45) but does not block the headline. See EXP-28/29's rows in
+   `EXPERIMENTS.md` for the full reconciliation of the two EXP-29 registrations.
 5. ARCHITECTURE.md freeze commit, tagged; models per D59 (`claude-sonnet-4-6`,
    reverted from D56's `claude-sonnet-5` after the EXP-28 `trio_s5` coverage
    collapse). Transport per D62 (cloak-safe user-turn fold; D61's cloak-off

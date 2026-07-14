@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agents.tools.answer_shapes import QuestionShape
+from agents.tools.answer_shapes import NOT_APPLICABLE, QuestionShape
 from agents.tools.catalogue import formats, licences, metrics
 from agents.tools.catalogue.model import Distribution, HarvestedDataset
 
@@ -173,3 +173,27 @@ def test_q27_open_format():
     r = metrics.metric_q27_open_format(datasets, _pct_shape("Q27"))
     assert r.numerator == 2 and r.denominator == 4
     assert r.band_label == "31-50%"
+
+
+# ------------------------------------------------------------------
+# Empty denominator (B3): abstain, never the bottom band
+# ------------------------------------------------------------------
+
+
+def test_empty_denominator_abstains_not_bottom_band():
+    """B3: a percentage metric with an empty denominator (nothing to
+    measure) must abstain with `not_applicable`, not collapse to the
+    bottom `<10%` band. A real 0-of-N is a different case and stays a
+    genuine bottom band."""
+    # Zero datasets harvested -> Q12's denominator is 0.
+    q12 = metrics.metric_q12_licence_presence([], _pct_shape("Q12"))
+    assert q12.denominator == 0
+    assert q12.band_label != "<10%"
+    assert q12.band_label == NOT_APPLICABLE
+
+    # Realistic trigger: datasets exist but none carry a distribution,
+    # so Q21's download-URL denominator is empty.
+    no_dists = [_ds("a"), _ds("b")]
+    q21 = metrics.metric_q21_download_url(no_dists, _pct_shape("Q21"))
+    assert q21.denominator == 0
+    assert q21.band_label == NOT_APPLICABLE
