@@ -703,7 +703,7 @@ def write_summary(
     lines.append(
         "Costs are notional subscription-equivalent pricing, not billed "
         "spend (D12/Q9); Opus pricing was backfilled 2026-06-25; rows "
-        "before 2026-07-01 are Sonnet 4.6 era, not Sonnet 5."
+        "before 2026-07-01 are Sonnet 4.6 era."
     )
     lines.append("")
 

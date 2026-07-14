@@ -2577,10 +2577,13 @@ production flip is `search_strategy = wide_only`.
 
 **wide_only adopted (EXP-34).** The 2026-07-13 EXP-34 re-run on 4.6 (NL+MT+AL dev
 battery, `exp34_retrieval_strategy_s46`) met the pre-registered adoption rule on
-NL (negative-gold FP 17 to 14 paired, commit-accuracy 0.62 to 0.67). Adopted on
-accuracy grounds: pooled commit-accuracy rises 0.679 to 0.733 and no country
-regresses. The FP-reduction does not generalise at full power (pooled McNemar
-p=0.727), so no general FP-reduction claim is made. The code default flips
+NL (negative-gold FP 17 to 14 paired, commit-accuracy 0.62 to 0.67, non-inferior),
+and no country regresses. Adopted on the literal pre-registered NL rule. Neither
+effect reaches significance at full power (the pooled FP McNemar is p=0.727 and a
+paired accuracy test on the pairs both arms committed is a tie), so no general
+accuracy or FP-reduction claim is made beyond the NL rule; the raw pooled
+commit-accuracy figures (0.679 to 0.733) are not a valid paired effect because the
+arms abstain on different pairs. The code default flips
 `narrow_then_wide` to `wide_only` across the dispatcher, coordinator and
 Researcher; narrowing is inert on the eight held-out countries anyway (no
 trusted-domain lists), so the headline runs wide on every reported country.

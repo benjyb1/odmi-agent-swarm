@@ -1,5 +1,14 @@
 # EXP-31..35 pre-registration: the final-report programme
 
+> **Superseded in part (D64, 2026-07-13).** EXP-31 (`exp31_frozen_headline_v2`)
+> is discarded and never ran; the frozen headline is re-minted as **EXP-36**
+> (`exp36_frozen_headline`), whose live pre-registration is
+> `docs/EXPERIMENTS_EXP36_PREREG.md`. The EXP-31 section below is kept as dated
+> history only. The per-arm model pins recorded in the EXP-32/33/34/35 sections
+> below are the 2026-07-02 registration state; every arm now runs on
+> `claude-sonnet-4-6` per D59 (2026-07-09). EXP-34 has since run and landed
+> (adopt `wide_only`); EXP-32/33/35 remain post-EXP-36 characterisation.
+
 Registered 2026-07-02, before dispatch (R1). These five experiments are the
 remaining evidence the final dissertation needs. Numbers EXP-31 to EXP-35 are
 claimed here; any collision with a concurrently minted number follows the D49
@@ -7,8 +16,8 @@ reconciliation rule (the programme with run data keeps the number).
 
 Decision context is D57 (held-out exposure voided; fresh headline run). All
 five follow the universal rules in `EXPERIMENTS_PROTOCOL.md` (D38 R1-R12).
-Everything runs DIY-only (D43) with models pinned per arm. The D47 held-out
-eight are touched by EXP-31 alone.
+Everything runs DIY-only (D43) on `claude-sonnet-4-6` (D59). The D47 held-out
+eight are touched by the headline run (EXP-36) alone.
 
 ---
 

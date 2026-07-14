@@ -202,6 +202,26 @@ def preflight(spec: Dict[str, Any]) -> List[str]:
                         f"split into separate experiments or fix the confound"
                     )
 
+        # Banned-model check: no arm may pin a cut model (Sonnet 5, D59). This
+        # is defence in depth over the llm.py call-time guard, so a stale spec
+        # fails at dry-run rather than mid-dispatch. Every model-valued knob is
+        # scanned across baseline and per-arm overrides.
+        model_knobs = (
+            "researcher_model", "verifier_model", "adjudicator_model",
+            "picker_model", "query_gen_model",
+            "researcher_escalation_model", "verifier_escalation_model",
+        )
+        for a in arms:
+            knobs = {**exp.get("baseline_knobs", {}), **a.get("knobs", {})}
+            for k in model_knobs:
+                v = knobs.get(k)
+                if v and str(v).lower().startswith("claude-sonnet-5"):
+                    errors.append(
+                        f"{eid}/{a.get('condition_label')}: knob {k}={v!r} pins a "
+                        f"cut model (Sonnet 5, D59); production is "
+                        f"claude-sonnet-4-6"
+                    )
+
     return errors
 
 

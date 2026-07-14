@@ -1,6 +1,6 @@
 {
   "run_id": "exp34_retrieval_strategy_s5_nl_pilot",
-  "description": "EXP-34 pilot. Sonnet-5 redo of EXP-23 narrow-then-widen, slim 2 arms (baseline_narrow_then_wide vs wide_only), NL only for the staged pilot. Step 1 runs nl_pilot10 (10% of the full 192 arm-pair design); analyse for obvious breakage; if healthy, questions_from is expanded to nl_pilot24 (25%) and the spec re-run (idempotent resume). One variable: search_strategy. Nothing to resume from EXP-23: those 58 rows are Opus 4.6 under a different experiment_id.",
+  "description": "EXP-34 pilot. Redo of EXP-23 narrow-then-widen, slim 2 arms (baseline_narrow_then_wide vs wide_only), NL only for the staged pilot. Step 1 runs nl_pilot10 (10% of the full 192 arm-pair design); analyse for obvious breakage; if healthy, questions_from is expanded to nl_pilot24 (25%) and the spec re-run (idempotent resume). One variable: search_strategy. Nothing to resume from EXP-23: those 58 rows are Opus 4.6 under a different experiment_id.",
   "headline": false,
   "global_parallel": 3,
   "budget_calls": 2500,
@@ -19,10 +19,10 @@
         "verifier_search": "always",
         "adjudicator_selection": "standard",
         "no_cache": true,
-        "researcher_model": "claude-sonnet-5",
-        "verifier_model": "claude-sonnet-5",
-        "adjudicator_model": "claude-sonnet-5",
-        "picker_model": "claude-sonnet-5"
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6"
       },
       "arms": [
         { "condition_label": "baseline_narrow_then_wide", "knobs": {} },

@@ -65,10 +65,6 @@ for _stale in ("ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_CUSTOM_HEADERS"):
 # before this date overstate by 3x; backfill the live DB with
 # scripts/backfill_opus_pricing.py.
 PRICING_USD_PER_M = {
-    # Sonnet 5 assumed at the standard Sonnet-tier rate (same as 4.5/4.6);
-    # arithmetic-equivalent only under the Max plan (D1). Correct deliberately
-    # if Anthropic publishes a different figure.
-    "claude-sonnet-5":            {"input": 3.0,  "output": 15.0},
     "claude-sonnet-4-6":          {"input": 3.0,  "output": 15.0},
     "claude-sonnet-4-5-20250929": {"input": 3.0,  "output": 15.0},
     "claude-opus-4-8":            {"input": 5.0,  "output": 25.0},
@@ -86,6 +82,24 @@ PRICING_USD_PER_M = {
 
 DEFAULT_MODEL = "claude-sonnet-4-6"
 
+# Models that must never be dispatched. Sonnet 5 was cut 2026-07-09 (D59); the
+# production stack is claude-sonnet-4-6 only. The name is retained in the
+# decision history (SPEC.md change log) as the record of that revert, but a live
+# call to it is always a bug (a stale spec pin, a stale DB default), so the one
+# chokepoint every Claude call passes through refuses it loudly rather than
+# silently spending on the banned model. Prefix match, so a dated variant is
+# caught too; claude-sonnet-4-6 / 4-5 are unaffected.
+_BANNED_MODEL_PREFIXES = ("claude-sonnet-5",)
+
+
+def _reject_banned_model(model: str) -> None:
+    if (model or "").lower().startswith(_BANNED_MODEL_PREFIXES):
+        raise ValueError(
+            f"model {model!r} is banned from dispatch: Sonnet 5 was cut "
+            f"2026-07-09 (D59); production is claude-sonnet-4-6. A spec or DB "
+            f"default still pins it; fix that rather than calling it."
+        )
+
 
 def _is_mistral(model: str) -> bool:
     """True for a Mistral model id, which routes off CLIProxyAPI (EXP-9)."""
@@ -95,12 +109,12 @@ def _is_mistral(model: str) -> bool:
 def _rejects_temperature(model: str) -> bool:
     """True for Claude 5 family models, which 400 on a `temperature` param.
 
-    Sonnet 5 / Fable 5 deprecate temperature entirely. Matching on the
-    family prefix (no date-suffix guessing) keeps every pre-5 model's
-    request byte-identical.
+    Fable 5 and its Claude 5-family siblings deprecate temperature entirely.
+    Matching on the family prefix (no date-suffix guessing) keeps every pre-5
+    model's request byte-identical.
     """
     m = model.lower()
-    return m.startswith(("claude-sonnet-5", "claude-fable-5", "claude-opus-5",
+    return m.startswith(("claude-fable-5", "claude-opus-5",
                          "claude-haiku-5", "claude-mythos-5"))
 
 
@@ -293,6 +307,7 @@ def call_for_structured(
     """
     if model is None:
         model = DEFAULT_MODEL
+    _reject_banned_model(model)
     # Only the Claude path needs the Anthropic/CLIProxyAPI client; a Mistral arm
     # (EXP-9) goes direct, so do not construct (or require auth for) the proxy
     # client when it will not be used.

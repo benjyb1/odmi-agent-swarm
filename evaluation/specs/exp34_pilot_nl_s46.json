@@ -1,6 +1,6 @@
 {
   "run_id": "exp34_retrieval_strategy_s46_nl_pilot",
-  "description": "EXP-34 pilot, re-pinned to claude-sonnet-4-6 (D59; Sonnet 5 cut 2026-07-09). Redo of EXP-23 narrow-then-widen, slim 2 arms (baseline_narrow_then_wide vs wide_only), NL only. Step 1 runs nl_pilot10 (10% of the 192 arm-pair design) as a behaviour check; if healthy, expand questions_from to nl_pilot24 (25%) and re-run (idempotent resume). One variable: search_strategy; every other knob pinned. Nothing to resume from EXP-23 (those 58 rows are Opus 4.6 under a different experiment_id).",
+  "description": "EXP-34 pilot, pinned to claude-sonnet-4-6 (D59). Redo of EXP-23 narrow-then-widen, slim 2 arms (baseline_narrow_then_wide vs wide_only), NL only. Step 1 runs nl_pilot10 (10% of the 192 arm-pair design) as a behaviour check; if healthy, expand questions_from to nl_pilot24 (25%) and re-run (idempotent resume). One variable: search_strategy; every other knob pinned. Nothing to resume from EXP-23 (those 58 rows are Opus 4.6 under a different experiment_id).",
   "headline": false,
   "global_parallel": 3,
   "budget_calls": 2500,

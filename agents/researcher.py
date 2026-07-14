@@ -590,7 +590,17 @@ def run_researcher(
         )
         output = output.model_copy(update={"answer": normalised})
     if not answer_shapes.is_valid_answer(output.answer, shape):
-        failure_mode = failure_mode or "invalid_answer_shape"
+        # Shape invalidity must take priority over any earlier failure_mode
+        # (e.g. url_unreachable set above): the Coordinator's B1 retry gate keys
+        # on the exact string "invalid_answer_shape", so a shape-invalid answer
+        # that also had an unreachable URL must still be reported as
+        # invalid_answer_shape, or it slips the gate and can commit as junk.
+        if failure_mode and failure_mode != "invalid_answer_shape":
+            notes_parts.append(
+                f"prior failure_mode {failure_mode!r} superseded by "
+                f"invalid_answer_shape"
+            )
+        failure_mode = "invalid_answer_shape"
         notes_parts.append(
             f"answer {output.answer!r} not in allowed set "
             f"{list(shape.all_valid)[:8]}..."

@@ -20,8 +20,8 @@ Two prior identities are void, and both stay in the DB as audit trail only:
 - `exp21_frozen_headline` — a 2026-06-24 partial dispatch finalised 301 pairs on
   FI/HR/SE under a pre-freeze config, then died to a power event. Voided by D57.
 - `exp31_frozen_headline_v2` — registered 2026-07-02 (D57) as the replacement,
-  but its pre-registration pinned `claude-sonnet-5` (cut 2026-07-09, D59), never
-  ran, and its design predates the July verdicts. Discarded here.
+  but its pre-registration pinned a model cut by D59 (2026-07-09), never ran,
+  and its design predates the July verdicts. Discarded here.
 
 EXP-36 is a fresh number (Q2, minted 2026-07-13) so the discard is unambiguous
 in the registry and the board. `run_id = exp36_frozen_headline`.
@@ -50,7 +50,7 @@ exactly.
 | Knob | Frozen value | Fixed by | Note |
 |---|---|---|---|
 | Search provider | DIY only (Serper SERP + trafilatura) | D43 | No Tavily, no Brave, no fallback. |
-| Researcher model | `claude-sonnet-4-6` | D59 | Sonnet 5 cut 2026-07-09. |
+| Researcher model | `claude-sonnet-4-6` | D59 | Model reverted 2026-07-09. |
 | Verifier model | `claude-sonnet-4-6` | D59 | |
 | Adjudicator model | `claude-sonnet-4-6` | D59 | |
 | Snippet-picker model | `claude-sonnet-4-6` | D59 | Picker is the largest single LLM call in a pair; pinned, not left to fall back. |
@@ -58,6 +58,7 @@ exactly.
 | Instruction transport | full prompt folded into the user turn (`<instructions>`), proxy cloak on | D55, D62 | Undisguised Sonnet/Opus is 429'd; cloak stays on. |
 | Results per query | 5 | EXP-18 | r10 never confirmed multi-country; keep r5. |
 | Queries per attempt | 3 | production default | |
+| Query language | bilingual (English + native) | EXP-22, production default | English-only is an ablation; bilingual ships. |
 | Max retries | 3 | production default | Retry-divergence limitation disclosed below. |
 | Verifier counter-search | always | EXP-19 | `never` inconclusive multi-country; keep `always`. |
 | Evidence chaining | off (baseline) | EXP-20 | Chaining failed 2 of 4 promotion conditions. |
@@ -156,8 +157,8 @@ Four data-integrity defects, confirmed present, fixed before dispatch:
   this bug, so the fix is load-bearing for coverage.
 - B3 `_pct(n, 0)` returned the bottom band on an empty denominator: an empty
   catalogue reported "<10%" rather than not-applicable. Fixed.
-- B4 dashboard still offered `claude-sonnet-5` for dispatch: removed from the Run
-  Console dispatch dropdown; retained on the Models comparison page per D59.
+- B4 dashboard still offered a since-cut model for dispatch: removed from both
+  the Run Console and the Models comparison dashboards (D59).
 
 ## Disclosures (carried into the write-up)
 
@@ -180,21 +181,32 @@ Four data-integrity defects, confirmed present, fixed before dispatch:
 
 ## Data hygiene (cache contamination: primary fix already done)
 
-The held-out cache contamination is handled primarily by the 2026-07-13 purge
-(commit b8a316c), which removed every held-out cache row from the canonical DB:
-verified 0 held-out fetch rows remaining. The steps below are the rest.
+The 2026-07-13 purge (commit b8a316c) cleared most held-out cache but was
+incomplete: a pre-dispatch audit (2026-07-14) found the canonical DB still
+carried **892 held-out fetch rows, 112 SERP rows and 202 snippet rows** (the
+b8a316c join matched cache to surviving `phase2_*` rows and missed rows whose
+originating `phase2_*` row had already been deleted; its "verified 0 fetch
+remaining" claim did not hold on this DB). `scripts/purge_heldout_cache.py`
+closes the gap: it deletes every cache row that names a held-out country, is
+referenced by a held-out `phase2_*` row, or (fetch) sits on a held-out national
+ccTLD, and re-scans to prove zero residual across all three layers. It must be
+run on the dispatch DB and read `VERIFIED CLEAN` before dispatch. Over-deletion
+is harmless: the cache is disposable and the run reads none of it.
 
-- Dispatch from a fresh copy of the purged canonical DB, with `model_defaults`
-  set to `claude-sonnet-4-6`. This is the load-bearing step. Never dispatch from a
-  worktree DB: the unpurged worktree copies still carry ~3,950 held-out fetch
-  rows each.
+- Dispatch from a fresh copy of the canonical DB that has been purged with
+  `scripts/purge_heldout_cache.py --apply` and registered with
+  `scripts/register_exp36.py`, `model_defaults` at `claude-sonnet-4-6`. This is
+  the load-bearing step. Never dispatch from a worktree DB: the unpurged worktree
+  copies still carry ~3,950 held-out fetch rows each. Full procedure in
+  `docs/EXPERIMENTS_EXP36_DISPATCH_RUNBOOK.md`.
 - `no_cache: true` in every sub-batch is defence in depth, not the primary fix.
   It disables cache reads (so no surviving row can be read) but not writes, so the
   run writes fresh held-out cache into its throwaway DB copy. That is why the copy
-  is disposable and never committed.
+  is disposable and never committed; the reported finals are exported separately
+  (see the runbook), so nothing depends on committing the DB.
 - Proxy cloak on and 4.6 authenticated through CLIProxyAPI before dispatch.
-- `check_data_leakage.py` (finalised URL rows) clean before and after, plus a
-  held-out cache-row scan on the dispatch DB.
+- `check_data_leakage.py` (finalised URL rows) clean before and after, plus the
+  held-out cache-row scan (the purge script re-scan) on the dispatch DB.
 
 ## Budget
 

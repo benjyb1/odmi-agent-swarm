@@ -1,5 +1,5 @@
 {
-  "description": "EXP-34 Sonnet-5 pilot subset of nl_eval_pairs.json (24 pairs, 14 no + 10 yes, dimension round-robin, deterministic).",
+  "description": "EXP-34 pilot subset of nl_eval_pairs.json (24 pairs, 14 no + 10 yes, dimension round-robin, deterministic).",
   "seed": 20260603,
   "country_code": "NL",
   "answer_shape": "binary",
