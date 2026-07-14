@@ -982,7 +982,7 @@ def coordinate(
     no_cache: bool = False,
     verifier_search: str = "always",
     query_language: str = "bilingual",
-    search_strategy: str = "narrow_then_wide",
+    search_strategy: str = "wide_only",
     picker_model: Optional[str] = None,
     subtrio_id: Optional[str] = None,
     batch_id: Optional[str] = None,
@@ -1235,8 +1235,13 @@ def coordinate(
             if r_result.cumulative_cost_usd:
                 cumulative_cost += r_result.cumulative_cost_usd
 
-            if r_result.output is None:
-                # Researcher failed unrecoverably; treat as Verifier fail and retry
+            if r_result.output is None or r_result.failure_mode == "invalid_answer_shape":
+                # Researcher failed unrecoverably, or emitted an answer that
+                # fails its per-question shape (D28 invalid_answer_shape). Treat
+                # both as a retryable Researcher failure and never carry a
+                # shape-invalid answer forward to the Verifier, where it could
+                # commit as a junk `differ` (B1 fix). Retry; on exhaustion,
+                # adjudicate on any prior valid attempt or abstain honestly.
                 print(f"  Researcher failed: {r_result.failure_mode}", flush=True)
                 if attempt == max_retries:
                     if researcher_outputs:
@@ -1429,29 +1434,16 @@ def coordinate(
             print(f"  Verifier failed: {v_result.failure_mode}", flush=True)
             verifier_outputs.append(None)  # type: ignore
             if attempt == max_retries:
-                final_status = "agent_failure"
-                _upsert_subtrio_status(
-                    subtrio_id=subtrio_id, batch_id=batch_id,
-                    question_id=question_id, country_code=country_code,
-                    stage="failed", final_verdict=final_status,
-                    cumulative_cost_usd=cumulative_cost,
-                    final_failure_reason=v_result.failure_mode,
-                    last_message=f"verifier failed: {v_result.failure_mode}",
-                    ended=True,
-                )
-                _save_final_row(
-                    run_id=run_id, pair_run_id=pair_run_id, inp=r_inp,
-                    final_output=last_researcher_output,
-                    terminal_status=final_status,
-                    retry_count=retry_count, adjudicator_involved=False,
-                    captcha_escalated=False,
-                    cumulative_input_tokens=cumulative_tokens_in,
-                    cumulative_output_tokens=cumulative_tokens_out,
-                    cumulative_wall_clock_ms=cumulative_wall,
-                    cumulative_cost_usd=cumulative_cost,
-                    final_failure_reason=v_result.failure_mode,
-                )
-                return final_status, last_researcher_output
+                # B2 fix: a Researcher answer is in hand and a prior attempt may
+                # carry a valid Verifier verdict. Do not drop the pair as
+                # agent_failure on a final-attempt Verifier schema glitch; fall
+                # through to the Adjudicator, which weighs any valid prior
+                # Verifier outputs (the None placeholders appended above are
+                # filtered) or abstains honestly through its own
+                # no-verifier-output guard. Mirrors the researcher-path recovery.
+                print("  final verifier attempt failed; adjudicating on prior "
+                      "attempts", flush=True)
+                break
             feedback = VerifierFeedback(
                 rejection_reason=f"verifier failure: {v_result.failure_mode}",
             )
@@ -1801,16 +1793,16 @@ def main() -> int:
              "not English-speaking. 'en' ablates the native query so all "
              "queries are English-only. See docs/EXPERIMENTS_FOREIGN_LANG.md.")
     parser.add_argument(
-        "--search-strategy", default="narrow_then_wide",
+        "--search-strategy", default="wide_only",
         choices=["narrow_then_wide", "wide_only", "narrow_only"],
-        help="EXP-23 Researcher retrieval strategy (SRCH-5/6). "
-             "'narrow_then_wide' (default) is byte-identical to production: "
-             "trusted-domain include list on the first pass, widen only on "
-             "empty. 'wide_only' skips the include list entirely so every "
-             "query runs against the open web (one pass, no widen). "
-             "'narrow_only' keeps the include list but never widens even on "
-             "empty, so EXP-23 can attribute any wide_only gain to the "
-             "widening step rather than to the absence of narrowing.")
+        help="Researcher retrieval strategy (SRCH-5/6). 'wide_only' (default "
+             "since the EXP-34 adoption) skips the trusted-domain include list "
+             "so every query runs against the open web (one pass, no widen). "
+             "'narrow_then_wide' is the former default: trusted-domain include "
+             "list on the first pass, widen only on empty. 'narrow_only' keeps "
+             "the include list but never widens even on empty, so any wide_only "
+             "gain is attributable to the widening step rather than to the "
+             "absence of narrowing.")
     parser.add_argument(
         "--picker-model", default=None,
         help="Pin the snippet-picker LLM to this model. Default None falls "

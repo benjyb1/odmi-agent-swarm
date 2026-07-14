@@ -20,7 +20,7 @@ import re
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from agents.tools.answer_shapes import QuestionShape
+from agents.tools.answer_shapes import NOT_APPLICABLE, QuestionShape
 from agents.tools.catalogue import formats, licences
 from agents.tools.catalogue.model import HarvestedDataset
 
@@ -109,6 +109,22 @@ def _pct(num: int, denom: int) -> float:
     return (100.0 * num / denom) if denom else 0.0
 
 
+def _percentage_band(
+    num: int, denom: int, allowed: Sequence[str]
+) -> tuple[float, str]:
+    """Percentage and assigned band for `num` of `denom`.
+
+    An empty denominator is not a zero percentage. With nothing to measure
+    (a catalogue with no datasets, or none carrying a distribution) the
+    metric abstains with `not_applicable` rather than collapsing to the
+    bottom band (B3). A real 0-of-N keeps its genuine bottom band.
+    """
+    if denom == 0:
+        return 0.0, NOT_APPLICABLE
+    pct = _pct(num, denom)
+    return pct, band_for_percentage(pct, allowed)
+
+
 # ------------------------------------------------------------------
 # Presence / count metrics
 # ------------------------------------------------------------------
@@ -120,8 +136,7 @@ def metric_q12_licence_presence(
     """Q12: percentage of datasets carrying licensing information."""
     denom = len(datasets)
     num = sum(1 for d in datasets if licences.dataset_is_licensed(d))
-    pct = _pct(num, denom)
-    band = band_for_percentage(pct, shape.allowed_answers)
+    pct, band = _percentage_band(num, denom, shape.allowed_answers)
     breakdown = (
         f"{num:,} of {denom:,} datasets carry licensing information "
         f"= {pct:.1f}% -> {band}"
@@ -152,8 +167,7 @@ def metric_q21_download_url(
         1 for d in with_dist
         if any(dist.download_url for dist in d.distributions)
     )
-    pct = _pct(num, denom)
-    band = band_for_percentage(pct, shape.allowed_answers)
+    pct, band = _percentage_band(num, denom, shape.allowed_answers)
     breakdown = (
         f"{num:,} of {denom:,} datasets (with distributions) carry a "
         f"download-URL = {pct:.1f}% -> {band}"
@@ -171,8 +185,7 @@ def metric_q22_access_url(
         1 for d in with_dist
         if any(dist.access_url for dist in d.distributions)
     )
-    pct = _pct(num, denom)
-    band = band_for_percentage(pct, shape.allowed_answers)
+    pct, band = _percentage_band(num, denom, shape.allowed_answers)
     breakdown = (
         f"{num:,} of {denom:,} datasets (with distributions) carry an "
         f"access-URL = {pct:.1f}% -> {band}"
@@ -186,8 +199,7 @@ def metric_q25_open_licence(
     """Q25: percentage of datasets under an open licence."""
     denom = len(datasets)
     num = sum(1 for d in datasets if licences.dataset_is_open(d))
-    pct = _pct(num, denom)
-    band = band_for_percentage(pct, shape.allowed_answers)
+    pct, band = _percentage_band(num, denom, shape.allowed_answers)
     breakdown = (
         f"{num:,} of {denom:,} datasets are under an open licence "
         f"= {pct:.1f}% -> {band}"
@@ -207,8 +219,7 @@ def metric_q27_open_format(
             for dist in d.distributions
         )
     )
-    pct = _pct(num, denom)
-    band = band_for_percentage(pct, shape.allowed_answers)
+    pct, band = _percentage_band(num, denom, shape.allowed_answers)
     breakdown = (
         f"{num:,} of {denom:,} datasets offer an open, machine-readable "
         f"distribution = {pct:.1f}% -> {band}"

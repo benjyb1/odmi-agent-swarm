@@ -50,9 +50,9 @@ def _trusted_list() -> list[str]:
     return ["data.overheid.nl", "overheid.nl"]
 
 
-# ---------- 1. Default: narrow_then_wide is byte-identical ----------
+# ---------- 1. narrow_then_wide (explicit; the former default) ----------
 
-def test_default_strategy_passes_trusted_on_first_pass_and_widens_on_empty(monkeypatch):
+def test_narrow_then_wide_passes_trusted_and_widens_on_empty(monkeypatch):
     _stub_query_gen(monkeypatch)
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: _trusted_list())
 
@@ -64,7 +64,7 @@ def test_default_strategy_passes_trusted_on_first_pass_and_widens_on_empty(monke
 
     monkeypatch.setattr(researcher, "search_many", fake_search_many)
 
-    researcher.run_researcher(_researcher_input())
+    researcher.run_researcher(_researcher_input(), search_strategy="narrow_then_wide")
 
     # Two calls: first narrow (trusted), then wide (None).
     assert len(calls) == 2
@@ -72,7 +72,7 @@ def test_default_strategy_passes_trusted_on_first_pass_and_widens_on_empty(monke
     assert calls[1]["include_domains"] is None
 
 
-def test_default_strategy_no_widen_when_narrow_returns_results(monkeypatch):
+def test_narrow_then_wide_no_widen_when_results(monkeypatch):
     _stub_query_gen(monkeypatch)
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: _trusted_list())
 
@@ -98,18 +98,41 @@ def test_default_strategy_no_widen_when_narrow_returns_results(monkeypatch):
 
     monkeypatch.setattr(researcher, "call_for_structured", _raise)
 
-    researcher.run_researcher(_researcher_input())
+    researcher.run_researcher(_researcher_input(), search_strategy="narrow_then_wide")
 
     assert len(calls) == 1
     assert calls[0]["include_domains"] == _trusted_list()
 
 
-def test_default_strategy_no_widen_when_trusted_is_empty(monkeypatch):
+def test_narrow_then_wide_no_widen_when_trusted_empty(monkeypatch):
     """Pre-EXP-23 behaviour: an empty trusted list skips both narrow framing
     and the widen branch, because `if not search_results and trusted` is False.
     """
     _stub_query_gen(monkeypatch)
     monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: [])
+
+    calls: list[dict] = []
+
+    def fake_search_many(queries, **kw):
+        calls.append({"include_domains": kw.get("include_domains")})
+        return []
+
+    monkeypatch.setattr(researcher, "search_many", fake_search_many)
+
+    researcher.run_researcher(_researcher_input(), search_strategy="narrow_then_wide")
+
+    assert len(calls) == 1
+    assert calls[0]["include_domains"] is None
+
+
+# ---------- 1b. Default is now wide_only (EXP-34 adoption) ----------
+
+def test_default_strategy_is_wide_only(monkeypatch):
+    """After the EXP-34 adoption the production default is wide_only: a call
+    with no explicit strategy issues one wide pass and never sends the trusted
+    include list, even when one exists."""
+    _stub_query_gen(monkeypatch)
+    monkeypatch.setattr(researcher, "trusted_domains_for", lambda cc: _trusted_list())
 
     calls: list[dict] = []
 

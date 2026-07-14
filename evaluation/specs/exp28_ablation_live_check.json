@@ -19,7 +19,8 @@
         "verifier_model": "claude-sonnet-4-6",
         "adjudicator_model": "claude-sonnet-4-6",
         "picker_model": "claude-sonnet-4-6",
-        "provider": "diy"
+        "provider": "diy",
+        "search_strategy": "narrow_then_wide"
       },
       "arms": [
         {
@@ -43,7 +44,8 @@
         "verifier_model": "claude-sonnet-4-6",
         "adjudicator_model": "claude-sonnet-4-6",
         "picker_model": "claude-sonnet-4-6",
-        "provider": "diy"
+        "provider": "diy",
+        "search_strategy": "narrow_then_wide"
       },
       "arms": [
         {

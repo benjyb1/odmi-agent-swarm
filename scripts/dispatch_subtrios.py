@@ -364,7 +364,7 @@ def dispatch(
     chained: bool = False,
     verifier_search: str = "always",
     query_language: str = "bilingual",
-    search_strategy: str = "narrow_then_wide",
+    search_strategy: str = "wide_only",
     picker_model: Optional[str] = None,
     adjudicator_selection: str = "standard",
     pipeline_mode: str = "trio",
@@ -588,10 +588,11 @@ def dispatch(
                 # the 'bilingual' production default, so the baseline subprocess
                 # invocation is byte-identical.
                 cmd += ["--query-language", query_language]
-            if search_strategy and search_strategy != "narrow_then_wide":
-                # EXP-23 Researcher retrieval strategy. Only forwarded when
-                # it differs from the production default, so the baseline
-                # subprocess invocation is byte-identical.
+            if search_strategy and search_strategy != "wide_only":
+                # Researcher retrieval strategy. wide_only is the production
+                # default since the EXP-34 adoption, so it is not forwarded (the
+                # subprocess default already matches). narrow_then_wide and
+                # narrow_only are forwarded explicitly when requested.
                 cmd += ["--search-strategy", search_strategy]
             if picker_model:
                 # Pin the snippet-picker LLM (EXP-23 sets this to Opus when
@@ -914,19 +915,19 @@ def main() -> int:
                              "is byte-identical to production. 'en' ablates the "
                              "native-language query so all queries are "
                              "English-only. See docs/EXPERIMENTS_FOREIGN_LANG.md.")
-    parser.add_argument("--search-strategy", default="narrow_then_wide",
+    parser.add_argument("--search-strategy", default="wide_only",
                         choices=["narrow_then_wide", "wide_only", "narrow_only"],
-                        help="EXP-23 Researcher retrieval strategy (SRCH-5/6), "
+                        help="Researcher retrieval strategy (SRCH-5/6), "
                              "forwarded to each run_coordinator subprocess. "
-                             "'narrow_then_wide' (default) is byte-identical "
-                             "to production: trusted-domain include list on "
-                             "the first pass, widen only on empty. "
-                             "'wide_only' skips the include list entirely so "
-                             "every query runs against the open web. "
-                             "'narrow_only' keeps the include list but never "
-                             "widens, so any wide_only gain is attributable "
-                             "to the widening step rather than to the absence "
-                             "of narrowing.")
+                             "'wide_only' (default since the EXP-34 adoption) "
+                             "skips the trusted-domain include list so every "
+                             "query runs against the open web. "
+                             "'narrow_then_wide' is the former default: trusted "
+                             "include list on the first pass, widen only on "
+                             "empty. 'narrow_only' keeps the include list but "
+                             "never widens, so any wide_only gain is "
+                             "attributable to the widening step rather than to "
+                             "the absence of narrowing.")
     parser.add_argument("--picker-model", default=None,
                         help="Pin the snippet-picker LLM to this model, "
                              "forwarded to each run_coordinator subprocess. "

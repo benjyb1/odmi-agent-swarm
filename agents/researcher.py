@@ -361,7 +361,7 @@ def run_researcher(
     page_text_cap: int = 16000,
     max_snippet_chars: int = 600,
     query_language: str = "bilingual",
-    search_strategy: str = "narrow_then_wide",
+    search_strategy: str = "wide_only",
     picker_model: Optional[str] = None,
     on_step: StepCallback = _noop,
     subtrio_id: str | None = None,
