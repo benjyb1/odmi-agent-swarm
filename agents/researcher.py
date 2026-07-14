@@ -186,7 +186,7 @@ def generate_queries(
         user_message=_build_query_gen_message(input),
         output_schema=_Queries,
         model=model,
-        max_tokens=200,
+        max_tokens=400,
         condition_label="query_gen",
         prompt_version_id=prompt_id,
         usage_context=f"researcher_query_gen:{input.question_id}:{input.country_code}",

@@ -16,6 +16,7 @@ from typing import List, Optional
 
 import httpx
 
+from agents.errors import SearchProviderExhausted
 from agents.tools.search import SearchResult
 
 _ENDPOINT = "https://google.serper.dev/search"
@@ -71,6 +72,17 @@ def serper_search(
         try:
             with httpx.Client(timeout=20.0) as client:
                 response = client.post(_ENDPOINT, headers=headers, json=body)
+                if (response.status_code == 400
+                        and "not enough credits" in response.text.lower()):
+                    # Definitive account exhaustion (2026-07-13), not a
+                    # malformed query -- every subsequent call fails
+                    # identically until the account is topped up.
+                    # check_serper_credits() only probes once before a batch
+                    # starts; this is the mid-batch case, which otherwise
+                    # crashes the coordinator subprocess uncaught.
+                    raise SearchProviderExhausted(
+                        f"Serper account out of credits: {response.text[:200]}"
+                    )
                 response.raise_for_status()
                 outcome["payload"] = response.json()
         except BaseException as exc:  # noqa: BLE001 - re-raised in the caller
