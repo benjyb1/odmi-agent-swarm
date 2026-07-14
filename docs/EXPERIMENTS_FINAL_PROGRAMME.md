@@ -40,7 +40,7 @@ higher-resource).
 2. EXP-34 retrieval-strategy verdict (EXP-23 produced no Sonnet-usable data).
 3. D50 neg_licence adopt-or-defer decision.
 4. EXP-28/29 land (model family and pipeline mode are config).
-5. ARCHITECTURE.md freeze commit, tagged; models per D56 (`claude-sonnet-5`).
+5. ARCHITECTURE.md freeze commit, tagged; models per D59 (`claude-sonnet-4-6`).
 6. SE catalogue route: restore `SE.json` or document web-only routing.
 7. Deny-list audit (`check_data_leakage.py`) clean before and after.
 8. Resume-from-interruption behaviour verified (the 2026-06-24 attempt died to

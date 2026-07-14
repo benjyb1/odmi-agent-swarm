@@ -2399,6 +2399,33 @@ honoured end to end (auth works AND our system prompt reaches the model). Only
 after that passes does any EXP-28 dispatch start. If Sonnet 5 is ever run as a
 labelled comparison, cloak-off means it too uses the plain `system` param.
 
+### D62: user-turn transport reinstated; the proxy cloak is mandatory, so instructions travel in the user turn
+
+**Date:** 2026-07-12. Reverses D61's transport half (the `system`-param
+restoration); the D59 model revert stands. This is the standing transport.
+
+**Why D61 could not hold.** D61 turned the CLIProxyAPI cloak off
+(`disable-claude-cloak-mode: true`) to restore the clean pre-July `system`-param
+shape. The verification gate D61 owed then failed on contact with the quota:
+with the cloak off, undisguised Sonnet and Opus OAuth calls are rate-limited by
+Anthropic (429), so the swarm cannot run. The cloak is what lets the Max
+subscription drive Sonnet and Opus through the proxy; Haiku passes undisguised,
+Sonnet and Opus do not, so this is a disguise problem, not a quota problem.
+
+**The transport.** The cloak stays on (`disable-claude-cloak-mode: false`). With
+the cloak on, the proxy replaces the API `system` param with the Claude Code
+prompt and discards whatever we send as `system`, so the D61 `system`-param shape
+loses the agent prompt and schema (observed as `query_gen_schema_invalid` on
+every pair). The fix is D55's user-turn folding: the full agent prompt travels
+inside an `<instructions>` block in the user turn, where it reaches the model
+regardless of the cloak (`agents/tools/llm.py::call_for_structured`, the folded
+user path). Temperature is omitted for the Claude 5 family and kept for 4.6.
+
+**Consequence.** The June `system`-param transport is permanently dead for this
+project; every model runs on the user-turn transport with the cloak on. The
+EXP-29 4.6 battery (2026-07-10..12) and the EXP-36 headline both run on this
+transport. There is no further revert.
+
 ### D63: EXP-28 architecture-ablation table filled by zero-cost replay of the trio run, not fresh dispatch; underlying rows subsequently lost to operator error
 
 **Date:** 2026-07-12. Companion to the 2026-07-12 D62-regression change-log entry
@@ -2454,10 +2481,55 @@ the 156-pair `trio_s46` battery (`evaluation/specs/exp29_s46_100pct_cumulative.j
 already registered) would restore a requeryable dataset; until then, treat
 this section as a documented finding, not a live number.
 
+### D64: EXP-31 discarded; EXP-36 is the fresh frozen headline, wide_only adopted, coordinator data-integrity fixes in
+
+**Date:** 2026-07-13. Supersedes D57's `exp31_frozen_headline_v2`, which pinned a
+cut model (Sonnet 5, reverted by D59) and predated the July verdicts. The
+headline is re-minted as EXP-36 (`exp36_frozen_headline`) with a fresh
+pre-registration, `docs/EXPERIMENTS_EXP36_PREREG.md`, which holds the full
+decision map. Spec `evaluation/specs/exp36_frozen_headline.json`.
+
+**The frozen configuration.** DIY (D43); models `claude-sonnet-4-6` for
+researcher, verifier, adjudicator and picker (D59); user-turn transport with the
+cloak on (D62); results-per-query 5 (EXP-18); verifier counter-search always
+(EXP-19); no chaining (EXP-20); full Researcher prompt, neg_licence off (D50);
+trio pipeline (D54); abstention floor 0.65 (D37); `no_cache` for the run. The one
+production flip is `search_strategy = wide_only`.
+
+**wide_only adopted (EXP-34).** The 2026-07-13 EXP-34 re-run on 4.6 (NL+MT+AL dev
+battery, `exp34_retrieval_strategy_s46`) met the pre-registered adoption rule on
+NL (negative-gold FP 17 to 14 paired, commit-accuracy 0.62 to 0.67). Adopted on
+accuracy grounds: pooled commit-accuracy rises 0.679 to 0.733 and no country
+regresses. The FP-reduction does not generalise at full power (pooled McNemar
+p=0.727), so no general FP-reduction claim is made. The code default flips
+`narrow_then_wide` to `wide_only` across the dispatcher, coordinator and
+Researcher; narrowing is inert on the eight held-out countries anyway (no
+trusted-domain lists), so the headline runs wide on every reported country.
+
+**Coordinator fixes carried by the freeze.** Four data-integrity defects fixed
+before dispatch: B1 `invalid_answer_shape` now retries rather than committing
+junk; B2 a final-attempt Verifier `schema_invalid` adjudicates on the answer in
+hand rather than dropping the pair; B3 an empty catalogue abstains rather than
+reporting "<10%"; B4 the dashboard Run Console no longer offers the cut Sonnet 5.
+B1/B2 are covered by `tests/test_coordinator_bug_fixes.py`. The EXP-18/19/20/34
+verdicts were measured pre-fix; the fixes touch only malformed-output edge cases,
+not the tested knobs, so the verdicts carry (disclosed in the prereg).
+
+**Resume rule.** The headline resumes at pair granularity across interruptions
+(finalised pairs kept, unfinished re-run) under one frozen config and one run_id;
+a resume under any changed knob voids the run.
+
+**Remaining gate.** The ARCHITECTURE.md freeze commit and tag are applied as the
+last step before dispatch; the `exp36_frozen_headline` registry row and the void
+of `exp31_frozen_headline_v2` land in the canonical DB at the same point.
+Dispatch is from a fresh copy of the purged canonical DB (held-out cache removed
+2026-07-13, commit b8a316c), never a worktree copy.
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-07-13 (D64: EXP-31 discarded, EXP-36 fresh frozen headline) | See D64 above. Discarded `exp31_frozen_headline_v2` (Sonnet-5-pinned, never ran); minted EXP-36 (`exp36_frozen_headline`) with a fresh pre-registration (`docs/EXPERIMENTS_EXP36_PREREG.md`) and spec (`evaluation/specs/exp36_frozen_headline.json`, eight per-country sub-batches, dry-run clean, every knob pinned). **wide_only adopted (EXP-34, `exp34_retrieval_strategy_s46`, 4.6):** NL adoption rule met (neg-gold FP 17->14 paired, commit-acc 0.62->0.67), pooled commit-acc 0.679->0.733 with no country regressing; FP-reduction not significant at full power (pooled McNemar p=0.727), so no general FP claim. Code default flipped `narrow_then_wide`->`wide_only` across dispatcher/coordinator/researcher, byte-identical tests updated; narrowing is inert on the held-out 8 (no trusted lists) so the headline runs wide everywhere. **Coordinator data-integrity fixes (B1-B4):** B1 `invalid_answer_shape` retries instead of committing junk; B2 a final-attempt Verifier `schema_invalid` adjudicates on the answer in hand instead of dropping the pair; B3 an empty catalogue abstains instead of reporting "<10%"; B4 the dashboard Run Console drops the cut Sonnet 5. New tests `tests/test_coordinator_bug_fixes.py`; full suite 784 passed. D62 written up as a formal decision (was change-log-only). ARCHITECTURE.md ledger and FINAL_PROGRAMME gate 5 corrected to 4.6 / EXP-18 / EXP-34. Remaining before dispatch: ARCHITECTURE.md freeze tag, canonical `exp36` registry row + void of `exp31_v2`, deny-list and held-out cache audits, all on a fresh copy of the purged canonical DB. |
 | 2026-07-12 (D63: ablation table via replay; underlying data subsequently lost) | See D63 above. Ablation table (`no_adjudicator`/`researcher_only`) filled by zero-cost replay of the existing `trio_s46` run rather than a ~300-pair fresh dispatch; replay validated on 9 live-dispatched pairs (8/9 exact match, one miss traced to a cross-arm cache-sharing gap, not a logic error). The underlying 156-pair dataset was subsequently destroyed by an accidental `git checkout -- data/odmi.db` in the source worktree (discarded uncommitted work, no recovery path); this entry documents the finding from the in-session analysis, not a re-queryable result. New eval specs preserved: `exp28_ablation_s46_full.json`, `exp28_ablation_s46_20pct.json`, `exp28_ablation_live_check.json`, `exp29_s46_10pct_pilot.json`/`_25pct_`/`_50pct_`/`_100pct_cumulative`/`_100pct_final.json` (the incremental dispatch trail and the canonical 156-pair pair list for this experiment). |
 | 2026-07-12 (post-D62 "regression" resolved as comparator artefact) | The EXP-29 4.6 battery (156 pairs, `trio_s46`, D62 user-turn transport, run 2026-07-10..12) looked like a commit-accuracy regression against each pair's most recent pre-July result (cov 0.46 -> 0.56, acc 0.76 -> 0.64). Root cause is the comparator rule, not the transport: the config-blind "most recent June row" gave all 52 NL pairs the late-June Opus-4-6 arms (expA/B/C; NL cov 0.46-0.60, acc 0.71-0.82) as their baseline, while Sonnet-4-6 has always run NL at cov 0.81-0.92 / acc 0.56-0.64 (eight June arms). Holding the comparator at `claude-sonnet-4-6`: June cov 0.603 / acc 0.646 vs now 0.559 / 0.645 (n=136, per-country flat, Wilson intervals overlapping). Folding bug, calibration drift and same-evidence verdict flips all ruled out (folded prompt dumps clean with the 0.6 floor and abstention rules intact; committed-answer confidence 0.733 vs 0.743, medians equal; 28 of 33 answer divergences cite different evidence, transitions symmetric). Script: `evaluation/exp29_transport_regression_check.py`; write-up in PROJECT_LOG 2026-07-12. Rule going forward: pre/post deltas compare like-for-like configs, model above all. Separately, the sleep/wake search hang (~26 pairs stuck at `search_start`, no error trail) got a 45s wall-clock guard on the Serper call (`SerperDeadlineError`, daemon thread - OS DNS resolution blocks before httpx's 20s timeout applies) and `dispatch_subtrios.py` now logs unknown child exit codes with a stderr tail instead of dropping them. |
 | 2026-07-10 (closed-book baseline) | New dev-only probe `evaluation/closed_book_baseline.py`: with retrieval disabled, what share of the 2025 answers does bare `claude-sonnet-4-6` (D59) reproduce from parametric memory? No existing `pipeline_mode` arm approximates this (`researcher_only` still searches). Universe = 20% of the full dev set, dimension-stratified within NL/MT/NO/FR/AL, seed 20260709, 145 pairs; rows in `closed_book_answers` (full prompt + raw response for replay), `--db` targets the canonical DB, resumable. Run `cb_20260709` (£0.33, user-turn transport): match rate **0.493** vs an always-`yes` majority-class floor of **0.681** - the bare model scores BELOW the trivial floor, so it is not carrying the 2025 answer key (contamination bound low; replaces the "structurally impossible" overclaim with a number). Well-calibrated (self-report known=true 0.877, known=false 0.177; abstains 22.8%); weakest on Quality (0.267) and `change` golds (0.190). RQ1 head-to-head on the 69 cb pairs that have a main-run (`experiment_id IS NULL`) final: swarm 0.567 vs closed-book 0.478 (+0.089 retrieval gain), but both sit under this yes-heavy subset's 0.739 always-yes floor because both abstain - which is why the definitive RQ1 read belongs on the class-balanced 156-pair battery (majority floor ~0.5), not the natural-distribution sample. |

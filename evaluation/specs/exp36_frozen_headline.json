@@ -1,0 +1,185 @@
+{
+  "run_id": "exp36_frozen_headline",
+  "headline": true,
+  "global_parallel": 3,
+  "budget_calls": 25000,
+  "_note": "Frozen headline run (EXP-36), discards EXP-31. Config frozen per docs/EXPERIMENTS_EXP36_PREREG.md. Every knob pinned explicitly for the receipts: model claude-sonnet-4-6 all roles + picker (D59), search_strategy wide_only (EXP-34), DIY (D43), r5 (EXP-18), verifier_search always (EXP-19), full prompt / neg_licence off (D50), no_cache true (leak guard). Eight per-country sub-batches, stratum B first. Dispatch from a fresh copy of the purged canonical DB, never a worktree copy.",
+  "experiments": [
+    {
+      "experiment_id": "exp36_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["FI"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "FI", "knobs": {}}]
+    },
+    {
+      "experiment_id": "exp36_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["SE"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "SE", "knobs": {}}]
+    },
+    {
+      "experiment_id": "exp36_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["BE"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "BE", "knobs": {}}]
+    },
+    {
+      "experiment_id": "exp36_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["HR"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "HR", "knobs": {}}]
+    },
+    {
+      "experiment_id": "exp36_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["BA"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "BA", "knobs": {}}]
+    },
+    {
+      "experiment_id": "exp36_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["MK"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "MK", "knobs": {}}]
+    },
+    {
+      "experiment_id": "exp36_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["ME"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "ME", "knobs": {}}]
+    },
+    {
+      "experiment_id": "exp36_frozen_headline",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": ["BG"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "BG", "knobs": {}}]
+    }
+  ]
+}
