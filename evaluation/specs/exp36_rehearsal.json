@@ -1,0 +1,53 @@
+{
+  "run_id": "exp36_rehearsal",
+  "headline": false,
+  "global_parallel": 3,
+  "budget_calls": 2000,
+  "_note": "DEV rehearsal of the EXP-36 frozen config on burnable countries (NL pipeline rehearsal + AL thin-web canary). Identical knobs to exp36_frozen_headline.json (claude-sonnet-4-6 all roles + picker, wide_only, DIY, r5, verifier always, full prompt, no_cache). NOT the headline: dev countries only, experiment_id exp36_rehearsal, never reads a held-out country. Exercises the real coordinator loop, B1/B2 paths, wide_only, and the auth pool at parallel=3; supports a mid-run kill + resume test.",
+  "experiments": [
+    {
+      "experiment_id": "exp36_rehearsal",
+      "type": "accuracy",
+      "questions": ["I12", "P10-a", "PT16", "Q20", "I17", "P10-b", "I2", "P15", "PT13", "Q1"],
+      "countries": ["NL"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "NL", "knobs": {}}]
+    },
+    {
+      "experiment_id": "exp36_rehearsal",
+      "type": "accuracy",
+      "questions": ["I12", "P10-a", "PT16", "Q20", "I17", "P10-b"],
+      "countries": ["AL"],
+      "baseline_knobs": {
+        "provider": "diy",
+        "strategy": "verifier-disprove",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [{"condition_label": "AL", "knobs": {}}]
+    }
+  ]
+}

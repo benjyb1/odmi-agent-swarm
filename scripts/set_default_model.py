@@ -12,8 +12,8 @@ Idempotent. Prints the before/after rows. Defaults to the repo's canonical
     uv run python scripts/set_default_model.py --model claude-sonnet-4-6
     uv run python scripts/set_default_model.py --model claude-sonnet-4-6 --db /path/to/odmi.db
 
-Used to revert the D56 Sonnet-5 default back to Sonnet 4.6 (the model every
-June dev experiment ran on), per the 2026-07-09 decision.
+Used to set the canonical model default to Sonnet 4.6 (the model every June
+dev experiment ran on), per the 2026-07-09 decision (D59).
 """
 from __future__ import annotations
 

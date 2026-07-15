@@ -139,6 +139,45 @@ def test_remaining_pairs_skips_finalised_preserving_order():
     assert remaining_pairs(pairs, done) == ["A:NL", "C:NL"]
 
 
+def _headline_spec(country="FI"):
+    return {
+        "run_id": "t", "global_parallel": 1, "budget_calls": 100, "headline": True,
+        "experiments": [{
+            "experiment_id": "exp_h", "type": "accuracy", "questions": ["I12"],
+            "countries": [country], "baseline_knobs": {},
+            "arms": [{"condition_label": country, "knobs": {}}],
+        }],
+    }
+
+
+def test_headline_cache_guard_blocks_dirty_db(monkeypatch):
+    import scripts.purge_heldout_cache as ph
+    monkeypatch.setattr(ph, "scan",
+                        lambda conn: {"fetch": ["u1"], "serp": [], "snippet": ["s1"]})
+    errors = preflight(_headline_spec("FI"))
+    assert any("held-out cache" in e for e in errors), errors
+
+
+def test_headline_cache_guard_passes_clean_db(monkeypatch):
+    import scripts.purge_heldout_cache as ph
+    monkeypatch.setattr(ph, "scan",
+                        lambda conn: {"fetch": [], "serp": [], "snippet": []})
+    errors = preflight(_headline_spec("FI"))
+    assert not any("held-out cache" in e for e in errors), errors
+
+
+def test_non_headline_spec_skips_cache_guard(monkeypatch):
+    """A dev spec must not trigger the (slow) cache scan at all."""
+    import scripts.purge_heldout_cache as ph
+
+    def _boom(conn):
+        raise AssertionError("cache scan must not run for a non-headline spec")
+
+    monkeypatch.setattr(ph, "scan", _boom)
+    spec = _valid_spec()  # no headline flag
+    assert preflight(spec) == []
+
+
 def test_remaining_pairs_none_done_is_identity():
     pairs = ["A:NL", "B:NL"]
     assert remaining_pairs(pairs, set()) == pairs

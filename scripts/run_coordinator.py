@@ -1243,6 +1243,20 @@ def coordinate(
                 # commit as a junk `differ` (B1 fix). Retry; on exhaustion,
                 # adjudicate on any prior valid attempt or abstain honestly.
                 print(f"  Researcher failed: {r_result.failure_mode}", flush=True)
+                # R12 receipts: a shape-invalid attempt still produced a raw
+                # response and a (rejected) answer. Persist the row so the retry
+                # trail stays auditable, exactly as it was before the B1 gate
+                # intercepted this branch. The row carries failure_mode set, so
+                # `_find_resumable_researcher` (failure_mode IS NULL) never
+                # resumes from it and the Adjudicator (researcher_outputs) never
+                # weighs it. A genuine unrecoverable failure has no output and
+                # nothing to persist here.
+                if r_result.output is not None:
+                    _save_researcher_row(
+                        result=r_result, inp=r_inp,
+                        run_id=run_id, pair_run_id=pair_run_id,
+                        retry_count=retry_count,
+                    )
                 if attempt == max_retries:
                     if researcher_outputs:
                         # A prior attempt already produced an answer. Do not
@@ -1439,8 +1453,11 @@ def coordinate(
                 # agent_failure on a final-attempt Verifier schema glitch; fall
                 # through to the Adjudicator, which weighs any valid prior
                 # Verifier outputs (the None placeholders appended above are
-                # filtered) or abstains honestly through its own
-                # no-verifier-output guard. Mirrors the researcher-path recovery.
+                # filtered). If NO attempt ever produced a Verifier verdict, the
+                # no-verifier-output guard below records agent_failure (a
+                # Researcher answer with zero verification is not committed), so
+                # this recovery only rescues pairs that had at least one valid
+                # Verifier verdict. Mirrors the researcher-path recovery.
                 print("  final verifier attempt failed; adjudicating on prior "
                       "attempts", flush=True)
                 break

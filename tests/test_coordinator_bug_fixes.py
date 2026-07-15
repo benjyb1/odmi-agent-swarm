@@ -168,3 +168,110 @@ def test_verifier_schema_invalid_final_attempt_adjudicates(calls):
     assert status != "agent_failure", (
         f"pair must not be dropped as agent_failure; got status={status!r}"
     )
+
+
+def _spy_researcher_saves(monkeypatch):
+    """Record the failure_mode of every _save_researcher_row call.
+
+    In dry-run the write is a no-op but the call still happens, so this captures
+    the receipts trail (B1: shape-invalid attempts must still be persisted)."""
+    saved: list = []
+
+    def _fake_save(**kw):
+        saved.append(kw["result"].failure_mode)
+        return -1
+
+    monkeypatch.setattr(rc, "_save_researcher_row", _fake_save)
+    return saved
+
+
+def test_b1_recovers_on_retry_and_saves_receipt(calls, monkeypatch):
+    """B1 recovery: a shape-invalid attempt is retried (never verified), and when
+    a later attempt is valid the pair commits. The shape-invalid attempt is still
+    persisted as a receipt (R12), and the Verifier runs only on the valid attempt."""
+    saved = _spy_researcher_saves(monkeypatch)
+    seq = iter([
+        _researcher_result(failure_mode="invalid_answer_shape"),  # attempt 0
+        _researcher_result(answer="yes", confidence=0.9),         # attempt 1
+    ])
+    calls.researcher_factory = lambda: next(seq)
+    calls.verifier_factory = lambda: _verifier_pass()
+
+    status, _out = _coordinate(max_retries=1)
+
+    assert calls.verifier == 1, (
+        "the Verifier must run only on the recovered (valid) attempt, "
+        f"never on the shape-invalid one; ran {calls.verifier} times"
+    )
+    assert status == "accepted_by_verifier", f"pair should commit; got {status!r}"
+    assert "invalid_answer_shape" in saved, "shape-invalid attempt not persisted (receipt lost)"
+    assert None in saved, "recovered valid attempt not persisted"
+
+
+def test_b1_all_invalid_never_reaches_verifier(calls, monkeypatch):
+    """B1: if every attempt is shape-invalid, the pair never reaches the Verifier
+    and abstains as agent_failure; each attempt is still saved as a receipt."""
+    saved = _spy_researcher_saves(monkeypatch)
+    calls.researcher_factory = lambda: _researcher_result(
+        failure_mode="invalid_answer_shape"
+    )
+
+    status, _out = _coordinate(max_retries=1)
+
+    assert calls.verifier == 0, "a shape-invalid answer must never reach the Verifier"
+    assert status == "agent_failure", f"all-invalid pair must not commit; got {status!r}"
+    assert saved == ["invalid_answer_shape", "invalid_answer_shape"], (
+        f"both attempts' receipts must be persisted; got {saved!r}"
+    )
+
+
+def test_shape_invalid_wins_over_url_unreachable(monkeypatch):
+    """B1 (gap closed): the Researcher must report `invalid_answer_shape` even
+    when the cited URL is also unreachable. `url_unreachable` is set first in the
+    validation block, and the Coordinator's B1 retry gate keys on the exact
+    string `invalid_answer_shape`; if the earlier mode were kept, an off-shape
+    answer with a dead URL would slip the gate and reach the Verifier, where it
+    could commit as junk. This drives the real `agents.researcher` validation
+    path, not an injected failure_mode."""
+    from types import SimpleNamespace
+
+    from agents import researcher as rmod
+    from agents.models import LLMUsage, ResearcherInput
+
+    def _usage() -> LLMUsage:
+        return LLMUsage(
+            input_tokens=1, output_tokens=1, wall_clock_ms=1,
+            estimated_cost_usd=0.0, model_version="t", prompt_version_id=None,
+            condition_label="researcher", raw_response="{}",
+        )
+
+    off_shape = ResearcherOutput(
+        answer="banana",  # not in the binary {yes, no} allowed set
+        answer_explanation="A fake explanation long enough to validate.",
+        evidence_quote="A fake evidence passage long enough to validate.",
+        source_url="https://www.data.gouv.fr/x",
+        retrieval_confidence=0.8, answer_confidence=0.9,
+    )
+    fake_result = SimpleNamespace(
+        title="t", url="https://www.data.gouv.fr/x", snippet="s", provider="diy",
+    )
+    monkeypatch.setattr(
+        rmod, "generate_queries",
+        lambda inp, subtrio_id=None, model=None, **kw: (["q1"], _usage()),
+    )
+    monkeypatch.setattr(rmod, "search_many", lambda queries, **kw: [fake_result])
+    monkeypatch.setattr(rmod, "call_for_structured", lambda **kw: (off_shape, _usage()))
+    # url_unreachable is set FIRST in the validation block:
+    monkeypatch.setattr(rmod, "head_ok", lambda url: (False, 404))
+    monkeypatch.setattr(rmod, "trust_score", lambda url, country_code=None: 0.5)
+
+    inp = ResearcherInput(
+        question_id="P1", question_text="Is there a national open data policy?",
+        dimension="Policy", indicator="policy_framework", response_scoring="{}",
+        country_code="NL", country_name="Netherlands", country_language="nl",
+    )
+    result = rmod.run_researcher(inp, search_strategy="wide_only")
+    assert result.failure_mode == "invalid_answer_shape", (
+        "shape invalidity must supersede url_unreachable so the B1 gate catches "
+        f"it; got {result.failure_mode!r}"
+    )

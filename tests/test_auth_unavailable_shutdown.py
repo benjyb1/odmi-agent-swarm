@@ -35,7 +35,7 @@ def _fake_internal_server_error() -> Exception:
         json={"type": "error", "error": {
             "type": "api_error",
             "message": "auth_unavailable: no auth available (providers=claude, "
-                       "model=claude-sonnet-5)",
+                       "model=claude-sonnet-4-6)",
         }},
     )
     return anthropic.InternalServerError(
@@ -65,7 +65,7 @@ class TestAuthUnavailableShutdown:
         with pytest.raises(AuthUnavailableShutdown):
             llm.call_for_structured(
                 system="s", user_message="u", output_schema=_Out,
-                model="claude-sonnet-5",
+                model="claude-sonnet-4-6",
             )
 
         # A usage row is still written (rate_limited=True), same as a 429,
@@ -102,6 +102,6 @@ class TestAuthUnavailableShutdown:
         with pytest.raises(RateLimitedShutdown) as excinfo:
             llm.call_for_structured(
                 system="s", user_message="u", output_schema=_Out,
-                model="claude-sonnet-5",
+                model="claude-sonnet-4-6",
             )
         assert not isinstance(excinfo.value, AuthUnavailableShutdown)

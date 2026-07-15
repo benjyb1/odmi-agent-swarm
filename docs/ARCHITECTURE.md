@@ -17,8 +17,9 @@ points to a better value but production has not been switched yet. *baseline* =
 built and validated as a comparison point, not the default. *pending* = under test
 or owed.
 
-Last updated 2026-07-13 (after the EXP-34 retrieval-strategy verdict, the
-EXP-18 breadth verdict, and the D59 model revert).
+Last updated 2026-07-14 (EXP-36 pre-dispatch audit corrections: results-per-query
+row fixed to 5, model rows resolved to 4.6/D59, EXP-34 adoption basis restated on
+the pre-registered NL rule). Not yet freeze-tagged; the tag is applied at dispatch.
 
 ## Search and retrieval
 
@@ -26,13 +27,13 @@ EXP-18 breadth verdict, and the D59 model revert).
 |---|---|---|---|
 | Provider | DIY only (Serper SERP + trafilatura). No Tavily, no Brave, no fallback. | D43 | adopted, closed |
 | Snippet picker | on (LLM selects chunks) | EXP-17 picker (off is no cheaper, no better, does not bin the answer) | kept |
-| Results per query | 3 (production) | default | adopted |
+| Results per query | 5 (r5) | EXP-18 | adopted |
 | ... breadth finding | keep results per query = 5 (r5) | EXP-18 breadth verdict: r10 rested on a single NL run at +17% cost and was never confirmed multi-country, so r5 stands | kept |
 | Queries per attempt | 3 | default | adopted |
 | Page-text cap | 16,000 chars | D29 (extraction-ordering fix) | adopted |
 | Max chars per snippet | 600 | EXP-24 snippet-cap replay: the cap is not binding on accuracy (negative) | kept |
 | Evidence deny-list | ODMI publications + data.europa.eu banned at every layer | D24 | adopted |
-| Retrieval strategy | wide_only | EXP-34 verdict 2026-07-13 on `claude-sonnet-4-6` (full NL+MT+AL dev battery); the pre-registered adoption rule was met on NL (negative-gold FP 17 to 14 paired, commit-accuracy 0.62 to 0.67); adopted on accuracy grounds (pooled commit-accuracy 0.679 to 0.733, never regresses any country); the FP-reduction is not significant at full power (pooled McNemar p=0.727), so no general FP-reduction claim is made | adopted |
+| Retrieval strategy | wide_only | EXP-34 verdict 2026-07-13 on `claude-sonnet-4-6` (full NL+MT+AL dev battery); the pre-registered NL adoption rule was met (negative-gold FP 17 to 14 paired, commit-accuracy 0.62 to 0.67 non-inferior, no country regresses), so adopted on that rule; neither effect is significant at full power (pooled FP McNemar p=0.727; paired accuracy on both-committed pairs is a tie), so no general accuracy or FP-reduction claim is made beyond the NL rule | adopted |
 | Query language | bilingual (English + native) | EXP-22 (AL foreign-language ablation) + L2 translate-before-entailment replay: language is not the binding constraint | kept |
 
 ## Researcher
@@ -77,8 +78,8 @@ EXP-18 breadth verdict, and the D59 model revert).
 |---|---|---|---|
 | Researcher / Verifier / Adjudicator | Sonnet (`claude-sonnet-4-6`) | D59 (revert to `claude-sonnet-4-6`, 2026-07-09) | adopted |
 | Routing | CLIProxyAPI on localhost:8317 (Claude Max), no direct API billing | D1 | adopted |
-| Model-variant comparison (Haiku / Opus / tiered / Mistral) | undecided | EXP-9 (status stale, needs re-check / re-run) | pending |
-| Sonnet 5 vs Sonnet 4.6 (whole stack) | undecided; adoption rule pre-registered | EXP-29 (running 2026-07-01 overnight) | pending |
+| Model-variant comparison (Haiku / Opus / tiered) | post-freeze characterisation | EXP-32/33 (registered, run after EXP-36); EXP-9 closed as stalled (D57) | pending |
+| Whole-stack model family | Sonnet 4.6 | D59 (2026-07-09); EXP-29 4.6 battery closed 2026-07-12 (D63) | adopted |
 | Instruction transport | agent instructions in the user turn (`<instructions>` block); the proxy's Claude OAuth channel replaces the API `system` param with the Claude Code system prompt | D55 (2026-07-01, CLIProxyAPI 7.2.45) | adopted (forced by the proxy) |
 
 ## Coordinator and evaluation
