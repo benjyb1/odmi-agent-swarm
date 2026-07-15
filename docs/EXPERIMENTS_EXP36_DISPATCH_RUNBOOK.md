@@ -1,5 +1,27 @@
 # EXP-36 dispatch runbook
 
+## TL;DR — how to run it
+
+Everything is prepared. From this worktree
+(`.claude/worktrees/exp36-pre-dispatch-audit-f39206`, HEAD at the
+`exp36-config-freeze` tag), one command runs the whole thing:
+
+```bash
+bash scripts/run_exp36.sh
+```
+
+It runs every gate in order (freeze check, .env, auth preflight, stages the
+purged + registered dispatch DB, held-out cache re-scan, dry-run), then prompts
+with a 15s countdown before the real dispatch. It is resume-safe: if the run is
+interrupted, the same command resumes it. The manual steps below are the same
+gates spelled out, for when something needs doing by hand.
+
+Nothing else is required first. Merging PR #26 to main and purging the canonical
+DB are optional hygiene, not preconditions: the run dispatches from the prepared
+`data/odmi.exp36-dispatch.db`, which is already clean and registered.
+
+---
+
 Operational steps for the single frozen headline run. Design and rationale are
 in `docs/EXPERIMENTS_EXP36_PREREG.md`; this file is the checklist for the
 person at the keyboard. Every step is on the **dispatch DB**, a fresh copy of
