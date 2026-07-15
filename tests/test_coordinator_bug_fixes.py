@@ -170,6 +170,61 @@ def test_verifier_schema_invalid_final_attempt_adjudicates(calls):
     )
 
 
+def _spy_researcher_saves(monkeypatch):
+    """Record the failure_mode of every _save_researcher_row call.
+
+    In dry-run the write is a no-op but the call still happens, so this captures
+    the receipts trail (B1: shape-invalid attempts must still be persisted)."""
+    saved: list = []
+
+    def _fake_save(**kw):
+        saved.append(kw["result"].failure_mode)
+        return -1
+
+    monkeypatch.setattr(rc, "_save_researcher_row", _fake_save)
+    return saved
+
+
+def test_b1_recovers_on_retry_and_saves_receipt(calls, monkeypatch):
+    """B1 recovery: a shape-invalid attempt is retried (never verified), and when
+    a later attempt is valid the pair commits. The shape-invalid attempt is still
+    persisted as a receipt (R12), and the Verifier runs only on the valid attempt."""
+    saved = _spy_researcher_saves(monkeypatch)
+    seq = iter([
+        _researcher_result(failure_mode="invalid_answer_shape"),  # attempt 0
+        _researcher_result(answer="yes", confidence=0.9),         # attempt 1
+    ])
+    calls.researcher_factory = lambda: next(seq)
+    calls.verifier_factory = lambda: _verifier_pass()
+
+    status, _out = _coordinate(max_retries=1)
+
+    assert calls.verifier == 1, (
+        "the Verifier must run only on the recovered (valid) attempt, "
+        f"never on the shape-invalid one; ran {calls.verifier} times"
+    )
+    assert status == "accepted_by_verifier", f"pair should commit; got {status!r}"
+    assert "invalid_answer_shape" in saved, "shape-invalid attempt not persisted (receipt lost)"
+    assert None in saved, "recovered valid attempt not persisted"
+
+
+def test_b1_all_invalid_never_reaches_verifier(calls, monkeypatch):
+    """B1: if every attempt is shape-invalid, the pair never reaches the Verifier
+    and abstains as agent_failure; each attempt is still saved as a receipt."""
+    saved = _spy_researcher_saves(monkeypatch)
+    calls.researcher_factory = lambda: _researcher_result(
+        failure_mode="invalid_answer_shape"
+    )
+
+    status, _out = _coordinate(max_retries=1)
+
+    assert calls.verifier == 0, "a shape-invalid answer must never reach the Verifier"
+    assert status == "agent_failure", f"all-invalid pair must not commit; got {status!r}"
+    assert saved == ["invalid_answer_shape", "invalid_answer_shape"], (
+        f"both attempts' receipts must be persisted; got {saved!r}"
+    )
+
+
 def test_shape_invalid_wins_over_url_unreachable(monkeypatch):
     """B1 (gap closed): the Researcher must report `invalid_answer_shape` even
     when the cited URL is also unreachable. `url_unreachable` is set first in the

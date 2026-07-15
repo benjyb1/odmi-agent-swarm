@@ -14,8 +14,23 @@ re-read cleanly. Do not skip the verification lines.
 - On `main` at the merge that carries the B1/B2 fixes, `wide_only`, and the
   purge/register scripts.
 - CLIProxyAPI up on `localhost:8317`, cloak ON (D62), Claude Max authenticated
-  on `claude-sonnet-4-6` (a real 4.6 call succeeds, not a 401/503).
+  on `claude-sonnet-4-6` (a real 4.6 call succeeds, not a 401/503). Verify at
+  the dispatch concurrency with `uv run python scripts/loadtest_proxy.py`.
+- **The dispatch checkout must contain `.env`.** `llm.py` auto-loads `.env`
+  from the checkout root; it is git-ignored, so a fresh worktree has none and
+  every call fails auth (the rehearsal caught this: 0 finals, orphaned at
+  `query_gen_start`). Dispatch from the canonical checkout, or `cp` the canonical
+  `.env` into the dispatch checkout first.
 - `git tag -l` shows no EXP-36 freeze tag yet (it is applied last, step 7).
+
+**Rehearsed (2026-07-14).** The frozen config was rehearsed end-to-end on dev
+countries (`exp36_rehearsal`: NL 10 + AL 6, `no_cache`, `parallel=3`) with a
+mid-run `SIGKILL` and resume. Result: 16/16 finalised, zero duplicates, the
+three pre-kill pairs finalised exactly once (resume is clean); NL 10/10 committed;
+AL abstained 4/6 with zero `agent_failure` (thin-web coverage will be lower on
+stratum A, but honest). An arm that comes back with 0 finals (e.g. an auth
+outage) trips the orchestrator health gate, which pauses and prints "re-run the
+same spec to resume" rather than pressing on.
 
 ## 1. Build the dispatch DB (fresh, purged, registered)
 
@@ -73,7 +88,12 @@ export ODMI_SKIP_AUTO_PUBLISH=1
 ## 4. Dispatch (via the orchestrator, resume-safe)
 
 ```bash
-# dry-run first: 8 arms, 1,144 pairs, no_cache=True on every arm, budget 55000
+# freeze gate: HEAD must be the tagged commit and the tree clean (step 7 tag).
+uv run python scripts/assert_freeze.py    # exits non-zero unless frozen
+
+# dry-run first: 8 arms, 1,144 pairs, no_cache=True on every arm, budget 55000.
+# For a headline spec the preflight now also hard-fails if the dispatch DB still
+# carries any held-out cache row, so this doubles as the purge gate.
 uv run python scripts/run_experiments.py evaluation/specs/exp36_frozen_headline.json --dry-run
 
 # real run

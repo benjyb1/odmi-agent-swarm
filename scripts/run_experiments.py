@@ -222,6 +222,34 @@ def preflight(spec: Dict[str, Any]) -> List[str]:
                         f"claude-sonnet-4-6"
                     )
 
+    # Held-out cache guard for the headline run. A headline dispatch reads the
+    # eight held-out countries once; if the dispatch DB still carries held-out
+    # cache and no_cache were ever off, the run would read voided evidence. This
+    # fails the preflight (at dry-run) rather than trusting the operator to have
+    # purged, turning the runbook's manual purge step into an enforced gate. Only
+    # runs for a headline spec, since it scans the cache tables.
+    if spec.get("headline") is True:
+        try:
+            import sqlite3
+            from scripts.purge_heldout_cache import scan as _scan_heldout
+            conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+            try:
+                n = {k: len(v) for k, v in _scan_heldout(conn).items()}
+            finally:
+                conn.close()
+            if any(n.values()):
+                errors.append(
+                    f"headline run: dispatch DB still carries held-out cache "
+                    f"(fetch={n['fetch']} serp={n['serp']} snippet={n['snippet']}); "
+                    f"run `scripts/purge_heldout_cache.py --db {DB_PATH} --apply` "
+                    f"and re-check before dispatch"
+                )
+        except Exception as exc:  # noqa: BLE001
+            errors.append(
+                f"headline run: could not verify the dispatch DB is purged of "
+                f"held-out cache ({exc}); resolve before dispatch"
+            )
+
     return errors
 
 
