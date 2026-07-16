@@ -1,0 +1,54 @@
+{
+  "english_subset_n": 69,
+  "arms": {
+    "en": {
+      "n": 69,
+      "youden_j": 0.34640522875817004,
+      "sensitivity": 0.7777777777777778,
+      "specificity": 0.5686274509803921,
+      "flips": 0,
+      "flip_rate": 0.0
+    },
+    "fr": {
+      "n": 67,
+      "youden_j": 0.3848039215686274,
+      "sensitivity": 0.875,
+      "specificity": 0.5098039215686274,
+      "flips": 9,
+      "flip_rate": 0.13432835820895522,
+      "mcnemar_vs_en": {
+        "b": 5,
+        "c": 4,
+        "p": 1.0
+      }
+    },
+    "bg": {
+      "n": 68,
+      "youden_j": 0.3137254901960784,
+      "sensitivity": 0.8823529411764706,
+      "specificity": 0.43137254901960786,
+      "flips": 15,
+      "flip_rate": 0.22058823529411764,
+      "mcnemar_vs_en": {
+        "b": 10,
+        "c": 5,
+        "p": 0.3017578125
+      },
+      "drop_beyond_fr_control": 0.07107843137254899
+    },
+    "sq": {
+      "n": 67,
+      "youden_j": 0.23582766439909286,
+      "sensitivity": 0.8888888888888888,
+      "specificity": 0.3469387755102041,
+      "flips": 17,
+      "flip_rate": 0.2537313432835821,
+      "mcnemar_vs_en": {
+        "b": 13,
+        "c": 4,
+        "p": 0.049041748046875
+      },
+      "drop_beyond_fr_control": 0.14897625716953455
+    }
+  }
+}

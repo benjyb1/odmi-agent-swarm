@@ -1,0 +1,221 @@
+{
+  "experiment_id": null,
+  "db": "/Users/benjyb/Desktop/MscProject/.claude/worktrees/compassionate-hypatia-d07df0/data/odmi.db",
+  "countries": {
+    "AL": {
+      "committed": {
+        "english": {
+          "match": 0,
+          "differ": 2,
+          "accuracy": 0.0,
+          "wilson": [
+            0.0,
+            0.6576197724933468
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": null,
+      "abstention": {
+        "english": {
+          "abstained": 1,
+          "of": 1
+        }
+      }
+    },
+    "DE": {
+      "committed": {
+        "english": {
+          "match": 2,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.3423802275066532,
+            1.0
+          ]
+        },
+        "non_english": {
+          "match": 1,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.2065493143772375,
+            1.0
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": null,
+      "abstention": {}
+    },
+    "EE": {
+      "committed": {
+        "english": {
+          "match": 1,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.2065493143772375,
+            1.0
+          ]
+        },
+        "non_english": {
+          "match": 3,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.4385029682449546,
+            1.0
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": null,
+      "abstention": {
+        "english": {
+          "abstained": 4,
+          "of": 4
+        },
+        "non_english": {
+          "abstained": 7,
+          "of": 7
+        },
+        "undetermined": {
+          "abstained": 1,
+          "of": 1
+        }
+      }
+    },
+    "FR": {
+      "committed": {
+        "english": {
+          "match": 1,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.2065493143772375,
+            1.0
+          ]
+        },
+        "non_english": {
+          "match": 77,
+          "differ": 6,
+          "accuracy": 0.927710843373494,
+          "wilson": [
+            0.8511321390822683,
+            0.9664497044770072
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": null,
+      "abstention": {
+        "english": {
+          "abstained": 4,
+          "of": 4
+        },
+        "non_english": {
+          "abstained": 31,
+          "of": 36
+        }
+      }
+    },
+    "MT": {
+      "committed": {
+        "english": {
+          "match": 27,
+          "differ": 7,
+          "accuracy": 0.7941176470588235,
+          "wilson": [
+            0.632016119488364,
+            0.8965047310096808
+          ]
+        },
+        "non_english": {
+          "match": 1,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.2065493143772375,
+            1.0
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 0.0,
+      "abstention": {
+        "english": {
+          "abstained": 25,
+          "of": 25
+        }
+      }
+    },
+    "NL": {
+      "committed": {
+        "non_english": {
+          "match": 3,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.4385029682449546,
+            1.0
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": null,
+      "abstention": {}
+    },
+    "NO": {
+      "committed": {
+        "english": {
+          "match": 37,
+          "differ": 3,
+          "accuracy": 0.925,
+          "wilson": [
+            0.8013576647568947,
+            0.9741639742254118
+          ]
+        },
+        "non_english": {
+          "match": 53,
+          "differ": 11,
+          "accuracy": 0.828125,
+          "wilson": [
+            0.717867883773418,
+            0.9012225769875535
+          ]
+        },
+        "undetermined": {
+          "match": 2,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.3423802275066532,
+            1.0
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 2.2911324786324787,
+      "abstention": {
+        "non_english": {
+          "abstained": 25,
+          "of": 28
+        },
+        "english": {
+          "abstained": 7,
+          "of": 7
+        }
+      }
+    },
+    "RO": {
+      "committed": {
+        "non_english": {
+          "match": 2,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.3423802275066532,
+            1.0
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": null,
+      "abstention": {}
+    }
+  }
+}

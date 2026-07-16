@@ -77,6 +77,49 @@ availability over comprehension; a within-country gap concentrated on
 native-evidence pairs, surviving the dimension stratification, implicates the
 language channel and names where.
 
+## Part A result (2026-07-16, run complete)
+
+English-evidence subset n = 69 (81 of the 150 frozen candidates carry
+Norwegian evidence and are excluded). Per arm, J against the gold labels and
+verdict-flip rate vs the English anchor:
+
+| arm | n | J | flip rate | McNemar vs en |
+|---|---|---|---|---|
+| en (anchor, from EXP-38) | 69 | 0.35 | — | — |
+| en->fr (MT control) | 67 | 0.38 | 0.13 | p = 1.00 |
+| en->bg (Cyrillic) | 68 | 0.31 | 0.22 | p = 0.30 |
+| en->sq (low-resource) | 67 | 0.24 | 0.25 | p = 0.049 |
+
+The pre-registered criteria fired for sq (J drop 0.15 beyond the fr
+control; flip rate above fr with p < 0.05) and for nothing else. The
+mandated 10-sample inspection then found 3/10 sq translations materially
+degraded, tracing to mixed-language sources: langdetect over the
+concatenated surface called 46 of the 69 "English" candidates English when
+at least one snippet part is Norwegian, and the weakest MT pair (en->sq)
+garbles those fragments. The quantified sensitivity split
+(`evaluation/results/exp39_purity_sensitivity.json`) settles it:
+
+- clean-English sources (n = 23): en J 0.53, fr 0.53, bg 0.47, sq 0.46 —
+  sq beyond-control +0.07, bg +0.07, both under the 0.10 margin;
+- mixed sources (n = 46): sq beyond-control +0.14 — the whole effect lives
+  where the MT input was contaminated.
+
+**Verdict: no comprehension penalty demonstrated.** The sq flag fails the
+pre-registered quality gate; the clean-subset read is a null for all three
+languages, now including a Cyrillic rendering. This is the third
+independent test pointing the same way (EXP-22 query ablation; the
+127-case pre-translation replay; this on-the-fly swap probe). Limitations,
+stated: the clean subset is small (n = 23); translationese biases toward
+finding degradation, which strengthens the null; synthetic translations
+are not real stratum-A web prose, so the production-evidence read is Part
+B over the EXP-36 rows. Method note for the Language section: language-ID
+must run per snippet part, not over concatenated evidence; surface-level
+detection mislabelled two-thirds of this subset.
+
+Receipts: `evaluation/results/exp39_language_swap.jsonl`,
+`exp39_language_swap_summary.json`, `exp39_sq_spotcheck.json`,
+`exp39_source_purity.json`, `exp39_purity_sensitivity.json`.
+
 ## What this does not test, and the queued follow-on
 
 Neither part tests whether bilingual querying earns recall on mid and
