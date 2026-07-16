@@ -70,15 +70,18 @@ the runbook; two orchestrators at full parallel would trip the WAFs).
 - EXP-36 throughput not degraded while the pilot runs (baseline 68 finals/hr;
   check before and after).
 
-## Pilot outcome (2026-07-16, pre-full-run addendum)
+## Pilot outcome (2026-07-16, pre-full-run addendum; updated live)
 
-All four arms finalised 8/8 with zero `agent_failure` / `auth_unavailable`
-(the researcher_only D58 recurrence did not appear; the first pilot attempt
-failed on a missing worktree `.env`, unrelated, fixed). Arm mechanics
-verified: no_adjudicator abstains exactly where trio adjudicates (I10:AL,
-I22:MT); researcher_only commits alone. Trio pilot outcomes match the
-EXP-34 arm on the stable NL/AL pairs; divergence confined to the
-known-retry-noisy MT pairs. Sanity gate: passed.
+Verified so far: arms 1-2 (trio, no_adjudicator) finalised 8/8, healthy,
+zero `agent_failure` / `auth_unavailable`; arm 3 (researcher_only, the D58
+recurrence watch) is mid-flight at 5/8 with no failures; arm 4
+(self_verify) queued. The first pilot attempt failed on a missing worktree
+`.env` (the failure mode the EXP-36 runbook documents), unrelated to D58,
+fixed. Arm mechanics verified on the finished arms: no_adjudicator
+abstains exactly where trio adjudicates (I10:AL, I22:MT). Trio pilot
+outcomes match the EXP-34 arm on the stable NL/AL pairs; divergence
+confined to the known-retry-noisy MT pairs. Full-run dispatch waits for
+all four arms to report and for EXP-36 to finish (window contention).
 
 Budget correction from measured pilot cost: the trio arm spent ~37
 calls/pair (299 over 8 pairs), against the ~12/pair the July registration
