@@ -1,0 +1,47 @@
+{
+  "arms": {
+    "disprove_replay": {
+      "n": 150,
+      "tp": 21,
+      "fp": 38,
+      "tn": 83,
+      "fn": 8,
+      "sensitivity": 0.7241379310344828,
+      "specificity": 0.6859504132231405,
+      "frr": 0.3140495867768595,
+      "frr_wilson": [
+        0.2381537765298799,
+        0.40138904502083517
+      ],
+      "youden_j": 0.4100883442576233
+    },
+    "corroborate_replay": {
+      "n": 149,
+      "tp": 9,
+      "fp": 19,
+      "tn": 102,
+      "fn": 19,
+      "sensitivity": 0.32142857142857145,
+      "specificity": 0.8429752066115702,
+      "frr": 0.15702479338842976,
+      "frr_wilson": [
+        0.10289117736106847,
+        0.2322655823880282
+      ],
+      "youden_j": 0.16440377804014172
+    }
+  },
+  "n_candidates": 150,
+  "paired": {
+    "shared_n": 149,
+    "disprove_only_correct": 11,
+    "corroborate_only_correct": 19,
+    "mcnemar_p": 0.20048842206597328
+  },
+  "mean_confidence_by_gold": {
+    "disprove_replay:should_pass": 0.7992561983471074,
+    "disprove_replay:should_fail": 0.6679310344827587,
+    "corroborate_replay:should_pass": 0.8159504132231405,
+    "corroborate_replay:should_fail": 0.6660714285714285
+  }
+}

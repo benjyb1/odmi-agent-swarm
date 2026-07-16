@@ -63,6 +63,38 @@ disprove, that is a reportable negative for the section 2.5 argument and is
 written up as such (R12); it would not flip production without a powered
 end-to-end run (D45 framing).
 
+## Result (2026-07-16, run complete)
+
+| arm | n | Youden J | sensitivity | specificity | FRR [Wilson 95] |
+|---|---|---|---|---|---|
+| disprove_replay | 150 | **0.41** | 0.72 | 0.69 | 0.31 [0.24, 0.40] |
+| corroborate_replay | 149 | **0.16** | 0.32 | 0.84 | 0.16 [0.10, 0.23] |
+
+The directional hypothesis is supported on the primary endpoint: the
+corroborative framing loses 0.26 of J, through exactly the predicted
+mechanism (sensitivity 0.72 -> 0.32; it passes bad claims it finds adjacent
+support for). The split holds in both claim directions (no-claims J 0.29 vs
+0.17, yes-claims 0.45 vs 0.25). The fresh disprove arm reproduces the June
+stage-1 J = 0.41 to two decimals on the D62 transport, which also retires
+the concern that the historical anchor was a transport artefact.
+
+Two honest caveats, both anticipated by the design:
+
+- **Raw correctness favours corroborate on this skewed set** (McNemar on
+  overall correctness: disprove-only-correct 11, corroborate-only-correct
+  19, p = 0.20, n.s.). With 121/29 pass-heavy golds, an arm that
+  rubber-stamps scores more raw hits; that is the R4 base-rate trap, and it
+  is why J was fixed as primary before the run. A verifier that misses 70%
+  of wrong claims provides no precision control, whatever its raw accuracy.
+- **The price of adversarialism is visible:** disprove false-rejects 31% of
+  good claims vs corroborate's 16%. The dissertation should report this as
+  the trade the architecture buys, alongside the confidence signature
+  (corroborate is the more confident arm on should-pass claims, 0.82 vs
+  0.80 mean).
+
+One candidate (149 vs 150) fails schema validation on every corroborate
+retry and is excluded pairwise; receipts in the JSONL.
+
 ## Rules compliance
 
 R1 this document + registry row; R2 identical candidates per arm; R4 the
