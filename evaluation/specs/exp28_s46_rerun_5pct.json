@@ -22,12 +22,48 @@
         "adjudicator_model": "claude-sonnet-4-6",
         "picker_model": "claude-sonnet-4-6",
         "provider": "diy",
-        "search_strategy": "narrow_then_wide"
+        "search_strategy": "wide_only"
       },
       "arms": [
         {
           "condition_label": "trio_s46",
           "knobs": {}
+        },
+        {
+          "condition_label": "no_adjudicator_s46",
+          "knobs": { "pipeline_mode": "no_adjudicator" }
+        },
+        {
+          "condition_label": "researcher_only_s46",
+          "knobs": { "pipeline_mode": "researcher_only" }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp35_self_critique",
+      "type": "accuracy",
+      "pairs": [
+        "I12:NL",
+        "I17:NL",
+        "I2:NL",
+        "I14:MT",
+        "I22:MT",
+        "I1:MT",
+        "I10:AL",
+        "I1:AL"
+      ],
+      "baseline_knobs": {
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "provider": "diy",
+        "search_strategy": "wide_only"
+      },
+      "arms": [
+        {
+          "condition_label": "self_verify_s46",
+          "knobs": { "pipeline_mode": "researcher_self_verify" }
         }
       ]
     }
