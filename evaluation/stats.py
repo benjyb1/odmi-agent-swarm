@@ -110,6 +110,69 @@ def mcnemar_exact(b: int, c: int) -> float:
     return _two_sided_binomial_p(min(b, c), n)
 
 
+def two_proportion_test(
+    successes_1: int, n_1: int, successes_2: int, n_2: int,
+    confidence: float = 0.95,
+) -> dict:
+    """Two-sided comparison of two independent binomial proportions.
+
+    Two parts, both standard:
+
+    - **p-value** from the pooled two-proportion z-test (normal approximation
+      with the pooled success rate under the null of equal proportions). When
+      either sample is empty, or the pooled rate is degenerate (0 or 1, so the
+      null variance is zero and the data carry no evidence of a difference),
+      the p-value is 1.0.
+    - **Interval on the difference** (p1 - p2) by Newcombe's hybrid score
+      method (Newcombe 1998, method 10), which combines the two Wilson
+      intervals. It respects the [-1, 1] range and behaves at the extremes
+      where the Wald interval collapses.
+
+    Args:
+        successes_1: Successes in group 1.
+        n_1: Trials in group 1.
+        successes_2: Successes in group 2.
+        n_2: Trials in group 2.
+        confidence: Two-sided confidence level for the difference interval.
+
+    Returns:
+        A dict with ``p1``, ``p2``, ``delta`` (p1 - p2), ``ci_95`` (the
+        Newcombe interval as a [lower, upper] list), ``z`` and ``p_value``.
+        With an empty group, ``delta`` and the interval are None.
+    """
+    if n_1 == 0 or n_2 == 0:
+        return {
+            "p1": successes_1 / n_1 if n_1 else None,
+            "p2": successes_2 / n_2 if n_2 else None,
+            "delta": None, "ci_95": None, "z": None, "p_value": 1.0,
+        }
+
+    p1 = successes_1 / n_1
+    p2 = successes_2 / n_2
+    delta = p1 - p2
+
+    # Newcombe hybrid score interval from the two Wilson intervals.
+    l1, u1 = wilson_interval(successes_1, n_1, confidence)
+    l2, u2 = wilson_interval(successes_2, n_2, confidence)
+    lower = delta - math.sqrt((p1 - l1) ** 2 + (u2 - p2) ** 2)
+    upper = delta + math.sqrt((u1 - p1) ** 2 + (p2 - l2) ** 2)
+
+    # Pooled z-test under the null of equal proportions.
+    pooled = (successes_1 + successes_2) / (n_1 + n_2)
+    variance = pooled * (1 - pooled) * (1 / n_1 + 1 / n_2)
+    if variance == 0:
+        z = None
+        p_value = 1.0
+    else:
+        z = delta / math.sqrt(variance)
+        p_value = 2 * (1 - statistics.NormalDist().cdf(abs(z)))
+    return {
+        "p1": p1, "p2": p2, "delta": delta,
+        "ci_95": [max(-1.0, lower), min(1.0, upper)],
+        "z": z, "p_value": min(1.0, p_value),
+    }
+
+
 def wilcoxon_signed_rank(differences: list[float]) -> tuple[float, float]:
     """Wilcoxon signed-rank test on a list of paired differences.
 
