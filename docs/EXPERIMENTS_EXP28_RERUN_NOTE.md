@@ -69,3 +69,19 @@ the runbook; two orchestrators at full parallel would trip the WAFs).
   behaviour on overlapping pairs (sanity, not a statistical test).
 - EXP-36 throughput not degraded while the pilot runs (baseline 68 finals/hr;
   check before and after).
+
+## Pilot outcome (2026-07-16, pre-full-run addendum)
+
+All four arms finalised 8/8 with zero `agent_failure` / `auth_unavailable`
+(the researcher_only D58 recurrence did not appear; the first pilot attempt
+failed on a missing worktree `.env`, unrelated, fixed). Arm mechanics
+verified: no_adjudicator abstains exactly where trio adjudicates (I10:AL,
+I22:MT); researcher_only commits alone. Trio pilot outcomes match the
+EXP-34 arm on the stable NL/AL pairs; divergence confined to the
+known-retry-noisy MT pairs. Sanity gate: passed.
+
+Budget correction from measured pilot cost: the trio arm spent ~37
+calls/pair (299 over 8 pairs), against the ~12/pair the July registration
+implied. Full-run `budget_calls` raised 13,500 -> 20,000 before dispatch
+(156 x 4 arms at a ~30-call blended average plus headroom); the
+orchestrator's budget pause remains the hard guard.
