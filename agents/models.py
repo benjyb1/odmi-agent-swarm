@@ -56,6 +56,10 @@ VerifierStrategy = Literal[
     # write no phase2_verifier_runs rows, so the DB CHECK is untouched.
     "verifier-tristate",
     "verifier-tristate-probes",
+    # EXP-38 corroborate arm. Evaluation-only, same binary VerifierOutput
+    # contract as disprove; exercised only by
+    # evaluation/exp38_corroborate_ladder.py, no phase2_verifier_runs rows.
+    "verifier-corroborate",
 ]
 VerifierVerdict = Literal["pass", "fail"]
 # EXP-11 P1: a verdict that separates "found counter-evidence" (refute)

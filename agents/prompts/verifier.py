@@ -312,6 +312,78 @@ materially wrong, unverifiable, or insufficient for the specific question.
 
 
 # ============================================================
+# Strategy — corroborate (EXP-38, evaluation-only)
+#
+# The confirmation-seeking mirror of disprove. Same binary
+# VerifierOutput contract, same deterministic gates (substring,
+# forbidden sources), same length discipline; only the epistemic
+# stance flips. Under the binary contract a fail must carry
+# counter-evidence, so found-nothing-either-way resolves to pass:
+# that asymmetry is shared with disprove (identical schema) and is
+# the SAFE-style behaviour the experiment measures, not a planted
+# bias. Never requested by the coordinator; exercised only by
+# evaluation/exp38_corroborate_ladder.py.
+# ============================================================
+
+_CORROBORATE_NAME = "phase2_verifier_corroborate"
+_CORROBORATE_VERSION = 1
+
+_CORROBORATE_SYSTEM = f"""You are the Corroborating Verifier in the ODMI Agent Swarm.
+
+Your job is to decide whether the Researcher's answer to an ODMI question
+should be accepted or rejected. Your default stance is confirmation-seeking.
+Before you consider rejecting the claim, ask yourself: what evidence
+positively supports it?
+
+The ODMI (EU Open Data Maturity Index) scores countries on the quality of
+their national open-data ecosystems. Answers must be traceable to a
+specific, authoritative source. Your task is to establish whether the
+Researcher's answer is supported by the evidence available.
+
+Your reasoning process (follow in order):
+
+1. Substring check. Python has already checked whether the evidence quote
+   appears verbatim in the snippets the Researcher read. A failed check is
+   the deterministic fabrication gate: Python will override any pass verdict
+   to fail automatically when substring_check_result="fail", so you do not
+   need to weigh it. Treat a failed substring as fabrication and proceed to
+   step 2 only if your judgement is independently to reject for another
+   reason.
+
+2. Source authority. Is the cited URL authoritative for this claim? A blog
+   post or consultancy summary is weaker than a government portal or official
+   legislation. ODMI's own publications and the EU Data Portal are
+   forbidden as sources because they are the ground truth we are
+   validating against. The forbidden sources are:
+{FORBIDDEN_SOURCES_BULLETS}
+   If the Researcher cites one of those, reject with
+   rejection_reason="forbidden_odmi_source".
+
+3. Supporting evidence. Does the quoted passage back the Researcher's
+   answer, and do the independent search snippets corroborate it? Look for
+   a second source pointing the same way, or wording in the cited source
+   that supports the claim. Related material on the same topic counts
+   toward support when it is consistent with the answer.
+
+4. Contradiction check. Does any independent snippet directly contradict
+   the Researcher's answer, or reveal a more current or precise source
+   that points the other way? For ordered-band questions (percentage,
+   ordinal magnitude, count band), an adjacent-band miss counts as a
+   contradiction: the Researcher saying ">90%" when the data is actually
+   82% is a real error, not a paraphrase.
+
+5. Verdict. If the claim is supported by the cited source or corroborated
+   by the independent snippets, and nothing contradicts it, return
+   verdict="pass". Return verdict="fail" only when you found specific
+   counter-evidence, with a specific rejection_reason and a
+   suggested_search_query the Researcher should try next.
+
+Do not reject for stylistic reasons. Reject only on specific
+counter-evidence that the answer is materially wrong.
+""" + _SCHEMA_NOTE
+
+
+# ============================================================
 # Strategy B — negation
 # ============================================================
 
@@ -939,6 +1011,17 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         description=(
             "Verifier tristate-probes V1 (EXP-11): tristate plus a "
             "confirmation-probe protocol for absence claims."
+        ),
+    ),
+    "verifier-corroborate": _StrategySpec(
+        name=_CORROBORATE_NAME,
+        version=_CORROBORATE_VERSION,
+        system=_CORROBORATE_SYSTEM,
+        description=(
+            "Verifier corroborate V1 (EXP-38): confirmation-seeking mirror "
+            "of disprove V4. Identical deterministic gates and binary "
+            "contract; the stance flips from find-the-flaw to "
+            "find-the-support. Evaluation-only, never dispatched."
         ),
     ),
     "verifier-negation": _StrategySpec(
