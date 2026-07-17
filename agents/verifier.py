@@ -39,6 +39,7 @@ from agents.prompts import verifier as verifier_prompt
 from agents.tools import answer_shapes
 from agents.tools import db as db_helpers
 from agents.tools import substring
+from agents.tools.blocked_domains import is_blocked
 from agents.tools.fetch import FetchResult, fetch_rendered_text, fetch_text
 from agents.tools.llm import StructuredOutputError, call_for_structured
 from agents.tools.search import SearchResult, format_for_prompt, search_many
@@ -382,6 +383,41 @@ StepCallback = Callable[[str, dict], None]
 
 def _noop(event: str, payload: dict) -> None:  # pragma: no cover
     return
+
+
+def _scrub_forbidden_counter_source(
+    output: "VerifierOutput",
+) -> "Optional[VerifierOutput]":
+    """Strip a deny-listed counter_source_url from a Verifier verdict (D24).
+
+    search() scrubs blocked domains from results, but the strategy LLM can
+    still emit a deny-listed ODMI mirror as counter_source_url from parametric
+    memory (the EXP-36 post-run audit found 7 such rows, all on this
+    counter-search channel; docs/EXP36_LEAKAGE_AUDIT.md). A refutation resting
+    on the answer key is inadmissible under D24 in either direction, so the
+    source and its quote are stripped before anything is persisted or shown.
+    The verdict is left intact: the Verifier's doubt may be independently
+    sound, so a fail retries for an admissible source (or abstains on
+    exhaustion) rather than being flipped to a commit. Also guards the
+    corroborate strategy's contradiction source.
+
+    Returns the scrubbed copy if the URL was blocked, else None (no change).
+    """
+    if not output.counter_source_url:
+        return None
+    if not is_blocked(str(output.counter_source_url)):
+        return None
+    return output.model_copy(update={
+        "counter_source_url": None,
+        "counter_evidence_quote": (
+            "Counter-evidence cited a deny-listed ODMI source and was "
+            "removed under D24; find an admissible source."
+        ),
+        "rejection_reason": (
+            "forbidden_odmi_source (verifier counter-search): "
+            + (output.rejection_reason or "")
+        ).strip(),
+    })
 
 
 def _is_catalogue_computed(researcher_output: ResearcherOutput) -> bool:
@@ -786,6 +822,19 @@ def run_verifier(
             "verifier_answer": output.verifier_answer,
             "answers_match": output.verifier_answer == inp.researcher_output.answer,
         })
+
+    # ----- D24 deny-list gate on the Verifier's own counter-source -----
+    scrubbed = _scrub_forbidden_counter_source(output)
+    if scrubbed is not None:
+        on_step("blocked_counter_source", {
+            "url": str(output.counter_source_url),
+            "verdict": output.verdict,
+        })
+        notes_parts.append(
+            f"counter_source_url {output.counter_source_url} hit the D24 "
+            "deny-list; counter-evidence stripped, verdict kept for retry"
+        )
+        output = scrubbed
 
     return VerifierRunResult(
         output=output,

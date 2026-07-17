@@ -312,33 +312,37 @@ materially wrong, unverifiable, or insufficient for the specific question.
 
 
 # ============================================================
-# Strategy — corroborate (EXP-38, evaluation-only)
+# Strategy — corroborate (EXP-40 cooperative arm; fair rewrite)
 #
-# The confirmation-seeking mirror of disprove. Same binary
-# VerifierOutput contract, same deterministic gates (substring,
-# forbidden sources), same length discipline; only the epistemic
-# stance flips. Under the binary contract a fail must carry
-# counter-evidence, so found-nothing-either-way resolves to pass:
-# that asymmetry is shared with disprove (identical schema) and is
-# the SAFE-style behaviour the experiment measures, not a planted
-# bias. Never requested by the coordinator; exercised only by
-# evaluation/exp38_corroborate_ladder.py.
+# V2 replaces the V1 strawman ("your default stance is
+# confirmation-seeking"; "related material counts toward support"),
+# which was tilted toward false positives and only ever ran as the
+# EXP-38 discrimination replay. V2 is the accuracy-seeking version:
+# steps 1-3 are byte-identical to disprove V4 (substring gate, source
+# authority, evidence fit), so the one variable against disprove is the
+# stance and burden. Step 4 flips the search direction to seeking
+# support but keeps a contradiction check and the load-bearing
+# "adjacency is not corroboration" guard that stops the rubber-stamp.
+# Step 5 flips the burden: pass requires positive corroboration, where
+# disprove passes on the absence of refutation. Used live by the
+# `cooperative` pipeline_mode (EXP-40) and by the EXP-38 replay.
 # ============================================================
 
 _CORROBORATE_NAME = "phase2_verifier_corroborate"
-_CORROBORATE_VERSION = 1
+_CORROBORATE_VERSION = 2
 
 _CORROBORATE_SYSTEM = f"""You are the Corroborating Verifier in the ODMI Agent Swarm.
 
-Your job is to decide whether the Researcher's answer to an ODMI question
-should be accepted or rejected. Your default stance is confirmation-seeking.
-Before you consider rejecting the claim, ask yourself: what evidence
-positively supports it?
+Your job is to establish whether the Researcher's answer is correct, by
+seeking independent evidence that confirms it. Your aim is an accurate
+verdict, reached by looking for genuine support rather than by looking for
+holes. Before accepting, ask what independent evidence positively
+establishes the answer; before rejecting, ask whether that support is
+really absent.
 
 The ODMI (EU Open Data Maturity Index) scores countries on the quality of
 their national open-data ecosystems. Answers must be traceable to a
-specific, authoritative source. Your task is to establish whether the
-Researcher's answer is supported by the evidence available.
+specific, authoritative source.
 
 Your reasoning process (follow in order):
 
@@ -359,27 +363,32 @@ Your reasoning process (follow in order):
    If the Researcher cites one of those, reject with
    rejection_reason="forbidden_odmi_source".
 
-3. Supporting evidence. Does the quoted passage back the Researcher's
-   answer, and do the independent search snippets corroborate it? Look for
-   a second source pointing the same way, or wording in the cited source
-   that supports the claim. Related material on the same topic counts
-   toward support when it is consistent with the answer.
+3. Evidence fit. Does the quoted passage actually answer the question asked?
+   A quote about open-data strategy in general does not confirm a specific
+   legal transposition. A quote that describes a planned policy does not
+   confirm an enacted one.
 
-4. Contradiction check. Does any independent snippet directly contradict
-   the Researcher's answer, or reveal a more current or precise source
-   that points the other way? For ordered-band questions (percentage,
-   ordinal magnitude, count band), an adjacent-band miss counts as a
-   contradiction: the Researcher saying ">90%" when the data is actually
-   82% is a real error, not a paraphrase.
+4. Independent corroboration. Search for a second, independent source that
+   supports the Researcher's answer, or wording in the cited source that
+   directly and unambiguously establishes it. While searching for support,
+   note any snippet that contradicts the answer or points to a different
+   label; a contradiction is decisive even when you were looking for
+   support. For ordered-band questions (percentage, ordinal magnitude,
+   count band), an adjacent-band miss is a contradiction, not a paraphrase.
+   Adjacency is not corroboration: evidence merely on the same topic, or
+   consistent with the answer without establishing it, does not count as
+   support.
 
-5. Verdict. If the claim is supported by the cited source or corroborated
-   by the independent snippets, and nothing contradicts it, return
-   verdict="pass". Return verdict="fail" only when you found specific
-   counter-evidence, with a specific rejection_reason and a
-   suggested_search_query the Researcher should try next.
+5. Verdict. Return verdict="pass" only when the answer fits the evidence
+   (step 3) AND is corroborated (the cited source unambiguously establishes
+   it, or an independent source supports it) AND nothing you found
+   contradicts it. Return verdict="fail" when corroboration is absent, weak,
+   or only adjacent, or when you found a contradiction. On fail, give a
+   specific rejection_reason and a suggested_search_query the Researcher
+   should try next to find better support.
 
-Do not reject for stylistic reasons. Reject only on specific
-counter-evidence that the answer is materially wrong.
+Do not accept on adjacency. Do not reject for stylistic reasons. Judge only
+whether the answer is genuinely supported.
 """ + _SCHEMA_NOTE
 
 
@@ -1018,10 +1027,12 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         version=_CORROBORATE_VERSION,
         system=_CORROBORATE_SYSTEM,
         description=(
-            "Verifier corroborate V1 (EXP-38): confirmation-seeking mirror "
-            "of disprove V4. Identical deterministic gates and binary "
-            "contract; the stance flips from find-the-flaw to "
-            "find-the-support. Evaluation-only, never dispatched."
+            "Verifier corroborate V2 (EXP-40): accuracy-seeking rewrite of "
+            "the V1 strawman. Steps 1-3 identical to disprove V4; step 4 "
+            "seeks support with a contradiction check and the "
+            "adjacency-is-not-corroboration guard; step 5 flips the burden "
+            "(pass requires positive corroboration). Live in the cooperative "
+            "pipeline_mode and the EXP-38 replay."
         ),
     ),
     "verifier-negation": _StrategySpec(

@@ -188,7 +188,8 @@ CREATE TABLE phase2_verifier_runs (
                                     'verifier-disprove',
                                     'verifier-negation',
                                     'verifier-steelman',
-                                    'verifier-blind'
+                                    'verifier-blind',
+                                    'verifier-corroborate'   -- EXP-40 cooperative arm (live)
                                 )),
 
     researcher_run_id           INTEGER NOT NULL REFERENCES phase2_researcher_runs(id),
@@ -281,11 +282,13 @@ CREATE TABLE phase2_final (
                                     'accepted_by_adjudicator',
                                     'accepted_researcher_only',  -- EXP-28 ablation
                                     'accepted_researcher_self_verify',  -- EXP-35 self-critique
+                                    'accepted_cooperative',      -- EXP-40 cooperative consensus
                                     'abstained_captcha',        -- D52
                                     'abstained_adjudicator',    -- D52
                                     'abstained_researcher_only', -- EXP-28 ablation
                                     'abstained_no_adjudicator',  -- EXP-28 ablation (EXP-15 design)
                                     'abstained_researcher_self_verify', -- EXP-35 self-critique
+                                    'abstained_cooperative',     -- EXP-40 (no adjudicator by design)
                                     'escalated_captcha',        -- D52 legacy: pre-rename rows only
                                     'escalated_adjudicator',    -- D52 legacy: pre-rename rows only
                                     'agent_failure'

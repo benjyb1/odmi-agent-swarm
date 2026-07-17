@@ -56,9 +56,11 @@ VerifierStrategy = Literal[
     # write no phase2_verifier_runs rows, so the DB CHECK is untouched.
     "verifier-tristate",
     "verifier-tristate-probes",
-    # EXP-38 corroborate arm. Evaluation-only, same binary VerifierOutput
-    # contract as disprove; exercised only by
-    # evaluation/exp38_corroborate_ladder.py, no phase2_verifier_runs rows.
+    # Corroborate arm. Same binary VerifierOutput contract as disprove.
+    # V2 (EXP-40) runs live in the `cooperative` pipeline_mode and DOES
+    # write phase2_verifier_runs rows, so 'verifier-corroborate' is in the
+    # strategy_label CHECK (scripts/setup_sqlite.py + migration). The EXP-38
+    # ladder replay also uses it and writes JSONL only.
     "verifier-corroborate",
 ]
 VerifierVerdict = Literal["pass", "fail"]

@@ -60,6 +60,7 @@ from agents.models import (
 )
 from agents.researcher import ResearcherRunResult, run_researcher
 from agents.tools.db import DB_PATH, connect
+from agents.tools.search import SearchResult
 from agents.verifier import VerifierRunResult, run_verifier
 
 QUESTIONS_JSON = REPO_ROOT / "data" / "questions" / "odmi_2025_questions.json"
@@ -506,8 +507,12 @@ def _save_researcher_row(
                 str(o.source_url) if o else None,
                 o.retrieval_confidence if o else None,
                 o.answer_confidence if o else None,
-                json.dumps(result.search_queries_used),
-                json.dumps(result.fetched_urls),
+                json.dumps([str(q) for q in result.search_queries_used]),
+                # str() coercion: a seeded ResearcherOutput (EXP-40) carries
+                # fetched_urls as pydantic AnyHttpUrl objects after round-
+                # tripping through the model, which json.dumps cannot
+                # serialise; the live path already yields plain strings.
+                json.dumps([str(u) for u in result.fetched_urls]),
                 json.dumps(result.search_provider_calls)
                     if result.search_provider_calls else None,
                 search_snippets_json,
@@ -834,6 +839,70 @@ def _researcher_output_from_row(row: dict) -> ResearcherOutput:
     )
 
 
+def _seed_researcher_from_experiment(
+    *, seed_experiment_id: str, seed_condition_label: str,
+    question_id: str, country_code: str,
+) -> Optional[tuple[dict, List[SearchResult]]]:
+    """Load a committed attempt-1 Researcher row from a prior experiment.
+
+    EXP-40's cooperative arm seeds its first pass from the frozen full-trio
+    run (exp34 wide_only) so every arm starts from identical attempt-1
+    evidence (Benjy's "start on the frozen evidence"). The Researcher's first
+    attempt is Verifier-independent, so this is the one part genuinely shared
+    across the stance contrast; the retries diverge live under the corroborate
+    Verifier. Returns the row and the reconstructed snippets (so the Verifier
+    uses the D34 stored-snippet path, not a re-fetch), or None if there is no
+    clean seed row (the caller then runs the Researcher live).
+
+    Unlike `_find_resumable_researcher`, this reads a DIFFERENT experiment_id
+    with no freshness window and no subtrio-stage gate: the seed run is
+    finished and immutable, we are reusing its evidence on purpose.
+    """
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT r.id, r.pair_run_id, r.retry_count,
+                   r.answer, r.answer_explanation, r.evidence_quote,
+                   r.source_url, r.retrieval_confidence, r.answer_confidence,
+                   r.search_queries_used, r.fetched_urls, r.search_snippets,
+                   r.domain_trust_score, r.language_route_used, r.notes
+            FROM phase2_researcher_runs r
+            WHERE r.question_id = ? AND r.country_code = ?
+              AND r.experiment_id IS ?
+              AND r.condition_label IS ?
+              AND r.retry_count = 0
+              AND r.answer IS NOT NULL
+              AND r.failure_mode IS NULL
+              AND lower(trim(r.answer)) != 'inconclusive'
+            ORDER BY r.id DESC
+            LIMIT 1
+            """,
+            (question_id, country_code, seed_experiment_id, seed_condition_label),
+        ).fetchone()
+    if row is None:
+        return None
+    row = dict(row) if hasattr(row, "keys") else {
+        k: row[i] for i, k in enumerate([
+            "id", "pair_run_id", "retry_count",
+            "answer", "answer_explanation", "evidence_quote",
+            "source_url", "retrieval_confidence", "answer_confidence",
+            "search_queries_used", "fetched_urls", "search_snippets",
+            "domain_trust_score", "language_route_used", "notes",
+        ])
+    }
+    snippets: List[SearchResult] = []
+    if row.get("search_snippets"):
+        for s in json.loads(row["search_snippets"]):
+            snippets.append(SearchResult(
+                title=s.get("title") or "",
+                url=s.get("url") or "",
+                snippet=s.get("snippet") or "",
+                score=s.get("score"),
+                provider=s.get("provider") or "diy",
+            ))
+    return row, snippets
+
+
 # ============================================================
 # EXP-7: evidence accumulation across the retry loop (chained arm)
 # ============================================================
@@ -991,6 +1060,8 @@ def coordinate(
     chained: bool = False,
     adjudicator_selection: str = "standard",
     pipeline_mode: str = "trio",
+    seed_experiment_id: Optional[str] = None,
+    seed_condition_label: Optional[str] = None,
     dry_run: bool = False,
     walkthrough: bool = False,
 ) -> tuple[str, Optional[ResearcherOutput]]:
@@ -1140,40 +1211,82 @@ def coordinate(
             flush=True,
         )
 
+    # EXP-40 cooperative arm: seed attempt 1 from a prior experiment's frozen
+    # full-trio run (exp34 wide_only) so every arm starts from identical
+    # attempt-1 evidence. Only on a genuine fresh dispatch (nothing resumable).
+    # The Researcher's first attempt is Verifier-independent, so reusing it is
+    # clean; the retries diverge live under the corroborate Verifier.
+    seeded_snippets: List[SearchResult] = []
+    seeded = False
+    if (pipeline_mode == "cooperative" and not resumable
+            and seed_experiment_id and seed_condition_label):
+        _seed = _seed_researcher_from_experiment(
+            seed_experiment_id=seed_experiment_id,
+            seed_condition_label=seed_condition_label,
+            question_id=question_id, country_code=country_code,
+        )
+        if _seed is not None:
+            _seed_row, seeded_snippets = _seed
+            _seed_out = _researcher_output_from_row(_seed_row)
+            _seed_note = (
+                f"[seeded from {seed_experiment_id}/{seed_condition_label} "
+                f"researcher row {_seed_row['id']}] "
+            )
+            last_researcher_output = _seed_out.model_copy(update={
+                "notes": _seed_note + (_seed_out.notes or ""),
+            })
+            researcher_outputs.append(last_researcher_output)
+            seeded = True
+            print(
+                f"  R1 (seeded from {seed_experiment_id}/{seed_condition_label}"
+                f" row {_seed_row['id']}): {last_researcher_output.answer} "
+                f"({last_researcher_output.answer_confidence:.2f}) — "
+                f"skipping Researcher call",
+                flush=True,
+            )
+        else:
+            print(
+                f"  no seed row for {question_id}/{country_code} in "
+                f"{seed_experiment_id}/{seed_condition_label}; running "
+                f"Researcher live",
+                flush=True,
+            )
+
     for attempt in range(max_retries + 1):
         retry_count = attempt
 
         # --- Researcher stage ---
-        if attempt == 0 and resumable is not None:
-            # Resume path: a prior incomplete subtrio for this pair
-            # already produced a Researcher row. `last_researcher_*`
-            # were populated just before the retry loop; we just need
-            # an `r_inp` for the Verifier-input construction below and
-            # a stage transition for visibility. No Researcher call.
+        if attempt == 0 and (resumable is not None or seeded):
+            # No live Researcher call: attempt 1 is reused. Either resumed
+            # from a prior incomplete subtrio of THIS arm (resumable), or
+            # seeded from a prior experiment's frozen attempt-1 evidence
+            # (EXP-40 cooperative). `last_researcher_output` was populated
+            # just before the loop; we need an `r_inp` for the Verifier-input
+            # construction and a ResearcherRunResult so the loop is uniform.
             r_inp = _build_researcher_input(
                 question_id, country_code, feedback,
                 previous_search_queries=accumulated_search_queries,
                 prior_evidence=evidence_corpus if chained else None,
             )
+            _substage = "seeded" if seeded else "resumed"
+            _msg = (
+                f"seeded from {seed_experiment_id}/{seed_condition_label}"
+                if seeded else
+                f"resumed from subtrio {resumable['subtrio_id'][:8]}"
+            )
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,
                 question_id=question_id, country_code=country_code,
-                stage="researching", substage="resumed",
-                retry_count=retry_count,
-                last_message=(
-                    f"resumed from subtrio "
-                    f"{resumable['subtrio_id'][:8]}"
-                ),
+                stage="researching", substage=_substage,
+                retry_count=retry_count, last_message=_msg,
             )
-            # Wrap the resumed output in a ResearcherRunResult so the rest
-            # of the loop is uniform. No usage objects, because the resumed
-            # call was already paid for under the prior subtrio (its cost
-            # stays in claude_usage_log there), so cumulative_* are zero and
-            # nothing is double-charged. The snippets are not persisted on
-            # the researcher row, so search_results is empty: a resumed
-            # Verifier falls back to a live re-fetch for the quote check
-            # rather than the D34 stored-snippet path. The queries are
-            # folded into the divergence accumulator so any retry varies.
+            # Wrap the reused output in a ResearcherRunResult so the rest of
+            # the loop is uniform. No usage objects: the call was already paid
+            # for (under the prior subtrio, or under the seed experiment), so
+            # cumulative_* stay zero and nothing is double-charged. Seeded runs
+            # carry the stored snippets, so the Verifier uses the D34
+            # stored-snippet path; resumed runs have no persisted snippets, so
+            # the Verifier re-fetches for the quote check.
             r_result = ResearcherRunResult(
                 output=last_researcher_output,
                 failure_mode=None,
@@ -1181,9 +1294,21 @@ def coordinate(
                 main_usage=None,
                 search_queries_used=last_researcher_output.search_queries_used,
                 fetched_urls=last_researcher_output.fetched_urls,
-                search_results=[],
+                search_results=seeded_snippets if seeded else [],
+                # Persist the seed provenance on the saved row (receipts):
+                # `_save_researcher_row` writes result.notes, not output.notes.
+                notes=last_researcher_output.notes if seeded else None,
             )
             accumulated_search_queries.extend(r_result.search_queries_used)
+            if seeded:
+                # Persist attempt 1 under THIS experiment so EXP-40's trail is
+                # self-contained and the Verifier row's researcher_run_id FK
+                # points at an exp40 row. Tagged exp40 by the dispatch context
+                # vars; the seed provenance is in the output notes.
+                last_researcher_db_id = _save_researcher_row(
+                    result=r_result, inp=r_inp,
+                    run_id=run_id, pair_run_id=pair_run_id, retry_count=0,
+                )
         else:
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,
@@ -1387,6 +1512,8 @@ def coordinate(
         # self-addressed disprove prompt variant. Every other mode is
         # byte-identical to before the knob existed.
         self_verify = pipeline_mode == "researcher_self_verify"
+        cooperative = pipeline_mode == "cooperative"
+        v_strategy = strategy
         if self_verify:
             v_model = _model_for_attempt(
                 researcher_model, researcher_escalation_model, attempt,
@@ -1399,6 +1526,15 @@ def coordinate(
             )
             v_search = verifier_search
             v_prompt_variant = verifier_prompt_variant
+        if cooperative:
+            # EXP-40: the corroborating Verifier runs its own supporting
+            # search (v_search stays at verifier_search, its natural
+            # mechanism); only the stance flips. One variable vs
+            # no_adjudicator: the Verifier prompt. A corroborate `pass` is
+            # the consensus commit; a `fail` (no corroboration) drives the
+            # symmetric retry, and exhaustion abstains with no Adjudicator.
+            v_strategy = "verifier-corroborate"
+            v_prompt_variant = "default"
         _upsert_subtrio_status(
             subtrio_id=subtrio_id, batch_id=batch_id,
             question_id=question_id, country_code=country_code,
@@ -1413,7 +1549,7 @@ def coordinate(
             country_code=country_code,
             country_name=r_inp.country_name,
             researcher_output=last_researcher_output,
-            strategy=strategy,
+            strategy=v_strategy,
             answer_shape=r_inp.answer_shape,
             allowed_answers=list(r_inp.allowed_answers),
             researcher_snippets=[r.snippet for r in r_result.search_results],
@@ -1492,19 +1628,23 @@ def coordinate(
             last_researcher_output.answer,
             last_researcher_output.answer_confidence,
         ):
-            final_status = (
-                "accepted_researcher_self_verify" if self_verify
-                else "accepted_by_verifier"
-            )
+            if self_verify:
+                final_status = "accepted_researcher_self_verify"
+                _accept_msg = "self-critique upheld"
+            elif cooperative:
+                # EXP-40 consensus commit: the corroborating Verifier found
+                # independent support and agrees with the Researcher.
+                final_status = "accepted_cooperative"
+                _accept_msg = "corroborated (cooperative consensus)"
+            else:
+                final_status = "accepted_by_verifier"
+                _accept_msg = "verifier passed"
             _upsert_subtrio_status(
                 subtrio_id=subtrio_id, batch_id=batch_id,
                 question_id=question_id, country_code=country_code,
                 stage="done", final_verdict=final_status,
                 cumulative_cost_usd=cumulative_cost,
-                last_message=(
-                    "self-critique upheld" if self_verify
-                    else "verifier passed"
-                ),
+                last_message=_accept_msg,
                 ended=True,
             )
             _save_final_row(
@@ -1563,19 +1703,24 @@ def coordinate(
         # Retries exhausted → Adjudicator.
         break
 
-    # --- EXP-28/35 ablation arms: no Adjudicator recovery ---
-    # researcher_only, no_adjudicator and researcher_self_verify terminate
-    # retry exhaustion in an honest abstention. The written answer is
-    # `inconclusive` (mirroring the D52 abstained_adjudicator
+    # --- EXP-28/35/40 ablation arms: no Adjudicator recovery ---
+    # researcher_only, no_adjudicator, researcher_self_verify and cooperative
+    # terminate retry exhaustion in an honest abstention. The cooperative arm
+    # (EXP-40) has no Adjudicator by construction: a corroborative Verifier
+    # produces agreement or an absence of support, never a counter-case to
+    # arbitrate, so exhaustion without corroboration abstains. The written
+    # answer is `inconclusive` (mirroring the D52 abstained_adjudicator
     # finalisation), so the headline metric is not polluted by whichever
     # sub-floor guess the last attempt happened to produce.
     if pipeline_mode in (
         "researcher_only", "no_adjudicator", "researcher_self_verify",
+        "cooperative",
     ):
         final_status = {
             "researcher_only": "abstained_researcher_only",
             "no_adjudicator": "abstained_no_adjudicator",
             "researcher_self_verify": "abstained_researcher_self_verify",
+            "cooperative": "abstained_cooperative",
         }[pipeline_mode]
         chosen = ResearcherOutput(
             answer="inconclusive",
@@ -1840,8 +1985,8 @@ def main() -> int:
     parser.add_argument(
         "--pipeline-mode", default="trio",
         choices=["trio", "no_adjudicator", "researcher_only",
-                 "researcher_self_verify"],
-        help="EXP-28/35 architecture ablation. 'trio' (default) is "
+                 "researcher_self_verify", "cooperative"],
+        help="EXP-28/35/40 architecture ablation. 'trio' (default) is "
              "byte-identical to production. 'no_adjudicator' keeps the "
              "Researcher-Verifier loop but abstains at retry exhaustion "
              "instead of adjudicating (the EXP-15 design). "
@@ -1850,7 +1995,18 @@ def main() -> int:
              "or inconclusive, abstain on exhaustion. "
              "'researcher_self_verify' (EXP-35) replaces the Verifier "
              "with one self-critique call on the Researcher's own model, "
-             "no independent search; no Adjudicator.")
+             "no independent search; no Adjudicator. "
+             "'cooperative' (EXP-40) runs the corroborate Verifier with its "
+             "own supporting-search; a corroborated pass is the consensus "
+             "commit, no corroboration retries then abstains, no Adjudicator.")
+    parser.add_argument(
+        "--seed-experiment-id", default=None,
+        help="EXP-40: seed attempt 1 from this experiment_id's frozen "
+             "Researcher rows (paired with --seed-condition-label). Only the "
+             "'cooperative' pipeline-mode consumes it; other modes ignore it.")
+    parser.add_argument(
+        "--seed-condition-label", default=None,
+        help="Condition label of the seed experiment (e.g. 'wide_only').")
     parser.add_argument(
         "--dry-run", action="store_true",
         help=(
@@ -1900,6 +2056,8 @@ def main() -> int:
             chained=args.chained,
             adjudicator_selection=args.adjudicator_selection,
             pipeline_mode=args.pipeline_mode,
+            seed_experiment_id=args.seed_experiment_id,
+            seed_condition_label=args.seed_condition_label,
             dry_run=args.dry_run,
             walkthrough=args.walkthrough,
         )

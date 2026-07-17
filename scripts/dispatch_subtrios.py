@@ -368,6 +368,8 @@ def dispatch(
     picker_model: Optional[str] = None,
     adjudicator_selection: str = "standard",
     pipeline_mode: str = "trio",
+    seed_experiment_id: Optional[str] = None,
+    seed_condition_label: Optional[str] = None,
     batch_id: Optional[str] = None,
     experiment_id: Optional[str] = None,
     condition_label: Optional[str] = None,
@@ -608,6 +610,12 @@ def dispatch(
                 # from the 'trio' production default, so the baseline
                 # subprocess invocation is byte-identical.
                 cmd += ["--pipeline-mode", pipeline_mode]
+            if seed_experiment_id:
+                # EXP-40 cooperative arm: seed attempt 1 from a prior
+                # experiment's frozen Researcher evidence.
+                cmd += ["--seed-experiment-id", seed_experiment_id]
+            if seed_condition_label:
+                cmd += ["--seed-condition-label", seed_condition_label]
             if experiment_id:
                 cmd += ["--experiment-id", experiment_id]
             if condition_label:
@@ -945,7 +953,7 @@ def main() -> int:
                              "Researcher attempts' answers by index.")
     parser.add_argument("--pipeline-mode", default="trio",
                         choices=["trio", "no_adjudicator", "researcher_only",
-                                 "researcher_self_verify"],
+                                 "researcher_self_verify", "cooperative"],
                         help="EXP-28/35 architecture ablation forwarded to "
                              "each run_coordinator subprocess. 'trio' "
                              "(default) is byte-identical to production. "
@@ -954,7 +962,16 @@ def main() -> int:
                              "removes the verification layer entirely. "
                              "'researcher_self_verify' (EXP-35) swaps the "
                              "Verifier for one no-search self-critique call "
-                             "on the Researcher's own model.")
+                             "on the Researcher's own model. 'cooperative' "
+                             "(EXP-40) runs the corroborate Verifier with "
+                             "consensus commit and no Adjudicator.")
+    parser.add_argument("--seed-experiment-id", default=None,
+                        help="EXP-40: seed attempt 1 from this experiment_id's "
+                             "frozen Researcher rows (with --seed-condition-label). "
+                             "Only used by the 'cooperative' pipeline-mode.")
+    parser.add_argument("--seed-condition-label", default=None,
+                        help="Condition label of the seed experiment "
+                             "(e.g. 'wide_only').")
     parser.add_argument("--batch-id", default=None)
     parser.add_argument("--experiment-id", default=None,
                         help="Tag every child row with this experiment_id (D27). "
@@ -1030,6 +1047,8 @@ def main() -> int:
         picker_model=args.picker_model,
         adjudicator_selection=args.adjudicator_selection,
         pipeline_mode=args.pipeline_mode,
+        seed_experiment_id=args.seed_experiment_id,
+        seed_condition_label=args.seed_condition_label,
         batch_id=args.batch_id,
         experiment_id=args.experiment_id,
         condition_label=args.condition_label,
