@@ -1,0 +1,3439 @@
+{
+  "row_counts": {
+    "raw_final_rows": 1148,
+    "canonical_pairs": 1146,
+    "superseded_duplicates": 2,
+    "by_country_canonical": {
+      "BA": 143,
+      "BE": 143,
+      "BG": 142,
+      "FI": 144,
+      "HR": 143,
+      "ME": 143,
+      "MK": 144,
+      "SE": 144
+    },
+    "condition_labels": [
+      "BA",
+      "BE",
+      "BG",
+      "FI",
+      "HR",
+      "ME",
+      "MK",
+      "SE",
+      "unlabelled"
+    ],
+    "questions_in_bank": 143
+  },
+  "headline": {
+    "binary_balance_aware": {
+      "n_binary_gold_pairs": 909,
+      "n_yes_gold": 541,
+      "n_no_gold": 368,
+      "n_committed": 527,
+      "per_class_recall": {
+        "yes": {
+          "successes": 298,
+          "n": 541,
+          "rate": 0.5508317929759704,
+          "wilson_95": [
+            0.5087054628572504,
+            0.5922413338844056
+          ]
+        },
+        "no": {
+          "successes": 90,
+          "n": 368,
+          "rate": 0.24456521739130435,
+          "wilson_95": [
+            0.2034361781397138,
+            0.29097200163602344
+          ]
+        }
+      },
+      "balanced_accuracy": 0.39769850518363736,
+      "youden_j": -0.20460298963272527,
+      "majority_class": "yes",
+      "majority_baseline_accuracy": 0.5951595159515951,
+      "majority_baseline_youden_j": 0.0,
+      "raw_accuracy": {
+        "successes": 388,
+        "n": 909,
+        "rate": 0.42684268426842686,
+        "wilson_95": [
+          0.3950626518562685,
+          0.4592384442269181
+        ]
+      },
+      "beats_majority_baseline": false
+    },
+    "three_outcome": {
+      "n": 1146,
+      "n_committed": 640,
+      "n_abstained": 506,
+      "n_failed": 0,
+      "coverage": {
+        "successes": 640,
+        "n": 1146,
+        "rate": 0.5584642233856894,
+        "wilson_95": [
+          0.5295663981776147,
+          0.5869714070754971
+        ]
+      },
+      "abstention_rate": {
+        "successes": 506,
+        "n": 1146,
+        "rate": 0.44153577661431065,
+        "wilson_95": [
+          0.4130285929245029,
+          0.47043360182238525
+        ]
+      },
+      "commit_accuracy": {
+        "successes": 440,
+        "n": 627,
+        "rate": 0.7017543859649122,
+        "wilson_95": [
+          0.6648047376361726,
+          0.7362468997640744
+        ]
+      },
+      "n_near_match": 10,
+      "n_committed_unscoreable": {
+        "flag_review": 13,
+        "no_ground_truth": 0
+      },
+      "negative_golds": {
+        "n": 368,
+        "n_committed": 185,
+        "false_positives": 95,
+        "fp_rate": {
+          "successes": 95,
+          "n": 368,
+          "rate": 0.25815217391304346,
+          "wilson_95": [
+            0.21610059287518407,
+            0.3052007688273756
+          ]
+        }
+      }
+    }
+  },
+  "strata": {
+    "by_dimension": {
+      "Impact": {
+        "n": 305,
+        "n_committed": 165,
+        "n_abstained": 140,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 165,
+          "n": 305,
+          "rate": 0.5409836065573771,
+          "wilson_95": [
+            0.48489561056377795,
+            0.5960520707982454
+          ]
+        },
+        "abstention_rate": {
+          "successes": 140,
+          "n": 305,
+          "rate": 0.45901639344262296,
+          "wilson_95": [
+            0.4039479292017546,
+            0.515104389436222
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 102,
+          "n": 165,
+          "rate": 0.6181818181818182,
+          "wilson_95": [
+            0.5421620447601734,
+            0.6888238770175881
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 141,
+          "n_committed": 65,
+          "false_positives": 38,
+          "fp_rate": {
+            "successes": 38,
+            "n": 141,
+            "rate": 0.2695035460992908,
+            "wilson_95": [
+              0.20309943606611555,
+              0.34813402616746714
+            ]
+          }
+        }
+      },
+      "Policy": {
+        "n": 249,
+        "n_committed": 185,
+        "n_abstained": 64,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 185,
+          "n": 249,
+          "rate": 0.7429718875502008,
+          "wilson_95": [
+            0.6852898011963386,
+            0.7932709560638413
+          ]
+        },
+        "abstention_rate": {
+          "successes": 64,
+          "n": 249,
+          "rate": 0.2570281124497992,
+          "wilson_95": [
+            0.2067290439361586,
+            0.3147101988036613
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 121,
+          "n": 176,
+          "rate": 0.6875,
+          "wilson_95": [
+            0.6156336459268277,
+            0.7513562596977894
+          ]
+        },
+        "n_near_match": 1,
+        "n_committed_unscoreable": {
+          "flag_review": 9,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 66,
+          "n_committed": 49,
+          "false_positives": 33,
+          "fp_rate": {
+            "successes": 33,
+            "n": 66,
+            "rate": 0.5,
+            "wilson_95": [
+              0.3827368802505011,
+              0.6172631197494989
+            ]
+          }
+        }
+      },
+      "Portal": {
+        "n": 362,
+        "n_committed": 191,
+        "n_abstained": 171,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 191,
+          "n": 362,
+          "rate": 0.5276243093922652,
+          "wilson_95": [
+            0.4761761007889878,
+            0.5784923888471264
+          ]
+        },
+        "abstention_rate": {
+          "successes": 171,
+          "n": 362,
+          "rate": 0.4723756906077348,
+          "wilson_95": [
+            0.42150761115287355,
+            0.5238238992110121
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 147,
+          "n": 187,
+          "rate": 0.786096256684492,
+          "wilson_95": [
+            0.7218750790934929,
+            0.8387997379049053
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 4,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 114,
+          "n_committed": 53,
+          "false_positives": 15,
+          "fp_rate": {
+            "successes": 15,
+            "n": 114,
+            "rate": 0.13157894736842105,
+            "wilson_95": [
+              0.08138650983774756,
+              0.20579135743718838
+            ]
+          }
+        }
+      },
+      "Quality": {
+        "n": 230,
+        "n_committed": 99,
+        "n_abstained": 131,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 99,
+          "n": 230,
+          "rate": 0.43043478260869567,
+          "wilson_95": [
+            0.36810543269226353,
+            0.4950497145541575
+          ]
+        },
+        "abstention_rate": {
+          "successes": 131,
+          "n": 230,
+          "rate": 0.5695652173913044,
+          "wilson_95": [
+            0.5049502854458425,
+            0.6318945673077365
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 70,
+          "n": 99,
+          "rate": 0.7070707070707071,
+          "wilson_95": [
+            0.6110382270180279,
+            0.787633675054892
+          ]
+        },
+        "n_near_match": 9,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 47,
+          "n_committed": 18,
+          "false_positives": 9,
+          "fp_rate": {
+            "successes": 9,
+            "n": 47,
+            "rate": 0.19148936170212766,
+            "wilson_95": [
+              0.10415932698542263,
+              0.32544004579661767
+            ]
+          }
+        }
+      }
+    },
+    "by_resource_stratum": {
+      "A": {
+        "n": 572,
+        "n_committed": 274,
+        "n_abstained": 298,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 274,
+          "n": 572,
+          "rate": 0.479020979020979,
+          "wilson_95": [
+            0.4383584503423075,
+            0.5199634112875388
+          ]
+        },
+        "abstention_rate": {
+          "successes": 298,
+          "n": 572,
+          "rate": 0.5209790209790209,
+          "wilson_95": [
+            0.4800365887124611,
+            0.5616415496576923
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 162,
+          "n": 266,
+          "rate": 0.6090225563909775,
+          "wilson_95": [
+            0.5492279407552024,
+            0.665713085184552
+          ]
+        },
+        "n_near_match": 5,
+        "n_committed_unscoreable": {
+          "flag_review": 8,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 261,
+          "n_committed": 130,
+          "false_positives": 59,
+          "fp_rate": {
+            "successes": 59,
+            "n": 261,
+            "rate": 0.2260536398467433,
+            "wilson_95": [
+              0.1794955503166162,
+              0.2805587756308351
+            ]
+          }
+        }
+      },
+      "B": {
+        "n": 574,
+        "n_committed": 366,
+        "n_abstained": 208,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 366,
+          "n": 574,
+          "rate": 0.6376306620209059,
+          "wilson_95": [
+            0.5975124236585677,
+            0.6759189779623184
+          ]
+        },
+        "abstention_rate": {
+          "successes": 208,
+          "n": 574,
+          "rate": 0.3623693379790941,
+          "wilson_95": [
+            0.3240810220376816,
+            0.4024875763414321
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 278,
+          "n": 361,
+          "rate": 0.7700831024930748,
+          "wilson_95": [
+            0.7239690398472037,
+            0.8105096913537785
+          ]
+        },
+        "n_near_match": 5,
+        "n_committed_unscoreable": {
+          "flag_review": 5,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 107,
+          "n_committed": 55,
+          "false_positives": 36,
+          "fp_rate": {
+            "successes": 36,
+            "n": 107,
+            "rate": 0.3364485981308411,
+            "wilson_95": [
+              0.2539726954082616,
+              0.4302609805791795
+            ]
+          }
+        }
+      }
+    },
+    "by_decision": {
+      "change": {
+        "n": 256,
+        "n_committed": 141,
+        "n_abstained": 115,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 141,
+          "n": 256,
+          "rate": 0.55078125,
+          "wilson_95": [
+            0.48954576485209544,
+            0.6105152497296519
+          ]
+        },
+        "abstention_rate": {
+          "successes": 115,
+          "n": 256,
+          "rate": 0.44921875,
+          "wilson_95": [
+            0.389484750270348,
+            0.5104542351479046
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 71,
+          "n": 137,
+          "rate": 0.5182481751824818,
+          "wilson_95": [
+            0.43522815818198896,
+            0.6002727521455982
+          ]
+        },
+        "n_near_match": 1,
+        "n_committed_unscoreable": {
+          "flag_review": 4,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 125,
+          "n_committed": 77,
+          "false_positives": 45,
+          "fp_rate": {
+            "successes": 45,
+            "n": 125,
+            "rate": 0.36,
+            "wilson_95": [
+              0.28118686524079173,
+              0.4471614449975396
+            ]
+          }
+        }
+      },
+      "complement": {
+        "n": 174,
+        "n_committed": 114,
+        "n_abstained": 60,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 114,
+          "n": 174,
+          "rate": 0.6551724137931034,
+          "wilson_95": [
+            0.5818831788464751,
+            0.7217580550822493
+          ]
+        },
+        "abstention_rate": {
+          "successes": 60,
+          "n": 174,
+          "rate": 0.3448275862068966,
+          "wilson_95": [
+            0.2782419449177507,
+            0.41811682115352494
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 94,
+          "n": 113,
+          "rate": 0.831858407079646,
+          "wilson_95": [
+            0.75226276400192,
+            0.8896326792507666
+          ]
+        },
+        "n_near_match": 1,
+        "n_committed_unscoreable": {
+          "flag_review": 1,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 7,
+          "n_committed": 4,
+          "false_positives": 3,
+          "fp_rate": {
+            "successes": 3,
+            "n": 7,
+            "rate": 0.42857142857142855,
+            "wilson_95": [
+              0.15821985525146975,
+              0.7495416354723428
+            ]
+          }
+        }
+      },
+      "confirm": {
+        "n": 716,
+        "n_committed": 385,
+        "n_abstained": 331,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 385,
+          "n": 716,
+          "rate": 0.5377094972067039,
+          "wilson_95": [
+            0.5010859370199722,
+            0.57393058132348
+          ]
+        },
+        "abstention_rate": {
+          "successes": 331,
+          "n": 716,
+          "rate": 0.4622905027932961,
+          "wilson_95": [
+            0.42606941867651993,
+            0.49891406298002783
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 275,
+          "n": 377,
+          "rate": 0.7294429708222812,
+          "wilson_95": [
+            0.682451578128925,
+            0.7718056882299117
+          ]
+        },
+        "n_near_match": 8,
+        "n_committed_unscoreable": {
+          "flag_review": 8,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 236,
+          "n_committed": 104,
+          "false_positives": 47,
+          "fp_rate": {
+            "successes": 47,
+            "n": 236,
+            "rate": 0.19915254237288135,
+            "wilson_95": [
+              0.15319977829870354,
+              0.25474244862812884
+            ]
+          }
+        }
+      }
+    },
+    "by_answer_shape": {
+      "binary": {
+        "n": 994,
+        "n_committed": 579,
+        "n_abstained": 415,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 579,
+          "n": 994,
+          "rate": 0.5824949698189135,
+          "wilson_95": [
+            0.5515776488821797,
+            0.6127771176493939
+          ]
+        },
+        "abstention_rate": {
+          "successes": 415,
+          "n": 994,
+          "rate": 0.41750503018108653,
+          "wilson_95": [
+            0.38722288235060615,
+            0.4484223511178202
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 410,
+          "n": 567,
+          "rate": 0.7231040564373897,
+          "wilson_95": [
+            0.68486498176116,
+            0.7583403882949579
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 12,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 368,
+          "n_committed": 185,
+          "false_positives": 95,
+          "fp_rate": {
+            "successes": 95,
+            "n": 368,
+            "rate": 0.25815217391304346,
+            "wilson_95": [
+              0.21610059287518407,
+              0.3052007688273756
+            ]
+          }
+        }
+      },
+      "categorical": {
+        "n": 16,
+        "n_committed": 11,
+        "n_abstained": 5,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 11,
+          "n": 16,
+          "rate": 0.6875,
+          "wilson_95": [
+            0.4440435583474067,
+            0.8583535614521796
+          ]
+        },
+        "abstention_rate": {
+          "successes": 5,
+          "n": 16,
+          "rate": 0.3125,
+          "wilson_95": [
+            0.14164643854782036,
+            0.5559564416525933
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 6,
+          "n": 11,
+          "rate": 0.5454545454545454,
+          "wilson_95": [
+            0.2800915374093221,
+            0.7872872837754024
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 0,
+          "n_committed": 0,
+          "false_positives": 0,
+          "fp_rate": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          }
+        }
+      },
+      "count_band": {
+        "n": 16,
+        "n_committed": 6,
+        "n_abstained": 10,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 6,
+          "n": 16,
+          "rate": 0.375,
+          "wilson_95": [
+            0.18481232558863636,
+            0.6135895945449727
+          ]
+        },
+        "abstention_rate": {
+          "successes": 10,
+          "n": 16,
+          "rate": 0.625,
+          "wilson_95": [
+            0.3864104054550273,
+            0.8151876744113637
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 1,
+          "n": 6,
+          "rate": 0.16666666666666666,
+          "wilson_95": [
+            0.030053369748306635,
+            0.5635028221864701
+          ]
+        },
+        "n_near_match": 3,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 0,
+          "n_committed": 0,
+          "false_positives": 0,
+          "fp_rate": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          }
+        }
+      },
+      "ordinal_magnitude": {
+        "n": 24,
+        "n_committed": 14,
+        "n_abstained": 10,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 14,
+          "n": 24,
+          "rate": 0.5833333333333334,
+          "wilson_95": [
+            0.38834665865228757,
+            0.7553239739018823
+          ]
+        },
+        "abstention_rate": {
+          "successes": 10,
+          "n": 24,
+          "rate": 0.4166666666666667,
+          "wilson_95": [
+            0.24467602609811767,
+            0.6116533413477123
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 7,
+          "n": 13,
+          "rate": 0.5384615384615384,
+          "wilson_95": [
+            0.29143795714506016,
+            0.767939321904617
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 1,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 0,
+          "n_committed": 0,
+          "false_positives": 0,
+          "fp_rate": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          }
+        }
+      },
+      "percentage_band": {
+        "n": 96,
+        "n_committed": 30,
+        "n_abstained": 66,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 30,
+          "n": 96,
+          "rate": 0.3125,
+          "wilson_95": [
+            0.22850954637750148,
+            0.4109187990691269
+          ]
+        },
+        "abstention_rate": {
+          "successes": 66,
+          "n": 96,
+          "rate": 0.6875,
+          "wilson_95": [
+            0.5890812009308731,
+            0.7714904536224986
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 16,
+          "n": 30,
+          "rate": 0.5333333333333333,
+          "wilson_95": [
+            0.361422996198733,
+            0.6976761109230025
+          ]
+        },
+        "n_near_match": 7,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 0,
+          "n_committed": 0,
+          "false_positives": 0,
+          "fp_rate": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          }
+        }
+      }
+    },
+    "by_country": {
+      "BA": {
+        "n": 143,
+        "n_committed": 55,
+        "n_abstained": 88,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 55,
+          "n": 143,
+          "rate": 0.38461538461538464,
+          "wilson_95": [
+            0.30888769795800425,
+            0.4663801299086761
+          ]
+        },
+        "abstention_rate": {
+          "successes": 88,
+          "n": 143,
+          "rate": 0.6153846153846154,
+          "wilson_95": [
+            0.533619870091324,
+            0.6911123020419958
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 32,
+          "n": 53,
+          "rate": 0.6037735849056604,
+          "wilson_95": [
+            0.4694147867320553,
+            0.7241059326199832
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 2,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 78,
+          "n_committed": 31,
+          "false_positives": 10,
+          "fp_rate": {
+            "successes": 10,
+            "n": 78,
+            "rate": 0.1282051282051282,
+            "wilson_95": [
+              0.0711532263123448,
+              0.22015950398646625
+            ]
+          }
+        }
+      },
+      "BE": {
+        "n": 143,
+        "n_committed": 79,
+        "n_abstained": 64,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 79,
+          "n": 143,
+          "rate": 0.5524475524475524,
+          "wilson_95": [
+            0.4706387590487242,
+            0.6315122282846029
+          ]
+        },
+        "abstention_rate": {
+          "successes": 64,
+          "n": 143,
+          "rate": 0.44755244755244755,
+          "wilson_95": [
+            0.36848777171539715,
+            0.5293612409512758
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 64,
+          "n": 78,
+          "rate": 0.8205128205128205,
+          "wilson_95": [
+            0.7209764606558009,
+            0.8899608408107411
+          ]
+        },
+        "n_near_match": 1,
+        "n_committed_unscoreable": {
+          "flag_review": 1,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 24,
+          "n_committed": 9,
+          "false_positives": 6,
+          "fp_rate": {
+            "successes": 6,
+            "n": 24,
+            "rate": 0.25,
+            "wilson_95": [
+              0.11999366228595004,
+              0.44899444005153993
+            ]
+          }
+        }
+      },
+      "BG": {
+        "n": 142,
+        "n_committed": 61,
+        "n_abstained": 81,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 61,
+          "n": 142,
+          "rate": 0.4295774647887324,
+          "wilson_95": [
+            0.35107193412557336,
+            0.5117928495804841
+          ]
+        },
+        "abstention_rate": {
+          "successes": 81,
+          "n": 142,
+          "rate": 0.5704225352112676,
+          "wilson_95": [
+            0.4882071504195159,
+            0.6489280658744266
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 42,
+          "n": 58,
+          "rate": 0.7241379310344828,
+          "wilson_95": [
+            0.5979534481052067,
+            0.8224764786108747
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 3,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 50,
+          "n_committed": 22,
+          "false_positives": 10,
+          "fp_rate": {
+            "successes": 10,
+            "n": 50,
+            "rate": 0.2,
+            "wilson_95": [
+              0.1124375001577611,
+              0.3303710593222541
+            ]
+          }
+        }
+      },
+      "FI": {
+        "n": 144,
+        "n_committed": 108,
+        "n_abstained": 36,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 108,
+          "n": 144,
+          "rate": 0.75,
+          "wilson_95": [
+            0.6734032433458373,
+            0.8136049380826443
+          ]
+        },
+        "abstention_rate": {
+          "successes": 36,
+          "n": 144,
+          "rate": 0.25,
+          "wilson_95": [
+            0.1863950619173557,
+            0.32659675665416266
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 86,
+          "n": 107,
+          "rate": 0.8037383177570093,
+          "wilson_95": [
+            0.7185272511729878,
+            0.8678959219931929
+          ]
+        },
+        "n_near_match": 1,
+        "n_committed_unscoreable": {
+          "flag_review": 1,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 29,
+          "n_committed": 17,
+          "false_positives": 14,
+          "fp_rate": {
+            "successes": 14,
+            "n": 29,
+            "rate": 0.4827586206896552,
+            "wilson_95": [
+              0.3138609015268349,
+              0.6556897811800527
+            ]
+          }
+        }
+      },
+      "HR": {
+        "n": 143,
+        "n_committed": 77,
+        "n_abstained": 66,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 77,
+          "n": 143,
+          "rate": 0.5384615384615384,
+          "wilson_95": [
+            0.4568175287627785,
+            0.6180931952816613
+          ]
+        },
+        "abstention_rate": {
+          "successes": 66,
+          "n": 143,
+          "rate": 0.46153846153846156,
+          "wilson_95": [
+            0.3819068047183386,
+            0.5431824712372215
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 50,
+          "n": 75,
+          "rate": 0.6666666666666666,
+          "wilson_95": [
+            0.5541742611414866,
+            0.7629177913642446
+          ]
+        },
+        "n_near_match": 1,
+        "n_committed_unscoreable": {
+          "flag_review": 2,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 27,
+          "n_committed": 12,
+          "false_positives": 6,
+          "fp_rate": {
+            "successes": 6,
+            "n": 27,
+            "rate": 0.2222222222222222,
+            "wilson_95": [
+              0.1060723945236004,
+              0.4075692886663257
+            ]
+          }
+        }
+      },
+      "ME": {
+        "n": 143,
+        "n_committed": 83,
+        "n_abstained": 60,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 83,
+          "n": 143,
+          "rate": 0.5804195804195804,
+          "wilson_95": [
+            0.4984697531201424,
+            0.6581617607909592
+          ]
+        },
+        "abstention_rate": {
+          "successes": 60,
+          "n": 143,
+          "rate": 0.4195804195804196,
+          "wilson_95": [
+            0.34183823920904083,
+            0.5015302468798577
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 50,
+          "n": 82,
+          "rate": 0.6097560975609756,
+          "wilson_95": [
+            0.5015357010815032,
+            0.7081531864011575
+          ]
+        },
+        "n_near_match": 5,
+        "n_committed_unscoreable": {
+          "flag_review": 1,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 59,
+          "n_committed": 31,
+          "false_positives": 13,
+          "fp_rate": {
+            "successes": 13,
+            "n": 59,
+            "rate": 0.22033898305084745,
+            "wilson_95": [
+              0.1335419762792904,
+              0.34132699367637087
+            ]
+          }
+        }
+      },
+      "MK": {
+        "n": 144,
+        "n_committed": 75,
+        "n_abstained": 69,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 75,
+          "n": 144,
+          "rate": 0.5208333333333334,
+          "wilson_95": [
+            0.43976297739607656,
+            0.6008210377229637
+          ]
+        },
+        "abstention_rate": {
+          "successes": 69,
+          "n": 144,
+          "rate": 0.4791666666666667,
+          "wilson_95": [
+            0.3991789622770364,
+            0.5602370226039235
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 38,
+          "n": 73,
+          "rate": 0.5205479452054794,
+          "wilson_95": [
+            0.40781596889792504,
+            0.6312254554326613
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 2,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 74,
+          "n_committed": 46,
+          "false_positives": 26,
+          "fp_rate": {
+            "successes": 26,
+            "n": 74,
+            "rate": 0.35135135135135137,
+            "wilson_95": [
+              0.252381884912968,
+              0.46499237382649816
+            ]
+          }
+        }
+      },
+      "SE": {
+        "n": 144,
+        "n_committed": 102,
+        "n_abstained": 42,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 102,
+          "n": 144,
+          "rate": 0.7083333333333334,
+          "wilson_95": [
+            0.6294527317183394,
+            0.7763874194720621
+          ]
+        },
+        "abstention_rate": {
+          "successes": 42,
+          "n": 144,
+          "rate": 0.2916666666666667,
+          "wilson_95": [
+            0.223612580527938,
+            0.37054726828166074
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 78,
+          "n": 101,
+          "rate": 0.7722772277227723,
+          "wilson_95": [
+            0.6814098987582485,
+            0.8431917294398498
+          ]
+        },
+        "n_near_match": 2,
+        "n_committed_unscoreable": {
+          "flag_review": 1,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 27,
+          "n_committed": 17,
+          "false_positives": 10,
+          "fp_rate": {
+            "successes": 10,
+            "n": 27,
+            "rate": 0.37037037037037035,
+            "wilson_95": [
+              0.21532512960965605,
+              0.5577076558789762
+            ]
+          }
+        }
+      }
+    }
+  },
+  "rq3_language_read": {
+    "stratum_a": {
+      "countries": [
+        "BA",
+        "MK",
+        "ME",
+        "BG"
+      ],
+      "n": 572,
+      "n_committed": 274,
+      "n_abstained": 298,
+      "n_failed": 0,
+      "coverage": {
+        "successes": 274,
+        "n": 572,
+        "rate": 0.479020979020979,
+        "wilson_95": [
+          0.4383584503423075,
+          0.5199634112875388
+        ]
+      },
+      "abstention_rate": {
+        "successes": 298,
+        "n": 572,
+        "rate": 0.5209790209790209,
+        "wilson_95": [
+          0.4800365887124611,
+          0.5616415496576923
+        ]
+      },
+      "commit_accuracy": {
+        "successes": 162,
+        "n": 266,
+        "rate": 0.6090225563909775,
+        "wilson_95": [
+          0.5492279407552024,
+          0.665713085184552
+        ]
+      },
+      "n_near_match": 5,
+      "n_committed_unscoreable": {
+        "flag_review": 8,
+        "no_ground_truth": 0
+      },
+      "negative_golds": {
+        "n": 261,
+        "n_committed": 130,
+        "false_positives": 59,
+        "fp_rate": {
+          "successes": 59,
+          "n": 261,
+          "rate": 0.2260536398467433,
+          "wilson_95": [
+            0.1794955503166162,
+            0.2805587756308351
+          ]
+        }
+      }
+    },
+    "stratum_b": {
+      "countries": [
+        "FI",
+        "HR",
+        "SE",
+        "BE"
+      ],
+      "n": 574,
+      "n_committed": 366,
+      "n_abstained": 208,
+      "n_failed": 0,
+      "coverage": {
+        "successes": 366,
+        "n": 574,
+        "rate": 0.6376306620209059,
+        "wilson_95": [
+          0.5975124236585677,
+          0.6759189779623184
+        ]
+      },
+      "abstention_rate": {
+        "successes": 208,
+        "n": 574,
+        "rate": 0.3623693379790941,
+        "wilson_95": [
+          0.3240810220376816,
+          0.4024875763414321
+        ]
+      },
+      "commit_accuracy": {
+        "successes": 278,
+        "n": 361,
+        "rate": 0.7700831024930748,
+        "wilson_95": [
+          0.7239690398472037,
+          0.8105096913537785
+        ]
+      },
+      "n_near_match": 5,
+      "n_committed_unscoreable": {
+        "flag_review": 5,
+        "no_ground_truth": 0
+      },
+      "negative_golds": {
+        "n": 107,
+        "n_committed": 55,
+        "false_positives": 36,
+        "fp_rate": {
+          "successes": 36,
+          "n": 107,
+          "rate": 0.3364485981308411,
+          "wilson_95": [
+            0.2539726954082616,
+            0.4302609805791795
+          ]
+        }
+      }
+    },
+    "contrasts_a_vs_b": {
+      "negative_gold_fp_rate": {
+        "p1": 0.2260536398467433,
+        "p2": 0.3364485981308411,
+        "delta": -0.11039495828409782,
+        "ci_95": [
+          -0.21512517742513007,
+          -0.011536046916701709
+        ],
+        "z": -2.197567205210778,
+        "p_value": 0.02797996239375533
+      },
+      "abstention_rate": {
+        "p1": 0.5209790209790209,
+        "p2": 0.3623693379790941,
+        "delta": 0.15860968299992684,
+        "ci_95": [
+          0.10128817037858011,
+          0.21446159770455622
+        ],
+        "z": 5.40643170325752,
+        "p_value": 6.429272669805641e-08
+      },
+      "commit_accuracy": {
+        "p1": 0.6090225563909775,
+        "p2": 0.7700831024930748,
+        "delta": -0.1610605461020973,
+        "ci_95": [
+          -0.23323883332160983,
+          -0.08798303363346974
+        ],
+        "z": -4.35682599757085,
+        "p_value": 1.3196209091903555e-05
+      }
+    },
+    "preregistered_read": "Flat FP across strata supports language driving abstention not error; a rise in stratum A is the headline negative result."
+  },
+  "calibration": {
+    "n_scored": 627,
+    "n_committed_excluded": {
+      "missing_confidence": 0,
+      "unscoreable": 13
+    },
+    "n_bins": 10,
+    "bins": [
+      {
+        "lo": 0.0,
+        "hi": 0.1,
+        "n": 0,
+        "n_match": 0,
+        "mean_confidence": null,
+        "match_rate": null,
+        "abs_gap": null
+      },
+      {
+        "lo": 0.1,
+        "hi": 0.2,
+        "n": 0,
+        "n_match": 0,
+        "mean_confidence": null,
+        "match_rate": null,
+        "abs_gap": null
+      },
+      {
+        "lo": 0.2,
+        "hi": 0.3,
+        "n": 0,
+        "n_match": 0,
+        "mean_confidence": null,
+        "match_rate": null,
+        "abs_gap": null
+      },
+      {
+        "lo": 0.3,
+        "hi": 0.4,
+        "n": 0,
+        "n_match": 0,
+        "mean_confidence": null,
+        "match_rate": null,
+        "abs_gap": null
+      },
+      {
+        "lo": 0.4,
+        "hi": 0.5,
+        "n": 0,
+        "n_match": 0,
+        "mean_confidence": null,
+        "match_rate": null,
+        "abs_gap": null
+      },
+      {
+        "lo": 0.5,
+        "hi": 0.6,
+        "n": 0,
+        "n_match": 0,
+        "mean_confidence": null,
+        "match_rate": null,
+        "abs_gap": null
+      },
+      {
+        "lo": 0.6,
+        "hi": 0.7,
+        "n": 202,
+        "n_match": 132,
+        "mean_confidence": 0.6554455445544555,
+        "match_rate": 0.6534653465346535,
+        "abs_gap": 0.001980198019801982
+      },
+      {
+        "lo": 0.7,
+        "hi": 0.8,
+        "n": 207,
+        "n_match": 133,
+        "mean_confidence": 0.7353623188405797,
+        "match_rate": 0.642512077294686,
+        "abs_gap": 0.09285024154589372
+      },
+      {
+        "lo": 0.8,
+        "hi": 0.9,
+        "n": 100,
+        "n_match": 77,
+        "mean_confidence": 0.8320000000000001,
+        "match_rate": 0.77,
+        "abs_gap": 0.062000000000000055
+      },
+      {
+        "lo": 0.9,
+        "hi": 1.0,
+        "n": 118,
+        "n_match": 98,
+        "mean_confidence": 0.9439830508474576,
+        "match_rate": 0.8305084745762712,
+        "abs_gap": 0.1134745762711864
+      }
+    ],
+    "ece": 0.06253588516746411
+  },
+  "risk_coverage_sweep": {
+    "n": 1146,
+    "production_floor": 0.65,
+    "n_committed_missing_confidence": 0,
+    "floors": [
+      {
+        "floor": 0.5,
+        "is_production_floor": false,
+        "n_committed": 640,
+        "coverage": 0.5584642233856894,
+        "n_scoreable": 627,
+        "n_match": 440,
+        "n_wrong": 187,
+        "risk": 0.2982456140350877
+      },
+      {
+        "floor": 0.55,
+        "is_production_floor": false,
+        "n_committed": 640,
+        "coverage": 0.5584642233856894,
+        "n_scoreable": 627,
+        "n_match": 440,
+        "n_wrong": 187,
+        "risk": 0.2982456140350877
+      },
+      {
+        "floor": 0.6,
+        "is_production_floor": false,
+        "n_committed": 640,
+        "coverage": 0.5584642233856894,
+        "n_scoreable": 627,
+        "n_match": 440,
+        "n_wrong": 187,
+        "risk": 0.2982456140350877
+      },
+      {
+        "floor": 0.65,
+        "is_production_floor": true,
+        "n_committed": 640,
+        "coverage": 0.5584642233856894,
+        "n_scoreable": 627,
+        "n_match": 440,
+        "n_wrong": 187,
+        "risk": 0.2982456140350877
+      },
+      {
+        "floor": 0.7,
+        "is_production_floor": false,
+        "n_committed": 435,
+        "coverage": 0.3795811518324607,
+        "n_scoreable": 425,
+        "n_match": 308,
+        "n_wrong": 117,
+        "risk": 0.2752941176470588
+      },
+      {
+        "floor": 0.75,
+        "is_production_floor": false,
+        "n_committed": 309,
+        "coverage": 0.2696335078534031,
+        "n_scoreable": 300,
+        "n_match": 229,
+        "n_wrong": 71,
+        "risk": 0.23666666666666666
+      },
+      {
+        "floor": 0.8,
+        "is_production_floor": false,
+        "n_committed": 222,
+        "coverage": 0.193717277486911,
+        "n_scoreable": 218,
+        "n_match": 175,
+        "n_wrong": 43,
+        "risk": 0.19724770642201836
+      },
+      {
+        "floor": 0.85,
+        "is_production_floor": false,
+        "n_committed": 166,
+        "coverage": 0.14485165794066318,
+        "n_scoreable": 162,
+        "n_match": 135,
+        "n_wrong": 27,
+        "risk": 0.16666666666666666
+      },
+      {
+        "floor": 0.9,
+        "is_production_floor": false,
+        "n_committed": 120,
+        "coverage": 0.10471204188481675,
+        "n_scoreable": 118,
+        "n_match": 98,
+        "n_wrong": 20,
+        "risk": 0.1694915254237288
+      }
+    ],
+    "note": "Floors below the production 0.65 cannot recover pairs the run abstained on; sub-floor coverage moves only through adjudicator commits, which bypass the floor (D37)."
+  },
+  "disagreement_bracket": {
+    "n_committed_scoreable": 627,
+    "n_match": 440,
+    "n_near_match": 10,
+    "n_differ": 177,
+    "commit_accuracy_lower_bound": {
+      "successes": 440,
+      "n": 627,
+      "rate": 0.7017543859649122,
+      "wilson_95": [
+        0.6648047376361726,
+        0.7362468997640744
+      ]
+    },
+    "commit_accuracy_upper_bound": null,
+    "upper_bound_note": "Pending the D22 staleness review: the upper bound recomputes as (n_match + confirmed_stale_differ) / n_committed_scoreable once each register entry is reviewed.",
+    "differ_register": [
+      {
+        "question_id": "I1",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I10",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I12",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I16",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I17",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I20",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I26",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I27",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I8-d",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "P1",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "other",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P10-b",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P13",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "P17",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P23",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "P27",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "P3",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT1",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.88
+      },
+      {
+        "question_id": "PT27",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT30",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT43",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "PT8",
+        "country_code": "BA",
+        "condition_label": "BA",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I10",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "I12",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.8
+      },
+      {
+        "question_id": "I16",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I30",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "I31",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "P16",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "few public bodies",
+        "gold_answer": "all public bodies",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "P24",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P5",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "P8",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "PT18",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Portal",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT40",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "PT9",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.85
+      },
+      {
+        "question_id": "Q3",
+        "country_code": "BE",
+        "condition_label": "BE",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "within one month",
+        "gold_answer": "within one week",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I13",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "I14",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "I15",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "I5",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P13",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P14",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "hybrid",
+        "gold_answer": "top-down",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "P15",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "P21",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P26-b",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.8
+      },
+      {
+        "question_id": "P3",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "PT27",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "PT32",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "few public sector data providers",
+        "gold_answer": "all public sector data providers",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "PT35",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "PT44",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT5",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.8
+      },
+      {
+        "question_id": "Q1",
+        "country_code": "BG",
+        "condition_label": "BG",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I1",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I12",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I18",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I19",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "I2",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.88
+      },
+      {
+        "question_id": "I22",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I28",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "I30",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.85
+      },
+      {
+        "question_id": "I31",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.8
+      },
+      {
+        "question_id": "I6",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "P1",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "other",
+        "final_confidence": 0.8
+      },
+      {
+        "question_id": "P10-b",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P15",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "P24",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "P7",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.85
+      },
+      {
+        "question_id": "PT16",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "PT41",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT42",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "Q14",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "Q27",
+        "country_code": "FI",
+        "condition_label": "FI",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "31-50%",
+        "gold_answer": "71-90%",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "I10",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "I11",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "I17",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I19",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I25",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I29",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I3",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "P16",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "few public bodies",
+        "gold_answer": "the majority of public bodies",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "P3",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "P4",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P7",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "PT14",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT32",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "few public sector data providers",
+        "gold_answer": "the majority of public sector data providers",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT39",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT41",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "PT43",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "PT44",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "Q11",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "Q12",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Quality",
+        "decision": "change",
+        "final_answer": "<10%",
+        "gold_answer": ">90%",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "Q13",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": ">10",
+        "gold_answer": "1-4",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "Q16",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "31-50%",
+        "gold_answer": ">90%",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "Q22",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": ">90%",
+        "gold_answer": "10-30%",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "Q25",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "<10%",
+        "gold_answer": ">90%",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "Q27",
+        "country_code": "HR",
+        "condition_label": "HR",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "31-50%",
+        "gold_answer": ">90%",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "I10",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "I14",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I22",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "i don't know",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I27",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "complement",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "I29",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "I3",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "I5",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "I7",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "complement",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "I8-a",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "P1",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "other",
+        "gold_answer": "yes",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "P13",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "P14",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "top-down",
+        "gold_answer": "hybrid",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P15",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P17",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P19",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P2",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P22",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "P24",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "P27",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "P3",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "P7",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "PT15",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT33",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes, or all public sector data providers already publish data",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT41",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "PT44",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Portal",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT9",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "Q3",
+        "country_code": "ME",
+        "condition_label": "ME",
+        "dimension": "Quality",
+        "decision": "change",
+        "final_answer": "longer than one month or i don't know",
+        "gold_answer": "within one day",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I1",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "I17",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I21",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "I22",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I23",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "I25",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I29",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I4",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "not applicable",
+        "gold_answer": "no",
+        "final_confidence": 0.95
+      },
+      {
+        "question_id": "I7",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "I8-c",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I9",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "I9",
+        "country_code": "MK",
+        "condition_label": "unlabelled",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P1",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "other",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P10-b",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P13",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "P14",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "top-down",
+        "gold_answer": "hybrid",
+        "final_confidence": 0.7
+      },
+      {
+        "question_id": "P21",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "P24",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P27",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "P28",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P7",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P8",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.8
+      },
+      {
+        "question_id": "P9",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "PT10",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT14",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT16",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "PT17",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "PT35",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "PT43",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "Q1",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Quality",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "Q14",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Quality",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "Q19",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Quality",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "Q24",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Quality",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "Q5",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Quality",
+        "decision": "change",
+        "final_answer": "not_applicable",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "Q6",
+        "country_code": "MK",
+        "condition_label": "MK",
+        "dimension": "Quality",
+        "decision": "change",
+        "final_answer": "not_applicable",
+        "gold_answer": "no",
+        "final_confidence": 0.85
+      },
+      {
+        "question_id": "I12",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.71
+      },
+      {
+        "question_id": "I21",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I27",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Impact",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.88
+      },
+      {
+        "question_id": "I5",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Impact",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "I6",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Impact",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I8-b",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "I9",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Impact",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P10-a",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Policy",
+        "decision": "complement",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.65
+      },
+      {
+        "question_id": "P17",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "P24",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.78
+      },
+      {
+        "question_id": "P29",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Policy",
+        "decision": "change",
+        "final_answer": "yes, 3-5",
+        "gold_answer": "no",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "P4",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Policy",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "PT13",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "PT16",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.9
+      },
+      {
+        "question_id": "PT32",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Portal",
+        "decision": "complement",
+        "final_answer": "the majority of public sector data providers",
+        "gold_answer": "few public sector data providers",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "PT36",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Portal",
+        "decision": "change",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "PT37",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "few datasets",
+        "gold_answer": "the majority of datasets",
+        "final_confidence": 0.72
+      },
+      {
+        "question_id": "PT41",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.68
+      },
+      {
+        "question_id": "PT7",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Portal",
+        "decision": "confirm",
+        "final_answer": "no",
+        "gold_answer": "yes",
+        "final_confidence": 0.82
+      },
+      {
+        "question_id": "Q14",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": "yes",
+        "gold_answer": "no",
+        "final_confidence": 0.75
+      },
+      {
+        "question_id": "Q18",
+        "country_code": "SE",
+        "condition_label": "SE",
+        "dimension": "Quality",
+        "decision": "confirm",
+        "final_answer": ">90%",
+        "gold_answer": "51-70%",
+        "final_confidence": 0.95
+      }
+    ]
+  },
+  "experiment_id": "exp36_frozen_headline",
+  "db_path": "/Users/benjyb/Desktop/MscProject/.claude/worktrees/exp36-run/data/odmi.db",
+  "generated_at": "2026-07-17T13:25:04.143620+00:00",
+  "preregistration": "docs/EXPERIMENTS_EXP36_PREREG.md",
+  "model_version_audit": {
+    "phase2_researcher_runs": {
+      "claude-sonnet-4-6": 3412,
+      "unknown": 33
+    },
+    "phase2_verifier_runs": {
+      "claude-sonnet-4-6": 1937,
+      "unknown": 33
+    },
+    "phase2_adjudications": {
+      "claude-sonnet-4-6": 622
+    }
+  }
+}
