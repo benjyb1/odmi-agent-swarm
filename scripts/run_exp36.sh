@@ -49,10 +49,15 @@ else
   echo "-- EXP-36 already staged in data/odmi.db; resuming (no re-stage) --"
 fi
 
-# 5. Verify the staged DB is purged of held-out cache (the preflight enforces
-#    this too for a headline spec, but check loudly here as well).
-echo "-- held-out cache re-scan (expect 0/0/0) --"
-uv run python scripts/purge_heldout_cache.py --db data/odmi.db | grep identified
+# 5. Purge held-out cache, not just scan. no_cache disables reads but not
+#    writes (see prereg Data hygiene), so every dispatch this DB has already
+#    done writes fresh held-out cache into it. On a resume that cache is
+#    real and non-zero, and the headline preflight in step 7 hard-fails on
+#    any residual row, so a scan-only check here would let step 7 fail every
+#    single resume. --apply is a no-op (and harmless) on a freshly staged
+#    DB, so it is always safe to run unconditionally.
+echo "-- held-out cache purge (defence in depth; a resume carries cache this run itself wrote) --"
+uv run python scripts/purge_heldout_cache.py --db data/odmi.db --apply | tail -3
 
 # 6. Auto-publish OFF so the disposable dispatch DB is never committed to main.
 export ODMI_SKIP_AUTO_PUBLISH=1

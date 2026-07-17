@@ -21,7 +21,11 @@ import sys
 
 def _git(*args: str) -> tuple[int, str]:
     p = subprocess.run(["git", *args], capture_output=True, text=True)
-    return p.returncode, (p.stdout + p.stderr).strip()
+    # rstrip only: porcelain status lines are fixed-column (XY<space>path), so
+    # a blanket .strip() would eat the leading space off an unstaged-modified
+    # first line ("M path" instead of " M path") and shift every column left
+    # by one, corrupting the line[3:] path parsing below.
+    return p.returncode, (p.stdout + p.stderr).rstrip("\n")
 
 
 def main() -> int:
