@@ -120,6 +120,36 @@ Receipts: `evaluation/results/exp39_language_swap.jsonl`,
 `exp39_language_swap_summary.json`, `exp39_sq_spotcheck.json`,
 `exp39_source_purity.json`, `exp39_purity_sensitivity.json`.
 
+## Part B result: held-out evidence-language contrast (2026-07-16, post-headline)
+
+Observational within-country split of committed EXP-36 pairs by detected
+evidence language (langdetect over the committed snippet), dimension
+stratified, Mantel-Haenszel odds ratio English vs non-English:
+
+| country | EN commit-acc | non-EN commit-acc | MH OR |
+|---|---|---|---|
+| FI | 0.83 (44/53) | 0.77 (40/52) | 1.39 |
+| HR | 0.68 (28/41) | 0.68 (21/31) | 1.14 |
+| ME | 0.52 (27/52) | 0.79 (23/29) | 0.33 |
+| MK | 0.52 (27/52) | 0.55 (11/20) | 0.93 |
+| SE | 0.76 (29/38) | 0.77 (48/62) | 0.89 |
+
+The odds ratios scatter around 1.0 (0.33 to 1.39), three below and two
+above, with ME actively reversing (non-English evidence commits more
+accurately). No systematic English-vs-native evidence-language effect on
+commit accuracy in the held-out production data. Per-country n is small,
+so this is corroboration not proof, but the direction is absent, not
+merely weak.
+
+**Four independent tests now converge on the same null:** EXP-22 query
+ablation, the 127-case pre-translation replay, EXP-39 Part A on-the-fly
+swap probe, and this Part B held-out contrast. Language of the evidence is
+not the binding constraint on the swarm's deficit; data availability is.
+The bilingual production query earns its place by surfacing native sources
+on mid/high-resource countries, but neither retrieving nor reading native
+evidence is where accuracy is lost. Receipts:
+`evaluation/results/exp39_partB_heldout.json`.
+
 ## What this does not test, and the queued follow-on
 
 Neither part tests whether bilingual querying earns recall on mid and

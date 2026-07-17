@@ -1,0 +1,317 @@
+{
+  "experiment_id": "exp36_frozen_headline",
+  "db": "/Users/benjyb/Desktop/MscProject/.claude/worktrees/exp36-run/data/odmi.db",
+  "countries": {
+    "BA": {
+      "committed": {
+        "english": {
+          "match": 29,
+          "differ": 12,
+          "accuracy": 0.7073170731707317,
+          "wilson": [
+            0.5552053227700284,
+            0.8239081237388657
+          ]
+        },
+        "non_english": {
+          "match": 3,
+          "differ": 9,
+          "accuracy": 0.25,
+          "wilson": [
+            0.08894166839405479,
+            0.5323053349335656
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 7.579963235294118,
+      "abstention": {
+        "english": {
+          "abstained": 49,
+          "of": 49
+        },
+        "undetermined": {
+          "abstained": 1,
+          "of": 1
+        },
+        "non_english": {
+          "abstained": 38,
+          "of": 38
+        }
+      }
+    },
+    "BE": {
+      "committed": {
+        "english": {
+          "match": 27,
+          "differ": 3,
+          "accuracy": 0.9,
+          "wilson": [
+            0.7437891742081593,
+            0.9654001112526658
+          ]
+        },
+        "non_english": {
+          "match": 37,
+          "differ": 11,
+          "accuracy": 0.7708333333333334,
+          "wilson": [
+            0.6346073590999656,
+            0.8669217373308876
+          ]
+        },
+        "undetermined": {
+          "match": 1,
+          "differ": 0,
+          "accuracy": 1.0,
+          "wilson": [
+            0.2065493143772375,
+            1.0
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 2.4763157894736842,
+      "abstention": {
+        "english": {
+          "abstained": 36,
+          "of": 36
+        },
+        "non_english": {
+          "abstained": 26,
+          "of": 26
+        },
+        "undetermined": {
+          "abstained": 1,
+          "of": 1
+        }
+      }
+    },
+    "BG": {
+      "committed": {
+        "english": {
+          "match": 21,
+          "differ": 12,
+          "accuracy": 0.6363636363636364,
+          "wilson": [
+            0.466161783022664,
+            0.7781282176475764
+          ]
+        },
+        "non_english": {
+          "match": 21,
+          "differ": 4,
+          "accuracy": 0.84,
+          "wilson": [
+            0.6534637839282115,
+            0.9359654854332357
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 0.36100497252028263,
+      "abstention": {
+        "non_english": {
+          "abstained": 43,
+          "of": 43
+        },
+        "english": {
+          "abstained": 38,
+          "of": 38
+        },
+        "undetermined": {
+          "abstained": 1,
+          "of": 1
+        }
+      }
+    },
+    "FI": {
+      "committed": {
+        "english": {
+          "match": 44,
+          "differ": 9,
+          "accuracy": 0.8301886792452831,
+          "wilson": [
+            0.7077471971890396,
+            0.9080005462038102
+          ]
+        },
+        "non_english": {
+          "match": 40,
+          "differ": 12,
+          "accuracy": 0.7692307692307693,
+          "wilson": [
+            0.6386621744190017,
+            0.8627573907450725
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 1.3874272359394948,
+      "abstention": {
+        "english": {
+          "abstained": 14,
+          "of": 14
+        },
+        "non_english": {
+          "abstained": 22,
+          "of": 22
+        }
+      }
+    },
+    "HR": {
+      "committed": {
+        "english": {
+          "match": 28,
+          "differ": 13,
+          "accuracy": 0.6829268292682927,
+          "wilson": [
+            0.5301580035565572,
+            0.8043538610101142
+          ]
+        },
+        "non_english": {
+          "match": 21,
+          "differ": 10,
+          "accuracy": 0.6774193548387096,
+          "wilson": [
+            0.5014100930808564,
+            0.8143057343364081
+          ]
+        },
+        "undetermined": {
+          "match": 1,
+          "differ": 2,
+          "accuracy": 0.3333333333333333,
+          "wilson": [
+            0.06149194472039626,
+            0.7923403991979521
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 1.137585238668271,
+      "abstention": {
+        "english": {
+          "abstained": 36,
+          "of": 36
+        },
+        "non_english": {
+          "abstained": 28,
+          "of": 28
+        },
+        "undetermined": {
+          "abstained": 2,
+          "of": 2
+        }
+      }
+    },
+    "ME": {
+      "committed": {
+        "english": {
+          "match": 27,
+          "differ": 25,
+          "accuracy": 0.5192307692307693,
+          "wilson": [
+            0.3868568276805606,
+            0.6489588555454449
+          ]
+        },
+        "non_english": {
+          "match": 23,
+          "differ": 6,
+          "accuracy": 0.7931034482758621,
+          "wilson": [
+            0.6160990959613211,
+            0.9015392980215897
+          ]
+        },
+        "undetermined": {
+          "match": 0,
+          "differ": 1,
+          "accuracy": 0.0,
+          "wilson": [
+            0.0,
+            0.7934506856227624
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 0.33086917562724016,
+      "abstention": {
+        "english": {
+          "abstained": 28,
+          "of": 28
+        },
+        "non_english": {
+          "abstained": 31,
+          "of": 31
+        },
+        "undetermined": {
+          "abstained": 1,
+          "of": 1
+        }
+      }
+    },
+    "MK": {
+      "committed": {
+        "english": {
+          "match": 27,
+          "differ": 25,
+          "accuracy": 0.5192307692307693,
+          "wilson": [
+            0.3868568276805606,
+            0.6489588555454449
+          ]
+        },
+        "non_english": {
+          "match": 11,
+          "differ": 9,
+          "accuracy": 0.55,
+          "wilson": [
+            0.3420853424503424,
+            0.7418021417443758
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 0.9280388776972441,
+      "abstention": {
+        "english": {
+          "abstained": 46,
+          "of": 46
+        },
+        "non_english": {
+          "abstained": 23,
+          "of": 23
+        }
+      }
+    },
+    "SE": {
+      "committed": {
+        "english": {
+          "match": 29,
+          "differ": 9,
+          "accuracy": 0.7631578947368421,
+          "wilson": [
+            0.607931876367602,
+            0.8700629298294591
+          ]
+        },
+        "non_english": {
+          "match": 48,
+          "differ": 14,
+          "accuracy": 0.7741935483870968,
+          "wilson": [
+            0.6559437908464204,
+            0.8604481696141172
+          ]
+        }
+      },
+      "mh_odds_ratio_en_vs_nonen": 0.8927361368556219,
+      "abstention": {
+        "english": {
+          "abstained": 18,
+          "of": 18
+        },
+        "non_english": {
+          "abstained": 24,
+          "of": 24
+        }
+      }
+    }
+  }
+}

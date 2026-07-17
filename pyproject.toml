@@ -23,6 +23,7 @@ dependencies = [
     "pyshacl>=0.26",
     "tldextract>=5",       # registrable-domain reduction for the blind judge
     "scipy>=1.17.1",
+    "langdetect>=1.0.9",
 ]
 
 [project.optional-dependencies]
