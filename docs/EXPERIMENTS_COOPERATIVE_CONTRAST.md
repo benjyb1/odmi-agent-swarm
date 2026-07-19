@@ -265,6 +265,61 @@ than 139; the stance contrast (no_adjudicator vs cooperative) is unaffected
 since both diverge after attempt 1 regardless. Budget raised 9k -> 12k for the
 extra live attempt-1s; the orchestrator budget-pause remains the guard.
 
+## Result (2026-07-19, run complete, 156/156)
+
+Full four-arm read (`evaluation/results/exp40_analysis.json`), dev battery
+MT 60 + NL 52 + AL 44, 78 negative golds. trio / no_adjudicator /
+researcher_only are replayed off exp34 wide_only; cooperative is the live arm
+(93 abstain, 63 commit, 1 agent_failure; deny-list clean, 0 blocked).
+
+| arm | coverage | commit-acc | neg-gold FPR | balanced-acc | Youden J |
+|---|---|---|---|---|---|
+| trio | 0.47 | 0.73 | 0.22 (17/78) | 0.33 | -0.34 |
+| no_adjudicator | 0.39 | 0.69 | 0.22 (17/78) | 0.26 | -0.48 |
+| researcher_only | 0.24 | 0.65 | 0.13 (10/78) | 0.15 | -0.70 |
+| **cooperative** | **0.40** | **0.65** | **0.24 (19/78)** | **0.26** | **-0.48** |
+
+**Primary contrast (no_adjudicator vs cooperative, one variable = verifier
+stance): a clean null.** Balanced accuracy 0.261 vs 0.262, Youden J -0.477 vs
+-0.476, coverage 0.39 vs 0.40, neg-gold FPR 0.218 vs 0.244. Paired McNemar on
+committed correctness over the 154 shared binary-gold pairs: 8 discordant each
+way, **p = 1.00**. The two arms differ per pair (16 discordant pairs; the pilot
+saw cooperative avoid a trio false positive and recover a correct answer trio
+missed) but net to an exact tie.
+
+**The prediction is refuted, in the mild-negative direction.** The prereg
+predicted cooperative would abstain more and carry a *lower* FPR (coverage down,
+precision up). It does neither: it commits marginally *more* (0.40 vs 0.39) at a
+marginally *higher* FPR (0.24 vs 0.22), both within noise. A fair,
+best-effort corroborative verifier is indistinguishable from the adversarial
+verifier at the pipeline level on this battery.
+
+**Reconciliation with EXP-38, and the real finding.** EXP-38 found the
+corroborative stance much worse at the verifier's *isolated* job (Youden J 0.16
+vs disprove's 0.41 on frozen candidates). EXP-40 finds that difference washes
+out end to end. Both are true and together they locate the effect precisely:
+**the verifier's stance governs its own discrimination but is not the binding
+system-level precision control.** That control is the D37 confidence floor and
+the researcher's evidence quality (consistent with D45 / VERIFIER_FINDINGS: the
+verifier verdict is decision-relevant on few pairs, and the floor is the binding
+gate). So the §2.5 claim needs reframing away from "adversarial beats
+corroborative for the system" toward "adversarial framing sharpens the
+verifier's own discrimination, but system precision is set upstream (retrieval,
+floor), not by the verifier's stance." This is a negative result on the
+headline prediction and is reported as such (R12); it does not change production
+(trio stays, D45).
+
+Secondary ladder (adversarial side, replays): the Adjudicator earns its place
+(trio 0.47/0.73 vs no_adjudicator 0.39/0.69 at flat FPR -- it rescues correct
+commits); the Verifier loop lifts coverage 0.24 -> 0.39 but also raises FPR
+0.13 -> 0.22 (it drives more commits, some wrong).
+
+Limitations: dev battery (MT/NL/AL), burned; balanced accuracy is low and J
+negative for every arm because abstention is high on this thin-web set and
+counts against recall -- the between-arm comparison, not the absolute level, is
+the result. 1 agent_failure (AL) excluded. PT17:AL required a manual single-pair
+resume (slow AL search); it abstained.
+
 ## Open item flagged to Benjy
 
 The corroborate Verifier runs a supporting-search. The EXP-36 audit found the

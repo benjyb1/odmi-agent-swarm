@@ -1,0 +1,397 @@
+{
+  "arms": {
+    "trio": {
+      "n_pairs": 156,
+      "three_outcome": {
+        "n": 156,
+        "n_committed": 73,
+        "n_abstained": 83,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 73,
+          "n": 156,
+          "rate": 0.46794871794871795,
+          "wilson_95": [
+            0.3913617968046755,
+            0.5460762116207998
+          ]
+        },
+        "abstention_rate": {
+          "successes": 83,
+          "n": 156,
+          "rate": 0.532051282051282,
+          "wilson_95": [
+            0.45392378837920017,
+            0.6086382031953245
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 53,
+          "n": 73,
+          "rate": 0.726027397260274,
+          "wilson_95": [
+            0.6143701175830995,
+            0.815085550053351
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 78,
+          "n_committed": 36,
+          "false_positives": 17,
+          "fp_rate": {
+            "successes": 17,
+            "n": 78,
+            "rate": 0.21794871794871795,
+            "wilson_95": [
+              0.1407681204113414,
+              0.3216070542981015
+            ]
+          }
+        }
+      },
+      "balance_aware": {
+        "n_binary_gold_pairs": 154,
+        "n_yes_gold": 76,
+        "n_no_gold": 78,
+        "n_committed": 71,
+        "per_class_recall": {
+          "yes": {
+            "successes": 32,
+            "n": 76,
+            "rate": 0.42105263157894735,
+            "wilson_95": [
+              0.3164861911803876,
+              0.5332159538298973
+            ]
+          },
+          "no": {
+            "successes": 19,
+            "n": 78,
+            "rate": 0.24358974358974358,
+            "wilson_95": [
+              0.16185238513667283,
+              0.34939777369009345
+            ]
+          }
+        },
+        "balanced_accuracy": 0.3323211875843455,
+        "youden_j": -0.33535762483130904,
+        "majority_class": "no",
+        "majority_baseline_accuracy": 0.5064935064935064,
+        "majority_baseline_youden_j": 0.0,
+        "raw_accuracy": {
+          "successes": 51,
+          "n": 154,
+          "rate": 0.33116883116883117,
+          "wilson_95": [
+            0.26174182675589514,
+            0.4088136762880084
+          ]
+        },
+        "beats_majority_baseline": false
+      }
+    },
+    "no_adjudicator": {
+      "n_pairs": 156,
+      "three_outcome": {
+        "n": 156,
+        "n_committed": 61,
+        "n_abstained": 95,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 61,
+          "n": 156,
+          "rate": 0.391025641025641,
+          "wilson_95": [
+            0.31794989228667325,
+            0.46933933635994274
+          ]
+        },
+        "abstention_rate": {
+          "successes": 95,
+          "n": 156,
+          "rate": 0.6089743589743589,
+          "wilson_95": [
+            0.5306606636400572,
+            0.6820501077133266
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 42,
+          "n": 61,
+          "rate": 0.6885245901639344,
+          "wilson_95": [
+            0.5640856563035855,
+            0.7906256721938473
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 78,
+          "n_committed": 28,
+          "false_positives": 17,
+          "fp_rate": {
+            "successes": 17,
+            "n": 78,
+            "rate": 0.21794871794871795,
+            "wilson_95": [
+              0.1407681204113414,
+              0.3216070542981015
+            ]
+          }
+        }
+      },
+      "balance_aware": {
+        "n_binary_gold_pairs": 154,
+        "n_yes_gold": 76,
+        "n_no_gold": 78,
+        "n_committed": 59,
+        "per_class_recall": {
+          "yes": {
+            "successes": 29,
+            "n": 76,
+            "rate": 0.3815789473684211,
+            "wilson_95": [
+              0.28057076752897386,
+              0.4939824499864535
+            ]
+          },
+          "no": {
+            "successes": 11,
+            "n": 78,
+            "rate": 0.14102564102564102,
+            "wilson_95": [
+              0.08061044056387122,
+              0.23513978179360157
+            ]
+          }
+        },
+        "balanced_accuracy": 0.26130229419703105,
+        "youden_j": -0.4773954116059379,
+        "majority_class": "no",
+        "majority_baseline_accuracy": 0.5064935064935064,
+        "majority_baseline_youden_j": 0.0,
+        "raw_accuracy": {
+          "successes": 40,
+          "n": 154,
+          "rate": 0.2597402597402597,
+          "wilson_95": [
+            0.19693131889166893,
+            0.3342438200554245
+          ]
+        },
+        "beats_majority_baseline": false
+      }
+    },
+    "researcher_only": {
+      "n_pairs": 156,
+      "three_outcome": {
+        "n": 156,
+        "n_committed": 37,
+        "n_abstained": 119,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 37,
+          "n": 156,
+          "rate": 0.23717948717948717,
+          "wilson_95": [
+            0.1772533749752504,
+            0.3097382941136471
+          ]
+        },
+        "abstention_rate": {
+          "successes": 119,
+          "n": 156,
+          "rate": 0.7628205128205128,
+          "wilson_95": [
+            0.6902617058863527,
+            0.8227466250247495
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 24,
+          "n": 37,
+          "rate": 0.6486486486486487,
+          "wilson_95": [
+            0.4875902312255084,
+            0.7817439286607287
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 78,
+          "n_committed": 13,
+          "false_positives": 10,
+          "fp_rate": {
+            "successes": 10,
+            "n": 78,
+            "rate": 0.1282051282051282,
+            "wilson_95": [
+              0.0711532263123448,
+              0.22015950398646625
+            ]
+          }
+        }
+      },
+      "balance_aware": {
+        "n_binary_gold_pairs": 154,
+        "n_yes_gold": 76,
+        "n_no_gold": 78,
+        "n_committed": 36,
+        "per_class_recall": {
+          "yes": {
+            "successes": 20,
+            "n": 76,
+            "rate": 0.2631578947368421,
+            "wilson_95": [
+              0.17729398962172488,
+              0.37181244540912967
+            ]
+          },
+          "no": {
+            "successes": 3,
+            "n": 78,
+            "rate": 0.038461538461538464,
+            "wilson_95": [
+              0.013165825413161046,
+              0.10708446047501827
+            ]
+          }
+        },
+        "balanced_accuracy": 0.1508097165991903,
+        "youden_j": -0.6983805668016194,
+        "majority_class": "no",
+        "majority_baseline_accuracy": 0.5064935064935064,
+        "majority_baseline_youden_j": 0.0,
+        "raw_accuracy": {
+          "successes": 23,
+          "n": 154,
+          "rate": 0.14935064935064934,
+          "wilson_95": [
+            0.10162818388836428,
+            0.21414093781820445
+          ]
+        },
+        "beats_majority_baseline": false
+      }
+    },
+    "cooperative": {
+      "n_pairs": 156,
+      "three_outcome": {
+        "n": 156,
+        "n_committed": 63,
+        "n_abstained": 93,
+        "n_failed": 0,
+        "coverage": {
+          "successes": 63,
+          "n": 156,
+          "rate": 0.40384615384615385,
+          "wilson_95": [
+            0.33005592876330575,
+            0.48225809651312007
+          ]
+        },
+        "abstention_rate": {
+          "successes": 93,
+          "n": 156,
+          "rate": 0.5961538461538461,
+          "wilson_95": [
+            0.5177419034868799,
+            0.6699440712366941
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 41,
+          "n": 63,
+          "rate": 0.6507936507936508,
+          "wilson_95": [
+            0.527514607736618,
+            0.7567401098476967
+          ]
+        },
+        "n_near_match": 0,
+        "n_committed_unscoreable": {
+          "flag_review": 0,
+          "no_ground_truth": 0
+        },
+        "negative_golds": {
+          "n": 78,
+          "n_committed": 27,
+          "false_positives": 19,
+          "fp_rate": {
+            "successes": 19,
+            "n": 78,
+            "rate": 0.24358974358974358,
+            "wilson_95": [
+              0.16185238513667283,
+              0.34939777369009345
+            ]
+          }
+        }
+      },
+      "balance_aware": {
+        "n_binary_gold_pairs": 154,
+        "n_yes_gold": 76,
+        "n_no_gold": 78,
+        "n_committed": 62,
+        "per_class_recall": {
+          "yes": {
+            "successes": 32,
+            "n": 76,
+            "rate": 0.42105263157894735,
+            "wilson_95": [
+              0.3164861911803876,
+              0.5332159538298973
+            ]
+          },
+          "no": {
+            "successes": 8,
+            "n": 78,
+            "rate": 0.10256410256410256,
+            "wilson_95": [
+              0.05289334765746387,
+              0.18954439852402385
+            ]
+          }
+        },
+        "balanced_accuracy": 0.26180836707152494,
+        "youden_j": -0.4763832658569501,
+        "majority_class": "no",
+        "majority_baseline_accuracy": 0.5064935064935064,
+        "majority_baseline_youden_j": 0.0,
+        "raw_accuracy": {
+          "successes": 40,
+          "n": 154,
+          "rate": 0.2597402597402597,
+          "wilson_95": [
+            0.19693131889166893,
+            0.3342438200554245
+          ]
+        },
+        "beats_majority_baseline": false
+      }
+    }
+  },
+  "primary_contrast": {
+    "description": "no_adjudicator vs cooperative: one variable (verifier stance), neither has an adjudicator",
+    "mcnemar_committed_correctness": {
+      "n_shared_binary": 154,
+      "a_correct_not_b": 8,
+      "b_correct_not_a": 8,
+      "mcnemar_p": 1.0
+    }
+  }
+}
