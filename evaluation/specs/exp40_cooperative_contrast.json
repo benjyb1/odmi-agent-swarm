@@ -1,7 +1,7 @@
 {
   "run_id": "exp40_cooperative_contrast",
   "global_parallel": 6,
-  "budget_calls": 9000,
+  "budget_calls": 12000,
   "experiments": [
     {
       "experiment_id": "exp40_cooperative_contrast",

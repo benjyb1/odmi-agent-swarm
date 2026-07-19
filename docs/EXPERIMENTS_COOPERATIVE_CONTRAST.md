@@ -251,9 +251,19 @@ Built and unit-tested; dispatch gated on Benjy's review.
 **Dispatch precondition (operational).** The seed reads exp34 wide_only
 Researcher rows, which live in the canonical DB, not a fresh worktree copy.
 Before dispatch the run DB must be synced from canonical and then migrated
-(`migrate_corroborate_strategy_label.py`). 139 of the 156 pairs have a clean
-attempt-1 seed row; the other 17 (8 agent_failure + a few inconclusive
-attempt-1s) fall back to a live attempt 1, disclosed.
+(`migrate_corroborate_strategy_label.py`, both CHECKs).
+
+**Seed coverage (corrected 2026-07-16 at dispatch).** Only **48 of the 156**
+pairs have a committable exp34 attempt-1 to seed; the other **108** run a live
+attempt 1. The seed query requires a non-inconclusive attempt-1 answer, and on
+this thin-web dev battery exp34's Researcher abstained on the first attempt for
+most pairs, so there is nothing to reuse there and the cooperative arm
+generates its own attempt 1 (correct behaviour, not a fault). The earlier
+"139" figure counted all retry_count=0 rows including inconclusive ones and was
+wrong. Consequence: more live compute and attempt-1 pairing on 48 pairs rather
+than 139; the stance contrast (no_adjudicator vs cooperative) is unaffected
+since both diverge after attempt 1 regardless. Budget raised 9k -> 12k for the
+extra live attempt-1s; the orchestrator budget-pause remains the guard.
 
 ## Open item flagged to Benjy
 

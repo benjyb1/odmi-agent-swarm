@@ -72,16 +72,17 @@ def _index_sqls(conn: sqlite3.Connection, table: str) -> list[str]:
 
 
 def _inject(ddl: str, anchor: str, new_label: str) -> str:
-    """Insert `<indent>new_label,` on the line after the anchor line."""
-    lines = ddl.splitlines()
-    for i, line in enumerate(lines):
-        if anchor in line and ("CHECK" in ddl):
-            indent = line[: len(line) - len(line.lstrip())]
-            # the anchor line ends with a comma already (it is mid-list);
-            # the new line carries the same and a trailing comma.
-            lines.insert(i + 1, f"{indent}{new_label},")
-            return "\n".join(lines)
-    raise SystemExit(f"anchor {anchor!r} not found for injection")
+    """Append `new_label` to a CHECK IN-list, right after the anchor label.
+
+    Replaces the quoted anchor token (e.g. `'verifier-blind'`) with
+    `<anchor>, <new_label>`. This keeps the list valid whether the anchor was
+    the last item (no trailing comma: the new label becomes the new last item)
+    or mid-list (its trailing comma stays after the new label). The anchor
+    token appears once in the CHECK, so a single replacement is unambiguous.
+    """
+    if anchor not in ddl:
+        raise SystemExit(f"anchor {anchor!r} not found for injection")
+    return ddl.replace(anchor, f"{anchor}, {new_label}", 1)
 
 
 def _migrate_table(conn: sqlite3.Connection, table: str, cfg: dict) -> str:
