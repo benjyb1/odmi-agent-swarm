@@ -13,14 +13,46 @@ parses a single format regardless of whether the portal served Turtle
 
 from __future__ import annotations
 
+import sys
 import time
 from typing import Callable, Iterator, Optional
 
+import httpx
 from rdflib import BNode, Graph, URIRef
 from rdflib.compare import to_canonical_graph
 from rdflib.namespace import RDF
 
 from agents.tools.catalogue._fetch import fetch_bytes
+
+# Deep pagination on some Hydra feeds (data.gouv.fr past ~page 200) degrades
+# badly: pages balloon to several MB and the server intermittently stalls,
+# tripping the read timeout. A single stall used to abort the whole harvest as
+# "partial" (FR truncated at 19,700 of ~74k). Retry a stalled page a few times
+# with a longer per-attempt timeout before giving up.
+_PAGE_FETCH_RETRIES = 7
+_PAGE_FETCH_TIMEOUT_S = 120.0
+# Exponential backoff (seconds) so a transient network/DNS blip or a
+# momentarily overloaded server has time to recover before the harvest gives
+# up and truncates. Total patience per page ~2 minutes.
+_PAGE_FETCH_BACKOFF = (2.0, 4.0, 8.0, 16.0, 32.0, 60.0)
+
+
+def _fetch_page(fetcher: "BytesFetcher", url: str) -> bytes:
+    last_exc: Optional[Exception] = None
+    for attempt in range(_PAGE_FETCH_RETRIES):
+        try:
+            return fetcher(url, timeout_s=_PAGE_FETCH_TIMEOUT_S)
+        except (httpx.TimeoutException, httpx.TransportError, OSError) as exc:
+            last_exc = exc
+            print(
+                f"[harvest] page fetch stalled (attempt "
+                f"{attempt + 1}/{_PAGE_FETCH_RETRIES}) {type(exc).__name__}: {url}",
+                file=sys.stderr,
+            )
+            if attempt < len(_PAGE_FETCH_BACKOFF):
+                time.sleep(_PAGE_FETCH_BACKOFF[attempt])
+    assert last_exc is not None
+    raise last_exc
 from agents.tools.catalogue.model import Distribution, HarvestedDataset
 from agents.tools.catalogue.registry import PortalConfig
 
@@ -107,17 +139,80 @@ def _normalise_dataset(graph: Graph, dataset: URIRef) -> HarvestedDataset:
     )
 
 
+# rdflib's N-Triples writer raises on a URIRef that carries characters
+# illegal in an IRI (a space, angle brackets, control chars). Some national
+# feeds emit them: Croatia's, for one, publishes a malformed accessURL
+# ("http:// http://servisi.azo.hr/...") with an embedded space. A single
+# such triple aborts the serialisation of its whole page, which
+# harvest_country catches as a partial harvest, silently truncating the
+# catalogue at that page (HR stopped at 1,400 of 3,867). The offending
+# terms are unusable to any metric anyway, so drop the individual triples
+# (never the datasets) before serialising. Deterministic: the same
+# malformed triples drop on every run, so content_sha256 stays reproducible.
+_ILLEGAL_URI_CHARS = frozenset('<>" {}|\\^`')
+
+
+def _uri_serialisable(term: object) -> bool:
+    """False for a URIRef that the N-Triples writer would reject."""
+    if not isinstance(term, URIRef):
+        return True
+    u = str(term)
+    return bool(u) and not any(c in _ILLEGAL_URI_CHARS or ord(c) < 0x21 for c in u)
+
+
+def _drop_unserialisable(page: Graph) -> tuple[Graph, int]:
+    """Copy of `page` without triples carrying a malformed IRI term."""
+    clean = Graph()
+    dropped = 0
+    for triple in page:
+        s, p, o = triple
+        if _uri_serialisable(s) and _uri_serialisable(p) and _uri_serialisable(o):
+            clean.add(triple)
+        else:
+            dropped += 1
+    return (page, 0) if dropped == 0 else (clean, dropped)
+
+
+# rdflib's blank-node canonicalisation (to_canonical_graph) is worst-case
+# exponential in the number of blank nodes on a page. Sweden's EntryScape feed
+# carries ~230 bnodes per 100-dataset page, where canonicalisation takes ~110s
+# PER PAGE (a 233-page harvest would need ~7h of pure CPU) — this is the real
+# cause of the long-observed "SE SPARQL hang". Above this many bnodes we skip
+# canonicalisation: blank-node labels are then not stable across re-harvests,
+# so content_sha256 is not cross-run reproducible for that page, but the data
+# is complete and replays identically. Feeds with few bnodes (FR, DE, HU, RO)
+# stay canonical and reproducible.
+_MAX_BNODES_FOR_CANON = 40
+
+
 def _canonical_turtle_bytes(page: Graph) -> bytes:
-    """Serialise a page deterministically so the snapshot hash reproduces.
+    """Serialise a page deterministically for the snapshot cache.
 
     rdflib's Turtle writer is non-deterministic (blank-node ids and triple
     order vary run to run), so hashing its output makes content_sha256
     irreproducible. Canonicalise the blank nodes, emit N-Triples (which is
-    valid Turtle, so the replay path still parses it as Turtle), and sort
-    the lines for a stable byte sequence.
+    valid Turtle, so the replay path still parses it as Turtle), and sort the
+    lines for a stable byte sequence.
+
+    Two guards keep this robust on messy real feeds: malformed-IRI triples are
+    dropped first (`_drop_unserialisable`), and canonicalisation is skipped for
+    blank-node-heavy pages where it would be pathologically slow (see
+    `_MAX_BNODES_FOR_CANON`).
     """
-    canon = to_canonical_graph(page)
-    nt = canon.serialize(format="nt")
+    clean, dropped = _drop_unserialisable(page)
+    if dropped:
+        print(
+            f"[harvest] dropped {dropped} triple(s) with malformed IRIs "
+            f"before serialising a page",
+            file=sys.stderr,
+        )
+    n_bnodes = len({t for s, p, o in clean for t in (s, p, o) if isinstance(t, BNode)})
+    if n_bnodes <= _MAX_BNODES_FOR_CANON:
+        to_serialise = to_canonical_graph(clean)
+    else:
+        # Skip the exponential canonicaliser; the data is unaffected.
+        to_serialise = clean
+    nt = to_serialise.serialize(format="nt")
     lines = sorted(line for line in nt.splitlines() if line.strip())
     return ("\n".join(lines) + "\n").encode("utf-8")
 
@@ -161,7 +256,7 @@ def harvest(
         url = config.dcat_catalog_url.format(
             page=page_idx + 1, page_size=config.page_size
         )
-        raw = fetcher(url)
+        raw = _fetch_page(fetcher, url)
         page = Graph()
         page.parse(data=raw, format=rdf_format)
 
