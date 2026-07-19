@@ -21,10 +21,11 @@ import sys
 
 def _git(*args: str) -> tuple[int, str]:
     p = subprocess.run(["git", *args], capture_output=True, text=True)
-    # rstrip only: a full strip() would eat the leading status column of
-    # the first `git status --porcelain` line (" M path" -> "M path"), which
-    # made the DB allowance below misread the first dirty entry and abort
-    # every resume of a run that had legitimately written to the DB.
+    # rstrip only: porcelain status lines are fixed-column (XY<space>path), so
+    # a blanket .strip() would eat the leading space off an unstaged-modified
+    # first line ("M path" instead of " M path"), shift every column left by
+    # one, and make the DB allowance below misread the first dirty entry and
+    # abort every resume of a run that had legitimately written to the DB.
     return p.returncode, (p.stdout + p.stderr).rstrip("\n")
 
 

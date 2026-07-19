@@ -170,25 +170,36 @@ uv run pytest
 - Commit small and often. Five weeks without a commit is why we are
   reverse-engineering state today.
 
-## Branch isolation per window (mandatory)
+## Finished work lands on main (mandatory)
 
-Benjy runs several Claude instances against this repo at the same time, each on
-its own branch, merged later. They share one folder, and a folder holds one
-branch, so a plain `git checkout -b` in the main checkout drags every other
-window onto the new branch. The isolation unit is therefore a git worktree, not
-a branch.
+When Benjy says "commit", "push", or "commit and push this work", he means the
+change must end up on `origin/main`. A task is not done until its work is merged
+into `main` and pushed. Never leave finished work sitting on a worktree branch
+and report it complete. That is the failure that left main dozens of commits
+behind, with a pile of orphaned branches and worktrees to reverse-engineer.
 
-- At the start of any task that will change files, if this session is not
-  already in a worktree, call `EnterWorktree` before editing anything. It makes
-  an isolated worktree under `.claude/worktrees/` on a fresh branch off
-  `origin/main` (the `worktree.baseRef=fresh` default), so concurrent windows
-  never collide.
-- Read-only work is exempt: questions, reviews, searches, explanations, status
-  checks. No worktree needed for those.
+Worktrees are scaffolding, not a destination. Benjy runs several Claude windows
+against this one repo folder at once. If two windows both worked directly on
+`main` in the shared folder they would overwrite each other, and a branch switch
+in one would drag the others onto it. So each window works in its own worktree to
+stay isolated, then lands the result on main. The isolation buys a clean merge;
+it is not a place for work to live.
+
+Workflow for any task that changes files:
+
+- If this session is not already in a worktree, call `EnterWorktree` before
+  editing. It makes an isolated worktree under `.claude/worktrees/` on a fresh
+  branch off `origin/main` (the `worktree.baseRef=fresh` default).
+- Do the work there and commit small and often on the branch.
+- To finish, land it on `origin/main`: merge the branch (push straight to main,
+  or open and merge a PR), then remove the worktree (`ExitWorktree` or
+  `git worktree remove`). Only call the task done once the work is on
+  `origin/main`.
+- Keep local `main` current with `git pull --ff-only` so new worktrees branch
+  off the live trunk, and prune stale worktrees and merged branches periodically.
+- Read-only work is exempt: questions, reviews, searches, status checks.
 - Never run `git checkout -b` for new work in the main checkout. It switches the
-  shared folder and disrupts other running instances.
-- When the work is done, merge the branch back and let the worktree be removed
-  (`ExitWorktree`, or `git worktree remove`). Prune stale ones periodically.
+  shared folder under other running windows.
 
 ## Current status
 
