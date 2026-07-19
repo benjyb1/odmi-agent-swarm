@@ -23,10 +23,10 @@ source; provisional and superseded items are flagged inline. Assembled
 
 ## 1. Evaluation design: development and held-out sets (D47)
 
-**The finding that forces the design.** A country's ODMI score is almost exactly
-its share of `yes` answers: Pearson r = 0.98 between the weighted ODMI score
-(sum `awarded_score` / sum `max_score`) and the binary yes-share across the 36
-countries (France 100% score / 99% yes; Bosnia 15% / 15%). Two consequences:
+**The design rationale.** A country's ODMI score is dominated by its share of
+`yes` answers: high-maturity countries answer `yes` to almost everything, while
+negative golds (`no` answers) are rare and cluster in the low-maturity tail. Two
+consequences:
 
 1. Guessing `yes` on every question reproduces the ODMI ranking, so naive
    accuracy on a high-maturity country measures nothing. The swarm's
@@ -36,8 +36,8 @@ countries (France 100% score / 99% yes; Bosnia 15% / 15%). Two consequences:
    (Bosnia) to 0% (Lithuania); the usable negative-gold counts sit in the Western
    Balkans and accession states.
 
-So maturity and base-rate balance are one axis, not two, and the binding property
-of an evaluation set is negative-gold density, not grid coverage.
+So the binding property of an evaluation set is negative-gold density, not grid
+coverage.
 
 **Why stratified, not random.** The quantity that carries the dissertation (the
 false-positive and true-negative rates) is a rare-event quantity concentrated in
