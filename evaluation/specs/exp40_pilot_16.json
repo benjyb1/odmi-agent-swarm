@@ -1,0 +1,49 @@
+{
+  "run_id": "exp40_pilot_16",
+  "global_parallel": 6,
+  "budget_calls": 2000,
+  "experiments": [
+    {
+      "experiment_id": "exp40_cooperative_contrast",
+      "type": "accuracy",
+      "pairs": [
+        "I14:MT",
+        "I8-d:MT",
+        "PT26:MT",
+        "I1:MT",
+        "P5:MT",
+        "PT45:MT",
+        "I12:NL",
+        "P5:NL",
+        "PT4:NL",
+        "I8:NL",
+        "PT23:NL",
+        "I10:AL",
+        "P15:AL",
+        "PT43:AL",
+        "I8-d:AL",
+        "PT34:AL"
+      ],
+      "baseline_knobs": {
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "provider": "diy",
+        "search_strategy": "wide_only",
+        "verifier_search": "always",
+        "no_cache": true,
+        "seed_experiment_id": "exp34_retrieval_strategy_s46",
+        "seed_condition_label": "wide_only"
+      },
+      "arms": [
+        {
+          "condition_label": "cooperative_s46",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    }
+  ]
+}
