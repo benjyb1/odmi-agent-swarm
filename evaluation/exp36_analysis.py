@@ -39,8 +39,14 @@ unit-testable without a database:
   everywhere else in the project.
 
 Canonical-row rule (docs/EXPERIMENT_RUNBOOK.md): the reported row for a pair
-is the latest `phase2_final` per (question_id, country_code, condition_label)
-within the experiment; earlier duplicates are superseded, never summed.
+is the latest `phase2_final` within the experiment; earlier duplicates are
+superseded, never summed. What counts as a pair depends on the design. A
+multi-arm experiment keys on (question_id, country_code, condition_label) so
+each arm keeps its own row. EXP-36 is single-arm, and its `condition_label`
+varies only because infra re-runs wrote finals whose researcher row carried no
+label ('unlabelled'), so keying on the label there counts a re-run pair twice.
+This script therefore keys on (question_id, country_code) unless
+`--scope-by-label` is passed.
 
 Usage:
     uv run python evaluation/exp36_analysis.py \
@@ -187,17 +193,31 @@ def decision_class(decision: Optional[str]) -> str:
     return d if d in ("confirm", "complement", "change") else "unknown"
 
 
-def dedup_canonical(rows: list[PairRow]) -> tuple[list[PairRow], int]:
+def dedup_canonical(rows: list[PairRow],
+                    scope_by_label: bool = True) -> tuple[list[PairRow], int]:
     """Canonical-row rule (docs/EXPERIMENT_RUNBOOK.md): keep the latest
-    `phase2_final` (highest id) per (question_id, country_code,
-    condition_label); earlier duplicates are superseded, never summed.
+    `phase2_final` (highest id) per pair; earlier duplicates are superseded,
+    never summed.
+
+    `scope_by_label` decides what a pair is. Set (the default, and the rule
+    for a multi-arm experiment) the key is (question_id, country_code,
+    condition_label), so each arm keeps its own row. A single-arm run has no
+    arms to separate: its `condition_label` differs only where an infra
+    re-run wrote a final whose researcher row carried no label, so scoping by
+    label keeps both the superseded row and the re-run and counts the pair
+    twice. Clear it to key on (question_id, country_code) alone, which is the
+    correct unit for EXP-36.
 
     Returns (canonical rows, count of superseded duplicates). Order of the
     returned rows is deterministic: sorted by (country, question, label).
     """
-    canon: dict[tuple[str, str, str], PairRow] = {}
+    canon: dict[tuple[str, ...], PairRow] = {}
     for row in rows:
-        key = (row.question_id, row.country_code, row.condition_label)
+        key = (
+            (row.question_id, row.country_code, row.condition_label)
+            if scope_by_label
+            else (row.question_id, row.country_code)
+        )
         held = canon.get(key)
         if held is None or row.row_id > held.row_id:
             canon[key] = row
@@ -756,6 +776,13 @@ def main() -> int:
         help="Where to write the result JSON. Default: "
              "evaluation/results/exp36_analysis_<experiment_id>.json",
     )
+    parser.add_argument(
+        "--scope-by-label", action="store_true",
+        help="Treat condition_label as an experimental arm, keeping one "
+             "canonical row per (question, country, label). Off by default: "
+             "EXP-36 is single-arm and its labels differ only across infra "
+             "re-runs, so the canonical unit is (question, country).",
+    )
     args = parser.parse_args()
 
     if not args.db.exists():
@@ -774,7 +801,9 @@ def main() -> int:
     finally:
         conn.close()
 
-    canonical, _n_superseded = dedup_canonical(raw)
+    canonical, _n_superseded = dedup_canonical(
+        raw, scope_by_label=args.scope_by_label
+    )
     report = analyse(canonical, n_raw=len(raw))
     report["experiment_id"] = args.experiment_id
     report["db_path"] = str(args.db)

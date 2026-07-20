@@ -1,17 +1,17 @@
 {
   "row_counts": {
-    "raw_final_rows": 1148,
-    "canonical_pairs": 1146,
-    "superseded_duplicates": 2,
+    "raw_final_rows": 1151,
+    "canonical_pairs": 1144,
+    "superseded_duplicates": 7,
     "by_country_canonical": {
       "BA": 143,
       "BE": 143,
-      "BG": 142,
-      "FI": 144,
+      "BG": 143,
+      "FI": 143,
       "HR": 143,
       "ME": 143,
-      "MK": 144,
-      "SE": 144
+      "MK": 143,
+      "SE": 143
     },
     "condition_labels": [
       "BA",
@@ -21,25 +21,24 @@
       "HR",
       "ME",
       "MK",
-      "SE",
-      "unlabelled"
+      "SE"
     ],
     "questions_in_bank": 143
   },
   "headline": {
     "binary_balance_aware": {
-      "n_binary_gold_pairs": 909,
-      "n_yes_gold": 541,
+      "n_binary_gold_pairs": 907,
+      "n_yes_gold": 539,
       "n_no_gold": 368,
-      "n_committed": 527,
+      "n_committed": 523,
       "per_class_recall": {
         "yes": {
-          "successes": 298,
-          "n": 541,
-          "rate": 0.5508317929759704,
+          "successes": 295,
+          "n": 539,
+          "rate": 0.5473098330241187,
           "wilson_95": [
-            0.5087054628572504,
-            0.5922413338844056
+            0.5051012173430929,
+            0.588848865450502
           ]
         },
         "no": {
@@ -52,52 +51,52 @@
           ]
         }
       },
-      "balanced_accuracy": 0.39769850518363736,
-      "youden_j": -0.20460298963272527,
+      "balanced_accuracy": 0.3959375252077115,
+      "youden_j": -0.20812494958457695,
       "majority_class": "yes",
-      "majority_baseline_accuracy": 0.5951595159515951,
+      "majority_baseline_accuracy": 0.5942668136714443,
       "majority_baseline_youden_j": 0.0,
       "raw_accuracy": {
-        "successes": 388,
-        "n": 909,
-        "rate": 0.42684268426842686,
+        "successes": 385,
+        "n": 907,
+        "rate": 0.4244762954796031,
         "wilson_95": [
-          0.3950626518562685,
-          0.4592384442269181
+          0.392694713891858,
+          0.45689491702219825
         ]
       },
       "beats_majority_baseline": false
     },
     "three_outcome": {
-      "n": 1146,
-      "n_committed": 640,
-      "n_abstained": 506,
+      "n": 1144,
+      "n_committed": 636,
+      "n_abstained": 508,
       "n_failed": 0,
       "coverage": {
-        "successes": 640,
-        "n": 1146,
-        "rate": 0.5584642233856894,
+        "successes": 636,
+        "n": 1144,
+        "rate": 0.5559440559440559,
         "wilson_95": [
-          0.5295663981776147,
-          0.5869714070754971
+          0.5270125950337099,
+          0.5845010630733154
         ]
       },
       "abstention_rate": {
-        "successes": 506,
-        "n": 1146,
-        "rate": 0.44153577661431065,
+        "successes": 508,
+        "n": 1144,
+        "rate": 0.44405594405594406,
         "wilson_95": [
-          0.4130285929245029,
-          0.47043360182238525
+          0.4154989369266846,
+          0.4729874049662901
         ]
       },
       "commit_accuracy": {
-        "successes": 440,
-        "n": 627,
-        "rate": 0.7017543859649122,
+        "successes": 437,
+        "n": 623,
+        "rate": 0.7014446227929374,
         "wilson_95": [
-          0.6648047376361726,
-          0.7362468997640744
+          0.6643644949163396,
+          0.7360557333056703
         ]
       },
       "n_near_match": 10,
@@ -107,15 +106,15 @@
       },
       "negative_golds": {
         "n": 368,
-        "n_committed": 185,
-        "false_positives": 95,
+        "n_committed": 184,
+        "false_positives": 94,
         "fp_rate": {
-          "successes": 95,
+          "successes": 94,
           "n": 368,
-          "rate": 0.25815217391304346,
+          "rate": 0.2554347826086957,
           "wilson_95": [
-            0.21610059287518407,
-            0.3052007688273756
+            0.21356320638132797,
+            0.3023595189358673
           ]
         }
       }
@@ -124,35 +123,35 @@
   "strata": {
     "by_dimension": {
       "Impact": {
-        "n": 305,
-        "n_committed": 165,
+        "n": 304,
+        "n_committed": 164,
         "n_abstained": 140,
         "n_failed": 0,
         "coverage": {
-          "successes": 165,
-          "n": 305,
-          "rate": 0.5409836065573771,
+          "successes": 164,
+          "n": 304,
+          "rate": 0.5394736842105263,
           "wilson_95": [
-            0.48489561056377795,
-            0.5960520707982454
+            0.48329922437181577,
+            0.5946629841362302
           ]
         },
         "abstention_rate": {
           "successes": 140,
-          "n": 305,
-          "rate": 0.45901639344262296,
+          "n": 304,
+          "rate": 0.4605263157894737,
           "wilson_95": [
-            0.4039479292017546,
-            0.515104389436222
+            0.4053370158637698,
+            0.5167007756281843
           ]
         },
         "commit_accuracy": {
           "successes": 102,
-          "n": 165,
-          "rate": 0.6181818181818182,
+          "n": 164,
+          "rate": 0.6219512195121951,
           "wilson_95": [
-            0.5421620447601734,
-            0.6888238770175881
+            0.545748472106119,
+            0.6925716681086547
           ]
         },
         "n_near_match": 0,
@@ -161,50 +160,50 @@
           "no_ground_truth": 0
         },
         "negative_golds": {
-          "n": 141,
-          "n_committed": 65,
-          "false_positives": 38,
+          "n": 140,
+          "n_committed": 64,
+          "false_positives": 37,
           "fp_rate": {
-            "successes": 38,
-            "n": 141,
-            "rate": 0.2695035460992908,
+            "successes": 37,
+            "n": 140,
+            "rate": 0.2642857142857143,
             "wilson_95": [
-              0.20309943606611555,
-              0.34813402616746714
+              0.19824577409710042,
+              0.34291572036276574
             ]
           }
         }
       },
       "Policy": {
-        "n": 249,
-        "n_committed": 185,
+        "n": 248,
+        "n_committed": 184,
         "n_abstained": 64,
         "n_failed": 0,
         "coverage": {
-          "successes": 185,
-          "n": 249,
-          "rate": 0.7429718875502008,
+          "successes": 184,
+          "n": 248,
+          "rate": 0.7419354838709677,
           "wilson_95": [
-            0.6852898011963386,
-            0.7932709560638413
+            0.6840772356612258,
+            0.7924130156338857
           ]
         },
         "abstention_rate": {
           "successes": 64,
-          "n": 249,
-          "rate": 0.2570281124497992,
+          "n": 248,
+          "rate": 0.25806451612903225,
           "wilson_95": [
-            0.2067290439361586,
-            0.3147101988036613
+            0.20758698436611442,
+            0.3159227643387742
           ]
         },
         "commit_accuracy": {
-          "successes": 121,
-          "n": 176,
-          "rate": 0.6875,
+          "successes": 120,
+          "n": 175,
+          "rate": 0.6857142857142857,
           "wilson_95": [
-            0.6156336459268277,
-            0.7513562596977894
+            0.6135709283262377,
+            0.749879473099803
           ]
         },
         "n_near_match": 1,
@@ -228,35 +227,35 @@
         }
       },
       "Portal": {
-        "n": 362,
-        "n_committed": 191,
+        "n": 360,
+        "n_committed": 189,
         "n_abstained": 171,
         "n_failed": 0,
         "coverage": {
-          "successes": 191,
-          "n": 362,
-          "rate": 0.5276243093922652,
+          "successes": 189,
+          "n": 360,
+          "rate": 0.525,
           "wilson_95": [
-            0.4761761007889878,
-            0.5784923888471264
+            0.4734234272554293,
+            0.576048669900136
           ]
         },
         "abstention_rate": {
           "successes": 171,
-          "n": 362,
-          "rate": 0.4723756906077348,
+          "n": 360,
+          "rate": 0.475,
           "wilson_95": [
-            0.42150761115287355,
-            0.5238238992110121
+            0.42395133009986397,
+            0.5265765727445707
           ]
         },
         "commit_accuracy": {
-          "successes": 147,
-          "n": 187,
-          "rate": 0.786096256684492,
+          "successes": 145,
+          "n": 185,
+          "rate": 0.7837837837837838,
           "wilson_95": [
-            0.7218750790934929,
-            0.8387997379049053
+            0.7190138726701125,
+            0.8370080975885372
           ]
         },
         "n_near_match": 0,
@@ -280,26 +279,26 @@
         }
       },
       "Quality": {
-        "n": 230,
+        "n": 232,
         "n_committed": 99,
-        "n_abstained": 131,
+        "n_abstained": 133,
         "n_failed": 0,
         "coverage": {
           "successes": 99,
-          "n": 230,
-          "rate": 0.43043478260869567,
+          "n": 232,
+          "rate": 0.4267241379310345,
           "wilson_95": [
-            0.36810543269226353,
-            0.4950497145541575
+            0.36478254981402247,
+            0.4910528059795932
           ]
         },
         "abstention_rate": {
-          "successes": 131,
-          "n": 230,
-          "rate": 0.5695652173913044,
+          "successes": 133,
+          "n": 232,
+          "rate": 0.5732758620689655,
           "wilson_95": [
-            0.5049502854458425,
-            0.6318945673077365
+            0.5089471940204067,
+            0.6352174501859775
           ]
         },
         "commit_accuracy": {
@@ -317,16 +316,16 @@
           "no_ground_truth": 0
         },
         "negative_golds": {
-          "n": 47,
+          "n": 48,
           "n_committed": 18,
           "false_positives": 9,
           "fp_rate": {
             "successes": 9,
-            "n": 47,
-            "rate": 0.19148936170212766,
+            "n": 48,
+            "rate": 0.1875,
             "wilson_95": [
-              0.10415932698542263,
-              0.32544004579661767
+              0.10191390954847651,
+              0.3193986714928469
             ]
           }
         }
@@ -335,34 +334,34 @@
     "by_resource_stratum": {
       "A": {
         "n": 572,
-        "n_committed": 274,
-        "n_abstained": 298,
+        "n_committed": 273,
+        "n_abstained": 299,
         "n_failed": 0,
         "coverage": {
-          "successes": 274,
+          "successes": 273,
           "n": 572,
-          "rate": 0.479020979020979,
+          "rate": 0.4772727272727273,
           "wilson_95": [
-            0.4383584503423075,
-            0.5199634112875388
+            0.4366280663718566,
+            0.5182206170604771
           ]
         },
         "abstention_rate": {
-          "successes": 298,
+          "successes": 299,
           "n": 572,
-          "rate": 0.5209790209790209,
+          "rate": 0.5227272727272727,
           "wilson_95": [
-            0.4800365887124611,
-            0.5616415496576923
+            0.48177938293952305,
+            0.5633719336281434
           ]
         },
         "commit_accuracy": {
           "successes": 162,
-          "n": 266,
-          "rate": 0.6090225563909775,
+          "n": 265,
+          "rate": 0.6113207547169811,
           "wilson_95": [
-            0.5492279407552024,
-            0.665713085184552
+            0.5514403779574192,
+            0.668019820848266
           ]
         },
         "n_near_match": 5,
@@ -372,49 +371,49 @@
         },
         "negative_golds": {
           "n": 261,
-          "n_committed": 130,
-          "false_positives": 59,
+          "n_committed": 129,
+          "false_positives": 58,
           "fp_rate": {
-            "successes": 59,
+            "successes": 58,
             "n": 261,
-            "rate": 0.2260536398467433,
+            "rate": 0.2222222222222222,
             "wilson_95": [
-              0.1794955503166162,
-              0.2805587756308351
+              0.17601958377179042,
+              0.2764830544266741
             ]
           }
         }
       },
       "B": {
-        "n": 574,
-        "n_committed": 366,
-        "n_abstained": 208,
+        "n": 572,
+        "n_committed": 363,
+        "n_abstained": 209,
         "n_failed": 0,
         "coverage": {
-          "successes": 366,
-          "n": 574,
-          "rate": 0.6376306620209059,
+          "successes": 363,
+          "n": 572,
+          "rate": 0.6346153846153846,
           "wilson_95": [
-            0.5975124236585677,
-            0.6759189779623184
+            0.5943768283594237,
+            0.6730578928490618
           ]
         },
         "abstention_rate": {
-          "successes": 208,
-          "n": 574,
-          "rate": 0.3623693379790941,
+          "successes": 209,
+          "n": 572,
+          "rate": 0.36538461538461536,
           "wilson_95": [
-            0.3240810220376816,
-            0.4024875763414321
+            0.3269421071509382,
+            0.40562317164057615
           ]
         },
         "commit_accuracy": {
-          "successes": 278,
-          "n": 361,
-          "rate": 0.7700831024930748,
+          "successes": 275,
+          "n": 358,
+          "rate": 0.7681564245810056,
           "wilson_95": [
-            0.7239690398472037,
-            0.8105096913537785
+            0.7217342914217859,
+            0.8088848383643981
           ]
         },
         "n_near_match": 5,
@@ -440,35 +439,35 @@
     },
     "by_decision": {
       "change": {
-        "n": 256,
-        "n_committed": 141,
+        "n": 255,
+        "n_committed": 140,
         "n_abstained": 115,
         "n_failed": 0,
         "coverage": {
-          "successes": 141,
-          "n": 256,
-          "rate": 0.55078125,
+          "successes": 140,
+          "n": 255,
+          "rate": 0.5490196078431373,
           "wilson_95": [
-            0.48954576485209544,
-            0.6105152497296519
+            0.4876694192788937,
+            0.6089147991608506
           ]
         },
         "abstention_rate": {
           "successes": 115,
-          "n": 256,
-          "rate": 0.44921875,
+          "n": 255,
+          "rate": 0.45098039215686275,
           "wilson_95": [
-            0.389484750270348,
-            0.5104542351479046
+            0.3910852008391494,
+            0.5123305807211063
           ]
         },
         "commit_accuracy": {
           "successes": 71,
-          "n": 137,
-          "rate": 0.5182481751824818,
+          "n": 136,
+          "rate": 0.5220588235294118,
           "wilson_95": [
-            0.43522815818198896,
-            0.6002727521455982
+            0.4386608042564525,
+            0.6042449266376543
           ]
         },
         "n_near_match": 1,
@@ -477,50 +476,50 @@
           "no_ground_truth": 0
         },
         "negative_golds": {
-          "n": 125,
-          "n_committed": 77,
-          "false_positives": 45,
+          "n": 124,
+          "n_committed": 76,
+          "false_positives": 44,
           "fp_rate": {
-            "successes": 45,
-            "n": 125,
-            "rate": 0.36,
+            "successes": 44,
+            "n": 124,
+            "rate": 0.3548387096774194,
             "wilson_95": [
-              0.28118686524079173,
-              0.4471614449975396
+              0.2761463969444141,
+              0.4422548139609439
             ]
           }
         }
       },
       "complement": {
-        "n": 174,
-        "n_committed": 114,
+        "n": 173,
+        "n_committed": 113,
         "n_abstained": 60,
         "n_failed": 0,
         "coverage": {
-          "successes": 114,
-          "n": 174,
-          "rate": 0.6551724137931034,
+          "successes": 113,
+          "n": 173,
+          "rate": 0.653179190751445,
           "wilson_95": [
-            0.5818831788464751,
-            0.7217580550822493
+            0.5796233318898995,
+            0.7200801446220116
           ]
         },
         "abstention_rate": {
           "successes": 60,
-          "n": 174,
-          "rate": 0.3448275862068966,
+          "n": 173,
+          "rate": 0.3468208092485549,
           "wilson_95": [
-            0.2782419449177507,
-            0.41811682115352494
+            0.27991985537798836,
+            0.42037666811010044
           ]
         },
         "commit_accuracy": {
-          "successes": 94,
-          "n": 113,
-          "rate": 0.831858407079646,
+          "successes": 93,
+          "n": 112,
+          "rate": 0.8303571428571429,
           "wilson_95": [
-            0.75226276400192,
-            0.8896326792507666
+            0.7501831328022577,
+            0.8886209771713689
           ]
         },
         "n_near_match": 1,
@@ -545,34 +544,34 @@
       },
       "confirm": {
         "n": 716,
-        "n_committed": 385,
-        "n_abstained": 331,
+        "n_committed": 383,
+        "n_abstained": 333,
         "n_failed": 0,
         "coverage": {
-          "successes": 385,
+          "successes": 383,
           "n": 716,
-          "rate": 0.5377094972067039,
+          "rate": 0.5349162011173184,
           "wilson_95": [
-            0.5010859370199722,
-            0.57393058132348
+            0.4982927680431223,
+            0.5711669711637778
           ]
         },
         "abstention_rate": {
-          "successes": 331,
+          "successes": 333,
           "n": 716,
-          "rate": 0.4622905027932961,
+          "rate": 0.4650837988826816,
           "wilson_95": [
-            0.42606941867651993,
-            0.49891406298002783
+            0.42883302883622215,
+            0.5017072319568777
           ]
         },
         "commit_accuracy": {
-          "successes": 275,
-          "n": 377,
-          "rate": 0.7294429708222812,
+          "successes": 273,
+          "n": 375,
+          "rate": 0.728,
           "wilson_95": [
-            0.682451578128925,
-            0.7718056882299117
+            0.6808190378983344,
+            0.7705571143641728
           ]
         },
         "n_near_match": 8,
@@ -581,16 +580,16 @@
           "no_ground_truth": 0
         },
         "negative_golds": {
-          "n": 236,
+          "n": 237,
           "n_committed": 104,
           "false_positives": 47,
           "fp_rate": {
             "successes": 47,
-            "n": 236,
-            "rate": 0.19915254237288135,
+            "n": 237,
+            "rate": 0.19831223628691982,
             "wilson_95": [
-              0.15319977829870354,
-              0.25474244862812884
+              0.15253781683399983,
+              0.2537105894818614
             ]
           }
         }
@@ -598,35 +597,35 @@
     },
     "by_answer_shape": {
       "binary": {
-        "n": 994,
-        "n_committed": 579,
-        "n_abstained": 415,
+        "n": 992,
+        "n_committed": 575,
+        "n_abstained": 417,
         "n_failed": 0,
         "coverage": {
-          "successes": 579,
-          "n": 994,
-          "rate": 0.5824949698189135,
+          "successes": 575,
+          "n": 992,
+          "rate": 0.5796370967741935,
           "wilson_95": [
-            0.5515776488821797,
-            0.6127771176493939
+            0.548670396580886,
+            0.6099893967029851
           ]
         },
         "abstention_rate": {
-          "successes": 415,
-          "n": 994,
-          "rate": 0.41750503018108653,
+          "successes": 417,
+          "n": 992,
+          "rate": 0.42036290322580644,
           "wilson_95": [
-            0.38722288235060615,
-            0.4484223511178202
+            0.3900106032970149,
+            0.45132960341911404
           ]
         },
         "commit_accuracy": {
-          "successes": 410,
-          "n": 567,
-          "rate": 0.7231040564373897,
+          "successes": 407,
+          "n": 563,
+          "rate": 0.7229129662522202,
           "wilson_95": [
-            0.68486498176116,
-            0.7583403882949579
+            0.6845272005221217,
+            0.7582773898869886
           ]
         },
         "n_near_match": 0,
@@ -636,15 +635,15 @@
         },
         "negative_golds": {
           "n": 368,
-          "n_committed": 185,
-          "false_positives": 95,
+          "n_committed": 184,
+          "false_positives": 94,
           "fp_rate": {
-            "successes": 95,
+            "successes": 94,
             "n": 368,
-            "rate": 0.25815217391304346,
+            "rate": 0.2554347826086957,
             "wilson_95": [
-              0.21610059287518407,
-              0.3052007688273756
+              0.21356320638132797,
+              0.3023595189358673
             ]
           }
         }
@@ -964,26 +963,26 @@
         }
       },
       "BG": {
-        "n": 142,
+        "n": 143,
         "n_committed": 61,
-        "n_abstained": 81,
+        "n_abstained": 82,
         "n_failed": 0,
         "coverage": {
           "successes": 61,
-          "n": 142,
-          "rate": 0.4295774647887324,
+          "n": 143,
+          "rate": 0.42657342657342656,
           "wilson_95": [
-            0.35107193412557336,
-            0.5117928495804841
+            0.3484768555230025,
+            0.5085117622103394
           ]
         },
         "abstention_rate": {
-          "successes": 81,
-          "n": 142,
-          "rate": 0.5704225352112676,
+          "successes": 82,
+          "n": 143,
+          "rate": 0.5734265734265734,
           "wilson_95": [
-            0.4882071504195159,
-            0.6489280658744266
+            0.49148823778966044,
+            0.6515231444769974
           ]
         },
         "commit_accuracy": {
@@ -1001,50 +1000,50 @@
           "no_ground_truth": 0
         },
         "negative_golds": {
-          "n": 50,
+          "n": 51,
           "n_committed": 22,
           "false_positives": 10,
           "fp_rate": {
             "successes": 10,
-            "n": 50,
-            "rate": 0.2,
+            "n": 51,
+            "rate": 0.19607843137254902,
             "wilson_95": [
-              0.1124375001577611,
-              0.3303710593222541
+              0.1101534251246669,
+              0.32458079481365604
             ]
           }
         }
       },
       "FI": {
-        "n": 144,
-        "n_committed": 108,
-        "n_abstained": 36,
+        "n": 143,
+        "n_committed": 106,
+        "n_abstained": 37,
         "n_failed": 0,
         "coverage": {
-          "successes": 108,
-          "n": 144,
-          "rate": 0.75,
+          "successes": 106,
+          "n": 143,
+          "rate": 0.7412587412587412,
           "wilson_95": [
-            0.6734032433458373,
-            0.8136049380826443
+            0.6638326864848716,
+            0.8060618552484331
           ]
         },
         "abstention_rate": {
-          "successes": 36,
-          "n": 144,
-          "rate": 0.25,
+          "successes": 37,
+          "n": 143,
+          "rate": 0.25874125874125875,
           "wilson_95": [
-            0.1863950619173557,
-            0.32659675665416266
+            0.1939381447515669,
+            0.3361673135151284
           ]
         },
         "commit_accuracy": {
-          "successes": 86,
-          "n": 107,
-          "rate": 0.8037383177570093,
+          "successes": 84,
+          "n": 105,
+          "rate": 0.8,
           "wilson_95": [
-            0.7185272511729878,
-            0.8678959219931929
+            0.7135226289709666,
+            0.8653009248715675
           ]
         },
         "n_near_match": 1,
@@ -1172,35 +1171,35 @@
         }
       },
       "MK": {
-        "n": 144,
-        "n_committed": 75,
+        "n": 143,
+        "n_committed": 74,
         "n_abstained": 69,
         "n_failed": 0,
         "coverage": {
-          "successes": 75,
-          "n": 144,
-          "rate": 0.5208333333333334,
+          "successes": 74,
+          "n": 143,
+          "rate": 0.5174825174825175,
           "wilson_95": [
-            0.43976297739607656,
-            0.6008210377229637
+            0.43620214588680606,
+            0.5978481832243031
           ]
         },
         "abstention_rate": {
           "successes": 69,
-          "n": 144,
-          "rate": 0.4791666666666667,
+          "n": 143,
+          "rate": 0.4825174825174825,
           "wilson_95": [
-            0.3991789622770364,
-            0.5602370226039235
+            0.40215181677569695,
+            0.563797854113194
           ]
         },
         "commit_accuracy": {
           "successes": 38,
-          "n": 73,
-          "rate": 0.5205479452054794,
+          "n": 72,
+          "rate": 0.5277777777777778,
           "wilson_95": [
-            0.40781596889792504,
-            0.6312254554326613
+            0.41400670490076613,
+            0.638734896621653
           ]
         },
         "n_near_match": 0,
@@ -1209,50 +1208,50 @@
           "no_ground_truth": 0
         },
         "negative_golds": {
-          "n": 74,
-          "n_committed": 46,
-          "false_positives": 26,
+          "n": 73,
+          "n_committed": 45,
+          "false_positives": 25,
           "fp_rate": {
-            "successes": 26,
-            "n": 74,
-            "rate": 0.35135135135135137,
+            "successes": 25,
+            "n": 73,
+            "rate": 0.3424657534246575,
             "wilson_95": [
-              0.252381884912968,
-              0.46499237382649816
+              0.24394867339318563,
+              0.4567337400723187
             ]
           }
         }
       },
       "SE": {
-        "n": 144,
-        "n_committed": 102,
+        "n": 143,
+        "n_committed": 101,
         "n_abstained": 42,
         "n_failed": 0,
         "coverage": {
-          "successes": 102,
-          "n": 144,
-          "rate": 0.7083333333333334,
+          "successes": 101,
+          "n": 143,
+          "rate": 0.7062937062937062,
           "wilson_95": [
-            0.6294527317183394,
-            0.7763874194720621
+            0.6270325161876241,
+            0.7747613673234625
           ]
         },
         "abstention_rate": {
           "successes": 42,
-          "n": 144,
-          "rate": 0.2916666666666667,
+          "n": 143,
+          "rate": 0.2937062937062937,
           "wilson_95": [
-            0.223612580527938,
-            0.37054726828166074
+            0.2252386326765375,
+            0.3729674838123758
           ]
         },
         "commit_accuracy": {
-          "successes": 78,
-          "n": 101,
-          "rate": 0.7722772277227723,
+          "successes": 77,
+          "n": 100,
+          "rate": 0.77,
           "wilson_95": [
-            0.6814098987582485,
-            0.8431917294398498
+            0.6784561697712622,
+            0.8415673411969654
           ]
         },
         "n_near_match": 2,
@@ -1286,34 +1285,34 @@
         "BG"
       ],
       "n": 572,
-      "n_committed": 274,
-      "n_abstained": 298,
+      "n_committed": 273,
+      "n_abstained": 299,
       "n_failed": 0,
       "coverage": {
-        "successes": 274,
+        "successes": 273,
         "n": 572,
-        "rate": 0.479020979020979,
+        "rate": 0.4772727272727273,
         "wilson_95": [
-          0.4383584503423075,
-          0.5199634112875388
+          0.4366280663718566,
+          0.5182206170604771
         ]
       },
       "abstention_rate": {
-        "successes": 298,
+        "successes": 299,
         "n": 572,
-        "rate": 0.5209790209790209,
+        "rate": 0.5227272727272727,
         "wilson_95": [
-          0.4800365887124611,
-          0.5616415496576923
+          0.48177938293952305,
+          0.5633719336281434
         ]
       },
       "commit_accuracy": {
         "successes": 162,
-        "n": 266,
-        "rate": 0.6090225563909775,
+        "n": 265,
+        "rate": 0.6113207547169811,
         "wilson_95": [
-          0.5492279407552024,
-          0.665713085184552
+          0.5514403779574192,
+          0.668019820848266
         ]
       },
       "n_near_match": 5,
@@ -1323,15 +1322,15 @@
       },
       "negative_golds": {
         "n": 261,
-        "n_committed": 130,
-        "false_positives": 59,
+        "n_committed": 129,
+        "false_positives": 58,
         "fp_rate": {
-          "successes": 59,
+          "successes": 58,
           "n": 261,
-          "rate": 0.2260536398467433,
+          "rate": 0.2222222222222222,
           "wilson_95": [
-            0.1794955503166162,
-            0.2805587756308351
+            0.17601958377179042,
+            0.2764830544266741
           ]
         }
       }
@@ -1343,35 +1342,35 @@
         "SE",
         "BE"
       ],
-      "n": 574,
-      "n_committed": 366,
-      "n_abstained": 208,
+      "n": 572,
+      "n_committed": 363,
+      "n_abstained": 209,
       "n_failed": 0,
       "coverage": {
-        "successes": 366,
-        "n": 574,
-        "rate": 0.6376306620209059,
+        "successes": 363,
+        "n": 572,
+        "rate": 0.6346153846153846,
         "wilson_95": [
-          0.5975124236585677,
-          0.6759189779623184
+          0.5943768283594237,
+          0.6730578928490618
         ]
       },
       "abstention_rate": {
-        "successes": 208,
-        "n": 574,
-        "rate": 0.3623693379790941,
+        "successes": 209,
+        "n": 572,
+        "rate": 0.36538461538461536,
         "wilson_95": [
-          0.3240810220376816,
-          0.4024875763414321
+          0.3269421071509382,
+          0.40562317164057615
         ]
       },
       "commit_accuracy": {
-        "successes": 278,
-        "n": 361,
-        "rate": 0.7700831024930748,
+        "successes": 275,
+        "n": 358,
+        "rate": 0.7681564245810056,
         "wilson_95": [
-          0.7239690398472037,
-          0.8105096913537785
+          0.7217342914217859,
+          0.8088848383643981
         ]
       },
       "n_near_match": 5,
@@ -1396,43 +1395,43 @@
     },
     "contrasts_a_vs_b": {
       "negative_gold_fp_rate": {
-        "p1": 0.2260536398467433,
+        "p1": 0.2222222222222222,
         "p2": 0.3364485981308411,
-        "delta": -0.11039495828409782,
+        "delta": -0.1142263759086189,
         "ci_95": [
-          -0.21512517742513007,
-          -0.011536046916701709
+          -0.21879906307125535,
+          -0.01550194913680078
         ],
-        "z": -2.197567205210778,
-        "p_value": 0.02797996239375533
+        "z": -2.281724689205977,
+        "p_value": 0.022505599496338347
       },
       "abstention_rate": {
-        "p1": 0.5209790209790209,
-        "p2": 0.3623693379790941,
-        "delta": 0.15860968299992684,
+        "p1": 0.5227272727272727,
+        "p2": 0.36538461538461536,
+        "delta": 0.15734265734265734,
         "ci_95": [
-          0.10128817037858011,
-          0.21446159770455622
+          0.09993297969477455,
+          0.21328740597059476
         ],
-        "z": 5.40643170325752,
-        "p_value": 6.429272669805641e-08
+        "z": 5.3554393793943325,
+        "p_value": 8.534875894916638e-08
       },
       "commit_accuracy": {
-        "p1": 0.6090225563909775,
-        "p2": 0.7700831024930748,
-        "delta": -0.1610605461020973,
+        "p1": 0.6113207547169811,
+        "p2": 0.7681564245810056,
+        "delta": -0.15683566986402453,
         "ci_95": [
-          -0.23323883332160983,
-          -0.08798303363346974
+          -0.2292543360363472,
+          -0.08355676057074868
         ],
-        "z": -4.35682599757085,
-        "p_value": 1.3196209091903555e-05
+        "z": -4.229179576173936,
+        "p_value": 2.345450766316759e-05
       }
     },
     "preregistered_read": "Flat FP across strata supports language driving abstention not error; a rise in stratum A is the headline negative result."
   },
   "calibration": {
-    "n_scored": 627,
+    "n_scored": 623,
     "n_committed_excluded": {
       "missing_confidence": 0,
       "unscoreable": 13
@@ -1496,20 +1495,20 @@
       {
         "lo": 0.6,
         "hi": 0.7,
-        "n": 202,
-        "n_match": 132,
-        "mean_confidence": 0.6554455445544555,
-        "match_rate": 0.6534653465346535,
-        "abs_gap": 0.001980198019801982
+        "n": 200,
+        "n_match": 131,
+        "mean_confidence": 0.65535,
+        "match_rate": 0.655,
+        "abs_gap": 0.00034999999999996145
       },
       {
         "lo": 0.7,
         "hi": 0.8,
-        "n": 207,
-        "n_match": 133,
-        "mean_confidence": 0.7353623188405797,
-        "match_rate": 0.642512077294686,
-        "abs_gap": 0.09285024154589372
+        "n": 205,
+        "n_match": 131,
+        "mean_confidence": 0.7352195121951219,
+        "match_rate": 0.6390243902439025,
+        "abs_gap": 0.09619512195121949
       },
       {
         "lo": 0.8,
@@ -1530,78 +1529,78 @@
         "abs_gap": 0.1134745762711864
       }
     ],
-    "ece": 0.06253588516746411
+    "ece": 0.06321027287319421
   },
   "risk_coverage_sweep": {
-    "n": 1146,
+    "n": 1144,
     "production_floor": 0.65,
     "n_committed_missing_confidence": 0,
     "floors": [
       {
         "floor": 0.5,
         "is_production_floor": false,
-        "n_committed": 640,
-        "coverage": 0.5584642233856894,
-        "n_scoreable": 627,
-        "n_match": 440,
-        "n_wrong": 187,
-        "risk": 0.2982456140350877
+        "n_committed": 636,
+        "coverage": 0.5559440559440559,
+        "n_scoreable": 623,
+        "n_match": 437,
+        "n_wrong": 186,
+        "risk": 0.2985553772070626
       },
       {
         "floor": 0.55,
         "is_production_floor": false,
-        "n_committed": 640,
-        "coverage": 0.5584642233856894,
-        "n_scoreable": 627,
-        "n_match": 440,
-        "n_wrong": 187,
-        "risk": 0.2982456140350877
+        "n_committed": 636,
+        "coverage": 0.5559440559440559,
+        "n_scoreable": 623,
+        "n_match": 437,
+        "n_wrong": 186,
+        "risk": 0.2985553772070626
       },
       {
         "floor": 0.6,
         "is_production_floor": false,
-        "n_committed": 640,
-        "coverage": 0.5584642233856894,
-        "n_scoreable": 627,
-        "n_match": 440,
-        "n_wrong": 187,
-        "risk": 0.2982456140350877
+        "n_committed": 636,
+        "coverage": 0.5559440559440559,
+        "n_scoreable": 623,
+        "n_match": 437,
+        "n_wrong": 186,
+        "risk": 0.2985553772070626
       },
       {
         "floor": 0.65,
         "is_production_floor": true,
-        "n_committed": 640,
-        "coverage": 0.5584642233856894,
-        "n_scoreable": 627,
-        "n_match": 440,
-        "n_wrong": 187,
-        "risk": 0.2982456140350877
+        "n_committed": 636,
+        "coverage": 0.5559440559440559,
+        "n_scoreable": 623,
+        "n_match": 437,
+        "n_wrong": 186,
+        "risk": 0.2985553772070626
       },
       {
         "floor": 0.7,
         "is_production_floor": false,
-        "n_committed": 435,
-        "coverage": 0.3795811518324607,
-        "n_scoreable": 425,
-        "n_match": 308,
+        "n_committed": 433,
+        "coverage": 0.3784965034965035,
+        "n_scoreable": 423,
+        "n_match": 306,
         "n_wrong": 117,
-        "risk": 0.2752941176470588
+        "risk": 0.2765957446808511
       },
       {
         "floor": 0.75,
         "is_production_floor": false,
-        "n_committed": 309,
-        "coverage": 0.2696335078534031,
-        "n_scoreable": 300,
-        "n_match": 229,
+        "n_committed": 308,
+        "coverage": 0.2692307692307692,
+        "n_scoreable": 299,
+        "n_match": 228,
         "n_wrong": 71,
-        "risk": 0.23666666666666666
+        "risk": 0.23745819397993312
       },
       {
         "floor": 0.8,
         "is_production_floor": false,
         "n_committed": 222,
-        "coverage": 0.193717277486911,
+        "coverage": 0.19405594405594406,
         "n_scoreable": 218,
         "n_match": 175,
         "n_wrong": 43,
@@ -1611,7 +1610,7 @@
         "floor": 0.85,
         "is_production_floor": false,
         "n_committed": 166,
-        "coverage": 0.14485165794066318,
+        "coverage": 0.1451048951048951,
         "n_scoreable": 162,
         "n_match": 135,
         "n_wrong": 27,
@@ -1621,7 +1620,7 @@
         "floor": 0.9,
         "is_production_floor": false,
         "n_committed": 120,
-        "coverage": 0.10471204188481675,
+        "coverage": 0.1048951048951049,
         "n_scoreable": 118,
         "n_match": 98,
         "n_wrong": 20,
@@ -1631,17 +1630,17 @@
     "note": "Floors below the production 0.65 cannot recover pairs the run abstained on; sub-floor coverage moves only through adjudicator commits, which bypass the floor (D37)."
   },
   "disagreement_bracket": {
-    "n_committed_scoreable": 627,
-    "n_match": 440,
+    "n_committed_scoreable": 623,
+    "n_match": 437,
     "n_near_match": 10,
-    "n_differ": 177,
+    "n_differ": 176,
     "commit_accuracy_lower_bound": {
-      "successes": 440,
-      "n": 627,
-      "rate": 0.7017543859649122,
+      "successes": 437,
+      "n": 623,
+      "rate": 0.7014446227929374,
       "wilson_95": [
-        0.6648047376361726,
-        0.7362468997640744
+        0.6643644949163396,
+        0.7360557333056703
       ]
     },
     "commit_accuracy_upper_bound": null,
@@ -2968,16 +2967,6 @@
         "final_confidence": 0.7
       },
       {
-        "question_id": "I9",
-        "country_code": "MK",
-        "condition_label": "unlabelled",
-        "dimension": "Impact",
-        "decision": "change",
-        "final_answer": "yes",
-        "gold_answer": "no",
-        "final_confidence": 0.65
-      },
-      {
         "question_id": "P1",
         "country_code": "MK",
         "condition_label": "MK",
@@ -3421,19 +3410,19 @@
   },
   "experiment_id": "exp36_frozen_headline",
   "db_path": "/Users/benjyb/Desktop/MscProject/.claude/worktrees/exp36-run/data/odmi.db",
-  "generated_at": "2026-07-17T13:25:04.143620+00:00",
+  "generated_at": "2026-07-20T15:53:07.009831+00:00",
   "preregistration": "docs/EXPERIMENTS_EXP36_PREREG.md",
   "model_version_audit": {
     "phase2_researcher_runs": {
-      "claude-sonnet-4-6": 3412,
+      "claude-sonnet-4-6": 3418,
       "unknown": 33
     },
     "phase2_verifier_runs": {
-      "claude-sonnet-4-6": 1937,
+      "claude-sonnet-4-6": 1940,
       "unknown": 33
     },
     "phase2_adjudications": {
-      "claude-sonnet-4-6": 622
+      "claude-sonnet-4-6": 624
     }
   }
 }

@@ -61,6 +61,30 @@ class TestDedupCanonical:
         assert superseded == 0
         assert len(kept) == 2
 
+    def test_single_arm_collapses_labels_and_keeps_latest(self):
+        # EXP-36 shape: an infra re-run wrote a second final for the same
+        # pair whose researcher row carried no condition_label. Without
+        # scope_by_label the pair must collapse to one row, the later one.
+        rows = [
+            _row(1, label="unlabelled", match="differ"),
+            _row(9, label="BA", match="match"),
+        ]
+        kept, superseded = dedup_canonical(rows, scope_by_label=False)
+        assert superseded == 1
+        assert len(kept) == 1
+        assert kept[0].row_id == 9
+        assert kept[0].match_status == "match"
+
+    def test_single_arm_keeps_distinct_pairs_apart(self):
+        rows = [
+            _row(1, qid="P1", cc="BA"),
+            _row(2, qid="P1", cc="BE"),
+            _row(3, qid="P2", cc="BA"),
+        ]
+        kept, superseded = dedup_canonical(rows, scope_by_label=False)
+        assert superseded == 0
+        assert len(kept) == 3
+
 
 class TestCalibration:
     def test_ece_is_weighted_gap(self):
