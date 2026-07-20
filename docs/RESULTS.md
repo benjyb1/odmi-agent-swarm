@@ -58,11 +58,11 @@ held-out countries it was never tuned on (BA MK ME BG / FI HR SE BE), 1,144
 pairs. Single configuration, no adoption rule -- the reported headline. Prereg:
 `docs/EXPERIMENTS_EXP36_PREREG.md`; audit: `docs/EXP36_LEAKAGE_AUDIT.md`.
 
-- Coverage 0.558, **commit accuracy 0.702** [0.665, 0.736], negative-gold FPR
-  0.258, expected calibration error 0.063 (well calibrated).
+- Coverage 0.556, **commit accuracy 0.701** [0.664, 0.736], negative-gold FPR
+  0.255, expected calibration error 0.063 (well calibrated).
 - RQ3 resource-stratum contrast (A low/mid-resource vs B higher): stratum A
   abstains +0.16 more (p < 0.001), commits -0.16 less accurately (p < 0.001),
-  with a *lower* negative-gold FPR (-0.11, p = 0.028). Low resource drives
+  with a *lower* negative-gold FPR (-0.11, p = 0.023). Low resource drives
   abstention, not false confidence.
 - FM-14 committed-evidence audit clean: 0 committed pairs cite a deny-listed
   source. 7 verifier counter-search hits were disclosed and drove the deny-list

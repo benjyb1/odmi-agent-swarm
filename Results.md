@@ -7,10 +7,14 @@ source; provisional and superseded items are flagged inline. Assembled
 
 **Provenance and health warnings (read first)**
 - EXP-36 numbers come from `phase2_final WHERE experiment_id='exp36_frozen_headline'`
-  in the worktree DB `.claude/worktrees/exp36-run/data/odmi.db` (the run finished
-  after the last push to `main`, so the canonical checkout does not yet hold these
-  rows). Classification uses the project's own `_MATCH_STATUS_SQL`
-  (`dashboard/lib/db.py`) and `evaluation/exp36_analysis.py`.
+  in the canonical `data/odmi.db`, which now holds the completed run (it is
+  byte-for-byte equivalent on the exp36-run worktree: 1,151 raw rows, 143 distinct
+  questions per country in both). Classification uses the project's own
+  `_MATCH_STATUS_SQL` (`dashboard/lib/db.py`) and `evaluation/exp36_analysis.py`.
+  The analysis pack `evaluation/results/exp36_headline.json` was regenerated from
+  this DB on 2026-07-20 and now agrees with the tables below at n = 1,144; the
+  version it replaced was computed mid-run (1,146 pairs, Bulgaria still at 142)
+  and every number here has been recomputed against the completed run.
 - Model verified as `claude-sonnet-4-6` across all EXP-36 subtrios (researcher,
   verifier, adjudicator). 33 agent rows carry an `unknown` model tag (a tagging
   gap to disclose, not model contamination). No Sonnet-5, no Opus.
@@ -109,14 +113,14 @@ no_ground_truth 0 (ground truth complete).
 ### 2.2 Headline metric and baselines
 
 - **Commit accuracy = 437 / 623 = 0.701** (scoreable committed; `near_match` in the
-  denominator, not the numerator; Wilson 95% ~ [0.665, 0.737]). Matches / all
+  denominator, not the numerator; Wilson 95% [0.664, 0.736]). Matches / all
   committed = 437/636 = 0.687.
 - **Always-yes baseline (base rate):** binary golds n = 907 (yes 539, no 368),
   positive base rate = **0.594**.
-- **Balance-aware:** raw all-pairs accuracy 385/907 = 0.425 (below the 0.594
+- **Balance-aware:** raw all-pairs accuracy 385/907 = 0.424 (below the 0.594
   floor, because coverage is only 0.556); balanced accuracy 0.396; **Youden's J =
   -0.208** (driven by weak no-gold recall).
-- Calibration: ECE = 0.062 (n_scored = 628).
+- Calibration: ECE = 0.063 (n_scored = 623).
 
 Reading: commit accuracy ~0.70 is a lower bound pending a D22 staleness review of
 the 176 differ rows. But balance-aware the run does **not** beat the always-yes
@@ -177,9 +181,9 @@ Portal 0.475 · Quality 0.573.
 
 | Metric | Stratum A (lower-resource) | Stratum B (higher-resource) | p |
 |---|---|---|---|
-| commit_acc | 0.609 | 0.771 | < 0.001 |
-| abstention | 0.522 | 0.363 | < 0.001 |
-| neg-gold FP | 0.225 | 0.336 | 0.027 |
+| commit_acc | 0.611 | 0.768 | < 0.001 |
+| abstention | 0.523 | 0.365 | < 0.001 |
+| neg-gold FP | 0.222 | 0.336 | 0.023 |
 
 Abstention rises and commit accuracy falls in the lower-resource stratum, but the
 negative-gold false-positive rate does **not** rise in A (it is lower). Consistent
@@ -191,9 +195,15 @@ with the RQ3 prediction that language drives abstention, not fabricated error.
   confirmed-stale golds).
 - 33 agent rows have an `unknown` model tag (tagging gap; no other model string
   exists in the run).
-- Strict 1,144-pair set used; the analysis pack's 1,149 (keyed on
-  `condition_label`) inflates by 5 phantom re-dispatch pairs; the deltas are
-  < 0.001.
+- Strict 1,144-pair set used, and the analysis pack now computes the same set.
+  Five re-dispatch pairs (FI PT39/PT40/Q15, MK I9, SE P9) lost their
+  `condition_label` on the researcher row, so the per-arm key kept both the
+  superseded row and the re-run and counted the pair twice (1,149 on the
+  completed run). `dedup_canonical(scope_by_label=False)` keys on
+  (question, country) and keeps the latest `phase2_final`, giving 143 per
+  country; `--scope-by-label` restores the multi-arm key for other
+  experiments. Every affected pair answered the same across its copies, so no
+  bucket moved.
 
 ---
 
