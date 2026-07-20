@@ -354,6 +354,11 @@ The mapping below uses the `docs/ABSTENTION_TAXONOMY.md` letter codes
 for the 580-pair non-committed population and the FM-* numbering from
 `docs/FAILURE_MODES.md` for the false-positive register.
 
+The letter codes carry over to EXP-36, but the counts do not: 580 is the
+2026-06-24 main run, and the held-out headline is 508. Every count in this
+section is main-run. See the scope warning at the top of
+`docs/ABSTENTION_TAXONOMY.md` before quoting any of it as a held-out result.
+
 ### 3.1 Abstention categories to the prompt that decides them
 
 | Code | Category | n (% union) | Choke-point prompt(s) | The rule that decides it |

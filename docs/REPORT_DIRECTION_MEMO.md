@@ -170,8 +170,11 @@ verifiable in the repo or DB; sources in brackets. Write it in your own words.
   - Selective prediction / answer-or-abstain QA (Kamath et al. 2020 and
     successors); calibration of LLM confidence. Your 0.65 floor result
     (gates more wrong answers than Verifier and Adjudicator combined,
-    abstention table code G, 146/580) is a selective-prediction finding and
-    should be framed in that vocabulary.
+    abstention table code G) is a selective-prediction finding and
+    should be framed in that vocabulary. Quote the EXP-36 figures, not the
+    main-run ones: code G is **199 of 508** held-out abstentions (39.2%). The
+    older 146/580 is the 2026-06-24 main-run population, not the held-out
+    headline (see the scope warning in `docs/ABSTENTION_TAXONOMY.md`).
   - LLM-as-judge self-preference bias: motivates the cross-family Mistral
     judge (EXP-1 reliability: raw agreement 78%, Krippendorff alpha 0.648).
 - Risk-coverage curve: EXP-10's floor sweep (0.65/0.55/0.50, pooled n=360,
