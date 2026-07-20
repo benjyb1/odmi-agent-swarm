@@ -33,7 +33,8 @@ lower floor would also change what the Verifier and Adjudicator saw downstream.
 Every one of the 161 sits strictly below 0.65 by construction, so it
 contributes nothing at or above the floor: the observed curve is untouched and
 the two segments join continuously at 0.65. The sub-floor segment is drawn
-dashed on a shaded ground so it is never mistaken for observed behaviour.
+dashed, and the legend labels it counterfactual, so it is not mistaken for
+observed behaviour.
 
 Outputs (under evaluation/figures/):
   - per_class_accuracy_full_range.svg   the chart, self-contained
@@ -83,7 +84,6 @@ INK_MUTED = "#898781"
 GRID = "#e1e0d9"
 AXIS = "#c3c2b7"
 RULE = "#52514e"
-SUBFLOOR_GROUND = "#f4f2ed"
 
 
 def load_observed(db_path: str) -> dict[str, list[tuple[float, bool]]]:
@@ -201,9 +201,9 @@ def validate(points: list[dict]) -> None:
 
 
 def build_svg(points: list[dict]) -> str:
-    width, height = 1080, 752
-    x0, y0, pw, ph = 104, 150, 800, 348
-    strip_y, strip_h = 546, 72
+    width, height = 1080, 700
+    x0, y0, pw, ph = 104, 100, 800, 348
+    strip_y, strip_h = 496, 72
     x_lo = points[0]["threshold"]
     x_hi = 1.00
 
@@ -227,49 +227,19 @@ def build_svg(points: list[dict]) -> str:
     out.append(f'<rect width="{width}" height="{height}" fill="#ffffff"/>')
     out.append(
         f'<text x="26" y="38" font-size="21" font-weight="700" '
-        f'fill="{INK_TITLE}">Per-class accuracy across the full confidence '
-        f'range, held-out eight (EXP-36)</text>'
+        f'fill="{INK_TITLE}">Per-class accuracy across the confidence '
+        f'range</text>'
     )
-    out.append(
-        f'<text x="26" y="60" font-size="13" fill="{INK_BODY}">'
-        'Right of the floor, the answers the swarm committed. Left of it, the '
-        'answers it discarded for being under-confident, scored on the '
-        'researcher&#8217;s own answer.</text>'
-    )
-    out.append(
-        f'<text x="26" y="84" font-size="14" font-weight="700" '
-        f'fill="{INK_TITLE}">Below the floor the swarm is right about no and '
-        f'wrong about yes. Above it that reverses. The floor is where it stops '
-        f'being able to say no.</text>'
-    )
-
-    # Shaded ground for the counterfactual half.
-    out.append(f'<rect x="{x0}" y="{y0}" width="{sx(PRODUCTION_FLOOR) - x0:.1f}" '
-               f'height="{ph}" fill="{SUBFLOOR_GROUND}"/>')
-    out.append(f'<rect x="{x0}" y="{strip_y}" '
-               f'width="{sx(PRODUCTION_FLOOR) - x0:.1f}" height="{strip_h}" '
-               f'fill="{SUBFLOOR_GROUND}"/>')
-    mid_sub = (x0 + sx(PRODUCTION_FLOOR)) / 2
-    out.append(f'<text x="{mid_sub:.1f}" y="{sy(0.28):.1f}" font-size="12" '
-               f'font-weight="700" text-anchor="middle" fill="{INK_BODY}">'
-               f'Below the floor: discarded, counterfactual</text>')
-    out.append(f'<text x="{mid_sub:.1f}" y="{sy(0.28) + 17:.1f}" font-size="11" '
-               f'text-anchor="middle" fill="{INK_MUTED}">'
-               f'researcher answer, never verified or adjudicated</text>')
-    out.append(f'<text x="{(sx(PRODUCTION_FLOOR) + x0 + pw) / 2:.1f}" '
-               f'y="{sy(0.70):.1f}" font-size="12" font-weight="700" '
-               f'text-anchor="middle" fill="{INK_BODY}">'
-               f'At or above the floor: what the swarm actually committed</text>')
 
     # Legend.
     lx = x0
     for cls in ("yes", "no"):
-        out.append(f'<rect x="{lx}" y="104" width="13" height="13" rx="2.5" '
+        out.append(f'<rect x="{lx}" y="62" width="13" height="13" rx="2.5" '
                    f'fill="{CLASS_COLOUR[cls]}"/>')
-        out.append(f'<text x="{lx + 18}" y="115" font-size="12.5" '
+        out.append(f'<text x="{lx + 18}" y="73" font-size="12.5" '
                    f'fill="{INK_TITLE}">{CLASS_LABEL[cls]}</text>')
         lx += 18 + len(CLASS_LABEL[cls]) * 7.2 + 26
-    out.append(f'<text x="{lx}" y="115" font-size="12" fill="{INK_MUTED}">'
+    out.append(f'<text x="{lx}" y="73" font-size="12" fill="{INK_MUTED}">'
                f'band = Wilson 95%; dashed = counterfactual</text>')
 
     for i in range(6):
@@ -392,23 +362,26 @@ def build_svg(points: list[dict]) -> str:
                    f'fill="{INK_MUTED}">{t:.2f}</text>')
     out.append(f'<text x="{x0 + pw / 2:.0f}" y="{axis_y + 44:.0f}" '
                f'font-size="13" text-anchor="middle" fill="{INK_BODY}">'
-               f'Commit threshold (minimum stated confidence retained)</text>')
+               f'Confidence threshold</text>')
 
     n_sub = sum(points[0][c]["n_subfloor"] for c in ("yes", "no"))
     fy = axis_y + 72
     out.append(
         f'<text x="26" y="{fy:.0f}" font-size="11.5" fill="{INK_BODY}">'
-        f'Sub-floor segment adds {n_sub} discarded pairs, scored on the '
-        f'researcher&#8217;s answer. A floor-relaxation, not a rerun: a lower '
-        f'floor would change what the Verifier saw too.</text>'
+        f'The horizontal axis is the threshold itself. The vertical axis is '
+        f'accuracy among the answers retained at that threshold.</text>'
+    )
+    out.append(
+        f'<text x="26" y="{fy + 17:.0f}" font-size="11.5" fill="{INK_BODY}">'
+        f'The strip beneath counts how many answers each point rests on, and '
+        f'the shaded bands are Wilson 95% intervals.</text>'
     )
     stamp = datetime.now().strftime("%Y-%m-%d")
     out.append(
-        f'<text x="26" y="{fy + 18:.0f}" font-size="11" fill="{INK_MUTED}">'
+        f'<text x="26" y="{fy + 35:.0f}" font-size="11" fill="{INK_MUTED}">'
         f'Source: {EXPERIMENT_ID}, latest row per (question, country). '
-        f'Observed n = 523 (339 yes, 184 no); sub-floor n = {n_sub} of 199. '
-        f'Non-binary shapes excluded. Generated {stamp}.'
-        f'</text>'
+        f'Observed n = 523 (339 yes, 184 no); dashed segment is the {n_sub} '
+        f'discarded sub-floor answers. Generated {stamp}.</text>'
     )
     out.append('</svg>')
     return "\n".join(out)
