@@ -1,0 +1,11 @@
+country,stratum,n_pairs,Below confidence floor,Verifier rejection,Researcher never committed,Retrieval failure,Other / deny-list,total_abstained,abstention_rate
+BA,A,143,47,30,2,1,8,88,0.6154
+BG,A,143,28,30,8,14,2,82,0.5734
+MK,A,143,39,25,3,0,2,69,0.4825
+ME,A,143,29,26,0,1,4,60,0.4196
+HR,B,143,16,47,2,0,1,66,0.4615
+BE,B,143,17,31,7,0,9,64,0.4476
+SE,B,143,14,19,6,0,3,42,0.2937
+FI,B,143,9,24,2,0,2,37,0.2587
+POOLED_A,A,572,143,111,13,16,16,299,0.5227
+POOLED_B,B,572,56,121,17,0,15,209,0.3654
