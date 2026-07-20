@@ -15,30 +15,30 @@
 <text x="198" y="146.0" font-size="13.5" text-anchor="end" fill="#161616">Finland</text>
 <clipPath id="barclip0"><rect x="212" y="128" width="726" height="28" rx="6" ry="6"/></clipPath>
 <g clip-path="url(#barclip0)">
-<rect x="212.00" y="128" width="435.59" height="28" fill="#0ca30c"/>
-<text x="430.79" y="146.0" font-size="11.5" text-anchor="middle" fill="#ffffff">60%</text>
-<rect x="649.59" y="128" width="67.62" height="28" fill="#d03b3b"/>
-<text x="684.40" y="146.0" font-size="11.5" text-anchor="middle" fill="#ffffff">10%</text>
-<rect x="719.21" y="128" width="17.89" height="28" fill="#ec835a"/>
-<rect x="739.10" y="128" width="181.99" height="28" fill="#6f7683"/>
-<text x="831.09" y="146.0" font-size="11.5" text-anchor="middle" fill="#ffffff">25%</text>
-<rect x="923.08" y="128" width="14.92" height="28" fill="#a9a79e"/>
+<rect x="212.00" y="128" width="429.54" height="28" fill="#0ca30c"/>
+<text x="427.77" y="146.0" font-size="11.5" text-anchor="middle" fill="#ffffff">59%</text>
+<rect x="643.54" y="128" width="69.08" height="28" fill="#d03b3b"/>
+<text x="679.08" y="146.0" font-size="11.5" text-anchor="middle" fill="#ffffff">10%</text>
+<rect x="714.62" y="128" width="18.31" height="28" fill="#ec835a"/>
+<rect x="734.92" y="128" width="185.85" height="28" fill="#6f7683"/>
+<text x="828.85" y="146.0" font-size="11.5" text-anchor="middle" fill="#ffffff">26%</text>
+<rect x="922.77" y="128" width="15.23" height="28" fill="#a9a79e"/>
 </g>
-<text x="947" y="146.0" font-size="11.5" fill="#898781">n=146</text>
+<text x="947" y="146.0" font-size="11.5" fill="#898781">n=143</text>
 <text x="198" y="188.0" font-size="13.5" text-anchor="end" fill="#161616">Sweden</text>
 <clipPath id="barclip1"><rect x="212" y="170" width="726" height="28" rx="6" ry="6"/></clipPath>
 <g clip-path="url(#barclip1)">
-<rect x="212.00" y="170" width="401.33" height="28" fill="#0ca30c"/>
-<text x="413.67" y="188.0" font-size="11.5" text-anchor="middle" fill="#ffffff">56%</text>
-<rect x="615.33" y="170" width="53.46" height="28" fill="#d03b3b"/>
-<text x="643.06" y="188.0" font-size="11.5" text-anchor="middle" fill="#ffffff">8%</text>
-<rect x="670.79" y="170" width="33.29" height="28" fill="#ec835a"/>
-<text x="688.44" y="188.0" font-size="11.5" text-anchor="middle" fill="#ffffff">5%</text>
-<rect x="706.08" y="170" width="209.75" height="28" fill="#6f7683"/>
-<text x="811.96" y="188.0" font-size="11.5" text-anchor="middle" fill="#ffffff">29%</text>
-<rect x="917.83" y="170" width="20.17" height="28" fill="#a9a79e"/>
+<rect x="212.00" y="170" width="399.08" height="28" fill="#0ca30c"/>
+<text x="412.54" y="188.0" font-size="11.5" text-anchor="middle" fill="#ffffff">55%</text>
+<rect x="613.08" y="170" width="53.85" height="28" fill="#d03b3b"/>
+<text x="641.00" y="188.0" font-size="11.5" text-anchor="middle" fill="#ffffff">8%</text>
+<rect x="668.92" y="170" width="33.54" height="28" fill="#ec835a"/>
+<text x="686.69" y="188.0" font-size="11.5" text-anchor="middle" fill="#ffffff">5%</text>
+<rect x="704.46" y="170" width="211.23" height="28" fill="#6f7683"/>
+<text x="811.08" y="188.0" font-size="11.5" text-anchor="middle" fill="#ffffff">29%</text>
+<rect x="917.69" y="170" width="20.31" height="28" fill="#a9a79e"/>
 </g>
-<text x="947" y="188.0" font-size="11.5" fill="#898781">n=144</text>
+<text x="947" y="188.0" font-size="11.5" fill="#898781">n=143</text>
 <text x="198" y="230.0" font-size="13.5" text-anchor="end" fill="#161616">Belgium</text>
 <clipPath id="barclip2"><rect x="212" y="212" width="726" height="28" rx="6" ry="6"/></clipPath>
 <g clip-path="url(#barclip2)">
@@ -100,18 +100,18 @@
 <text x="198" y="398.0" font-size="13.5" text-anchor="end" fill="#161616">North Macedonia</text>
 <clipPath id="barclip6"><rect x="212" y="380" width="726" height="28" rx="6" ry="6"/></clipPath>
 <g clip-path="url(#barclip6)">
-<rect x="212.00" y="380" width="189.58" height="28" fill="#0ca30c"/>
-<text x="307.79" y="398.0" font-size="11.5" text-anchor="middle" fill="#ffffff">26%</text>
-<rect x="403.58" y="380" width="113.96" height="28" fill="#d03b3b"/>
-<text x="461.56" y="398.0" font-size="11.5" text-anchor="middle" fill="#ffffff">16%</text>
-<rect x="519.54" y="380" width="33.29" height="28" fill="#ec835a"/>
-<text x="537.19" y="398.0" font-size="11.5" text-anchor="middle" fill="#ffffff">5%</text>
-<rect x="554.83" y="380" width="345.88" height="28" fill="#6f7683"/>
-<text x="728.77" y="398.0" font-size="11.5" text-anchor="middle" fill="#ffffff">48%</text>
-<rect x="902.71" y="380" width="35.29" height="28" fill="#a9a79e"/>
-<text x="920.35" y="398.0" font-size="11.5" text-anchor="middle" fill="#1f1e1c">5%</text>
+<rect x="212.00" y="380" width="190.92" height="28" fill="#0ca30c"/>
+<text x="308.46" y="398.0" font-size="11.5" text-anchor="middle" fill="#ffffff">27%</text>
+<rect x="404.92" y="380" width="109.69" height="28" fill="#d03b3b"/>
+<text x="460.77" y="398.0" font-size="11.5" text-anchor="middle" fill="#ffffff">15%</text>
+<rect x="516.62" y="380" width="33.54" height="28" fill="#ec835a"/>
+<text x="534.38" y="398.0" font-size="11.5" text-anchor="middle" fill="#ffffff">5%</text>
+<rect x="552.15" y="380" width="348.31" height="28" fill="#6f7683"/>
+<text x="727.31" y="398.0" font-size="11.5" text-anchor="middle" fill="#ffffff">48%</text>
+<rect x="902.46" y="380" width="35.54" height="28" fill="#a9a79e"/>
+<text x="920.23" y="398.0" font-size="11.5" text-anchor="middle" fill="#1f1e1c">5%</text>
 </g>
-<text x="947" y="398.0" font-size="11.5" fill="#898781">n=144</text>
+<text x="947" y="398.0" font-size="11.5" fill="#898781">n=143</text>
 <text x="198" y="440.0" font-size="13.5" text-anchor="end" fill="#161616">Bosnia &amp; Herz.</text>
 <clipPath id="barclip7"><rect x="212" y="422" width="726" height="28" rx="6" ry="6"/></clipPath>
 <g clip-path="url(#barclip7)">
@@ -127,5 +127,5 @@
 </g>
 <text x="947" y="440.0" font-size="11.5" fill="#898781">n=143</text>
 <text x="26" y="490" font-size="11.5" fill="#52514e">Yes when No = false positive (swarm yes, gold no); No when Yes = false negative; Abstain = inconclusive; Other = band or category miss, or unclear gold.</text>
-<text x="26" y="508" font-size="11" fill="#898781">Source: exp36_frozen_headline finalised pairs, canonical row per (question, country, condition), classified by _MATCH_STATUS_SQL. Generated 2026-07-20.</text>
+<text x="26" y="508" font-size="11" fill="#898781">Source: exp36_frozen_headline finalised pairs, latest row per (question, country), classified by _MATCH_STATUS_SQL. Generated 2026-07-20.</text>
 </svg>

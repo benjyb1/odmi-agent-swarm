@@ -18,12 +18,15 @@ everywhere else in the project:
                    ODMI `not applicable`). Small, mixed, never a clean yes/no
                    flip.
 
-Bars are one canonical row per (question, country, condition_label) within the
-experiment (docs/EXPERIMENT_RUNBOOK.md), so the loader and dedup are imported
-from `exp36_analysis` rather than re-implemented. Countries are ordered by
-correct share, high to low. n varies 143 to 146 because a few pairs carry a
-second condition_label; the bars are proportions so the varying n does not
-distort the comparison, and the raw counts travel in the CSV.
+Bars are one row per (question, country): the latest phase2_final for the pair.
+EXP-36 is a single arm, so this is the reported answer. It is deliberately
+stricter than the runbook's per-condition_label dedup: five re-run pairs
+(FI PT39/PT40/Q15, MK I9, SE P9) lost their condition_label on the researcher
+row, so a per-label dedup keeps the tagged and the `unlabelled` copy as two
+rows and double-counts the question. Collapsing per (question, country)
+restores exactly 143 pairs per country, 1,144 in total. Every affected pair
+answered the same across its copies, so removing the duplicate moves no bucket.
+Countries are ordered by correct share, high to low.
 
 Colour is a status-semantic scale, not arbitrary categorical: good (green) for
 correct, critical (red) for the over-claim false positive, serious (orange) for
@@ -56,7 +59,6 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from evaluation.exp36_analysis import (  # noqa: E402
-    dedup_canonical,
     load_rows,
     norm,
 )
@@ -116,11 +118,18 @@ def build_counts(db_path: str) -> tuple[list[str], dict[str, Counter]]:
     """Return (country order high-to-low correct share, per-country counts)."""
     conn = sqlite3.connect(db_path)
     try:
-        rows, _ = dedup_canonical(load_rows(conn, EXPERIMENT_ID))
+        raw = load_rows(conn, EXPERIMENT_ID)
     finally:
         conn.close()
+    # One reported row per (question, country): the latest phase2_final. See
+    # the module docstring for why this is stricter than the per-label dedup.
+    best: dict[tuple[str, str], object] = {}
+    for r in raw:
+        key = (r.country_code, r.question_id)
+        if key not in best or r.row_id > best[key].row_id:
+            best[key] = r
     counts: dict[str, Counter] = defaultdict(Counter)
-    for r in rows:
+    for r in best.values():
         counts[r.country_code][outcome(r)] += 1
     order = sorted(
         counts,
@@ -244,8 +253,8 @@ def build_svg(order: list[str], counts: dict[str, Counter]) -> str:
     stamp = datetime.now().strftime("%Y-%m-%d")
     out.append(
         f'<text x="26" y="{fy + 18}" font-size="11" fill="#898781">'
-        f'Source: {EXPERIMENT_ID} finalised pairs, canonical row per '
-        f'(question, country, condition), classified by _MATCH_STATUS_SQL. '
+        f'Source: {EXPERIMENT_ID} finalised pairs, latest row per '
+        f'(question, country), classified by _MATCH_STATUS_SQL. '
         f'Generated {stamp}.</text>'
     )
 
