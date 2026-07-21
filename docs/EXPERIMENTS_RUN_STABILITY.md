@@ -66,15 +66,26 @@ Two consequences for this pre-registration.
    M2 below: an empirical noise floor for its ablation ladder, which that
    section can currently only bound with Wilson intervals.
 
-### One action still outstanding
+### The reproduction path now works end to end
 
-The dumps are committed and verified, but the canonical `data/odmi.db` has
-**not** been restored from them: it still lacks both experiments and still
-carries the pre-EXP-40 CHECK constraint. The procedure is in
-`data/recovery/README.md` and is three commands. Until it is run, the canonical
-database does not contain the rows behind §4.2. This is not this experiment's
-work and is flagged rather than done here, since another window owns it and the
-file is a 634 MB LFS object that two windows should not write at once.
+Flagged as outstanding when this was drafted, and closed the same day by
+`5dc7127`, which restored 22 recovered experiments into the canonical database
+and migrated the CHECK constraint. Verified from this session against canonical
+directly:
+
+```
+$ uv run python evaluation/exp40_analysis.py --db data/odmi.db
+trio              156  0.47  0.73  0.22  0.33  -0.34
+no_adjudicator    156  0.39  0.69  0.22  0.26  -0.48
+researcher_only   156  0.24  0.65  0.13  0.15  -0.70
+cooperative       156  0.40  0.65  0.24  0.26  -0.48
+primary no_adj vs cooperative: n=154 ... McNemar p=1.000
+```
+
+Byte-identical to `evaluation/results/exp40_analysis.json`. An examiner with
+the repository and the canonical database can now regenerate §4.2 from the
+documented command, which is the §2.2 first condition met in the one place it
+had failed.
 
 ---
 

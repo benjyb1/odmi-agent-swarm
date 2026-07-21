@@ -93,10 +93,12 @@ unreferenced object rather than from the versioned record, which is the D1
 lesson restated. Never run `git lfs prune` while any experiment is
 unaccounted for.
 
-**Still open, downstream.** Canonical `data/odmi.db` has not yet been restored
-from the dumps: it still lacks both experiments and still carries the
-pre-EXP-40 CHECK constraint, so `accepted_cooperative` inserts would fail.
-Procedure in `data/recovery/README.md`.
+**Downstream, also closed.** `5dc7127` restored the 22 recovered experiments
+into canonical `data/odmi.db` and migrated the CHECK constraint. Verified:
+`evaluation/exp40_analysis.py --db data/odmi.db` now reproduces
+`evaluation/results/exp40_analysis.json` byte for byte, all four arms, n = 154
+at 8 versus 8, p = 1.00. The documented reproduction path works from the
+canonical database with no recovery step.
 
 ## D3. The EXP-36 headline was computed mid-run
 
@@ -207,4 +209,4 @@ other model string appears in the run. Related to the missing
 | date | entry |
 |---|---|
 | 2026-07-20 | File created. D1 repaired (1,134 pairs rescued). D3, D4 repaired. D7 repaired forward-only. D5 source repaired, docx outstanding. D2 confirmed unrepairable. D6 awaiting a cost decision. |
-| 2026-07-21 | **D2 repaired and closed**, overturning the 2026-07-20 "unrepairable" verdict: the rows were recovered from an orphaned Git LFS object and committed as SQL dumps under `data/recovery/`, verified to reproduce `exp40_analysis.json` byte for byte. §4.2 needs no re-run and no aggregate-only disclosure. Downstream action still open: canonical `data/odmi.db` not yet restored from the dumps. D7's forward-only fix has a consequence for EXP-41 (D65): `exp34_retrieval_strategy_s46/wide_only` carries the floor-leak artefact (0.65 on 9.4% of first-attempt commits against 32.7% of retried ones, the D7 signature), so it cannot serve as a replicate alongside runs dispatched after the fix. |
+| 2026-07-21 | **D2 repaired and closed**, overturning the 2026-07-20 "unrepairable" verdict: the rows were recovered from an orphaned Git LFS object and committed as SQL dumps under `data/recovery/`, verified to reproduce `exp40_analysis.json` byte for byte. §4.2 needs no re-run and no aggregate-only disclosure. Downstream action also closed the same day by `5dc7127`: canonical `data/odmi.db` restored and CHECK migrated, verified to reproduce the published table from the canonical DB alone. D7's forward-only fix has a consequence for EXP-41 (D65): `exp34_retrieval_strategy_s46/wide_only` carries the floor-leak artefact (0.65 on 9.4% of first-attempt commits against 32.7% of retried ones, the D7 signature), so it cannot serve as a replicate alongside runs dispatched after the fix. |
