@@ -238,6 +238,27 @@ contaminated, it is a no-op, and the failure is quiet.
 
 ---
 
+## Reading progress mid-run
+
+The battery is ordered MT 60, then NL 52, then AL 44, and the three countries
+behave very differently. On the exp34 `wide_only` baseline, `agent_failure`
+runs at 11.7% on MT (7/60), 2.3% on AL (1/44) and 0% on NL. Coverage differs
+too: MT sits at 0.233 against a whole-battery 0.47.
+
+So any rate computed part-way through is dominated by whichever country block
+is in flight, and the first 60 pairs are all Malta, the hardest of the three.
+**Compare a mid-run rate against that country's baseline, never against the
+whole-battery figure.** Doing the latter turns Malta's ordinary difficulty into
+a false regression signal, which is exactly what a health check is supposed not
+to do.
+
+Worked example from replicate 1: at 26 pairs the failure rate read 19.2%,
+against a whole-battery baseline of 5.1%. That looks alarming and is not. All
+26 were MT, whose baseline is 11.7%, and an exact binomial on 5 of 26 against
+0.117 gives P(X >= 5) = 0.18. No signal.
+
+---
+
 ## Cache protocol
 
 Run before every dispatch, including the first. `scripts/purge_search_cache.py`
