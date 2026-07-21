@@ -1,0 +1,3490 @@
+{
+  "experiment_id": "exp36_frozen_headline",
+  "db_path": "/Users/benjyb/Desktop/MscProject/.claude/worktrees/sharp-tesla-0dd51d/data/odmi.db",
+  "generated_at": "2026-07-21T15:49:51.822723+00:00",
+  "provenance": {
+    "marking": "dashboard/lib/db.py::_MATCH_STATUS_SQL, via evaluation/exp36_analysis.load_rows",
+    "canonical_rule": "dedup_canonical(scope_by_label=False), latest phase2_final per (question, country)",
+    "abstention_codes": "evaluation/abstention_gold_class_by_code.classify_abstentions (priority-list, re-derived from trails)",
+    "abstention_records_csv": "NOT USED (stale, zero EXP-36 rows)"
+  },
+  "population": {
+    "raw_final_rows": 1151,
+    "canonical_pairs": 1144,
+    "superseded_duplicates": 7,
+    "per_country": {
+      "BA": 143,
+      "BE": 143,
+      "BG": 143,
+      "FI": 143,
+      "HR": 143,
+      "ME": 143,
+      "MK": 143,
+      "SE": 143
+    },
+    "n_committed": 636,
+    "n_abstained": 508,
+    "n_agent_failure": 0,
+    "gold_class_counts": {
+      "no": 370,
+      "other": 235,
+      "yes": 539
+    }
+  },
+  "denominators": {
+    "binary_shape_gold_no": 368,
+    "all_shapes_gold_no": 370,
+    "binary_shape_gold_yes": 539,
+    "all_pairs": 1144,
+    "note": "Binary-shape and all-shapes negative golds differ by two count_band pairs. They are never mixed in a single table; every rate below names the denominator it uses."
+  },
+  "s1_yes_share_reconstruction": {
+    "BA": {
+      "stratum": "A",
+      "n_binary_gold_pairs": 92,
+      "n_off_shape_commits_excluded": 1,
+      "off_shape_literals": [
+        [
+          "other",
+          1
+        ]
+      ],
+      "n_effective_binary_gold_pairs": 91,
+      "n_committed": 37,
+      "n_abstained": 54,
+      "n_gold_yes": 13,
+      "gold_yes_share": 0.14285714285714285,
+      "policies": {
+        "a_excluded": {
+          "numerator": 13,
+          "denominator": 37,
+          "denominator_label": "committed binary-gold pairs",
+          "reconstructed_yes_share": 0.35135135135135137,
+          "signed_error": 0.20849420849420852
+        },
+        "b_coerced_no": {
+          "numerator": 13,
+          "denominator": 91,
+          "denominator_label": "all binary-gold pairs",
+          "reconstructed_yes_share": 0.14285714285714285,
+          "signed_error": 0.0
+        },
+        "c_coerced_gold": {
+          "numerator": 20,
+          "denominator": 91,
+          "denominator_label": "all binary-gold pairs (oracle fill)",
+          "reconstructed_yes_share": 0.21978021978021978,
+          "signed_error": 0.07692307692307693
+        }
+      }
+    },
+    "BE": {
+      "stratum": "B",
+      "n_binary_gold_pairs": 115,
+      "n_off_shape_commits_excluded": 0,
+      "off_shape_literals": [],
+      "n_effective_binary_gold_pairs": 115,
+      "n_committed": 70,
+      "n_abstained": 45,
+      "n_gold_yes": 91,
+      "gold_yes_share": 0.7913043478260869,
+      "policies": {
+        "a_excluded": {
+          "numerator": 65,
+          "denominator": 70,
+          "denominator_label": "committed binary-gold pairs",
+          "reconstructed_yes_share": 0.9285714285714286,
+          "signed_error": 0.13726708074534166
+        },
+        "b_coerced_no": {
+          "numerator": 65,
+          "denominator": 115,
+          "denominator_label": "all binary-gold pairs",
+          "reconstructed_yes_share": 0.5652173913043478,
+          "signed_error": -0.22608695652173916
+        },
+        "c_coerced_gold": {
+          "numerator": 95,
+          "denominator": 115,
+          "denominator_label": "all binary-gold pairs (oracle fill)",
+          "reconstructed_yes_share": 0.8260869565217391,
+          "signed_error": 0.034782608695652195
+        }
+      }
+    },
+    "BG": {
+      "stratum": "A",
+      "n_binary_gold_pairs": 117,
+      "n_off_shape_commits_excluded": 0,
+      "off_shape_literals": [],
+      "n_effective_binary_gold_pairs": 117,
+      "n_committed": 55,
+      "n_abstained": 62,
+      "n_gold_yes": 66,
+      "gold_yes_share": 0.5641025641025641,
+      "policies": {
+        "a_excluded": {
+          "numerator": 39,
+          "denominator": 55,
+          "denominator_label": "committed binary-gold pairs",
+          "reconstructed_yes_share": 0.7090909090909091,
+          "signed_error": 0.144988344988345
+        },
+        "b_coerced_no": {
+          "numerator": 39,
+          "denominator": 117,
+          "denominator_label": "all binary-gold pairs",
+          "reconstructed_yes_share": 0.3333333333333333,
+          "signed_error": -0.23076923076923078
+        },
+        "c_coerced_gold": {
+          "numerator": 72,
+          "denominator": 117,
+          "denominator_label": "all binary-gold pairs (oracle fill)",
+          "reconstructed_yes_share": 0.6153846153846154,
+          "signed_error": 0.05128205128205132
+        }
+      }
+    },
+    "FI": {
+      "stratum": "B",
+      "n_binary_gold_pairs": 120,
+      "n_off_shape_commits_excluded": 0,
+      "off_shape_literals": [],
+      "n_effective_binary_gold_pairs": 120,
+      "n_committed": 92,
+      "n_abstained": 28,
+      "n_gold_yes": 91,
+      "gold_yes_share": 0.7583333333333333,
+      "policies": {
+        "a_excluded": {
+          "numerator": 85,
+          "denominator": 92,
+          "denominator_label": "committed binary-gold pairs",
+          "reconstructed_yes_share": 0.9239130434782609,
+          "signed_error": 0.16557971014492756
+        },
+        "b_coerced_no": {
+          "numerator": 85,
+          "denominator": 120,
+          "denominator_label": "all binary-gold pairs",
+          "reconstructed_yes_share": 0.7083333333333334,
+          "signed_error": -0.04999999999999993
+        },
+        "c_coerced_gold": {
+          "numerator": 101,
+          "denominator": 120,
+          "denominator_label": "all binary-gold pairs (oracle fill)",
+          "reconstructed_yes_share": 0.8416666666666667,
+          "signed_error": 0.08333333333333337
+        }
+      }
+    },
+    "HR": {
+      "stratum": "B",
+      "n_binary_gold_pairs": 113,
+      "n_off_shape_commits_excluded": 0,
+      "off_shape_literals": [],
+      "n_effective_binary_gold_pairs": 113,
+      "n_committed": 57,
+      "n_abstained": 56,
+      "n_gold_yes": 86,
+      "gold_yes_share": 0.7610619469026548,
+      "policies": {
+        "a_excluded": {
+          "numerator": 46,
+          "denominator": 57,
+          "denominator_label": "committed binary-gold pairs",
+          "reconstructed_yes_share": 0.8070175438596491,
+          "signed_error": 0.04595559695699425
+        },
+        "b_coerced_no": {
+          "numerator": 46,
+          "denominator": 113,
+          "denominator_label": "all binary-gold pairs",
+          "reconstructed_yes_share": 0.40707964601769914,
+          "signed_error": -0.3539823008849557
+        },
+        "c_coerced_gold": {
+          "numerator": 87,
+          "denominator": 113,
+          "denominator_label": "all binary-gold pairs (oracle fill)",
+          "reconstructed_yes_share": 0.7699115044247787,
+          "signed_error": 0.008849557522123908
+        }
+      }
+    },
+    "ME": {
+      "stratum": "A",
+      "n_binary_gold_pairs": 113,
+      "n_off_shape_commits_excluded": 1,
+      "off_shape_literals": [
+        [
+          "other",
+          1
+        ]
+      ],
+      "n_effective_binary_gold_pairs": 112,
+      "n_committed": 58,
+      "n_abstained": 54,
+      "n_gold_yes": 53,
+      "gold_yes_share": 0.4732142857142857,
+      "policies": {
+        "a_excluded": {
+          "numerator": 31,
+          "denominator": 58,
+          "denominator_label": "committed binary-gold pairs",
+          "reconstructed_yes_share": 0.5344827586206896,
+          "signed_error": 0.061268472906403915
+        },
+        "b_coerced_no": {
+          "numerator": 31,
+          "denominator": 112,
+          "denominator_label": "all binary-gold pairs",
+          "reconstructed_yes_share": 0.2767857142857143,
+          "signed_error": -0.1964285714285714
+        },
+        "c_coerced_gold": {
+          "numerator": 57,
+          "denominator": 112,
+          "denominator_label": "all binary-gold pairs (oracle fill)",
+          "reconstructed_yes_share": 0.5089285714285714,
+          "signed_error": 0.0357142857142857
+        }
+      }
+    },
+    "MK": {
+      "stratum": "A",
+      "n_binary_gold_pairs": 116,
+      "n_off_shape_commits_excluded": 4,
+      "off_shape_literals": [
+        [
+          "not applicable",
+          1
+        ],
+        [
+          "not_applicable",
+          2
+        ],
+        [
+          "other",
+          1
+        ]
+      ],
+      "n_effective_binary_gold_pairs": 112,
+      "n_committed": 61,
+      "n_abstained": 51,
+      "n_gold_yes": 42,
+      "gold_yes_share": 0.375,
+      "policies": {
+        "a_excluded": {
+          "numerator": 34,
+          "denominator": 61,
+          "denominator_label": "committed binary-gold pairs",
+          "reconstructed_yes_share": 0.5573770491803278,
+          "signed_error": 0.18237704918032782
+        },
+        "b_coerced_no": {
+          "numerator": 34,
+          "denominator": 112,
+          "denominator_label": "all binary-gold pairs",
+          "reconstructed_yes_share": 0.30357142857142855,
+          "signed_error": -0.07142857142857145
+        },
+        "c_coerced_gold": {
+          "numerator": 57,
+          "denominator": 112,
+          "denominator_label": "all binary-gold pairs (oracle fill)",
+          "reconstructed_yes_share": 0.5089285714285714,
+          "signed_error": 0.1339285714285714
+        }
+      }
+    },
+    "SE": {
+      "stratum": "B",
+      "n_binary_gold_pairs": 121,
+      "n_off_shape_commits_excluded": 0,
+      "off_shape_literals": [],
+      "n_effective_binary_gold_pairs": 121,
+      "n_committed": 87,
+      "n_abstained": 34,
+      "n_gold_yes": 94,
+      "gold_yes_share": 0.7768595041322314,
+      "policies": {
+        "a_excluded": {
+          "numerator": 73,
+          "denominator": 87,
+          "denominator_label": "committed binary-gold pairs",
+          "reconstructed_yes_share": 0.8390804597701149,
+          "signed_error": 0.062220955637883546
+        },
+        "b_coerced_no": {
+          "numerator": 73,
+          "denominator": 121,
+          "denominator_label": "all binary-gold pairs",
+          "reconstructed_yes_share": 0.6033057851239669,
+          "signed_error": -0.17355371900826444
+        },
+        "c_coerced_gold": {
+          "numerator": 97,
+          "denominator": 121,
+          "denominator_label": "all binary-gold pairs (oracle fill)",
+          "reconstructed_yes_share": 0.8016528925619835,
+          "signed_error": 0.024793388429752095
+        }
+      }
+    }
+  },
+  "s2_decision_mix": {
+    "by_country": {
+      "BA": {
+        "group": "BA",
+        "n_pairs": 143,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 140,
+            "share_of_pairs": 0.9790209790209791,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 31,
+              "n": 50,
+              "rate": 0.62,
+              "wilson_95": [
+                0.48150446930992985,
+                0.741372106898064
+              ]
+            },
+            "abstention_rate": {
+              "successes": 88,
+              "n": 140,
+              "rate": 0.6285714285714286,
+              "wilson_95": [
+                0.5461006296061411,
+                0.7041749188702956
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 2,
+            "share_of_pairs": 0.013986013986013986,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 1,
+              "n": 2,
+              "rate": 0.5,
+              "wilson_95": [
+                0.09453120573423074,
+                0.9054687942657693
+              ]
+            },
+            "abstention_rate": {
+              "successes": 0,
+              "n": 2,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.6576197724933468
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 1,
+            "share_of_pairs": 0.006993006993006993,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.7934506856227624
+              ]
+            },
+            "abstention_rate": {
+              "successes": 0,
+              "n": 1,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.7934506856227624
+              ]
+            }
+          }
+        }
+      },
+      "BE": {
+        "group": "BE",
+        "n_pairs": 143,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 112,
+            "share_of_pairs": 0.7832167832167832,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 49,
+              "n": 59,
+              "rate": 0.8305084745762712,
+              "wilson_95": [
+                0.71536779263512,
+                0.9052416065081895
+              ]
+            },
+            "abstention_rate": {
+              "successes": 52,
+              "n": 112,
+              "rate": 0.4642857142857143,
+              "wilson_95": [
+                0.3746436104562974,
+                0.5562964857627701
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 24,
+            "share_of_pairs": 0.16783216783216784,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 14,
+              "n": 15,
+              "rate": 0.9333333333333333,
+              "wilson_95": [
+                0.7018347012621999,
+                0.9881331045067314
+              ]
+            },
+            "abstention_rate": {
+              "successes": 9,
+              "n": 24,
+              "rate": 0.375,
+              "wilson_95": [
+                0.2115936755954878,
+                0.5729003755732571
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 7,
+            "share_of_pairs": 0.04895104895104895,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 1,
+              "n": 4,
+              "rate": 0.25,
+              "wilson_95": [
+                0.0455872608097006,
+                0.699358157417598
+              ]
+            },
+            "abstention_rate": {
+              "successes": 3,
+              "n": 7,
+              "rate": 0.42857142857142855,
+              "wilson_95": [
+                0.15821985525146975,
+                0.7495416354723428
+              ]
+            }
+          }
+        }
+      },
+      "BG": {
+        "group": "BG",
+        "n_pairs": 143,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 126,
+            "share_of_pairs": 0.8811188811188811,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 34,
+              "n": 46,
+              "rate": 0.7391304347826086,
+              "wilson_95": [
+                0.597408464719844,
+                0.843991135543574
+              ]
+            },
+            "abstention_rate": {
+              "successes": 78,
+              "n": 126,
+              "rate": 0.6190476190476191,
+              "wilson_95": [
+                0.5319219933564636,
+                0.6991290151001559
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 14,
+            "share_of_pairs": 0.0979020979020979,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 7,
+              "n": 10,
+              "rate": 0.7,
+              "wilson_95": [
+                0.39677814746114537,
+                0.8922087325936989
+              ]
+            },
+            "abstention_rate": {
+              "successes": 4,
+              "n": 14,
+              "rate": 0.2857142857142857,
+              "wilson_95": [
+                0.11721378644576921,
+                0.5464908432989318
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 3,
+            "share_of_pairs": 0.02097902097902098,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 1,
+              "n": 2,
+              "rate": 0.5,
+              "wilson_95": [
+                0.09453120573423074,
+                0.9054687942657693
+              ]
+            },
+            "abstention_rate": {
+              "successes": 0,
+              "n": 3,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.5614970317550454
+              ]
+            }
+          }
+        }
+      },
+      "FI": {
+        "group": "FI",
+        "n_pairs": 143,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 128,
+            "share_of_pairs": 0.8951048951048951,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 78,
+              "n": 95,
+              "rate": 0.8210526315789474,
+              "wilson_95": [
+                0.7319856818309805,
+                0.8851642543173579
+              ]
+            },
+            "abstention_rate": {
+              "successes": 32,
+              "n": 128,
+              "rate": 0.25,
+              "wilson_95": [
+                0.18301284861358558,
+                0.33155562952316864
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 11,
+            "share_of_pairs": 0.07692307692307693,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 6,
+              "n": 6,
+              "rate": 1.0,
+              "wilson_95": [
+                0.6096657120978348,
+                1.0
+              ]
+            },
+            "abstention_rate": {
+              "successes": 5,
+              "n": 11,
+              "rate": 0.45454545454545453,
+              "wilson_95": [
+                0.2127127162245977,
+                0.719908462590678
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 4,
+            "share_of_pairs": 0.027972027972027972,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 0,
+              "n": 4,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.48989083645459713
+              ]
+            },
+            "abstention_rate": {
+              "successes": 0,
+              "n": 4,
+              "rate": 0.0,
+              "wilson_95": [
+                0.0,
+                0.48989083645459713
+              ]
+            }
+          }
+        }
+      },
+      "HR": {
+        "group": "HR",
+        "n_pairs": 143,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 84,
+            "share_of_pairs": 0.5874125874125874,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 23,
+              "n": 41,
+              "rate": 0.5609756097560976,
+              "wilson_95": [
+                0.41040527222106093,
+                0.7010986826344963
+              ]
+            },
+            "abstention_rate": {
+              "successes": 42,
+              "n": 84,
+              "rate": 0.5,
+              "wilson_95": [
+                0.3954393376854136,
+                0.6045606623145864
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 44,
+            "share_of_pairs": 0.3076923076923077,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 23,
+              "n": 25,
+              "rate": 0.92,
+              "wilson_95": [
+                0.7503389104960471,
+                0.9777795987151524
+              ]
+            },
+            "abstention_rate": {
+              "successes": 18,
+              "n": 44,
+              "rate": 0.4090909090909091,
+              "wilson_95": [
+                0.27687855627549735,
+                0.5559024625896809
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 15,
+            "share_of_pairs": 0.1048951048951049,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 4,
+              "n": 9,
+              "rate": 0.4444444444444444,
+              "wilson_95": [
+                0.18877852109766463,
+                0.7333487065045068
+              ]
+            },
+            "abstention_rate": {
+              "successes": 6,
+              "n": 15,
+              "rate": 0.4,
+              "wilson_95": [
+                0.19824496141341588,
+                0.642531698793754
+              ]
+            }
+          }
+        }
+      },
+      "ME": {
+        "group": "ME",
+        "n_pairs": 143,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 49,
+            "share_of_pairs": 0.34265734265734266,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 19,
+              "n": 31,
+              "rate": 0.6129032258064516,
+              "wilson_95": [
+                0.43824108619660723,
+                0.7626689857961972
+              ]
+            },
+            "abstention_rate": {
+              "successes": 17,
+              "n": 49,
+              "rate": 0.3469387755102041,
+              "wilson_95": [
+                0.22924392834538962,
+                0.4868880571302726
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 24,
+            "share_of_pairs": 0.16783216783216784,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 7,
+              "n": 15,
+              "rate": 0.4666666666666667,
+              "wilson_95": [
+                0.24809535365737398,
+                0.698830199745016
+              ]
+            },
+            "abstention_rate": {
+              "successes": 9,
+              "n": 24,
+              "rate": 0.375,
+              "wilson_95": [
+                0.2115936755954878,
+                0.5729003755732571
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 70,
+            "share_of_pairs": 0.48951048951048953,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 24,
+              "n": 36,
+              "rate": 0.6666666666666666,
+              "wilson_95": [
+                0.5033399787115652,
+                0.7978538117569468
+              ]
+            },
+            "abstention_rate": {
+              "successes": 34,
+              "n": 70,
+              "rate": 0.4857142857142857,
+              "wilson_95": [
+                0.3724587838303857,
+                0.6004561608099076
+              ]
+            }
+          }
+        }
+      },
+      "MK": {
+        "group": "MK",
+        "n_pairs": 143,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 0,
+            "share_of_pairs": 0.0,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 0,
+              "n": 0,
+              "rate": null,
+              "wilson_95": [
+                0.0,
+                1.0
+              ]
+            },
+            "abstention_rate": {
+              "successes": 0,
+              "n": 0,
+              "rate": null,
+              "wilson_95": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 0,
+            "share_of_pairs": 0.0,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 0,
+              "n": 0,
+              "rate": null,
+              "wilson_95": [
+                0.0,
+                1.0
+              ]
+            },
+            "abstention_rate": {
+              "successes": 0,
+              "n": 0,
+              "rate": null,
+              "wilson_95": [
+                0.0,
+                1.0
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 143,
+            "share_of_pairs": 1.0,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 38,
+              "n": 72,
+              "rate": 0.5277777777777778,
+              "wilson_95": [
+                0.41400670490076613,
+                0.638734896621653
+              ]
+            },
+            "abstention_rate": {
+              "successes": 69,
+              "n": 143,
+              "rate": 0.4825174825174825,
+              "wilson_95": [
+                0.40215181677569695,
+                0.563797854113194
+              ]
+            }
+          }
+        }
+      },
+      "SE": {
+        "group": "SE",
+        "n_pairs": 143,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 77,
+            "share_of_pairs": 0.5384615384615384,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 39,
+              "n": 53,
+              "rate": 0.7358490566037735,
+              "wilson_95": [
+                0.604193355893815,
+                0.8356264608153633
+              ]
+            },
+            "abstention_rate": {
+              "successes": 24,
+              "n": 77,
+              "rate": 0.3116883116883117,
+              "wilson_95": [
+                0.21927281991691477,
+                0.42200035324140445
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 54,
+            "share_of_pairs": 0.3776223776223776,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 35,
+              "n": 39,
+              "rate": 0.8974358974358975,
+              "wilson_95": [
+                0.7642114553714349,
+                0.9593866865533162
+              ]
+            },
+            "abstention_rate": {
+              "successes": 15,
+              "n": 54,
+              "rate": 0.2777777777777778,
+              "wilson_95": [
+                0.1761682765302237,
+                0.40890442928795245
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 12,
+            "share_of_pairs": 0.08391608391608392,
+            "share_denominator": 143,
+            "commit_accuracy": {
+              "successes": 3,
+              "n": 8,
+              "rate": 0.375,
+              "wilson_95": [
+                0.13684428582359737,
+                0.6942576053973726
+              ]
+            },
+            "abstention_rate": {
+              "successes": 3,
+              "n": 12,
+              "rate": 0.25,
+              "wilson_95": [
+                0.08894166839405479,
+                0.5323053349335656
+              ]
+            }
+          }
+        }
+      }
+    },
+    "by_stratum": {
+      "A": {
+        "group": "A",
+        "n_pairs": 572,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 315,
+            "share_of_pairs": 0.5506993006993007,
+            "share_denominator": 572,
+            "commit_accuracy": {
+              "successes": 84,
+              "n": 127,
+              "rate": 0.6614173228346457,
+              "wilson_95": [
+                0.5754538537128384,
+                0.7379024812710648
+              ]
+            },
+            "abstention_rate": {
+              "successes": 183,
+              "n": 315,
+              "rate": 0.580952380952381,
+              "wilson_95": [
+                0.5258102661113919,
+                0.63414383831604
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 40,
+            "share_of_pairs": 0.06993006993006994,
+            "share_denominator": 572,
+            "commit_accuracy": {
+              "successes": 15,
+              "n": 27,
+              "rate": 0.5555555555555556,
+              "wilson_95": [
+                0.37313024513224485,
+                0.7241414182297699
+              ]
+            },
+            "abstention_rate": {
+              "successes": 13,
+              "n": 40,
+              "rate": 0.325,
+              "wilson_95": [
+                0.20084502231782703,
+                0.4798225381012233
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 217,
+            "share_of_pairs": 0.3793706293706294,
+            "share_denominator": 572,
+            "commit_accuracy": {
+              "successes": 63,
+              "n": 111,
+              "rate": 0.5675675675675675,
+              "wilson_95": [
+                0.4746712178875155,
+                0.6559436328295938
+              ]
+            },
+            "abstention_rate": {
+              "successes": 103,
+              "n": 217,
+              "rate": 0.47465437788018433,
+              "wilson_95": [
+                0.4092341799027469,
+                0.5409563320657004
+              ]
+            }
+          }
+        }
+      },
+      "B": {
+        "group": "B",
+        "n_pairs": 572,
+        "n_unclassified_decision": 0,
+        "by_decision": {
+          "confirm": {
+            "n_pairs": 401,
+            "share_of_pairs": 0.701048951048951,
+            "share_denominator": 572,
+            "commit_accuracy": {
+              "successes": 189,
+              "n": 248,
+              "rate": 0.7620967741935484,
+              "wilson_95": [
+                0.7053587713561178,
+                0.8108390008802528
+              ]
+            },
+            "abstention_rate": {
+              "successes": 150,
+              "n": 401,
+              "rate": 0.3740648379052369,
+              "wilson_95": [
+                0.3281096436592641,
+                0.42240997877709974
+              ]
+            }
+          },
+          "complement": {
+            "n_pairs": 133,
+            "share_of_pairs": 0.23251748251748253,
+            "share_denominator": 572,
+            "commit_accuracy": {
+              "successes": 78,
+              "n": 85,
+              "rate": 0.9176470588235294,
+              "wilson_95": [
+                0.8396401546662471,
+                0.9595362765008393
+              ]
+            },
+            "abstention_rate": {
+              "successes": 47,
+              "n": 133,
+              "rate": 0.3533834586466165,
+              "wilson_95": [
+                0.277302263690079,
+                0.43769638996281407
+              ]
+            }
+          },
+          "change": {
+            "n_pairs": 38,
+            "share_of_pairs": 0.06643356643356643,
+            "share_denominator": 572,
+            "commit_accuracy": {
+              "successes": 8,
+              "n": 25,
+              "rate": 0.32,
+              "wilson_95": [
+                0.17205190306907994,
+                0.5158973072689776
+              ]
+            },
+            "abstention_rate": {
+              "successes": 12,
+              "n": 38,
+              "rate": 0.3157894736842105,
+              "wilson_95": [
+                0.19084603675596182,
+                0.4745575989060953
+              ]
+            }
+          }
+        }
+      }
+    },
+    "pooled": {
+      "group": "pooled",
+      "n_pairs": 1144,
+      "n_unclassified_decision": 0,
+      "by_decision": {
+        "confirm": {
+          "n_pairs": 716,
+          "share_of_pairs": 0.6258741258741258,
+          "share_denominator": 1144,
+          "commit_accuracy": {
+            "successes": 273,
+            "n": 375,
+            "rate": 0.728,
+            "wilson_95": [
+              0.6808190378983344,
+              0.7705571143641728
+            ]
+          },
+          "abstention_rate": {
+            "successes": 333,
+            "n": 716,
+            "rate": 0.4650837988826816,
+            "wilson_95": [
+              0.42883302883622215,
+              0.5017072319568777
+            ]
+          }
+        },
+        "complement": {
+          "n_pairs": 173,
+          "share_of_pairs": 0.15122377622377622,
+          "share_denominator": 1144,
+          "commit_accuracy": {
+            "successes": 93,
+            "n": 112,
+            "rate": 0.8303571428571429,
+            "wilson_95": [
+              0.7501831328022577,
+              0.8886209771713689
+            ]
+          },
+          "abstention_rate": {
+            "successes": 60,
+            "n": 173,
+            "rate": 0.3468208092485549,
+            "wilson_95": [
+              0.27991985537798836,
+              0.42037666811010044
+            ]
+          }
+        },
+        "change": {
+          "n_pairs": 255,
+          "share_of_pairs": 0.2229020979020979,
+          "share_denominator": 1144,
+          "commit_accuracy": {
+            "successes": 71,
+            "n": 136,
+            "rate": 0.5220588235294118,
+            "wilson_95": [
+              0.4386608042564525,
+              0.6042449266376543
+            ]
+          },
+          "abstention_rate": {
+            "successes": 115,
+            "n": 255,
+            "rate": 0.45098039215686275,
+            "wilson_95": [
+              0.3910852008391494,
+              0.5123305807211063
+            ]
+          }
+        }
+      }
+    }
+  },
+  "s3_class_recall_committed": {
+    "pooled": {
+      "denominator_label": "committed binary-gold pairs",
+      "n_committed_binary": 523,
+      "tpr": {
+        "successes": 295,
+        "n": 339,
+        "rate": 0.8702064896755162,
+        "wilson_95": [
+          0.8302428685681393,
+          0.9018739555271427
+        ]
+      },
+      "tnr": {
+        "successes": 90,
+        "n": 184,
+        "rate": 0.4891304347826087,
+        "wilson_95": [
+          0.41786658724369025,
+          0.5608388592263658
+        ]
+      },
+      "balanced_accuracy": 0.6796684622290624,
+      "balanced_accuracy_ci_95": [
+        0.6388162071564712,
+        0.718863253112769
+      ],
+      "youden_j": 0.3593369244581248,
+      "youden_j_ci_95": [
+        0.2776324143129425,
+        0.437726506225538
+      ],
+      "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+    },
+    "by_stratum": {
+      "A": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 217,
+        "tpr": {
+          "successes": 62,
+          "n": 88,
+          "rate": 0.7045454545454546,
+          "wilson_95": [
+            0.6022884358332854,
+            0.7896914005310769
+          ]
+        },
+        "tnr": {
+          "successes": 71,
+          "n": 129,
+          "rate": 0.5503875968992248,
+          "wilson_95": [
+            0.4643248997495745,
+            0.6335361152935307
+          ]
+        },
+        "balanced_accuracy": 0.6274665257223397,
+        "balanced_accuracy_ci_95": [
+          0.5606397239947145,
+          0.6869717948775892
+        ],
+        "youden_j": 0.2549330514446795,
+        "youden_j_ci_95": [
+          0.12127944798942902,
+          0.3739435897551784
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      },
+      "B": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 306,
+        "tpr": {
+          "successes": 233,
+          "n": 251,
+          "rate": 0.9282868525896414,
+          "wilson_95": [
+            0.8895020255061696,
+            0.9541597593342377
+          ]
+        },
+        "tnr": {
+          "successes": 19,
+          "n": 55,
+          "rate": 0.34545454545454546,
+          "wilson_95": [
+            0.23362709542089738,
+            0.4774609649243839
+          ]
+        },
+        "balanced_accuracy": 0.6368706990220934,
+        "balanced_accuracy_ci_95": [
+          0.5776895335365209,
+          0.7041297171621568
+        ],
+        "youden_j": 0.27374139804418673,
+        "youden_j_ci_95": [
+          0.15537906707304172,
+          0.40825943432431355
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      }
+    },
+    "by_country": {
+      "BA": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 38,
+        "tpr": {
+          "successes": 3,
+          "n": 7,
+          "rate": 0.42857142857142855,
+          "wilson_95": [
+            0.15821985525146975,
+            0.7495416354723428
+          ]
+        },
+        "tnr": {
+          "successes": 21,
+          "n": 31,
+          "rate": 0.6774193548387096,
+          "wilson_95": [
+            0.5014100930808564,
+            0.8143057343364081
+          ]
+        },
+        "balanced_accuracy": 0.5529953917050691,
+        "balanced_accuracy_ci_95": [
+          0.3916965747370566,
+          0.7274658437951032
+        ],
+        "youden_j": 0.10599078341013812,
+        "youden_j_ci_95": [
+          -0.2166068505258868,
+          0.4549316875902063
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      },
+      "BE": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 70,
+        "tpr": {
+          "successes": 59,
+          "n": 61,
+          "rate": 0.9672131147540983,
+          "wilson_95": [
+            0.8881050958050438,
+            0.9909621096016377
+          ]
+        },
+        "tnr": {
+          "successes": 3,
+          "n": 9,
+          "rate": 0.3333333333333333,
+          "wilson_95": [
+            0.1205838183869109,
+            0.6457978644196036
+          ]
+        },
+        "balanced_accuracy": 0.6502732240437158,
+        "balanced_accuracy_ci_95": [
+          0.5367826575062475,
+          0.8069561027695288
+        ],
+        "youden_j": 0.3005464480874316,
+        "youden_j_ci_95": [
+          0.07356531501249508,
+          0.6139122055390576
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      },
+      "BG": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 55,
+        "tpr": {
+          "successes": 29,
+          "n": 33,
+          "rate": 0.8787878787878788,
+          "wilson_95": [
+            0.7267449482892476,
+            0.9518383869058644
+          ]
+        },
+        "tnr": {
+          "successes": 12,
+          "n": 22,
+          "rate": 0.5454545454545454,
+          "wilson_95": [
+            0.34659795320734943,
+            0.7307970581918667
+          ]
+        },
+        "balanced_accuracy": 0.7121212121212122,
+        "balanced_accuracy_ci_95": [
+          0.5869603186732394,
+          0.8117307294427011
+        ],
+        "youden_j": 0.4242424242424243,
+        "youden_j_ci_95": [
+          0.17392063734647878,
+          0.6234614588854022
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      },
+      "FI": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 92,
+        "tpr": {
+          "successes": 71,
+          "n": 75,
+          "rate": 0.9466666666666667,
+          "wilson_95": [
+            0.8707401284620144,
+            0.9790665722533456
+          ]
+        },
+        "tnr": {
+          "successes": 3,
+          "n": 17,
+          "rate": 0.17647058823529413,
+          "wilson_95": [
+            0.061911266376209945,
+            0.4102945856883412
+          ]
+        },
+        "balanced_accuracy": 0.5615686274509804,
+        "balanced_accuracy_ci_95": [
+          0.4928505850084097,
+          0.6795976658980383
+        ],
+        "youden_j": 0.1231372549019607,
+        "youden_j_ci_95": [
+          -0.01429882998318055,
+          0.35919533179607654
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      },
+      "HR": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 57,
+        "tpr": {
+          "successes": 40,
+          "n": 45,
+          "rate": 0.8888888888888888,
+          "wilson_95": [
+            0.7650090300423142,
+            0.9515952820543281
+          ]
+        },
+        "tnr": {
+          "successes": 6,
+          "n": 12,
+          "rate": 0.5,
+          "wilson_95": [
+            0.2537815976337061,
+            0.7462184023662939
+          ]
+        },
+        "balanced_accuracy": 0.6944444444444444,
+        "balanced_accuracy_ci_95": [
+          0.5566314179450805,
+          0.8214834083567308
+        ],
+        "youden_j": 0.38888888888888884,
+        "youden_j_ci_95": [
+          0.11326283589016106,
+          0.6429668167134617
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      },
+      "ME": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 59,
+        "tpr": {
+          "successes": 18,
+          "n": 28,
+          "rate": 0.6428571428571429,
+          "wilson_95": [
+            0.45830306514427815,
+            0.7929417049226233
+          ]
+        },
+        "tnr": {
+          "successes": 18,
+          "n": 31,
+          "rate": 0.5806451612903226,
+          "wilson_95": [
+            0.4076626249536972,
+            0.7358445693268776
+          ]
+        },
+        "balanced_accuracy": 0.6117511520737328,
+        "balanced_accuracy_ci_95": [
+          0.4852766828339905,
+          0.7197004828095971
+        ],
+        "youden_j": 0.22350230414746552,
+        "youden_j_ci_95": [
+          -0.029446634332018995,
+          0.4394009656191942
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      },
+      "MK": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 65,
+        "tpr": {
+          "successes": 12,
+          "n": 20,
+          "rate": 0.6,
+          "wilson_95": [
+            0.38658150076225317,
+            0.7811934676271829
+          ]
+        },
+        "tnr": {
+          "successes": 20,
+          "n": 45,
+          "rate": 0.4444444444444444,
+          "wilson_95": [
+            0.3093893003499759,
+            0.5882386550647895
+          ]
+        },
+        "balanced_accuracy": 0.5222222222222221,
+        "balanced_accuracy_ci_95": [
+          0.39594143611120114,
+          0.6378810391350402
+        ],
+        "youden_j": 0.04444444444444429,
+        "youden_j_ci_95": [
+          -0.20811712777759772,
+          0.2757620782700805
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      },
+      "SE": {
+        "denominator_label": "committed binary-gold pairs",
+        "n_committed_binary": 87,
+        "tpr": {
+          "successes": 63,
+          "n": 70,
+          "rate": 0.9,
+          "wilson_95": [
+            0.807670851514326,
+            0.9507106985574605
+          ]
+        },
+        "tnr": {
+          "successes": 7,
+          "n": 17,
+          "rate": 0.4117647058823529,
+          "wilson_95": [
+            0.2161105679021483,
+            0.6399455735700021
+          ]
+        },
+        "balanced_accuracy": 0.6558823529411765,
+        "balanced_accuracy_ci_95": [
+          0.5477097901435029,
+          0.7727563056924996
+        ],
+        "youden_j": 0.31176470588235294,
+        "youden_j_ci_95": [
+          0.0954195802870057,
+          0.5455126113849993
+        ],
+        "interval_method": "Wilson on TPR/TNR; square-and-add (Newcombe) on their sum for balanced accuracy and Youden's J"
+      }
+    }
+  },
+  "s4_negative_gold_fp": {
+    "pooled": {
+      "binary_shape": {
+        "shape_denominator_label": "binary-shape gold no",
+        "n_no_golds": 368,
+        "n_committed": 184,
+        "n_false_positives": 94,
+        "fp_over_all_no_golds": {
+          "successes": 94,
+          "n": 368,
+          "rate": 0.2554347826086957,
+          "wilson_95": [
+            0.21356320638132797,
+            0.3023595189358673
+          ]
+        },
+        "fp_over_committed_no_golds": {
+          "successes": 94,
+          "n": 184,
+          "rate": 0.5108695652173914,
+          "wilson_95": [
+            0.4391611407736341,
+            0.5821334127563097
+          ]
+        }
+      },
+      "all_shapes": {
+        "shape_denominator_label": "all-shapes gold no",
+        "n_no_golds": 370,
+        "n_committed": 185,
+        "n_false_positives": 95,
+        "fp_over_all_no_golds": {
+          "successes": 95,
+          "n": 370,
+          "rate": 0.25675675675675674,
+          "wilson_95": [
+            0.21490338873280485,
+            0.3036090829234393
+          ]
+        },
+        "fp_over_committed_no_golds": {
+          "successes": 95,
+          "n": 185,
+          "rate": 0.5135135135135135,
+          "wilson_95": [
+            0.441951021331933,
+            0.5845262153470502
+          ]
+        }
+      }
+    },
+    "by_stratum": {
+      "A": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 261,
+          "n_committed": 129,
+          "n_false_positives": 58,
+          "fp_over_all_no_golds": {
+            "successes": 58,
+            "n": 261,
+            "rate": 0.2222222222222222,
+            "wilson_95": [
+              0.17601958377179042,
+              0.2764830544266741
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 58,
+            "n": 129,
+            "rate": 0.4496124031007752,
+            "wilson_95": [
+              0.3664638847064693,
+              0.5356751002504254
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 262,
+          "n_committed": 129,
+          "n_false_positives": 58,
+          "fp_over_all_no_golds": {
+            "successes": 58,
+            "n": 262,
+            "rate": 0.22137404580152673,
+            "wilson_95": [
+              0.17533075114565333,
+              0.2754697347993373
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 58,
+            "n": 129,
+            "rate": 0.4496124031007752,
+            "wilson_95": [
+              0.3664638847064693,
+              0.5356751002504254
+            ]
+          }
+        }
+      },
+      "B": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 107,
+          "n_committed": 55,
+          "n_false_positives": 36,
+          "fp_over_all_no_golds": {
+            "successes": 36,
+            "n": 107,
+            "rate": 0.3364485981308411,
+            "wilson_95": [
+              0.2539726954082616,
+              0.4302609805791795
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 36,
+            "n": 55,
+            "rate": 0.6545454545454545,
+            "wilson_95": [
+              0.5225390350756162,
+              0.7663729045791027
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 108,
+          "n_committed": 56,
+          "n_false_positives": 37,
+          "fp_over_all_no_golds": {
+            "successes": 37,
+            "n": 108,
+            "rate": 0.3425925925925926,
+            "wilson_95": [
+              0.2598796411796127,
+              0.43611860170356265
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 37,
+            "n": 56,
+            "rate": 0.6607142857142857,
+            "wilson_95": [
+              0.5299945300706023,
+              0.770800275984081
+            ]
+          }
+        }
+      }
+    },
+    "by_country": {
+      "BA": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 78,
+          "n_committed": 31,
+          "n_false_positives": 10,
+          "fp_over_all_no_golds": {
+            "successes": 10,
+            "n": 78,
+            "rate": 0.1282051282051282,
+            "wilson_95": [
+              0.0711532263123448,
+              0.22015950398646625
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 10,
+            "n": 31,
+            "rate": 0.3225806451612903,
+            "wilson_95": [
+              0.18569426566359176,
+              0.49858990691914346
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 79,
+          "n_committed": 31,
+          "n_false_positives": 10,
+          "fp_over_all_no_golds": {
+            "successes": 10,
+            "n": 79,
+            "rate": 0.12658227848101267,
+            "wilson_95": [
+              0.07023263469675517,
+              0.21756358666503517
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 10,
+            "n": 31,
+            "rate": 0.3225806451612903,
+            "wilson_95": [
+              0.18569426566359176,
+              0.49858990691914346
+            ]
+          }
+        }
+      },
+      "BE": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 24,
+          "n_committed": 9,
+          "n_false_positives": 6,
+          "fp_over_all_no_golds": {
+            "successes": 6,
+            "n": 24,
+            "rate": 0.25,
+            "wilson_95": [
+              0.11999366228595004,
+              0.44899444005153993
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 6,
+            "n": 9,
+            "rate": 0.6666666666666666,
+            "wilson_95": [
+              0.3542021355803963,
+              0.879416181613089
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 24,
+          "n_committed": 9,
+          "n_false_positives": 6,
+          "fp_over_all_no_golds": {
+            "successes": 6,
+            "n": 24,
+            "rate": 0.25,
+            "wilson_95": [
+              0.11999366228595004,
+              0.44899444005153993
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 6,
+            "n": 9,
+            "rate": 0.6666666666666666,
+            "wilson_95": [
+              0.3542021355803963,
+              0.879416181613089
+            ]
+          }
+        }
+      },
+      "BG": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 51,
+          "n_committed": 22,
+          "n_false_positives": 10,
+          "fp_over_all_no_golds": {
+            "successes": 10,
+            "n": 51,
+            "rate": 0.19607843137254902,
+            "wilson_95": [
+              0.1101534251246669,
+              0.32458079481365604
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 10,
+            "n": 22,
+            "rate": 0.45454545454545453,
+            "wilson_95": [
+              0.2692029418081332,
+              0.6534020467926506
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 51,
+          "n_committed": 22,
+          "n_false_positives": 10,
+          "fp_over_all_no_golds": {
+            "successes": 10,
+            "n": 51,
+            "rate": 0.19607843137254902,
+            "wilson_95": [
+              0.1101534251246669,
+              0.32458079481365604
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 10,
+            "n": 22,
+            "rate": 0.45454545454545453,
+            "wilson_95": [
+              0.2692029418081332,
+              0.6534020467926506
+            ]
+          }
+        }
+      },
+      "FI": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 29,
+          "n_committed": 17,
+          "n_false_positives": 14,
+          "fp_over_all_no_golds": {
+            "successes": 14,
+            "n": 29,
+            "rate": 0.4827586206896552,
+            "wilson_95": [
+              0.3138609015268349,
+              0.6556897811800527
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 14,
+            "n": 17,
+            "rate": 0.8235294117647058,
+            "wilson_95": [
+              0.5897054143116588,
+              0.9380887336237901
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 29,
+          "n_committed": 17,
+          "n_false_positives": 14,
+          "fp_over_all_no_golds": {
+            "successes": 14,
+            "n": 29,
+            "rate": 0.4827586206896552,
+            "wilson_95": [
+              0.3138609015268349,
+              0.6556897811800527
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 14,
+            "n": 17,
+            "rate": 0.8235294117647058,
+            "wilson_95": [
+              0.5897054143116588,
+              0.9380887336237901
+            ]
+          }
+        }
+      },
+      "HR": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 27,
+          "n_committed": 12,
+          "n_false_positives": 6,
+          "fp_over_all_no_golds": {
+            "successes": 6,
+            "n": 27,
+            "rate": 0.2222222222222222,
+            "wilson_95": [
+              0.1060723945236004,
+              0.4075692886663257
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 6,
+            "n": 12,
+            "rate": 0.5,
+            "wilson_95": [
+              0.2537815976337061,
+              0.7462184023662939
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 27,
+          "n_committed": 12,
+          "n_false_positives": 6,
+          "fp_over_all_no_golds": {
+            "successes": 6,
+            "n": 27,
+            "rate": 0.2222222222222222,
+            "wilson_95": [
+              0.1060723945236004,
+              0.4075692886663257
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 6,
+            "n": 12,
+            "rate": 0.5,
+            "wilson_95": [
+              0.2537815976337061,
+              0.7462184023662939
+            ]
+          }
+        }
+      },
+      "ME": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 59,
+          "n_committed": 31,
+          "n_false_positives": 13,
+          "fp_over_all_no_golds": {
+            "successes": 13,
+            "n": 59,
+            "rate": 0.22033898305084745,
+            "wilson_95": [
+              0.1335419762792904,
+              0.34132699367637087
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 13,
+            "n": 31,
+            "rate": 0.41935483870967744,
+            "wilson_95": [
+              0.26415543067312236,
+              0.5923373750463028
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 59,
+          "n_committed": 31,
+          "n_false_positives": 13,
+          "fp_over_all_no_golds": {
+            "successes": 13,
+            "n": 59,
+            "rate": 0.22033898305084745,
+            "wilson_95": [
+              0.1335419762792904,
+              0.34132699367637087
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 13,
+            "n": 31,
+            "rate": 0.41935483870967744,
+            "wilson_95": [
+              0.26415543067312236,
+              0.5923373750463028
+            ]
+          }
+        }
+      },
+      "MK": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 73,
+          "n_committed": 45,
+          "n_false_positives": 25,
+          "fp_over_all_no_golds": {
+            "successes": 25,
+            "n": 73,
+            "rate": 0.3424657534246575,
+            "wilson_95": [
+              0.24394867339318563,
+              0.4567337400723187
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 25,
+            "n": 45,
+            "rate": 0.5555555555555556,
+            "wilson_95": [
+              0.41176134493521055,
+              0.6906106996500242
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 73,
+          "n_committed": 45,
+          "n_false_positives": 25,
+          "fp_over_all_no_golds": {
+            "successes": 25,
+            "n": 73,
+            "rate": 0.3424657534246575,
+            "wilson_95": [
+              0.24394867339318563,
+              0.4567337400723187
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 25,
+            "n": 45,
+            "rate": 0.5555555555555556,
+            "wilson_95": [
+              0.41176134493521055,
+              0.6906106996500242
+            ]
+          }
+        }
+      },
+      "SE": {
+        "binary_shape": {
+          "shape_denominator_label": "binary-shape gold no",
+          "n_no_golds": 27,
+          "n_committed": 17,
+          "n_false_positives": 10,
+          "fp_over_all_no_golds": {
+            "successes": 10,
+            "n": 27,
+            "rate": 0.37037037037037035,
+            "wilson_95": [
+              0.21532512960965605,
+              0.5577076558789762
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 10,
+            "n": 17,
+            "rate": 0.5882352941176471,
+            "wilson_95": [
+              0.36005442642999796,
+              0.7838894320978519
+            ]
+          }
+        },
+        "all_shapes": {
+          "shape_denominator_label": "all-shapes gold no",
+          "n_no_golds": 28,
+          "n_committed": 18,
+          "n_false_positives": 11,
+          "fp_over_all_no_golds": {
+            "successes": 11,
+            "n": 28,
+            "rate": 0.39285714285714285,
+            "wilson_95": [
+              0.23565686541579595,
+              0.575909557034028
+            ]
+          },
+          "fp_over_committed_no_golds": {
+            "successes": 11,
+            "n": 18,
+            "rate": 0.6111111111111112,
+            "wilson_95": [
+              0.38619041602237913,
+              0.7969475342783637
+            ]
+          }
+        }
+      }
+    }
+  },
+  "s5_crosstab_gold_class": {
+    "outcome_definition": "committed = D37 commit (accepted terminal status, non-abstention final answer); abstained = every other pair. EXP-36 logged zero agent_failure rows, so abstained is entirely honest abstention.",
+    "cells": {
+      "yes": {
+        "A": {
+          "n": 177,
+          "n_committed": 88,
+          "n_abstained": 89,
+          "n_agent_failure": 0,
+          "abstention_rate": {
+            "successes": 89,
+            "n": 177,
+            "rate": 0.5028248587570622,
+            "wilson_95": [
+              0.4298925806714473,
+              0.5756371247761929
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 62,
+            "n": 88,
+            "rate": 0.7045454545454546,
+            "wilson_95": [
+              0.6022884358332854,
+              0.7896914005310769
+            ]
+          }
+        },
+        "B": {
+          "n": 362,
+          "n_committed": 251,
+          "n_abstained": 111,
+          "n_agent_failure": 0,
+          "abstention_rate": {
+            "successes": 111,
+            "n": 362,
+            "rate": 0.30662983425414364,
+            "wilson_95": [
+              0.2613678102499728,
+              0.35595276229722805
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 233,
+            "n": 251,
+            "rate": 0.9282868525896414,
+            "wilson_95": [
+              0.8895020255061696,
+              0.9541597593342377
+            ]
+          }
+        }
+      },
+      "no": {
+        "A": {
+          "n": 262,
+          "n_committed": 129,
+          "n_abstained": 133,
+          "n_agent_failure": 0,
+          "abstention_rate": {
+            "successes": 133,
+            "n": 262,
+            "rate": 0.5076335877862596,
+            "wilson_95": [
+              0.4474257194345604,
+              0.5676208425943441
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 71,
+            "n": 129,
+            "rate": 0.5503875968992248,
+            "wilson_95": [
+              0.4643248997495745,
+              0.6335361152935307
+            ]
+          }
+        },
+        "B": {
+          "n": 108,
+          "n_committed": 56,
+          "n_abstained": 52,
+          "n_agent_failure": 0,
+          "abstention_rate": {
+            "successes": 52,
+            "n": 108,
+            "rate": 0.48148148148148145,
+            "wilson_95": [
+              0.3895137339402882,
+              0.5747213534577322
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 19,
+            "n": 56,
+            "rate": 0.3392857142857143,
+            "wilson_95": [
+              0.22919972401591907,
+              0.47000546992939773
+            ]
+          }
+        }
+      },
+      "other": {
+        "A": {
+          "n": 133,
+          "n_committed": 56,
+          "n_abstained": 77,
+          "n_agent_failure": 0,
+          "abstention_rate": {
+            "successes": 77,
+            "n": 133,
+            "rate": 0.5789473684210527,
+            "wilson_95": [
+              0.4939783156180539,
+              0.6594839477996192
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 29,
+            "n": 48,
+            "rate": 0.6041666666666666,
+            "wilson_95": [
+              0.4631040849254725,
+              0.7297917213940862
+            ]
+          }
+        },
+        "B": {
+          "n": 102,
+          "n_committed": 56,
+          "n_abstained": 46,
+          "n_agent_failure": 0,
+          "abstention_rate": {
+            "successes": 46,
+            "n": 102,
+            "rate": 0.45098039215686275,
+            "wilson_95": [
+              0.35794619944555056,
+              0.5475728654707694
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 23,
+            "n": 51,
+            "rate": 0.45098039215686275,
+            "wilson_95": [
+              0.32267518549374025,
+              0.5861529144963118
+            ]
+          }
+        }
+      },
+      "absent": {
+        "A": {
+          "n": 0,
+          "n_committed": 0,
+          "n_abstained": 0,
+          "n_agent_failure": 0,
+          "abstention_rate": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "B": {
+          "n": 0,
+          "n_committed": 0,
+          "n_abstained": 0,
+          "n_agent_failure": 0,
+          "abstention_rate": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          }
+        }
+      }
+    },
+    "marginal_abstention_by_stratum": {
+      "A": {
+        "successes": 299,
+        "n": 572,
+        "rate": 0.5227272727272727,
+        "wilson_95": [
+          0.48177938293952305,
+          0.5633719336281434
+        ]
+      },
+      "B": {
+        "successes": 209,
+        "n": 572,
+        "rate": 0.36538461538461536,
+        "wilson_95": [
+          0.3269421071509382,
+          0.40562317164057615
+        ]
+      }
+    },
+    "marginal_test_a_vs_b": {
+      "p1": 0.5227272727272727,
+      "p2": 0.36538461538461536,
+      "delta": 0.15734265734265734,
+      "ci_95": [
+        0.09993297969477455,
+        0.21328740597059476
+      ],
+      "z": 5.3554393793943325,
+      "p_value": 8.534875894916638e-08
+    },
+    "within_class_tests_a_vs_b": {
+      "yes": {
+        "p1": 0.5028248587570622,
+        "p2": 0.30662983425414364,
+        "delta": 0.19619502450291854,
+        "ci_95": [
+          0.10815032893583318,
+          0.2819287803975181
+        ],
+        "z": 4.428008476789304,
+        "p_value": 9.510716472149738e-06
+      },
+      "no": {
+        "p1": 0.5076335877862596,
+        "p2": 0.48148148148148145,
+        "delta": 0.0261521063047781,
+        "ci_95": [
+          -0.08483735777899505,
+          0.13595437097728252
+        ],
+        "z": 0.4574022851257142,
+        "p_value": 0.647381922184531
+      },
+      "other": {
+        "p1": 0.5789473684210527,
+        "p2": 0.45098039215686275,
+        "delta": 0.1279669762641899,
+        "ci_95": [
+          -0.0006792278583436506,
+          0.251017785410029
+        ],
+        "z": 1.946687223640578,
+        "p_value": 0.0515722442766362
+      },
+      "absent": null
+    },
+    "cmh_abstention_conditioned_on_gold_class": {
+      "n_tables_used": 3,
+      "statistic": 16.88987248576473,
+      "p_value": 3.961237096729734e-05,
+      "mh_odds_ratio": 0.5907351894801575,
+      "observed_a": 273.0,
+      "expected_a": 305.71005407965896
+    }
+  },
+  "s6_abstention_codes": {
+    "code_totals": {
+      "E": 208,
+      "G": 199,
+      "I": 30,
+      "Z": 19,
+      "D": 24,
+      "C": 12,
+      "B": 16
+    },
+    "by_code_and_stratum": {
+      "B": {
+        "A": {
+          "n": 16,
+          "by_gold_class": {
+            "no": 10,
+            "yes": 3,
+            "other": 3
+          }
+        },
+        "B": {
+          "n": 0,
+          "by_gold_class": {}
+        }
+      },
+      "C": {
+        "A": {
+          "n": 4,
+          "by_gold_class": {
+            "other": 4
+          }
+        },
+        "B": {
+          "n": 8,
+          "by_gold_class": {
+            "other": 6,
+            "yes": 2
+          }
+        }
+      },
+      "D": {
+        "A": {
+          "n": 10,
+          "by_gold_class": {
+            "other": 7,
+            "no": 2,
+            "yes": 1
+          }
+        },
+        "B": {
+          "n": 14,
+          "by_gold_class": {
+            "yes": 12,
+            "no": 1,
+            "other": 1
+          }
+        }
+      },
+      "E": {
+        "A": {
+          "n": 101,
+          "by_gold_class": {
+            "yes": 39,
+            "no": 41,
+            "other": 21
+          }
+        },
+        "B": {
+          "n": 107,
+          "by_gold_class": {
+            "yes": 58,
+            "other": 23,
+            "no": 26
+          }
+        }
+      },
+      "G": {
+        "A": {
+          "n": 143,
+          "by_gold_class": {
+            "no": 72,
+            "yes": 44,
+            "other": 27
+          }
+        },
+        "B": {
+          "n": 56,
+          "by_gold_class": {
+            "yes": 29,
+            "no": 17,
+            "other": 10
+          }
+        }
+      },
+      "I": {
+        "A": {
+          "n": 13,
+          "by_gold_class": {
+            "other": 11,
+            "yes": 1,
+            "no": 1
+          }
+        },
+        "B": {
+          "n": 17,
+          "by_gold_class": {
+            "no": 6,
+            "yes": 7,
+            "other": 4
+          }
+        }
+      },
+      "Z": {
+        "A": {
+          "n": 12,
+          "by_gold_class": {
+            "no": 7,
+            "other": 4,
+            "yes": 1
+          }
+        },
+        "B": {
+          "n": 7,
+          "by_gold_class": {
+            "no": 2,
+            "yes": 3,
+            "other": 2
+          }
+        }
+      }
+    },
+    "G_composition": {
+      "n_G": 199,
+      "yes_gold": 73,
+      "no_gold": 89,
+      "binary_gold": 162,
+      "yes_share": 0.4506172839506173,
+      "base_rate_yes_share": 0.592959295929593,
+      "base_rate_denominator_label": "all-shapes gold yes/no (n=909)"
+    },
+    "G_by_stratum_and_gold_class": {
+      "yes": {
+        "A": {
+          "n_pairs": 177,
+          "n_abstentions": 89,
+          "n_G": 44,
+          "G_per_pair": {
+            "successes": 44,
+            "n": 177,
+            "rate": 0.24858757062146894,
+            "wilson_95": [
+              0.19071119602943998,
+              0.3171450191305789
+            ]
+          },
+          "G_per_abstention": {
+            "successes": 44,
+            "n": 89,
+            "rate": 0.4943820224719101,
+            "wilson_95": [
+              0.39291450235623177,
+              0.596314447590243
+            ]
+          }
+        },
+        "B": {
+          "n_pairs": 362,
+          "n_abstentions": 111,
+          "n_G": 29,
+          "G_per_pair": {
+            "successes": 29,
+            "n": 362,
+            "rate": 0.08011049723756906,
+            "wilson_95": [
+              0.056354989541829256,
+              0.11268396798923559
+            ]
+          },
+          "G_per_abstention": {
+            "successes": 29,
+            "n": 111,
+            "rate": 0.26126126126126126,
+            "wilson_95": [
+              0.18850199579737154,
+              0.3499921983355096
+            ]
+          }
+        }
+      },
+      "no": {
+        "A": {
+          "n_pairs": 262,
+          "n_abstentions": 133,
+          "n_G": 72,
+          "G_per_pair": {
+            "successes": 72,
+            "n": 262,
+            "rate": 0.2748091603053435,
+            "wilson_95": [
+              0.224301202885962,
+              0.33182521726135916
+            ]
+          },
+          "G_per_abstention": {
+            "successes": 72,
+            "n": 133,
+            "rate": 0.5413533834586466,
+            "wilson_95": [
+              0.4566974437056402,
+              0.6236875514179028
+            ]
+          }
+        },
+        "B": {
+          "n_pairs": 108,
+          "n_abstentions": 52,
+          "n_G": 17,
+          "G_per_pair": {
+            "successes": 17,
+            "n": 108,
+            "rate": 0.1574074074074074,
+            "wilson_95": [
+              0.10066202670916789,
+              0.2376870901542137
+            ]
+          },
+          "G_per_abstention": {
+            "successes": 17,
+            "n": 52,
+            "rate": 0.3269230769230769,
+            "wilson_95": [
+              0.21522074458569174,
+              0.4624381063802605
+            ]
+          }
+        }
+      },
+      "other": {
+        "A": {
+          "n_pairs": 133,
+          "n_abstentions": 77,
+          "n_G": 27,
+          "G_per_pair": {
+            "successes": 27,
+            "n": 133,
+            "rate": 0.20300751879699247,
+            "wilson_95": [
+              0.14343686665544986,
+              0.2792527138209234
+            ]
+          },
+          "G_per_abstention": {
+            "successes": 27,
+            "n": 77,
+            "rate": 0.35064935064935066,
+            "wilson_95": [
+              0.25348675204062443,
+              0.46200576460218046
+            ]
+          }
+        },
+        "B": {
+          "n_pairs": 102,
+          "n_abstentions": 46,
+          "n_G": 10,
+          "G_per_pair": {
+            "successes": 10,
+            "n": 102,
+            "rate": 0.09803921568627451,
+            "wilson_95": [
+              0.05412802052496396,
+              0.17112831178885937
+            ]
+          },
+          "G_per_abstention": {
+            "successes": 10,
+            "n": 46,
+            "rate": 0.21739130434782608,
+            "wilson_95": [
+              0.1226090532456255,
+              0.35573687371578944
+            ]
+          }
+        }
+      },
+      "absent": {
+        "A": {
+          "n_pairs": 0,
+          "n_abstentions": 0,
+          "n_G": 0,
+          "G_per_pair": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          },
+          "G_per_abstention": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          }
+        },
+        "B": {
+          "n_pairs": 0,
+          "n_abstentions": 0,
+          "n_G": 0,
+          "G_per_pair": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          },
+          "G_per_abstention": {
+            "successes": 0,
+            "n": 0,
+            "rate": null,
+            "wilson_95": [
+              0.0,
+              1.0
+            ]
+          }
+        }
+      }
+    },
+    "G_marginal_per_pair": {
+      "A": {
+        "successes": 143,
+        "n": 572,
+        "rate": 0.25,
+        "wilson_95": [
+          0.21626153657086356,
+          0.287073981184806
+        ]
+      },
+      "B": {
+        "successes": 56,
+        "n": 572,
+        "rate": 0.0979020979020979,
+        "wilson_95": [
+          0.07616396240898307,
+          0.1250050521630728
+        ]
+      }
+    },
+    "G_marginal_per_abstention": {
+      "A": {
+        "successes": 143,
+        "n": 299,
+        "rate": 0.4782608695652174,
+        "wilson_95": [
+          0.42227597081584667,
+          0.5347972778383376
+        ]
+      },
+      "B": {
+        "successes": 56,
+        "n": 209,
+        "rate": 0.2679425837320574,
+        "wilson_95": [
+          0.2124841185625917,
+          0.331777603108295
+        ]
+      }
+    },
+    "G_marginal_test_per_pair": {
+      "p1": 0.25,
+      "p2": 0.0979020979020979,
+      "delta": 0.15209790209790208,
+      "ci_95": [
+        0.10882141836560615,
+        0.1950749496420083
+      ],
+      "z": 6.785624487762404,
+      "p_value": 1.1558531909372505e-11
+    },
+    "G_marginal_test_per_abstention": {
+      "p1": 0.4782608695652174,
+      "p2": 0.2679425837320574,
+      "delta": 0.21031828583315998,
+      "ci_95": [
+        0.12541116842394673,
+        0.2895142883798655
+      ],
+      "z": 4.7787229081669755,
+      "p_value": 1.7641211260688294e-06
+    },
+    "cmh_G_per_pair_conditioned_on_gold_class": {
+      "n_tables_used": 3,
+      "statistic": 33.519601911786665,
+      "p_value": 7.054939018466567e-09,
+      "mh_odds_ratio": 2.7192301121708686,
+      "observed_a": 143.0,
+      "expected_a": 107.93421783999291
+    },
+    "cmh_G_per_abstention_conditioned_on_gold_class": {
+      "n_tables_used": 3,
+      "statistic": 19.372511377297233,
+      "p_value": 1.0754396810942173e-05,
+      "mh_odds_ratio": 2.4429126872867992,
+      "observed_a": 143.0,
+      "expected_a": 119.63138540980003
+    }
+  },
+  "s7_permutation_tests": {
+    "unit_note": "The country-level test permutes the eight country labels, so the 143 pairs inside a country move together and within-country clustering is handled by construction. The pair-level test treats the 1,144 pairs as independent, which they are not: pairs cluster within country, so its p-value is anti-conservative and is reported only as a comparator.",
+    "abstention": {
+      "country_level_exact": {
+        "observed_delta": 0.1573426573426573,
+        "n_arrangements": 70,
+        "n_at_least_as_extreme": 8,
+        "p_value_exact": 0.11428571428571428,
+        "min_achievable_p": 0.02857142857142857,
+        "at_floor": false,
+        "country_values": {
+          "BA": 0.6153846153846154,
+          "BE": 0.44755244755244755,
+          "BG": 0.5734265734265734,
+          "FI": 0.25874125874125875,
+          "HR": 0.46153846153846156,
+          "ME": 0.4195804195804196,
+          "MK": 0.4825174825174825,
+          "SE": 0.2937062937062937
+        }
+      },
+      "pair_level": {
+        "p1": 0.5227272727272727,
+        "p2": 0.36538461538461536,
+        "delta": 0.15734265734265734,
+        "ci_95": [
+          0.09993297969477455,
+          0.21328740597059476
+        ],
+        "z": 5.3554393793943325,
+        "p_value": 8.534875894916638e-08,
+        "denominator_label": "all pairs (A n=572, B n=572)"
+      }
+    },
+    "commit_accuracy": {
+      "country_level_exact": {
+        "observed_delta": -0.1479335239751477,
+        "n_arrangements": 70,
+        "n_at_least_as_extreme": 4,
+        "p_value_exact": 0.05714285714285714,
+        "min_achievable_p": 0.02857142857142857,
+        "at_floor": false,
+        "country_values": {
+          "BA": 0.6037735849056604,
+          "BE": 0.8205128205128205,
+          "BG": 0.7241379310344828,
+          "FI": 0.8,
+          "HR": 0.6666666666666666,
+          "ME": 0.6097560975609756,
+          "MK": 0.5277777777777778,
+          "SE": 0.77
+        }
+      },
+      "pair_level": {
+        "p1": 0.6113207547169811,
+        "p2": 0.7681564245810056,
+        "delta": -0.15683566986402453,
+        "ci_95": [
+          -0.2292543360363472,
+          -0.08355676057074868
+        ],
+        "z": -4.229179576173936,
+        "p_value": 2.345450766316759e-05,
+        "denominator_label": "scoreable committed pairs"
+      }
+    },
+    "per_country_rates": {
+      "abstention": {
+        "BA": 0.6153846153846154,
+        "BE": 0.44755244755244755,
+        "BG": 0.5734265734265734,
+        "FI": 0.25874125874125875,
+        "HR": 0.46153846153846156,
+        "ME": 0.4195804195804196,
+        "MK": 0.4825174825174825,
+        "SE": 0.2937062937062937
+      },
+      "commit_accuracy": {
+        "BA": 0.6037735849056604,
+        "BE": 0.8205128205128205,
+        "BG": 0.7241379310344828,
+        "FI": 0.8,
+        "HR": 0.6666666666666666,
+        "ME": 0.6097560975609756,
+        "MK": 0.5277777777777778,
+        "SE": 0.77
+      }
+    }
+  },
+  "s8_belgium_isolate": {
+    "catalogue_flag": {
+      "harvestable_national_catalogue": [
+        "FI",
+        "HR",
+        "SE",
+        "ME"
+      ],
+      "no_harvestable_catalogue": [
+        "BG",
+        "MK",
+        "BE",
+        "BA"
+      ],
+      "note": "The catalogue split swaps BE and ME relative to the D47 stratum split; it is a competing grouping, not a nested one."
+    },
+    "be": {
+      "group": "BE",
+      "n_pairs": 143,
+      "abstention_rate": {
+        "successes": 64,
+        "n": 143,
+        "rate": 0.44755244755244755,
+        "wilson_95": [
+          0.36848777171539715,
+          0.5293612409512758
+        ]
+      },
+      "commit_accuracy": {
+        "successes": 64,
+        "n": 78,
+        "rate": 0.8205128205128205,
+        "wilson_95": [
+          0.7209764606558009,
+          0.8899608408107411
+        ]
+      },
+      "tpr": {
+        "successes": 59,
+        "n": 61,
+        "rate": 0.9672131147540983,
+        "wilson_95": [
+          0.8881050958050438,
+          0.9909621096016377
+        ]
+      },
+      "tnr": {
+        "successes": 3,
+        "n": 9,
+        "rate": 0.3333333333333333,
+        "wilson_95": [
+          0.1205838183869109,
+          0.6457978644196036
+        ]
+      },
+      "balanced_accuracy": 0.6502732240437158,
+      "youden_j": 0.3005464480874316
+    },
+    "rest_of_stratum_b": {
+      "group": "FI+SE+HR",
+      "n_pairs": 429,
+      "abstention_rate": {
+        "successes": 145,
+        "n": 429,
+        "rate": 0.337995337995338,
+        "wilson_95": [
+          0.29484743754889503,
+          0.384018814360719
+        ]
+      },
+      "commit_accuracy": {
+        "successes": 211,
+        "n": 280,
+        "rate": 0.7535714285714286,
+        "wilson_95": [
+          0.6998899819994673,
+          0.8003892957000707
+        ]
+      },
+      "tpr": {
+        "successes": 174,
+        "n": 190,
+        "rate": 0.9157894736842105,
+        "wilson_95": [
+          0.8675969993151478,
+          0.9475021077657169
+        ]
+      },
+      "tnr": {
+        "successes": 16,
+        "n": 46,
+        "rate": 0.34782608695652173,
+        "wilson_95": [
+          0.22680993370754343,
+          0.4922994115793723
+        ]
+      },
+      "balanced_accuracy": 0.6318077803203661,
+      "youden_j": 0.2636155606407322
+    },
+    "contrasts_be_vs_rest_b": {
+      "abstention_rate": {
+        "p1": 0.44755244755244755,
+        "p2": 0.337995337995338,
+        "delta": 0.10955710955710957,
+        "ci_95": [
+          0.018072775696209395,
+          0.20204721708385165
+        ],
+        "z": 2.3561817586557594,
+        "p_value": 0.01846388088631068
+      },
+      "commit_accuracy": {
+        "p1": 0.8205128205128205,
+        "p2": 0.7535714285714286,
+        "delta": 0.06694139194139193,
+        "ci_95": [
+          -0.04305587900685154,
+          0.1547179561789988
+        ],
+        "z": 1.2389596875631785,
+        "p_value": 0.21536042747726358
+      },
+      "tpr": {
+        "p1": 0.9672131147540983,
+        "p2": 0.9157894736842105,
+        "delta": 0.05142364106988784,
+        "ci_95": [
+          -0.03380411158399531,
+          0.10515007164256981
+        ],
+        "z": 1.354338390959665,
+        "p_value": 0.17562844333535899
+      },
+      "tnr": {
+        "p1": 0.3333333333333333,
+        "p2": 0.34782608695652173,
+        "delta": -0.014492753623188415,
+        "ci_95": [
+          -0.27165981535061406,
+          0.3205878225583369
+        ],
+        "z": -0.08361888528376636,
+        "p_value": 0.933359451237227
+      }
+    },
+    "catalogue_grouping": {
+      "no_catalogue": {
+        "group": "no_catalogue",
+        "n_pairs": 572,
+        "abstention_rate": {
+          "successes": 303,
+          "n": 572,
+          "rate": 0.5297202797202797,
+          "wilson_95": [
+            0.48875553709774283,
+            0.5702884922599746
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 176,
+          "n": 261,
+          "rate": 0.6743295019157088,
+          "wilson_95": [
+            0.6153051400209025,
+            0.728296652557992
+          ]
+        },
+        "tpr": {
+          "successes": 103,
+          "n": 121,
+          "rate": 0.8512396694214877,
+          "wilson_95": [
+            0.7770809679977386,
+            0.9037825912953552
+          ]
+        },
+        "tnr": {
+          "successes": 56,
+          "n": 107,
+          "rate": 0.5233644859813084,
+          "wilson_95": [
+            0.4295706213734639,
+            0.615538853485473
+          ]
+        },
+        "balanced_accuracy": 0.6873020777013981,
+        "youden_j": 0.3746041554027961
+      },
+      "catalogue": {
+        "group": "catalogue",
+        "n_pairs": 572,
+        "abstention_rate": {
+          "successes": 205,
+          "n": 572,
+          "rate": 0.3583916083916084,
+          "wilson_95": [
+            0.32015877113536856,
+            0.39851379486609456
+          ]
+        },
+        "commit_accuracy": {
+          "successes": 261,
+          "n": 362,
+          "rate": 0.7209944751381215,
+          "wilson_95": [
+            0.6726560506478709,
+            0.7646918664410423
+          ]
+        },
+        "tpr": {
+          "successes": 192,
+          "n": 218,
+          "rate": 0.8807339449541285,
+          "wilson_95": [
+            0.8309856246308704,
+            0.9172965083953615
+          ]
+        },
+        "tnr": {
+          "successes": 34,
+          "n": 77,
+          "rate": 0.44155844155844154,
+          "wilson_95": [
+            0.336053346334575,
+            0.5526176384386963
+          ]
+        },
+        "balanced_accuracy": 0.661146193256285,
+        "youden_j": 0.32229238651257
+      },
+      "contrasts_no_catalogue_vs_catalogue": {
+        "abstention_rate": {
+          "p1": 0.5297202797202797,
+          "p2": 0.3583916083916084,
+          "delta": 0.1713286713286713,
+          "ci_95": [
+            0.11398845868846452,
+            0.22707389276807344
+          ],
+          "z": 5.831478435340494,
+          "p_value": 5.49384138182063e-09
+        },
+        "commit_accuracy": {
+          "p1": 0.6743295019157088,
+          "p2": 0.7209944751381215,
+          "delta": -0.0466649732224127,
+          "ci_95": [
+            -0.12010431760789611,
+            0.025785400349064125
+          ],
+          "z": -1.2557766185718597,
+          "p_value": 0.2091969710995003
+        },
+        "tpr": {
+          "p1": 0.8512396694214877,
+          "p2": 0.8807339449541285,
+          "delta": -0.029494275532640835,
+          "ci_95": [
+            -0.11217640203075978,
+            0.04286354376858492
+          ],
+          "z": -0.7741429585695104,
+          "p_value": 0.4388462558735635
+        },
+        "tnr": {
+          "p1": 0.5233644859813084,
+          "p2": 0.44155844155844154,
+          "delta": 0.08180604442286682,
+          "ci_95": [
+            -0.06356050692152546,
+            0.22190400708824587
+          ],
+          "z": 1.0950813308497591,
+          "p_value": 0.27348100687234056
+        }
+      },
+      "country_level_exact_abstention": {
+        "observed_delta": 0.1713286713286713,
+        "n_arrangements": 70,
+        "n_at_least_as_extreme": 4,
+        "p_value_exact": 0.05714285714285714,
+        "min_achievable_p": 0.02857142857142857,
+        "at_floor": false,
+        "country_values": {
+          "BA": 0.6153846153846154,
+          "BE": 0.44755244755244755,
+          "BG": 0.5734265734265734,
+          "FI": 0.25874125874125875,
+          "HR": 0.46153846153846156,
+          "ME": 0.4195804195804196,
+          "MK": 0.4825174825174825,
+          "SE": 0.2937062937062937
+        }
+      },
+      "country_level_exact_commit_accuracy": {
+        "observed_delta": -0.04255516249922531,
+        "n_arrangements": 70,
+        "n_at_least_as_extreme": 40,
+        "p_value_exact": 0.5714285714285714,
+        "min_achievable_p": 0.02857142857142857,
+        "at_floor": false,
+        "country_values": {
+          "BA": 0.6037735849056604,
+          "BE": 0.8205128205128205,
+          "BG": 0.7241379310344828,
+          "FI": 0.8,
+          "HR": 0.6666666666666666,
+          "ME": 0.6097560975609756,
+          "MK": 0.5277777777777778,
+          "SE": 0.77
+        }
+      }
+    }
+  },
+  "small_cells": [
+    {
+      "path": "s2_decision_mix.by_country.MK.by_decision.complement.abstention_rate",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s2_decision_mix.by_country.MK.by_decision.complement.commit_accuracy",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s2_decision_mix.by_country.MK.by_decision.confirm.abstention_rate",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s2_decision_mix.by_country.MK.by_decision.confirm.commit_accuracy",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s5_crosstab_gold_class.cells.absent.A.abstention_rate",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s5_crosstab_gold_class.cells.absent.A.commit_accuracy",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s5_crosstab_gold_class.cells.absent.B.abstention_rate",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s5_crosstab_gold_class.cells.absent.B.commit_accuracy",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s6_abstention_codes.G_by_stratum_and_gold_class.absent.A.G_per_abstention",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s6_abstention_codes.G_by_stratum_and_gold_class.absent.A.G_per_pair",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s6_abstention_codes.G_by_stratum_and_gold_class.absent.B.G_per_abstention",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s6_abstention_codes.G_by_stratum_and_gold_class.absent.B.G_per_pair",
+      "n": 0,
+      "successes": 0,
+      "rate": null
+    },
+    {
+      "path": "s2_decision_mix.by_country.BA.by_decision.change.abstention_rate",
+      "n": 1,
+      "successes": 0,
+      "rate": 0.0
+    },
+    {
+      "path": "s2_decision_mix.by_country.BA.by_decision.change.commit_accuracy",
+      "n": 1,
+      "successes": 0,
+      "rate": 0.0
+    },
+    {
+      "path": "s2_decision_mix.by_country.BA.by_decision.complement.abstention_rate",
+      "n": 2,
+      "successes": 0,
+      "rate": 0.0
+    },
+    {
+      "path": "s2_decision_mix.by_country.BA.by_decision.complement.commit_accuracy",
+      "n": 2,
+      "successes": 1,
+      "rate": 0.5
+    },
+    {
+      "path": "s2_decision_mix.by_country.BG.by_decision.change.commit_accuracy",
+      "n": 2,
+      "successes": 1,
+      "rate": 0.5
+    },
+    {
+      "path": "s2_decision_mix.by_country.BG.by_decision.change.abstention_rate",
+      "n": 3,
+      "successes": 0,
+      "rate": 0.0
+    },
+    {
+      "path": "s2_decision_mix.by_country.BE.by_decision.change.commit_accuracy",
+      "n": 4,
+      "successes": 1,
+      "rate": 0.25
+    },
+    {
+      "path": "s2_decision_mix.by_country.FI.by_decision.change.abstention_rate",
+      "n": 4,
+      "successes": 0,
+      "rate": 0.0
+    },
+    {
+      "path": "s2_decision_mix.by_country.FI.by_decision.change.commit_accuracy",
+      "n": 4,
+      "successes": 0,
+      "rate": 0.0
+    },
+    {
+      "path": "s2_decision_mix.by_country.FI.by_decision.complement.commit_accuracy",
+      "n": 6,
+      "successes": 6,
+      "rate": 1.0
+    },
+    {
+      "path": "s2_decision_mix.by_country.BE.by_decision.change.abstention_rate",
+      "n": 7,
+      "successes": 3,
+      "rate": 0.42857142857142855
+    },
+    {
+      "path": "s3_class_recall_committed.by_country.BA.tpr",
+      "n": 7,
+      "successes": 3,
+      "rate": 0.42857142857142855
+    },
+    {
+      "path": "s2_decision_mix.by_country.SE.by_decision.change.commit_accuracy",
+      "n": 8,
+      "successes": 3,
+      "rate": 0.375
+    },
+    {
+      "path": "s2_decision_mix.by_country.HR.by_decision.change.commit_accuracy",
+      "n": 9,
+      "successes": 4,
+      "rate": 0.4444444444444444
+    },
+    {
+      "path": "s3_class_recall_committed.by_country.BE.tnr",
+      "n": 9,
+      "successes": 3,
+      "rate": 0.3333333333333333
+    },
+    {
+      "path": "s4_negative_gold_fp.by_country.BE.all_shapes.fp_over_committed_no_golds",
+      "n": 9,
+      "successes": 6,
+      "rate": 0.6666666666666666
+    },
+    {
+      "path": "s4_negative_gold_fp.by_country.BE.binary_shape.fp_over_committed_no_golds",
+      "n": 9,
+      "successes": 6,
+      "rate": 0.6666666666666666
+    },
+    {
+      "path": "s8_belgium_isolate.be.tnr",
+      "n": 9,
+      "successes": 3,
+      "rate": 0.3333333333333333
+    },
+    {
+      "path": "s2_decision_mix.by_country.BG.by_decision.complement.commit_accuracy",
+      "n": 10,
+      "successes": 7,
+      "rate": 0.7
+    },
+    {
+      "path": "s2_decision_mix.by_country.FI.by_decision.complement.abstention_rate",
+      "n": 11,
+      "successes": 5,
+      "rate": 0.45454545454545453
+    },
+    {
+      "path": "s2_decision_mix.by_country.SE.by_decision.change.abstention_rate",
+      "n": 12,
+      "successes": 3,
+      "rate": 0.25
+    },
+    {
+      "path": "s3_class_recall_committed.by_country.HR.tnr",
+      "n": 12,
+      "successes": 6,
+      "rate": 0.5
+    },
+    {
+      "path": "s4_negative_gold_fp.by_country.HR.all_shapes.fp_over_committed_no_golds",
+      "n": 12,
+      "successes": 6,
+      "rate": 0.5
+    },
+    {
+      "path": "s4_negative_gold_fp.by_country.HR.binary_shape.fp_over_committed_no_golds",
+      "n": 12,
+      "successes": 6,
+      "rate": 0.5
+    },
+    {
+      "path": "s2_decision_mix.by_country.BG.by_decision.complement.abstention_rate",
+      "n": 14,
+      "successes": 4,
+      "rate": 0.2857142857142857
+    },
+    {
+      "path": "s2_decision_mix.by_country.BE.by_decision.complement.commit_accuracy",
+      "n": 15,
+      "successes": 14,
+      "rate": 0.9333333333333333
+    },
+    {
+      "path": "s2_decision_mix.by_country.HR.by_decision.change.abstention_rate",
+      "n": 15,
+      "successes": 6,
+      "rate": 0.4
+    },
+    {
+      "path": "s2_decision_mix.by_country.ME.by_decision.complement.commit_accuracy",
+      "n": 15,
+      "successes": 7,
+      "rate": 0.4666666666666667
+    },
+    {
+      "path": "s3_class_recall_committed.by_country.FI.tnr",
+      "n": 17,
+      "successes": 3,
+      "rate": 0.17647058823529413
+    },
+    {
+      "path": "s3_class_recall_committed.by_country.SE.tnr",
+      "n": 17,
+      "successes": 7,
+      "rate": 0.4117647058823529
+    },
+    {
+      "path": "s4_negative_gold_fp.by_country.FI.all_shapes.fp_over_committed_no_golds",
+      "n": 17,
+      "successes": 14,
+      "rate": 0.8235294117647058
+    },
+    {
+      "path": "s4_negative_gold_fp.by_country.FI.binary_shape.fp_over_committed_no_golds",
+      "n": 17,
+      "successes": 14,
+      "rate": 0.8235294117647058
+    },
+    {
+      "path": "s4_negative_gold_fp.by_country.SE.binary_shape.fp_over_committed_no_golds",
+      "n": 17,
+      "successes": 10,
+      "rate": 0.5882352941176471
+    },
+    {
+      "path": "s4_negative_gold_fp.by_country.SE.all_shapes.fp_over_committed_no_golds",
+      "n": 18,
+      "successes": 11,
+      "rate": 0.6111111111111112
+    }
+  ],
+  "small_cell_threshold": 20,
+  "not_computable": [
+    "**Upper bound on commit accuracy under the D22 staleness band.** ODMI gold can be one cycle old, so some disagreements are stale gold rather than swarm error. Separating them needs a human review of each disagreement, which does not exist yet. Every commit-accuracy figure here is therefore a lower bound.",
+    "**Absent-gold cells.** The cross-tab reserves a gold class for `absent`, but all 1,144 canonical pairs carry a gold response, so the class is empty and its stratum contrast is undefined rather than zero.",
+    "**Causal attribution for the abstention codes.** The priority list is a first-match marker: a pair that would satisfy several predicates is recorded under the first one in the order. Code counts are therefore descriptive, and the conditioned tests speak to composition, not cause.",
+    "**A clean separation of language resource from catalogue access.** The two candidate groupings differ by exactly one swap (BE for ME), so with eight countries no test can attribute a gap to one rather than the other. Both splits are reported side by side and the comparison is descriptive.",
+    "**Per-country TNR for several countries at a usable precision.** Committed no-gold pairs per country run to a few dozen at most, so the country-level TNR intervals are too wide to rank countries against each other.",
+    "**Any within-country stratification below the country level.** With 143 pairs per country, splitting further by dimension and gold class at once produces cells in single figures, which is why the decomposition stops at stratum x gold class.",
+    "**A country-level p below 0.029 for any endpoint.** Eight countries admit 70 four-against-four arrangements, so the smallest two-sided p the design can produce is 2/70 = 0.029, and that only when the observed split is the single most extreme of the 70. A null result at country level is therefore a statement about the design's resolution as much as about the swarm; it does not license the reverse claim that the strata behave alike."
+  ]
+}

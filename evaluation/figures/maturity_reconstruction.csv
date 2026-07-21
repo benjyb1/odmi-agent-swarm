@@ -1,0 +1,9 @@
+country_code,country,published_odmi_2025,swarm_floor,swarm_ceiling,band_width,published_inside_band,n_scored_questions,n_committed,n_abstained,coverage
+FI,Finland,77.9,69.9,91.3,21.4,yes,130,97,33,0.746
+SE,Sweden,77.8,61.3,83.9,22.6,yes,130,93,37,0.715
+BE,Belgium,76.6,50.0,87.7,37.7,yes,130,74,56,0.569
+HR,Croatia,73.5,40.3,68.6,28.2,no,130,69,61,0.531
+BG,Bulgaria,62.9,28.8,70.2,41.5,yes,130,54,76,0.415
+ME,Montenegro,59.9,33.6,54.2,20.6,no,130,76,54,0.585
+MK,North Macedonia,42.8,28.3,54.9,26.6,yes,130,65,65,0.500
+BA,Bosnia and Herzegovina,15.1,12.2,24.5,12.3,yes,130,50,80,0.385
