@@ -9,9 +9,9 @@ rather than trusted as an opaque artefact.
 Figures fall into two groups by where their generating script writes **by
 default**:
 
-- **Written here directly.** `cost_report.py` and `risk_coverage.py` take an
-  output path and are pointed at this directory. Re-running them updates this
-  copy.
+- **Written here directly.** `cost_report.py`, `risk_coverage.py` and
+  `maturity_reconstruction_figure.py` take an output path and are pointed at
+  this directory. Re-running them updates this copy.
 - **Copied from `evaluation/figures/`.** The EXP-36 figure scripts default
   their `--out-dir` to `evaluation/figures/`, where they write the graphic
   **and** its CSV receipts side by side. Only the graphic is copied here; the
@@ -33,6 +33,7 @@ one of those scripts, either re-copy the graphic here or pass
 | `per_class_accuracy_full_range.svg` | `evaluation/per_class_accuracy_full_range.py` | Per-class accuracy across the full confidence range, above and below the D37 floor |
 | `reliability_by_class.svg` | `evaluation/reliability_by_class.py` | Reliability diagram split by gold class, with bin counts |
 | `risk_coverage_curve.svg` | `evaluation/risk_coverage_curve.py` | Risk-coverage curve with a random-abstention null |
+| `maturity_reconstruction.svg` | `evaluation/maturity_reconstruction_figure.py` | Published 2025 ODMI score against the swarm's reconstructed score |
 
 ## Cross-run figures
 
@@ -57,6 +58,9 @@ uv run python evaluation/per_class_accuracy_vs_threshold.py    --out-dir docs/fi
 uv run python evaluation/per_class_accuracy_full_range.py      --out-dir docs/figures
 uv run python evaluation/reliability_by_class.py               --out-dir docs/figures
 uv run python evaluation/risk_coverage_curve.py                --out-dir docs/figures
+
+# Writes here directly via its own manuscript flag
+uv run python evaluation/maturity_reconstruction_figure.py --manuscript-dir docs/figures
 
 # Cross-run
 uv run python evaluation/abstention_by_country_dimension.py
