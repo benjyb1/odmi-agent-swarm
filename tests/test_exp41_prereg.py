@@ -1,6 +1,6 @@
 """EXP-41: the cache purge, and the frozen-config claim the campaign rests on.
 
-The campaign's whole argument is that four dispatches ran under an identical
+The campaign's whole argument is that three dispatches ran under an identical
 configuration with no evidence carried between them. Both halves of that are
 mechanical and therefore testable, so they are tested rather than asserted.
 """
@@ -141,12 +141,10 @@ def test_three_replicates_are_knob_identical():
     assert reps[0] == reps[1] == reps[2]
 
 
-def test_cooperative_differs_in_exactly_one_knob():
-    """The one-variable rule: stance is the only thing that moves."""
-    trio = _spec("exp41_stability_rep1")["baseline_knobs"]
-    coop = _spec("exp41_cooperative_rerun")["baseline_knobs"]
-    diff = {k for k in set(trio) | set(coop) if trio.get(k) != coop.get(k)}
-    assert diff == {"pipeline_mode"}
+def test_every_replicate_runs_the_incumbent_trio():
+    """A replicate on any other pipeline would measure a different system."""
+    for run in RUNS:
+        assert _spec(run["experiment_id"])["baseline_knobs"]["pipeline_mode"] == "trio"
 
 
 def test_every_spec_runs_cold_and_carries_no_seed():
@@ -176,7 +174,7 @@ def test_no_model_knob_is_left_to_the_stale_model_defaults_row():
 def test_battery_is_the_156_pair_dev_set_and_identical_across_specs():
     pairs = [tuple(_spec(r["experiment_id"])["pairs"]) for r in RUNS]
     assert all(len(p) == 156 for p in pairs)
-    assert len(set(pairs)) == 1, "the four specs do not share one pair list"
+    assert len(set(pairs)) == 1, "the three specs do not share one pair list"
 
     countries = [p.split(":")[1] for p in pairs[0]]
     assert {c: countries.count(c) for c in set(countries)} == {

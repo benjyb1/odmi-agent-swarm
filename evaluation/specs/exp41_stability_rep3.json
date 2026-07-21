@@ -1,6 +1,6 @@
 {
   "run_id": "exp41_stability_rep3",
-  "description": "EXP-41B replicate 3 of 3. Identical to replicates 1 and 2. Third replicate is what makes any variance estimate possible at all: two runs give a pairwise agreement rate and nothing else. Prereg: docs/EXPERIMENTS_RUN_STABILITY.md.",
+  "description": "EXP-41 replicate 3 of 3. Identical to replicates 1 and 2. Third replicate is what makes any variance estimate possible at all: two runs give a pairwise agreement rate and nothing else. Prereg: docs/EXPERIMENTS_RUN_STABILITY.md.",
   "headline": false,
   "global_parallel": 4,
   "budget_calls": 7500,

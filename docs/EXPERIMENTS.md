@@ -840,39 +840,29 @@ Run notes (R12):
 
 Result: pending (analysis morning of 2026-07-02).
 
-## EXP-41: run-to-run stability, and the repair of the §4.2 ablation ladder (queued, pre-registered 2026-07-21)
+## EXP-41: run-to-run stability (queued, pre-registered 2026-07-21)
 
 Full pre-registration in `docs/EXPERIMENTS_RUN_STABILITY.md`; decision D65.
-Registry ids `exp41_cooperative_rerun`, `exp41_stability_rep1/2/3`. Specs from
+Registry ids `exp41_stability_rep1/2/3`. Specs from
 `scripts/gen_exp41_specs.py`. **Not dispatched: awaiting Benjy's review.**
 
-**Why.** Two problems on one battery, so one campaign.
+**Why.** §2.2 sets two conditions for the Reproducibility criterion: a record
+complete enough to repeat the run, and evidence that a repeat returns the same
+answers. §4.7 claims the first and leaves the second open; Table 3.1 has no
+Reproducibility row at all. The second condition cannot be met by argument, so
+it is run.
 
-1. The EXP-40 cooperative arm has no row-level record in any of the 46
-   `odmi.db` copies on disk, and no `experiments` registry row anywhere. The
-   only artefact is an aggregate JSON.
-   `evaluation/exp40_analysis.py --db data/odmi.db` returns n=0 for all four
-   arms and prints `McNemar p=1.000`, the same p-value the dissertation
-   reports, so the documented reproduction path yields a plausible null from
-   an empty database. §4.2's primary contrast sits entirely in that arm. The
-   other three arms reproduce the published table exactly, but only from
-   `data/odmi.exp36-dispatch.db`.
-2. §4.7 leaves the second Reproducibility condition of §2.2 open (evidence
-   that a repeat run returns the same answers), and Table 3.1 has no
-   Reproducibility row.
-
-**Design.** 624 live pairs over the 156-pair dev battery (MT 60 + NL 52 + AL
-44, 78 negative golds). Three fresh replicates of the incumbent trio plus one
-live cooperative arm. Replicate 1 doubles as the live trio arm of the §4.2
-ladder, so every arm in that table comes from one campaign under one frozen
-configuration instead of one replayed and one exported. `no_adjudicator` and
-`researcher_only` stay decision-layer replays off replicate 1 and cost nothing.
+**Design.** Three fresh dispatches of the incumbent trio over the 156-pair dev
+battery (MT 60 + NL 52 + AL 44, 78 negative golds), 468 live pairs, one frozen
+configuration, nothing replayed and nothing seeded. All 21 knobs pinned from a
+single `FROZEN_KNOBS` dict, verified to reach the command line. Three rather
+than two: two give a pairwise agreement rate and nothing else.
 
 **Endpoints.** Three-way outcome unanimity with Fleiss' kappa; per-run marginal
 commit rate and spread; label agreement restricted to unanimously committed
 pairs; both decomposed by gold class; and the share of unanimously committed
 pairs citing more than one distinct source URL across the runs. The last is the
-result the campaign is for: high URL divergence with high answer agreement is
+result the experiment is for: high URL divergence with high answer agreement is
 direct evidence for the §2.2 claim about independent evidence paths, and the
 converse is reportable.
 
@@ -881,9 +871,23 @@ miss); commit-rate range ≤ 0.10; label agreement ≥ 0.90 and κ ≥ 0.70 (pre
 to clear). The predicted miss follows from the pile-up at the D37 floor: of 81
 committed exp34 `wide_only` pairs, 19 sit at exactly 0.65.
 
-**Order.** Import exp34 into canonical (free) → cooperative arm → replicate 1 →
-replicates 2 and 3. If the calendar cuts it short, the repair goes first. If
-cost bites, cut the sample to ~100 pairs before cutting a replicate.
+**Bonus for §4.2 at no extra cost.** That section reports an ablation ladder
+running 0.649 to 0.726 in commit accuracy and concedes its Wilson bounds
+overlap across all four arms. Three replicates of the trio arm on the same
+battery give the run-to-run spread of that quantity directly, so the caution
+can be stated with a measured number instead of an interval.
+
+**Not needed after all: the cooperative re-run.** The campaign was scoped at
+624 pairs on the premise that the EXP-40 cooperative arm was unrecomputable.
+It was: zero rows in all 46 `odmi.db` copies, no registry row, and
+`exp40_analysis.py` against canonical returned n=0 for all four arms while
+still printing `McNemar p=1.000`. The rows were then recovered from an orphaned
+Git LFS object and committed as SQL dumps under `data/recovery/`. Verified
+independently: restoring them reproduces `exp40_analysis.json` byte for byte,
+all four arms, n=154 at 8-vs-8, p=1.00. §4.2 needs no re-run, so the arm is
+dropped and the dispatch is 468 pairs.
+**Outstanding:** canonical `data/odmi.db` has not yet been restored from the
+dumps (procedure in `data/recovery/README.md`).
 
 **Tooling added.** `scripts/purge_search_cache.py` (archive-then-purge, run
 before every dispatch: `--no-cache` disables cache reads but not writes, so a

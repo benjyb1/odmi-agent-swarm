@@ -1,10 +1,10 @@
-"""Generate the four EXP-41 specs from one frozen knob set and one pair list.
+"""Generate the three EXP-41 replicate specs from one knob set and one pair list.
 
-The campaign's whole claim is that four dispatches ran under an identical
-configuration. Hand-writing four spec files would let a knob drift between
-them, which is exactly the defect being repaired. So the specs are generated:
-one FROZEN_KNOBS dict, one PAIRS list, four outputs that differ only in
-`experiment_id`, `condition_label` and `pipeline_mode`.
+The campaign's whole claim is that three dispatches ran under an identical
+configuration. Hand-writing three spec files would let a knob drift between
+them, and a drifted knob turns a stability measurement into a comparison of
+two configurations. So the specs are generated: one FROZEN_KNOBS dict, one
+PAIRS list, three outputs that differ only in `experiment_id`.
 
 Pre-registration: docs/EXPERIMENTS_RUN_STABILITY.md.
 
@@ -21,8 +21,8 @@ REPO = Path(__file__).resolve().parent.parent
 SPECS = REPO / "evaluation" / "specs"
 
 # The 156-pair dev battery (MT 60 + NL 52 + AL 44), taken verbatim from the
-# EXP-40 spec so the repair lands on the identical sample the published §4.2
-# table was computed over.
+# EXP-40 spec, so the stability measurement and the §4.2 ablation it bounds
+# are computed over the identical sample.
 SOURCE_SPEC = SPECS / "exp40_cooperative_contrast.json"
 
 # The incumbent production configuration, pinned exhaustively. Reconciled from
@@ -62,9 +62,9 @@ FROZEN_KNOBS = {
 }
 
 # Deliberately absent, and why:
-#   seed_experiment_id / seed_condition_label -- dropped. EXP-40 seeded
-#     attempt 1 off exp34; a seeded arm is not independently recomputable,
-#     which is the defect under repair.
+#   seed_experiment_id / seed_condition_label -- unset. A replicate seeded
+#     from a prior run would share that run's evidence, which is the one
+#     thing this design must not do.
 #   chained -- false (EXP-20).
 #   researcher_escalation_model / verifier_escalation_model -- unset, one
 #     model throughout (EXP-8 off).
@@ -82,32 +82,17 @@ BUDGET_PER_RUN = 7500
 
 RUNS = [
     {
-        "experiment_id": "exp41_cooperative_rerun",
-        "condition_label": "cooperative_s46",
-        "pipeline_mode": "cooperative",
-        "description": (
-            "EXP-41A. Live re-run of the EXP-40 cooperative arm on the same "
-            "156-pair dev battery. The original run left no row-level receipts "
-            "in any database, so the McNemar null reported in dissertation "
-            "S4.2 cannot be regenerated; this restores it. One change from the "
-            "EXP-40 spec: the attempt-1 seed off exp34 is dropped, so every "
-            "pair runs its own attempt 1 and the arm is self-contained. "
-            "Prereg: docs/EXPERIMENTS_RUN_STABILITY.md."
-        ),
-    },
-    {
         "experiment_id": "exp41_stability_rep1",
         "condition_label": "trio_s46",
         "pipeline_mode": "trio",
         "description": (
-            "EXP-41B replicate 1 of 3. Incumbent trio, frozen config, 156-pair "
-            "dev battery. Doubles as the live trio arm of the S4.2 ablation "
-            "ladder, replacing the exp34 replay so all four arms derive from "
-            "one campaign under one configuration. Distinct experiment_id per "
-            "replicate: run_experiments' resume and the coordinator's "
-            "_find_resumable_researcher are both scoped on "
+            "EXP-41 replicate 1 of 3. Incumbent trio, frozen config, 156-pair "
+            "dev battery. Measures the second condition of the Reproducibility "
+            "criterion in dissertation S2.2, which S4.7 leaves open. Distinct "
+            "experiment_id per replicate: run_experiments' resume and the "
+            "coordinator's _find_resumable_researcher are both scoped on "
             "(experiment_id, condition_label), so replicates sharing a key "
-            "would be skipped or would share evidence. "
+            "would be skipped outright or would share evidence. "
             "Prereg: docs/EXPERIMENTS_RUN_STABILITY.md."
         ),
     },
@@ -116,7 +101,7 @@ RUNS = [
         "condition_label": "trio_s46",
         "pipeline_mode": "trio",
         "description": (
-            "EXP-41B replicate 2 of 3. Identical to replicate 1 in every knob. "
+            "EXP-41 replicate 2 of 3. Identical to replicate 1 in every knob. "
             "Dispatched only after the search cache has been archived and "
             "purged, so this run shares no retrieved evidence with replicate 1. "
             "Prereg: docs/EXPERIMENTS_RUN_STABILITY.md."
@@ -127,7 +112,7 @@ RUNS = [
         "condition_label": "trio_s46",
         "pipeline_mode": "trio",
         "description": (
-            "EXP-41B replicate 3 of 3. Identical to replicates 1 and 2. Third "
+            "EXP-41 replicate 3 of 3. Identical to replicates 1 and 2. Third "
             "replicate is what makes any variance estimate possible at all: "
             "two runs give a pairwise agreement rate and nothing else. "
             "Prereg: docs/EXPERIMENTS_RUN_STABILITY.md."

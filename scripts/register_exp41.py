@@ -1,9 +1,9 @@
-"""Register the four EXP-41 experiments in the `experiments` table (R1, D27).
+"""Register the three EXP-41 replicates in the `experiments` table (R1, D27).
 
 `run_experiments.py` hard-fails preflight on any experiment_id absent from this
 table, so nothing dispatches until these rows exist. Idempotent.
 
-Four rows rather than one because each replicate needs its own experiment_id:
+Three rows rather than one because each replicate needs its own experiment_id:
 `arm_health` computes blocker_rate scoped by experiment_id alone
 (`run_experiments.py`), so three replicates sharing an id would pool their
 blockers and trip a spurious health pause on the later runs.
@@ -34,33 +34,15 @@ _PREREG = "Pre-registration: docs/EXPERIMENTS_RUN_STABILITY.md."
 
 ROWS = [
     (
-        "exp41_cooperative_rerun",
-        "EXP-41A Cooperative arm re-run (repairs the S4.2 ablation ladder)",
-        "Live re-run of the EXP-40 cooperative arm: corroborative verifier, "
-        "consensus commit, no adjudicator. The 2026-07-19 original left no "
-        "row-level receipts in any database on disk, so the primary contrast "
-        "reported in dissertation S4.2 (no_adjudicator vs cooperative, McNemar "
-        "p = 1.00) cannot be regenerated; running the committed analysis script "
-        "against the canonical DB returns n = 0 for all four arms. This restores "
-        "the arm with receipts. One deliberate change from EXP-40: the attempt-1 "
-        "seed off exp34 is dropped, so all 156 pairs run their own attempt 1 and "
-        "the arm is self-contained. Endpoint: three-outcome and balance-aware "
-        "per arm, primary contrast no_adjudicator vs cooperative on committed "
-        "correctness by exact McNemar. The re-run may or may not reproduce the "
-        "original null; either outcome is accepted in advance and reported "
-        "(R12). " + _BATTERY + " " + _PREREG,
-        "Single live arm cooperative_s46, pipeline_mode=cooperative; the three "
-        "adversarial arms are decision-layer replays off exp41_stability_rep1.",
-    ),
-    (
         "exp41_stability_rep1",
-        "EXP-41B Run-to-run stability, replicate 1 of 3",
+        "EXP-41 Run-to-run stability, replicate 1 of 3",
         "First of three fresh dispatches of the incumbent trio under one frozen "
         "configuration, measuring the second condition of the Reproducibility "
         "criterion in dissertation S2.2 (evidence that a repeat run returns the "
-        "same answers), which S4.7 currently leaves open. Also serves as the "
-        "live trio arm of the S4.2 ladder, replacing the exp34 replay so every "
-        "arm in that table derives from one campaign. Endpoints: three-way "
+        "same answers), which S4.7 currently leaves open. The spread across the "
+        "three also gives S4.2 an empirical noise floor for its ablation ladder, "
+        "which that section can currently only bound with Wilson intervals. "
+        "Endpoints: three-way "
         "outcome unanimity with Fleiss' kappa, per-run marginal commit rate and "
         "its spread, label agreement restricted to unanimously committed pairs, "
         "both decomposed by gold class, and the share of unanimously committed "
@@ -71,7 +53,7 @@ ROWS = [
     ),
     (
         "exp41_stability_rep2",
-        "EXP-41B Run-to-run stability, replicate 2 of 3",
+        "EXP-41 Run-to-run stability, replicate 2 of 3",
         "Second fresh dispatch, knob-identical to replicate 1. Dispatched only "
         "after the search cache has been archived and purged, so it shares no "
         "retrieved evidence with replicate 1: a repeat reading the first run's "
@@ -82,7 +64,7 @@ ROWS = [
     ),
     (
         "exp41_stability_rep3",
-        "EXP-41B Run-to-run stability, replicate 3 of 3",
+        "EXP-41 Run-to-run stability, replicate 3 of 3",
         "Third fresh dispatch, knob-identical to replicates 1 and 2. Three "
         "replicates rather than two: two give a pairwise agreement rate and "
         "nothing else, while three separate a consistently unstable pair from "

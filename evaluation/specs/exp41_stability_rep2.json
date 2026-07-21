@@ -1,6 +1,6 @@
 {
   "run_id": "exp41_stability_rep2",
-  "description": "EXP-41B replicate 2 of 3. Identical to replicate 1 in every knob. Dispatched only after the search cache has been archived and purged, so this run shares no retrieved evidence with replicate 1. Prereg: docs/EXPERIMENTS_RUN_STABILITY.md.",
+  "description": "EXP-41 replicate 2 of 3. Identical to replicate 1 in every knob. Dispatched only after the search cache has been archived and purged, so this run shares no retrieved evidence with replicate 1. Prereg: docs/EXPERIMENTS_RUN_STABILITY.md.",
   "headline": false,
   "global_parallel": 4,
   "budget_calls": 7500,

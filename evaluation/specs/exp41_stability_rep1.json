@@ -1,6 +1,6 @@
 {
   "run_id": "exp41_stability_rep1",
-  "description": "EXP-41B replicate 1 of 3. Incumbent trio, frozen config, 156-pair dev battery. Doubles as the live trio arm of the S4.2 ablation ladder, replacing the exp34 replay so all four arms derive from one campaign under one configuration. Distinct experiment_id per replicate: run_experiments' resume and the coordinator's _find_resumable_researcher are both scoped on (experiment_id, condition_label), so replicates sharing a key would be skipped or would share evidence. Prereg: docs/EXPERIMENTS_RUN_STABILITY.md.",
+  "description": "EXP-41 replicate 1 of 3. Incumbent trio, frozen config, 156-pair dev battery. Measures the second condition of the Reproducibility criterion in dissertation S2.2, which S4.7 leaves open. Distinct experiment_id per replicate: run_experiments' resume and the coordinator's _find_resumable_researcher are both scoped on (experiment_id, condition_label), so replicates sharing a key would be skipped outright or would share evidence. Prereg: docs/EXPERIMENTS_RUN_STABILITY.md.",
   "headline": false,
   "global_parallel": 4,
   "budget_calls": 7500,
