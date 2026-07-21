@@ -289,6 +289,55 @@ which is where M5 below takes it from.
 
 ---
 
+## Observation during replicate 1: the abstain/fail boundary moved
+
+Malta finished with 13 of 60 pairs at `agent_failure`, against the exp34
+`wide_only` baseline of 7 of 60. Exact binomial P(X >= 13) = 0.019, so on its
+face a real elevation. It is not a capability loss, and under the
+pre-registered M1 rule it has no effect at all.
+
+Where the extra failures came from, on the 60 Malta pairs:
+
+| exp34 | rep1 | n |
+|---|---|---|
+| abstain | fail | 9 |
+| commit | fail | 2 |
+| fail | fail | 2 |
+
+Nine of the thirteen were pairs exp34 abstained on. Only two were pairs it
+committed. Malta coverage is essentially unchanged across the two runs, 0.250
+against 0.233, which is what that composition predicts: the run is not
+committing less, it is recording some of the same abstentions under a different
+terminal status.
+
+The dominant reason is `no verifier output for adjudication` at three retries,
+which means the Researcher exhausted its budget still answering `inconclusive`,
+so no Verifier ever ran. That is an abstention wearing a failure label. A
+plausible contributor is D7: exp34 ran with the retry text naming the 0.65
+floor, and a retried Researcher could clear the bar by returning exactly 0.65.
+With the leak closed it returns its honest confidence, stays inconclusive, and
+exhausts. The direct test is underpowered so far (2 of the 3 Malta pairs where
+exp34 committed at exactly 0.65 now fail, against 9 of 48 elsewhere) and is not
+claimed; M6 across all three replicates is the proper read.
+
+**Why the pre-registered M1 rule already absorbs this.** M1 folds
+`agent_failure` into `no-commit`, so a pair moving between abstention and
+failure is invisible to it. Collapsing the Malta table that way gives exp34 to
+rep1 agreement of 45 of 60, with the disagreements almost symmetric: 7 pairs
+commit to no-commit, 8 the other way. Balanced churn, not drift.
+
+That 0.750 is **not** a preview of M1. It spans three code changes as well as
+time, so it measures drift across a changed system. The pre-registered
+comparison is replicate against replicate under one runtime fingerprint, which
+excludes the code-change component and should therefore agree at least this
+well. It is recorded as a lower bound and nothing more.
+
+The amendment logged at 11 pairs, folding failures into `no-commit` rather than
+dropping them, was made before any of this was visible. It turns out to be what
+keeps the primary metric readable through it.
+
+---
+
 ## Pre-dispatch audit, 2026-07-21
 
 Two independent adversarial audits were run against the live campaign, one for
