@@ -38,9 +38,13 @@ achromatic ink, a reference mark rather than a series, so identity never rests
 on colour alone: the marker's position relative to the band carries the same
 information, and both band ends are directly labelled.
 
-Outputs (house convention, alongside the other EXP-36 figures):
-  - evaluation/figures/maturity_reconstruction.svg   self-contained, for the manuscript
+Outputs:
+  - evaluation/figures/maturity_reconstruction.svg   beside the other EXP-36 figures
   - evaluation/figures/maturity_reconstruction.csv   the numbers behind it
+  - docs/figures/maturity_reconstruction.svg         the manuscript figure set
+
+The SVG is written to both places by the same run rather than copied by hand,
+so the manuscript copy cannot drift from the analysis output.
 
 Usage:
     uv run python evaluation/maturity_reconstruction_figure.py
@@ -275,6 +279,12 @@ def main() -> int:
     parser.add_argument("--db", default="data/odmi.db")
     parser.add_argument("--experiment-id", default="exp36_frozen_headline")
     parser.add_argument("--outdir", default="evaluation/figures")
+    parser.add_argument(
+        "--manuscript-dir",
+        default="docs/figures",
+        help="second destination for the SVG, the manuscript figure set. "
+             "Pass an empty string to skip it.",
+    )
     args = parser.parse_args()
 
     conn = sqlite3.connect(args.db)
@@ -297,8 +307,16 @@ def main() -> int:
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
 
+    svg = build_svg(scored)
     svg_path = outdir / "maturity_reconstruction.svg"
-    svg_path.write_text(build_svg(scored))
+    svg_path.write_text(svg)
+
+    if args.manuscript_dir:
+        manuscript_dir = Path(args.manuscript_dir)
+        manuscript_dir.mkdir(parents=True, exist_ok=True)
+        manuscript_path = manuscript_dir / "maturity_reconstruction.svg"
+        manuscript_path.write_text(svg)
+        print(f"wrote {manuscript_path}")
 
     csv_path = outdir / "maturity_reconstruction.csv"
     with csv_path.open("w", newline="") as fh:
