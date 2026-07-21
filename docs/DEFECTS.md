@@ -12,7 +12,7 @@ needs. Nothing here is closed by being explained.
 | id | defect | severity | status |
 |---|---|---|---|
 | D1 | Canonical DB is not the system of record | high | **fixed** 2026-07-20 |
-| D2 | EXP-40 cooperative arm has no surviving rows | high | **open, unrepairable** |
+| D2 | EXP-40 cooperative arm has no surviving rows | high | **fixed** 2026-07-21 (LFS recovery) |
 | D3 | EXP-36 headline computed mid-run | high | **fixed** 2026-07-20 |
 | D4 | EXP-36 dedup double-counted five pairs | medium | **fixed** 2026-07-20 |
 | D5 | Dissertation abstention section built on the wrong population | high | source fixed; **docx open** |
@@ -65,14 +65,38 @@ cooperative with McNemar p = 1.00, cannot be recomputed or checked by anyone.
 It survives only as an aggregate in `evaluation/results/exp40_analysis.json`.
 This fails the project's own reproducibility standard.
 
-**Why it cannot be repaired.** Re-dispatching a live arm produces a fresh
+**Why re-dispatching was not the answer.** A fresh live arm produces a new
 sample on a transport and model configuration that has since moved. That is a
-new experiment, not a replication of the filed null.
+new experiment, not a replication of the filed null, and it would have forced
+§4.2 to be restated rather than reproduced.
 
-**Disclosure required.** Either report the null with an explicit statement that
-the per-pair data did not survive and the result rests on a stored aggregate,
-or demote it and lead §4.2 on the ladder, which is recomputable now that D1 has
-restored EXP-34. Do not keep it as an unqualified headline.
+**Repair, 2026-07-21.** The rows were recovered from an orphaned Git LFS
+object. Git LFS had staged a snapshot of the deleted worktree's database into
+the local object store, where it sat unreferenced by any commit
+(`b37d933dd6f5b9b27cc5bda5d2cb0d423fbde5d898a6ae0d2af2d388f775df9c`, plus its
+`-wal` and `-shm` sidecars). `git lfs prune --dry-run` listed 169 unreferenced
+objects totalling 26 GB, and this was among them, so the arm was one prune from
+permanent loss. Both EXP-40 and its EXP-34 replay source are now committed as
+SQL dumps under `data/recovery/`, which no longer depend on the object store.
+
+**Verified twice, independently.** Restoring both dumps into a copy of the
+canonical database and re-running `evaluation/exp40_analysis.py` reproduces
+`evaluation/results/exp40_analysis.json` byte for byte: all four arms, and the
+primary contrast at n = 154, 8 versus 8, p = 1.00. Checked once by the
+recovering session and once again from the EXP-41 pre-registration session
+against a fresh scratch copy.
+
+**No disclosure required on the result.** §4.2's numbers stand on recovered
+per-pair rows, not on a stored aggregate. What does warrant a line in the
+methods is that the recovery happened at all: the arm was retrieved from an
+unreferenced object rather than from the versioned record, which is the D1
+lesson restated. Never run `git lfs prune` while any experiment is
+unaccounted for.
+
+**Still open, downstream.** Canonical `data/odmi.db` has not yet been restored
+from the dumps: it still lacks both experiments and still carries the
+pre-EXP-40 CHECK constraint, so `accepted_cooperative` inserts would fail.
+Procedure in `data/recovery/README.md`.
 
 ## D3. The EXP-36 headline was computed mid-run
 
@@ -183,3 +207,4 @@ other model string appears in the run. Related to the missing
 | date | entry |
 |---|---|
 | 2026-07-20 | File created. D1 repaired (1,134 pairs rescued). D3, D4 repaired. D7 repaired forward-only. D5 source repaired, docx outstanding. D2 confirmed unrepairable. D6 awaiting a cost decision. |
+| 2026-07-21 | **D2 repaired and closed**, overturning the 2026-07-20 "unrepairable" verdict: the rows were recovered from an orphaned Git LFS object and committed as SQL dumps under `data/recovery/`, verified to reproduce `exp40_analysis.json` byte for byte. §4.2 needs no re-run and no aggregate-only disclosure. Downstream action still open: canonical `data/odmi.db` not yet restored from the dumps. D7's forward-only fix has a consequence for EXP-41 (D65): `exp34_retrieval_strategy_s46/wide_only` carries the floor-leak artefact (0.65 on 9.4% of first-attempt commits against 32.7% of retried ones, the D7 signature), so it cannot serve as a replicate alongside runs dispatched after the fix. |

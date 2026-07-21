@@ -95,6 +95,48 @@ Three give unanimity, separate a consistently unstable pair from one flaky run,
 and are the minimum for any variance estimate at all. If cost bites, cut the
 sample before cutting a replicate.
 
+### Why the existing run cannot be one of the three
+
+The obvious saving is to treat `exp34_retrieval_strategy_s46/wide_only` as
+replicate 1 and dispatch only two, keeping 156 pairs and about £9. It was
+checked and rejected. That run is not the same system the two new ones would
+be, and every difference lands on the metric this experiment is built to
+measure.
+
+It ran 2026-07-10 to 2026-07-13. Three changes to the run path have landed
+since.
+
+| Commit | Change | Why it matters here |
+|---|---|---|
+| `2d45e67` (07-13) | B1/B2 coordinator fixes: `invalid_answer_shape` now retries instead of committing junk; a final-attempt Verifier `schema_invalid` now adjudicates on the answer in hand instead of dropping the pair | Both change terminal outcomes directly. exp34 carries 8 `agent_failure` pairs, which is the class B2 addresses |
+| `5b663d9` (07-16) | `_scrub_forbidden_counter_source` strips a deny-listed counter-source from a verdict | Changes verifier verdicts wherever a counter-search hit a deny-listed host |
+| `065cb82` (07-20) | D7: two retry paths stopped naming the 0.65 floor in the message sent back to the Researcher | The decisive one, below |
+
+**The floor leak is the one that settles it.** D7 found that the retry text told
+the Researcher the exact threshold, and the Researcher returned exactly 0.65,
+the cheapest value clearing it. The signature is present in exp34 `wide_only`:
+**3 of 32 first-attempt commits sit at exactly 0.65 (9.4%), against 16 of 49
+retried commits (32.7%)**. Part of that run's confidence distribution near the
+floor was manufactured by the leak.
+
+M1, the primary metric, is the stability of a threshold crossing at that floor.
+So pairing a leaked run with two unleaked ones puts the largest known
+difference between them precisely on the boundary being measured. The result
+would not be run-to-run variance; it would be run-to-run variance plus a code
+change, inseparable, on the one metric that matters most. That is the
+one-variable rule (R2), and it is not a close call.
+
+Two honest notes on the other side. First, the same argument applies with less
+force to M3 and M5, which are less exposed to the floor, so a three-way
+including exp34 is not worthless for those. It is simply not clean, and mixing
+a clean primary with a dirty one in the same table invites the reader to treat
+both as clean. Second, the comparison against exp34 is still worth reporting,
+just as a different quantity: **drift of the system across eight days and three
+code fixes**, which is an interesting number and honestly labelled. It is a
+secondary, not a replicate.
+
+The saving is roughly £9 and 1.5 hours. It is not worth a confounded primary.
+
 ---
 
 ## The incumbent configuration
@@ -246,6 +288,16 @@ the commit/abstain decision with the label decision; M3 isolates the label.
 The battery carries 78 negative golds, which is where discrimination is
 visible at all.
 
+**M6 (secondary, added 2026-07-21). The confidence distribution without the
+floor leak.** Report the share of committed pairs at exactly 0.65, split by
+first attempt and retried, per run and pooled. These will be the first runs on
+this battery after D7's fix, so this is the direct test of whether the pile-up
+at the floor was an artefact of the Researcher being told the bar or a real
+attractor in its stated belief. Compared against the exp34 `wide_only`
+baseline of 9.4% first-attempt and 32.7% retried. A retried share that falls
+towards the first-attempt share is evidence the leak manufactured it. This is
+descriptive, carries no pass bar, and is reported either way.
+
 **M5. Evidence-path divergence.** Among pairs all three runs committed on and
 agreed on, the share citing two or more distinct source URLs across the runs.
 URL normalisation is fixed here rather than chosen afterwards: lowercase scheme
@@ -284,12 +336,29 @@ The κ thresholds are the Landis and Koch bands: 0.60 is the floor of
 "substantial", 0.70 sits inside it.
 
 **Why M1 is predicted to miss.** The commit decision is a threshold crossing at
-the D37 floor of 0.65, and the committed confidences pile up on that threshold.
-On the exp34 `wide_only` canonical rows, of 81 committed pairs 19 sit at
-exactly 0.65 and 6 below it. So roughly a quarter of commits sit on the
-boundary where a small perturbation flips commit to abstain. Outcome unanimity
-inherits that instability; label agreement does not, because once a pair is
-committed the label is the easier decision.
+the D37 floor of 0.65. A pair whose confidence lands near that boundary flips
+between commit and abstain under a small perturbation, and every such pair
+costs outcome unanimity. Label agreement does not inherit the same fragility,
+because once a pair is committed the label is the easier decision. That is the
+mechanism, and it does not depend on any particular pile-up magnitude.
+
+**A correction to an earlier draft of this prediction.** It originally cited
+the exp34 `wide_only` distribution as evidence for the size of the effect: 19
+of 81 committed pairs sitting at exactly 0.65. That figure is contaminated and
+should not be used. Defect D7 (`docs/DEFECTS.md`) found that two retry paths in
+`run_coordinator.py` named the threshold in the message sent back to the
+Researcher, which then returned exactly 0.65, the cheapest value clearing the
+bar. The signature is present in exp34 `wide_only`: **9.4% of first-attempt
+commits sit at exactly 0.65 against 32.7% of retried commits** (3/32 and 16/49).
+Part of that pile-up was manufactured by the leak, not believed by the model.
+
+The leak was closed forward-only in `065cb82`, so the three replicates will be
+the first runs on this battery without it. This cuts both ways and is stated
+before dispatch rather than after: removing the leak could spread retried
+confidences away from the boundary, which would *raise* unanimity, or push them
+below the floor into abstention, which would lower coverage and could lower
+unanimity further. The prediction that M1 misses its bar stands on the
+threshold-crossing mechanism alone. Its margin is now genuinely uncertain.
 
 Reporting a miss on M1 alongside a clear pass on M3 is a clean result, and it
 is what §4.7 predicts: a generative assessor reproduces its answers well and
