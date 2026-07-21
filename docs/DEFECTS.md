@@ -20,6 +20,53 @@ needs. Nothing here is closed by being explained.
 | D7 | Commit floor leaked to the Researcher in retry text | high | **code fixed; EXP-36 data open** |
 | D8 | Three RDF adapter tests fail in a fresh venv | low | open, environmental |
 | D9 | 33 agent rows carry an `unknown` model tag | low | open, already disclosed |
+| D10 | Redirect chains bypass the D24 deny-list on the main fetch path | high | **open**, fix deferred past EXP-41 |
+| D11 | `model_defaults` still pins the cut Sonnet 5 | low | open, inert while models are pinned |
+
+---
+
+## D10. Redirect chains bypass the deny-list
+
+`agents/tools/fetch.py` builds its client with `follow_redirects=True` and
+checks only the URL it was handed. `resp.url` and `resp.history` are never
+re-examined, so a permitted host redirecting to a deny-listed one delivers the
+page anyway. Worse, the result is cached under the clean pre-redirect URL with
+a 30-day TTL, so a single redirect would poison the cache invisibly.
+
+The correct guard already exists in the repo: `_guard_response` in
+`agents/tools/catalogue/_fetch.py` re-checks after the redirect. It was never
+ported to the main fetch path.
+
+Same class: `data-europa-eu.translate.goog` is a live Google Translate mirror
+of the evaluation's answer surface. Host mangling defeats both exact and
+subdomain matching, so it is not blocked.
+
+**What it damages.** Potentially the answer-key guard on every run, which is
+the control the whole evaluation rests on.
+
+**Has it fired?** No. Checked directly against EXP-41 replicate 1 and the
+cache: zero deny-listed hosts in any fetched URL, cited source, evidence quote
+or verifier counter-source, despite 357 cached SERP rows surfacing
+`data.europa.eu`. The pre-fetch filter catches them before the fetch layer is
+reached. EXP-36's committed evidence audit was also clean.
+
+**Why the fix is deferred.** It lands in `agents/`, and EXP-41 is measuring
+run-to-run stability across three replicates of one frozen configuration.
+Changing the swarm between replicates would introduce exactly the confound that
+experiment exists to exclude, and would trip its runtime fingerprint. Detection
+is in place meanwhile: the translation mirror is in the gate audit's deny-host
+list and a content check scans committed evidence for ODMI's own scoring
+vocabulary. Fix immediately after the campaign, then re-run the leakage audit
+over EXP-36 and EXP-41.
+
+## D11. `model_defaults` still pins a cut model
+
+`dispatch_subtrios.py` falls back to the `model_defaults` table when a model
+flag is absent, and all three role rows still read `claude-sonnet-5`, cut per
+D59. Any dispatch omitting the flags hard-fails at `llm.py`'s banned-model
+guard, so the blast radius is a crash rather than bad data, and the dashboard
+can rewrite the table from a browser session mid-campaign. EXP-41 pins all four
+models explicitly and its gate hard-checks the served model. Correct the rows.
 
 ---
 

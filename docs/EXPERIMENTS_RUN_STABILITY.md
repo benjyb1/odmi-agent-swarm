@@ -289,6 +289,105 @@ which is where M5 below takes it from.
 
 ---
 
+## Pre-dispatch audit, 2026-07-21
+
+Two independent adversarial audits were run against the live campaign, one for
+contamination and answer-key leakage, one for confounds and configuration
+drift. Both were told to find problems rather than confirm the design. What
+they found is recorded here in full, including the parts that were wrong,
+because a pre-registration that only records the checks that passed is not
+evidence of anything.
+
+### Verified clean, with evidence
+
+- **Cache reads genuinely disabled.** Exactly three cache read sites exist
+  (`search_diy.py` serp / fetch / snippet); all three are guarded by
+  `_READ_DISABLED`, set in `run_coordinator.py` before any agent call, and
+  every live child process carries `--no-cache` on its own command line.
+- **Replicate 1 started cold.** Zero cache rows predating the run. A 398 MB
+  archive was written one minute before dispatch as the receipt.
+- **No cross-run state reuse.** Distinct `experiment_id` per replicate closes
+  `_find_resumable_researcher`. Empirically: one batch id, no duplicate
+  attempt-1 rows, no superseded subtrios.
+- **`ground_truth` is unreachable from the dispatch path.** No SQL read, no
+  spreadsheet access, no dynamic import. Structurally too: `questions` has no
+  country dimension, `ground_truth` is keyed on one.
+- **The catalogue carrier is empty, not merely inert.** The battery's question
+  ids intersect `COMPUTABLE_QUESTIONS` in the empty set, so the route cannot
+  fire at all.
+- **No prompt or deny-list drift vector.** Both are Python constants, not
+  database rows.
+- **No model-side or proxy-side response caching.** No `cache_control` in the
+  repo, no cache setting in the proxy config, ephemeral browser contexts.
+- **Deny-list holding under pressure.** 357 cached SERP rows surfaced
+  `data.europa.eu`; zero reached any fetched URL, cited source or counter
+  source. The pre-fetch filter is doing real work.
+
+### Acted on
+
+**The dispatch procedure had to match across arms.** Replicate 1 ran as a
+single 156-pair dispatch. The plan was to stage replicates 2 and 3 at 5/40/100%
+with a gate between stages. Both audits objected, and three concrete
+asymmetries follow from staging:
+
+1. `--max-calls` is computed per dispatch, so one run gets a single pool of
+   7,070 while a staged run gets 410, then ~2,480, then ~4,280.
+2. `fetch_stage_timeouts` clears only rows older than 45 seconds, so one
+   stage's tail can trip the next stage's systemic breaker before it spawns.
+3. A stage ending abnormally leaves pairs mid-flight, and
+   `_find_resumable_researcher` is scoped on `(experiment_id, condition_label)`,
+   which every stage of a replicate shares. The next stage would **replay**
+   that pair's attempt-1 evidence instead of retrieving it again. On an
+   experiment measuring whether re-retrieved evidence yields the same answer,
+   replayed evidence is the one thing that must not happen.
+
+Resolution: every replicate runs as one dispatch, and the 5% and 40% checks
+move to a watchdog that reads the database while the run proceeds and kills it
+if a hard check fails. Same protection, no procedural difference between arms.
+
+**Two hard checks added to the gate.** A `superseded` subtrio count that must
+be zero, which detects the replay path directly on all three arms (it has fired
+before: EXP-36 on 11 pairs, EXP-34 on 1). And a runtime fingerprint: a SHA-256
+over `agents/` plus the coordinator and dispatcher, recorded at campaign start
+and checked at every gate. Other sessions share this checkout and landed six
+merges in the 90 minutes before dispatch, so freezing HEAD was not available;
+fingerprinting the swarm path allows docs and figures to land while hard-failing
+if the swarm itself changes. Verified: nothing under `agents/` or the
+coordinator changed between replicate 1's dispatch and now.
+
+**Settle time between replicates.** 75 seconds, past the 45-second fetch-stall
+window, with a warning if rows remain.
+
+**Cache receipts are timestamped** so re-running a replicate can never overwrite
+an earlier run's archive.
+
+### Found, and deliberately not fixed during the campaign
+
+`agents/tools/fetch.py` follows redirects but only checks the pre-redirect URL;
+`resp.url` and `resp.history` are never re-examined, and a redirect-delivered
+page is cached under the clean pre-redirect URL. The correct guard already
+exists in the catalogue fetcher and was never ported. Separately,
+`data-europa-eu.translate.goog` is a live translation mirror of the answer
+surface that defeats host matching.
+
+Neither is fixed now, on purpose. Changing `agents/` mid-campaign would alter
+the swarm between replicates, which is precisely the confound this design
+exists to exclude, and it would trip the runtime fingerprint. Both are logged
+as defects for after the campaign. The gate detects both in the meantime: the
+translation mirror is in the audit's deny-host list, and a content check looks
+for ODMI's own scoring vocabulary arriving by any route. Neither has fired.
+
+### Audit claim that did not survive checking
+
+One audit reported that staged runs would retry their own failures twice more
+than an unstaged run, biasing stability upward. That is wrong:
+`run_experiments.finalised_pairs` selects any pair carrying a `phase2_final`
+row, and `agent_failure` writes one, so a failed pair is treated as finalised
+and skipped on resume. The narrower version of the concern, mid-flight pairs at
+an abnormal stage boundary, is real and is finding 3 above.
+
+---
+
 ## Metrics
 
 In the order §4.7 wants them. All computed over the three replicates.

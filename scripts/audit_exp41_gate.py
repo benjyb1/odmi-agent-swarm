@@ -20,6 +20,7 @@ in flight, which is why every rate here is compared per country.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sqlite3
 import sys
@@ -35,7 +36,28 @@ HELD_OUT = ("BA", "MK", "ME", "BG", "FI", "HR", "SE", "BE")
 # D24. The evaluation cycle publishes its own answers; a run that reads them is
 # scoring against its own source. Checked over every column that can carry a
 # URL, not just the committed one.
-DENY_HOSTS = ("data.europa.eu", "opendatamaturity", "europeandataportal")
+DENY_HOSTS = (
+    "data.europa.eu", "opendatamaturity", "europeandataportal",
+    # Translation mirrors defeat both exact and subdomain matching by mangling
+    # the host. Detection only -- the runtime deny-list is not changed
+    # mid-campaign, since that would alter the swarm between replicates.
+    "data-europa-eu.translate.goog",
+)
+
+# Strings that only appear if the evaluation's own published answers were read.
+# The deny-list works on hosts; this catches the content arriving by any route.
+ODMI_LABEL_TOKENS = (
+    "trend-setter", "trend setter", "fast-tracker", "fast tracker",
+    "follower", "beginner", "open data maturity index",
+)
+
+# The swarm's runtime path. If any of this changes between replicates, the
+# three runs are not the same system and the campaign is void. Unrelated work
+# elsewhere in the repo (docs, figures, analysis) is allowed and expected --
+# other sessions share this checkout -- so the guard fingerprints exactly the
+# files that decide swarm behaviour rather than freezing HEAD.
+RUNTIME_PATHS = ("agents", "scripts/run_coordinator.py", "scripts/dispatch_subtrios.py")
+FINGERPRINT = REPO / "evaluation" / "runs" / "exp41_provenance" / "runtime_fingerprint.txt"
 
 BASELINE_EXP, BASELINE_LABEL = "exp34_retrieval_strategy_s46", "wide_only"
 EXPECTED_MODEL = "claude-sonnet-4-6"
@@ -66,6 +88,20 @@ def hard(ok: bool, label: str, detail: str = "") -> None:
 def soft(label: str, detail: str) -> None:
     print(f"  [ .. ] {label} -- {detail}")
     notes.append(f"{label}: {detail}")
+
+
+def runtime_fingerprint() -> str:
+    """SHA-256 over every file that decides swarm behaviour."""
+    h = hashlib.sha256()
+    files: list[Path] = []
+    for rel in RUNTIME_PATHS:
+        p = REPO / rel
+        files.extend(sorted(p.rglob("*.py")) if p.is_dir() else [p])
+    for f in sorted(files):
+        if f.exists():
+            h.update(f.relative_to(REPO).as_posix().encode())
+            h.update(f.read_bytes())
+    return h.hexdigest()
 
 
 def binom_tail(n: int, k: int, p: float) -> float:
@@ -242,7 +278,48 @@ def main() -> int:
             hard(n_final == args.expect, f"stage size is exactly {args.expect}",
                  f"found {n_final}")
 
-        # 6. Retrieval actually happened. All-empty evidence would make the run
+        # 6. Runtime immutability. Other sessions share this checkout, so the
+        #    guard is a fingerprint of the swarm path rather than a frozen HEAD:
+        #    docs and figures may land, agents/ may not.
+        fp_now = runtime_fingerprint()
+        if FINGERPRINT.exists():
+            fp_at_start = FINGERPRINT.read_text().strip()
+            hard(fp_now == fp_at_start, "swarm runtime code unchanged since campaign start",
+                 f"fingerprint moved {fp_at_start[:12]} -> {fp_now[:12]}")
+        else:
+            FINGERPRINT.parent.mkdir(parents=True, exist_ok=True)
+            FINGERPRINT.write_text(fp_now + "\n")
+            print(f"  [ .. ] runtime fingerprint recorded: {fp_now[:12]}")
+
+        # 7. Researcher-evidence replay. `_find_resumable_researcher` reuses a
+        #    prior attempt-1 Researcher row instead of retrieving again, and
+        #    marks the superseded subtrio. It is scoped on
+        #    (experiment_id, condition_label), which a replicate shares with
+        #    itself across any re-dispatch, so a killed or crashed run can leave
+        #    pairs whose evidence is replayed rather than redrawn. That is the
+        #    EXP-40 seeding mechanism arriving by accident, on the one metric
+        #    built to measure redrawn evidence. It has fired before: exp36 (11
+        #    pairs) and exp34 (1) carry superseded rows.
+        n_sup = c.execute(
+            "SELECT COUNT(*) FROM subtrio_status WHERE experiment_id=? AND stage='superseded'",
+            (eid,)).fetchone()[0]
+        hard(n_sup == 0, "no Researcher evidence replayed within the replicate",
+             f"{n_sup} superseded subtrios -- those pairs did not redraw evidence")
+
+        # 8. Content-level answer-key leakage. The deny-list filters hosts; this
+        #    catches ODMI's own scoring vocabulary arriving by any other route.
+        n_label = 0
+        for (q, cc, quote, expl) in c.execute(
+            "SELECT question_id, country_code, final_evidence_quote, "
+            "final_answer_explanation FROM phase2_final WHERE experiment_id=?", (eid,)
+        ):
+            blob = f"{quote or ''} {expl or ''}".lower()
+            if any(tok in blob for tok in ODMI_LABEL_TOKENS):
+                n_label += 1
+        hard(n_label == 0, "no ODMI scoring vocabulary in committed evidence",
+             f"{n_label} rows")
+
+        # 9. Retrieval actually happened. All-empty evidence would make the run
         #    look stable for the wrong reason.
         n_r, n_snip = c.execute(
             "SELECT COUNT(*), SUM(search_snippets IS NOT NULL AND search_snippets != '') "
