@@ -61,6 +61,7 @@ from pathlib import Path
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
@@ -380,35 +381,49 @@ def _spearman(xs, ys):
 # Style
 # ---------------------------------------------------------------------------
 
+# Greyscale-safe: the stratum reads from hatch and marker shape, never hue.
+# Near-black rather than pure black; at print size 000 rings harsh against
+# white and makes every edge shout for equal attention.
+INK = "#1A1A1A"
+MUTED = "#6E6E6E"
+FILL_A = "#FFFFFF"
+FILL_B = "#D2D2D2"
+HATCH_A = "///"
+HATCH_B = ""
+MARKER_A = "D"
+MARKER_B = "o"
+
+
 def apply_style():
     """Plain matplotlib. No seaborn, no styles that carry meaning in hue."""
     plt.rcParams.update({
         "font.family": "sans-serif",
-        "font.sans-serif": ["Helvetica", "Arial", "DejaVu Sans"],
-        "font.size": 9,
-        "axes.linewidth": 0.8,
-        "axes.edgecolor": "#000000",
-        "axes.labelsize": 9,
-        "xtick.labelsize": 8.5,
+        "font.sans-serif": ["Helvetica Neue", "Helvetica", "Arial",
+                            "DejaVu Sans"],
+        "font.size": 8.5,
+        "axes.linewidth": 0.7,
+        "axes.edgecolor": INK,
+        "axes.labelsize": 8.5,
+        "axes.labelcolor": INK,
+        "text.color": INK,
+        "xtick.labelsize": 8,
         "ytick.labelsize": 9,
+        "xtick.color": INK,
+        "ytick.color": INK,
         "xtick.direction": "out",
         "ytick.direction": "out",
+        "xtick.major.size": 3,
+        "xtick.major.width": 0.7,
+        # Fine hatching. The matplotlib default is heavy enough to read as
+        # texture noise at print size and muddies the bar it fills.
+        "hatch.linewidth": 0.55,
         "legend.frameon": False,
-        "legend.fontsize": 8.5,
+        "legend.fontsize": 8,
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
         "savefig.bbox": "tight",
-        "savefig.pad_inches": 0.02,
+        "savefig.pad_inches": 0.03,
     })
-
-
-# Greyscale-safe: the stratum reads from hatch and marker shape, never hue.
-FILL_A = "#FFFFFF"
-FILL_B = "#C8C8C8"
-HATCH_A = "////"
-HATCH_B = ""
-MARKER_A = "D"
-MARKER_B = "o"
 
 
 def save(fig, stem: str, out_dir: Path) -> list:
@@ -428,46 +443,85 @@ def save(fig, stem: str, out_dir: Path) -> list:
 def figure_band(results, out_dir: Path) -> list:
     rows = sorted(results, key=lambda r: r["coverage"], reverse=True)
 
-    fig, ax = plt.subplots(figsize=(6.6, 3.5))
+    fig, ax = plt.subplots(figsize=(7.0, 3.9))
     ys = list(range(len(rows)))[::-1]
 
     ax.set_axisbelow(True)
-    ax.xaxis.grid(True, color="#000000", alpha=0.10, linewidth=0.6)
+    ax.xaxis.grid(True, color=INK, alpha=0.09, linewidth=0.6)
     ax.yaxis.grid(False)
 
     for y, r in zip(ys, rows):
         is_a = r["stratum"] == "A"
+
+        # Leader rule across the full width, carrying the eye from the
+        # country label through the bar to the coverage column.
+        ax.plot(
+            [0, 100], [y, y],
+            color=INK, alpha=0.13, linewidth=0.5,
+            linestyle=(0, (1, 2.5)), zorder=1,
+        )
+
         ax.barh(
             y,
             width=r["ceiling"] - r["floor"],
             left=r["floor"],
-            height=0.54,
+            height=0.46,
             facecolor=FILL_A if is_a else FILL_B,
-            edgecolor="#000000",
-            linewidth=0.8,
+            edgecolor=INK,
+            linewidth=0.7,
             hatch=HATCH_A if is_a else HATCH_B,
             zorder=3,
         )
+
+        # Floor and ceiling values, set just outside the bar ends. The
+        # reader should not have to measure the bar against the axis.
+        # Where the published tick falls outside the band it occupies the
+        # space the value label wants, so that label goes inside the bar
+        # instead: Bosnia's published score sits below its floor, and
+        # Croatia's above its ceiling.
+        floor_inside = r["published"] < r["floor"]
+        ceil_inside = r["published"] > r["ceiling"]
+        ax.annotate(f"{r['floor']:.0f}", xy=(r["floor"], y),
+                    xytext=(4 if floor_inside else -4, 0),
+                    textcoords="offset points", va="center",
+                    ha="left" if floor_inside else "right",
+                    fontsize=7.2, color=MUTED, zorder=4,
+                    path_effects=[pe.Stroke(linewidth=2.2,
+                                            foreground="white"),
+                                  pe.Normal()])
+        ax.annotate(f"{r['ceiling']:.0f}", xy=(r["ceiling"], y),
+                    xytext=(-4 if ceil_inside else 4, 0),
+                    textcoords="offset points", va="center",
+                    ha="right" if ceil_inside else "left",
+                    fontsize=7.2, color=MUTED, zorder=4,
+                    path_effects=[pe.Stroke(linewidth=2.2,
+                                            foreground="white"),
+                                  pe.Normal()])
+
         # Published score: a vertical tick, readable wherever it lands,
-        # including outside the band. Drawn taller than the bar (half-height
-        # 0.27) so it stays legible where it coincides with a bar edge, as
-        # Montenegro's does with its ceiling.
+        # including outside the band. Taller than the bar so it stays
+        # legible where it coincides with a bar edge, as Montenegro's does
+        # with its ceiling, and haloed in white so it separates from the
+        # bar fill instead of merging with the edge stroke.
         ax.plot(
             [r["published"], r["published"]],
-            [y - 0.37, y + 0.37],
-            color="#000000",
-            linewidth=1.9,
+            [y - 0.36, y + 0.36],
+            color=INK,
+            linewidth=1.7,
             solid_capstyle="butt",
-            zorder=5,
+            zorder=6,
+            path_effects=[pe.Stroke(linewidth=3.6, foreground="white"),
+                          pe.Normal()],
         )
+
         ax.annotate(
             f"{100 * r['coverage']:.0f}%",
             xy=(1.0, y),
             xycoords=("axes fraction", "data"),
-            xytext=(6, 0),
+            xytext=(14, 0),
             textcoords="offset points",
             va="center",
-            ha="left",
+            ha="right",
             fontsize=8.5,
         )
 
@@ -475,40 +529,42 @@ def figure_band(results, out_dir: Path) -> list:
         "coverage",
         xy=(1.0, 1.0),
         xycoords="axes fraction",
-        xytext=(6, 8),
+        xytext=(14, 10),
         textcoords="offset points",
         va="bottom",
-        ha="left",
-        fontsize=8.5,
-        style="italic",
+        ha="right",
+        fontsize=7.5,
+        color=MUTED,
     )
 
     ax.set_yticks(ys)
     ax.set_yticklabels([r["country"] for r in rows])
-    ax.set_ylim(-0.7, len(rows) - 0.3)
+    ax.set_ylim(-0.65, len(rows) - 0.35)
     ax.set_xlim(0, 100)
     ax.set_xticks(range(0, 101, 20))
     ax.set_xlabel("ODMI score (%)")
 
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.tick_params(axis="y", length=0)
+    for side in ("top", "right", "left"):
+        ax.spines[side].set_visible(False)
+    ax.spines["bottom"].set_position(("outward", 6))
+    ax.tick_params(axis="y", length=0, pad=6)
 
     handles = [
-        Patch(facecolor=FILL_A, edgecolor="#000000", hatch=HATCH_A,
-              linewidth=0.8, label="Stratum A (low/mid-resource)"),
-        Patch(facecolor=FILL_B, edgecolor="#000000", linewidth=0.8,
+        Patch(facecolor=FILL_A, edgecolor=INK, hatch=HATCH_A,
+              linewidth=0.7, label="Stratum A (low/mid-resource)"),
+        Patch(facecolor=FILL_B, edgecolor=INK, linewidth=0.7,
               label="Stratum B (higher-resource)"),
-        Line2D([0], [0], color="#000000", linewidth=1.9,
+        Line2D([0], [0], color=INK, linewidth=1.7,
                label="Published ODMI score"),
     ]
     ax.legend(
         handles=handles,
         loc="lower center",
-        bbox_to_anchor=(0.5, -0.40),
+        bbox_to_anchor=(0.5, -0.34),
         ncol=3,
-        handlelength=1.6,
-        columnspacing=1.4,
+        handlelength=1.5,
+        handletextpad=0.6,
+        columnspacing=2.0,
     )
     return save(fig, "fig_exp36_score_bands", out_dir)
 
@@ -521,19 +577,22 @@ def figure_band(results, out_dir: Path) -> list:
 # Sweden differ by 0.1 on the x axis. Nudged by hand so no label overlaps a
 # neighbour's marker; (dx, dy, horizontal alignment) in points.
 LABEL_OFFSETS = {
-    "HR": (-7, -3, "right"),
-    "BE": (7, 1, "left"),
-    "FI": (7, 1, "left"),
-    "SE": (7, -5, "left"),
-    "ME": (7, 1, "left"),
+    "HR": (-8, -2, "right"),
+    "BE": (9, -1, "left"),
+    "FI": (9, 2, "left"),
+    "SE": (9, -2, "left"),
+    "ME": (-8, 3, "right"),
+    "MK": (-8, 2, "right"),
+    "BG": (8, -4, "left"),
+    "BA": (9, 1, "left"),
 }
 
 
 def figure_scatter(results, out_dir: Path, stats: dict) -> list:
-    fig, ax = plt.subplots(figsize=(4.4, 3.9))
+    fig, ax = plt.subplots(figsize=(4.6, 4.2))
 
     ax.set_axisbelow(True)
-    ax.xaxis.grid(True, color="#000000", alpha=0.10, linewidth=0.6)
+    ax.xaxis.grid(True, color=INK, alpha=0.09, linewidth=0.6)
     ax.yaxis.grid(False)
 
     for r in results:
@@ -542,13 +601,13 @@ def figure_scatter(results, out_dir: Path, stats: dict) -> list:
             r["published"],
             100 * r["coverage"],
             marker=MARKER_A if is_a else MARKER_B,
-            s=46 if is_a else 42,
+            s=58 if is_a else 52,
             facecolor=FILL_A if is_a else FILL_B,
-            edgecolor="#000000",
+            edgecolor=INK,
             linewidth=0.9,
             zorder=4,
         )
-        dx, dy, ha = LABEL_OFFSETS.get(r["country"], (6, 4, "left"))
+        dx, dy, ha = LABEL_OFFSETS.get(r["country"], (7, 3, "left"))
         ax.annotate(
             r["country"],
             xy=(r["published"], 100 * r["coverage"]),
@@ -556,6 +615,11 @@ def figure_scatter(results, out_dir: Path, stats: dict) -> list:
             textcoords="offset points",
             ha=ha,
             fontsize=8.5,
+            zorder=5,
+            # Croatia and Belgium sit close enough that a label can cross a
+            # neighbour's marker at some figure sizes.
+            path_effects=[pe.Stroke(linewidth=2.4, foreground="white"),
+                          pe.Normal()],
         )
 
     # No trend line. n = 8, and the Pearson coefficient leans on Bosnia,
@@ -565,11 +629,13 @@ def figure_scatter(results, out_dir: Path, stats: dict) -> list:
         f"Pearson $r$ = {stats['pearson']:.2f}\n"
         f"Spearman $\\rho$ = {stats['spearman']:.2f}\n"
         f"$n$ = {stats['n']}",
-        xy=(0.03, 0.97),
+        xy=(0.035, 0.965),
         xycoords="axes fraction",
         va="top",
         ha="left",
-        fontsize=8,
+        fontsize=7.8,
+        color=MUTED,
+        linespacing=1.5,
     )
 
     ax.set_xlim(0, 100)
@@ -578,19 +644,23 @@ def figure_scatter(results, out_dir: Path, stats: dict) -> list:
     ax.set_yticks(range(0, 101, 20))
     ax.set_xlabel("Published ODMI score (%)")
     ax.set_ylabel("Coverage (committed / 143, %)")
+    ax.set_aspect("equal", adjustable="box")
 
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for side in ("bottom", "left"):
+        ax.spines[side].set_position(("outward", 6))
 
     handles = [
         Line2D([0], [0], marker=MARKER_A, linestyle="none",
-               markerfacecolor=FILL_A, markeredgecolor="#000000",
-               markersize=6.6, label="Stratum A"),
+               markerfacecolor=FILL_A, markeredgecolor=INK,
+               markersize=6.8, label="Stratum A"),
         Line2D([0], [0], marker=MARKER_B, linestyle="none",
-               markerfacecolor=FILL_B, markeredgecolor="#000000",
-               markersize=6.4, label="Stratum B"),
+               markerfacecolor=FILL_B, markeredgecolor=INK,
+               markersize=6.6, label="Stratum B"),
     ]
-    ax.legend(handles=handles, loc="lower right", handletextpad=0.4)
+    ax.legend(handles=handles, loc="lower right", handletextpad=0.5,
+              borderpad=0.2)
     return save(fig, "fig_exp36_coverage_vs_published", out_dir)
 
 
