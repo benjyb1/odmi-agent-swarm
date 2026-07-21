@@ -1,0 +1,121 @@
+{
+  "experiment_id": "exp36_frozen_headline",
+  "db_path": "data/odmi.db",
+  "provenance": {
+    "population": "evaluation/exp36_analysis.load_rows + dedup_canonical(scope_by_label=False)",
+    "commit_rule": "evaluation/exp36_analysis.is_committed (D37)",
+    "score_formula": "mean of the four dimension percentages, each SUM(awarded_score)/SUM(max_score)",
+    "marking": "ODMI rubric recovered from ground_truth: (question_id, response) -> awarded fraction",
+    "off_rubric_rule": "a swarm answer absent from its question's rubric scores zero"
+  },
+  "rubric_keys": 345,
+  "raw_final_rows": 1151,
+  "canonical_pairs": 1144,
+  "superseded_duplicates": 7,
+  "countries": [
+    {
+      "country_code": "FI",
+      "published": 77.9,
+      "floor": 69.9,
+      "ceiling": 91.3,
+      "width": 21.4,
+      "marker_inside_band": true,
+      "n_questions": 130,
+      "n_committed": 97,
+      "n_abstained": 33,
+      "n_off_rubric": 0,
+      "coverage": 0.746
+    },
+    {
+      "country_code": "SE",
+      "published": 77.8,
+      "floor": 61.3,
+      "ceiling": 83.9,
+      "width": 22.6,
+      "marker_inside_band": true,
+      "n_questions": 130,
+      "n_committed": 93,
+      "n_abstained": 37,
+      "n_off_rubric": 0,
+      "coverage": 0.715
+    },
+    {
+      "country_code": "BE",
+      "published": 76.6,
+      "floor": 50.0,
+      "ceiling": 87.7,
+      "width": 37.7,
+      "marker_inside_band": true,
+      "n_questions": 130,
+      "n_committed": 74,
+      "n_abstained": 56,
+      "n_off_rubric": 1,
+      "coverage": 0.569
+    },
+    {
+      "country_code": "HR",
+      "published": 73.5,
+      "floor": 40.3,
+      "ceiling": 68.6,
+      "width": 28.2,
+      "marker_inside_band": false,
+      "n_questions": 130,
+      "n_committed": 69,
+      "n_abstained": 61,
+      "n_off_rubric": 1,
+      "coverage": 0.531
+    },
+    {
+      "country_code": "BG",
+      "published": 62.9,
+      "floor": 28.8,
+      "ceiling": 70.2,
+      "width": 41.5,
+      "marker_inside_band": true,
+      "n_questions": 130,
+      "n_committed": 54,
+      "n_abstained": 76,
+      "n_off_rubric": 0,
+      "coverage": 0.415
+    },
+    {
+      "country_code": "ME",
+      "published": 59.9,
+      "floor": 33.6,
+      "ceiling": 54.2,
+      "width": 20.6,
+      "marker_inside_band": false,
+      "n_questions": 130,
+      "n_committed": 76,
+      "n_abstained": 54,
+      "n_off_rubric": 4,
+      "coverage": 0.585
+    },
+    {
+      "country_code": "MK",
+      "published": 42.8,
+      "floor": 28.3,
+      "ceiling": 54.9,
+      "width": 26.6,
+      "marker_inside_band": true,
+      "n_questions": 130,
+      "n_committed": 65,
+      "n_abstained": 65,
+      "n_off_rubric": 4,
+      "coverage": 0.5
+    },
+    {
+      "country_code": "BA",
+      "published": 15.1,
+      "floor": 12.2,
+      "ceiling": 24.5,
+      "width": 12.3,
+      "marker_inside_band": true,
+      "n_questions": 130,
+      "n_committed": 50,
+      "n_abstained": 80,
+      "n_off_rubric": 5,
+      "coverage": 0.385
+    }
+  ]
+}
