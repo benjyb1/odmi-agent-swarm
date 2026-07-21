@@ -1,0 +1,162 @@
+<svg viewBox="0 0 1040 612" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif">
+<rect width="1040" height="612" fill="#ffffff"/>
+<text x="26" y="38" font-size="21" font-weight="700" fill="#161616">Why the swarm abstains, by country (EXP-36)</text>
+<text x="26" y="60" font-size="13" fill="#52514e">Abstention rate over each country&#8217;s 143 pairs, split by cause. Countries grouped by D47 resource stratum, then by rate.</text>
+<text x="26" y="80" font-size="13" fill="#52514e">The stratum gap is almost entirely the confidence floor. Verifier rejection is flat across strata, and retrieval failure is near zero outside Bulgaria.</text>
+<rect x="26" y="97" width="13" height="13" rx="2.5" fill="#2a78d6"/>
+<text x="44" y="108" font-size="12" fill="#161616">Below confidence floor</text>
+<rect x="212.7" y="97" width="13" height="13" rx="2.5" fill="#1baf7a"/>
+<text x="230.7" y="108" font-size="12" fill="#161616">Verifier rejection</text>
+<rect x="372.0" y="97" width="13" height="13" rx="2.5" fill="#4a3aa7"/>
+<text x="390.0" y="108" font-size="12" fill="#161616">Researcher never committed</text>
+<rect x="586.1" y="97" width="13" height="13" rx="2.5" fill="#eb6834"/>
+<text x="604.1" y="108" font-size="12" fill="#161616">Retrieval failure</text>
+<rect x="738.55" y="97" width="13" height="13" rx="2.5" fill="#a9a79e"/>
+<text x="756.55" y="108" font-size="12" fill="#161616">Other / deny-list</text>
+<line x1="232.0" y1="124" x2="232.0" y2="476.0" stroke="#e1e0d9" stroke-width="1"/>
+<line x1="324.9" y1="124" x2="324.9" y2="476.0" stroke="#e1e0d9" stroke-width="1"/>
+<line x1="417.7" y1="124" x2="417.7" y2="476.0" stroke="#e1e0d9" stroke-width="1"/>
+<line x1="510.6" y1="124" x2="510.6" y2="476.0" stroke="#e1e0d9" stroke-width="1"/>
+<line x1="603.4" y1="124" x2="603.4" y2="476.0" stroke="#e1e0d9" stroke-width="1"/>
+<line x1="696.3" y1="124" x2="696.3" y2="476.0" stroke="#e1e0d9" stroke-width="1"/>
+<line x1="789.1" y1="124" x2="789.1" y2="476.0" stroke="#e1e0d9" stroke-width="1"/>
+<line x1="882.0" y1="124" x2="882.0" y2="476.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="218" y="147.0" font-size="13" font-weight="400" text-anchor="end" fill="#161616">Bosnia &amp; Herz.</text>
+<clipPath id="clip55980"><rect x="232" y="132" width="571.4" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip55980)">
+<rect x="232.00" y="132" width="303.19" height="22" fill="#2a78d6"/>
+<text x="384.60" y="147.0" font-size="11" text-anchor="middle" fill="#ffffff">47</text>
+<rect x="537.19" y="132" width="192.81" height="22" fill="#1baf7a"/>
+<text x="634.60" y="147.0" font-size="11" text-anchor="middle" fill="#0b2b20">30</text>
+<rect x="732.00" y="132" width="10.99" height="22" fill="#4a3aa7"/>
+<rect x="744.99" y="132" width="4.49" height="22" fill="#eb6834"/>
+<rect x="751.48" y="132" width="51.95" height="22" fill="#a9a79e"/>
+<text x="777.45" y="147.0" font-size="11" text-anchor="middle" fill="#1f1e1c">8</text>
+</g>
+<text x="812.4" y="147.0" font-size="11.5" font-weight="400" fill="#52514e">0.615</text>
+<text x="218" y="181.0" font-size="13" font-weight="400" text-anchor="end" fill="#161616">Bulgaria</text>
+<clipPath id="clip10894"><rect x="232" y="166" width="532.5" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip10894)">
+<rect x="232.00" y="166" width="179.82" height="22" fill="#2a78d6"/>
+<text x="322.91" y="181.0" font-size="11" text-anchor="middle" fill="#ffffff">28</text>
+<rect x="413.82" y="166" width="192.81" height="22" fill="#1baf7a"/>
+<text x="511.22" y="181.0" font-size="11" text-anchor="middle" fill="#0b2b20">30</text>
+<rect x="608.62" y="166" width="49.95" height="22" fill="#4a3aa7"/>
+<text x="634.60" y="181.0" font-size="11" text-anchor="middle" fill="#ffffff">8</text>
+<rect x="660.57" y="166" width="88.91" height="22" fill="#eb6834"/>
+<text x="706.03" y="181.0" font-size="11" text-anchor="middle" fill="#ffffff">14</text>
+<rect x="751.48" y="166" width="12.99" height="22" fill="#a9a79e"/>
+</g>
+<text x="773.5" y="181.0" font-size="11.5" font-weight="400" fill="#52514e">0.573</text>
+<text x="218" y="215.0" font-size="13" font-weight="400" text-anchor="end" fill="#161616">North Macedonia</text>
+<clipPath id="clip30814"><rect x="232" y="200" width="448.1" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip30814)">
+<rect x="232.00" y="200" width="251.25" height="22" fill="#2a78d6"/>
+<text x="358.62" y="215.0" font-size="11" text-anchor="middle" fill="#ffffff">39</text>
+<rect x="485.25" y="200" width="160.34" height="22" fill="#1baf7a"/>
+<text x="566.42" y="215.0" font-size="11" text-anchor="middle" fill="#0b2b20">25</text>
+<rect x="647.58" y="200" width="17.48" height="22" fill="#4a3aa7"/>
+<rect x="667.06" y="200" width="12.99" height="22" fill="#a9a79e"/>
+</g>
+<text x="689.1" y="215.0" font-size="11.5" font-weight="400" fill="#52514e">0.483</text>
+<text x="218" y="249.0" font-size="13" font-weight="400" text-anchor="end" fill="#161616">Montenegro</text>
+<clipPath id="clip51981"><rect x="232" y="234" width="389.6" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip51981)">
+<rect x="232.00" y="234" width="186.31" height="22" fill="#2a78d6"/>
+<text x="326.16" y="249.0" font-size="11" text-anchor="middle" fill="#ffffff">29</text>
+<rect x="420.31" y="234" width="166.83" height="22" fill="#1baf7a"/>
+<text x="504.73" y="249.0" font-size="11" text-anchor="middle" fill="#0b2b20">26</text>
+<rect x="589.14" y="234" width="4.49" height="22" fill="#eb6834"/>
+<rect x="595.64" y="234" width="25.97" height="22" fill="#a9a79e"/>
+<text x="608.62" y="249.0" font-size="11" text-anchor="middle" fill="#1f1e1c">4</text>
+</g>
+<text x="630.6" y="249.0" font-size="11.5" font-weight="400" fill="#52514e">0.420</text>
+<line x1="46" y1="262.0" x2="882" y2="262.0" stroke="#e1e0d9" stroke-width="1"/>
+<text x="218" y="283.0" font-size="13" font-weight="400" text-anchor="end" fill="#161616">Croatia</text>
+<clipPath id="clip63228"><rect x="232" y="268" width="428.6" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip63228)">
+<rect x="232.00" y="268" width="101.90" height="22" fill="#2a78d6"/>
+<text x="283.95" y="283.0" font-size="11" text-anchor="middle" fill="#ffffff">16</text>
+<rect x="335.90" y="268" width="303.19" height="22" fill="#1baf7a"/>
+<text x="488.49" y="283.0" font-size="11" text-anchor="middle" fill="#0b2b20">47</text>
+<rect x="641.09" y="268" width="10.99" height="22" fill="#4a3aa7"/>
+<rect x="654.08" y="268" width="6.49" height="22" fill="#a9a79e"/>
+</g>
+<text x="669.6" y="283.0" font-size="11.5" font-weight="400" fill="#52514e">0.462</text>
+<text x="218" y="317.0" font-size="13" font-weight="400" text-anchor="end" fill="#161616">Belgium</text>
+<clipPath id="clip66937"><rect x="232" y="302" width="415.6" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip66937)">
+<rect x="232.00" y="302" width="108.39" height="22" fill="#2a78d6"/>
+<text x="287.19" y="317.0" font-size="11" text-anchor="middle" fill="#ffffff">17</text>
+<rect x="342.39" y="302" width="199.30" height="22" fill="#1baf7a"/>
+<text x="443.04" y="317.0" font-size="11" text-anchor="middle" fill="#0b2b20">31</text>
+<rect x="543.69" y="302" width="43.45" height="22" fill="#4a3aa7"/>
+<text x="566.42" y="317.0" font-size="11" text-anchor="middle" fill="#ffffff">7</text>
+<rect x="589.14" y="302" width="58.44" height="22" fill="#a9a79e"/>
+<text x="618.36" y="317.0" font-size="11" text-anchor="middle" fill="#1f1e1c">9</text>
+</g>
+<text x="656.6" y="317.0" font-size="11.5" font-weight="400" fill="#52514e">0.448</text>
+<text x="218" y="351.0" font-size="13" font-weight="400" text-anchor="end" fill="#161616">Sweden</text>
+<clipPath id="clip79991"><rect x="232" y="336" width="272.7" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip79991)">
+<rect x="232.00" y="336" width="88.91" height="22" fill="#2a78d6"/>
+<text x="277.45" y="351.0" font-size="11" text-anchor="middle" fill="#ffffff">14</text>
+<rect x="322.91" y="336" width="121.38" height="22" fill="#1baf7a"/>
+<text x="384.60" y="351.0" font-size="11" text-anchor="middle" fill="#0b2b20">19</text>
+<rect x="446.29" y="336" width="36.96" height="22" fill="#4a3aa7"/>
+<text x="465.77" y="351.0" font-size="11" text-anchor="middle" fill="#ffffff">6</text>
+<rect x="485.25" y="336" width="19.48" height="22" fill="#a9a79e"/>
+</g>
+<text x="513.7" y="351.0" font-size="11.5" font-weight="400" fill="#52514e">0.294</text>
+<text x="218" y="385.0" font-size="13" font-weight="400" text-anchor="end" fill="#161616">Finland</text>
+<clipPath id="clip41565"><rect x="232" y="370" width="240.3" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip41565)">
+<rect x="232.00" y="370" width="56.44" height="22" fill="#2a78d6"/>
+<text x="261.22" y="385.0" font-size="11" text-anchor="middle" fill="#ffffff">9</text>
+<rect x="290.44" y="370" width="153.84" height="22" fill="#1baf7a"/>
+<text x="368.36" y="385.0" font-size="11" text-anchor="middle" fill="#0b2b20">24</text>
+<rect x="446.29" y="370" width="10.99" height="22" fill="#4a3aa7"/>
+<rect x="459.27" y="370" width="12.99" height="22" fill="#a9a79e"/>
+</g>
+<text x="481.3" y="385.0" font-size="11.5" font-weight="400" fill="#52514e">0.259</text>
+<line x1="46" y1="414.0" x2="882" y2="414.0" stroke="#c3c2b7" stroke-width="1"/>
+<text x="218" y="441.0" font-size="12.5" font-weight="700" text-anchor="end" fill="#161616">Stratum A (low-resource)</text>
+<clipPath id="clip82119"><rect x="232" y="426" width="485.4" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip82119)">
+<rect x="232.00" y="426" width="230.14" height="22" fill="#2a78d6"/>
+<text x="348.07" y="441.0" font-size="11" text-anchor="middle" fill="#ffffff">143</text>
+<rect x="464.14" y="426" width="178.19" height="22" fill="#1baf7a"/>
+<text x="554.24" y="441.0" font-size="11" text-anchor="middle" fill="#0b2b20">111</text>
+<rect x="644.34" y="426" width="19.10" height="22" fill="#4a3aa7"/>
+<rect x="665.44" y="426" width="23.97" height="22" fill="#eb6834"/>
+<text x="678.43" y="441.0" font-size="11" text-anchor="middle" fill="#ffffff">16</text>
+<rect x="691.42" y="426" width="25.97" height="22" fill="#a9a79e"/>
+<text x="704.40" y="441.0" font-size="11" text-anchor="middle" fill="#1f1e1c">16</text>
+</g>
+<text x="726.4" y="441.0" font-size="11.5" font-weight="700" fill="#52514e">0.523</text>
+<text x="218" y="475.0" font-size="12.5" font-weight="700" text-anchor="end" fill="#161616">Stratum B (higher-resource)</text>
+<clipPath id="clip42522"><rect x="232" y="460" width="339.3" height="22" rx="4" ry="4"/></clipPath>
+<g clip-path="url(#clip42522)">
+<rect x="232.00" y="460" width="88.91" height="22" fill="#2a78d6"/>
+<text x="277.45" y="475.0" font-size="11" text-anchor="middle" fill="#ffffff">56</text>
+<rect x="322.91" y="460" width="194.43" height="22" fill="#1baf7a"/>
+<text x="421.12" y="475.0" font-size="11" text-anchor="middle" fill="#0b2b20">121</text>
+<rect x="519.34" y="460" width="25.60" height="22" fill="#4a3aa7"/>
+<text x="533.14" y="475.0" font-size="11" text-anchor="middle" fill="#ffffff">17</text>
+<rect x="546.94" y="460" width="24.35" height="22" fill="#a9a79e"/>
+<text x="559.11" y="475.0" font-size="11" text-anchor="middle" fill="#1f1e1c">15</text>
+</g>
+<text x="580.3" y="475.0" font-size="11.5" font-weight="700" fill="#52514e">0.365</text>
+<line x1="232" y1="498.0" x2="882" y2="498.0" stroke="#c3c2b7" stroke-width="1"/>
+<text x="232.0" y="516.0" font-size="11.5" text-anchor="middle" fill="#898781">0.00</text>
+<text x="324.9" y="516.0" font-size="11.5" text-anchor="middle" fill="#898781">0.10</text>
+<text x="417.7" y="516.0" font-size="11.5" text-anchor="middle" fill="#898781">0.20</text>
+<text x="510.6" y="516.0" font-size="11.5" text-anchor="middle" fill="#898781">0.30</text>
+<text x="603.4" y="516.0" font-size="11.5" text-anchor="middle" fill="#898781">0.40</text>
+<text x="696.3" y="516.0" font-size="11.5" text-anchor="middle" fill="#898781">0.50</text>
+<text x="789.1" y="516.0" font-size="11.5" text-anchor="middle" fill="#898781">0.60</text>
+<text x="882.0" y="516.0" font-size="11.5" text-anchor="middle" fill="#898781">0.70</text>
+<text x="557" y="538" font-size="12.5" text-anchor="middle" fill="#52514e">Abstention rate</text>
+<text x="26" y="564" font-size="11.5" fill="#52514e">Segment labels are pair counts (country n = 143, stratum n = 572); bar length is the rate. Causes from the `abstention_taxonomy.py` register.</text>
+<text x="26" y="582" font-size="11" fill="#898781">Source: exp36_frozen_headline, 508 non-committed pairs of 1,144. Generated 2026-07-20.</text>
+</svg>
