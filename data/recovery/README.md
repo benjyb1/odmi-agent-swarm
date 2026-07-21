@@ -1,85 +1,108 @@
 # Recovered experiment data
 
-## EXP-40 cooperative arm, and its EXP-34 replay seed
+Twenty-two experiments were missing from the canonical `data/odmi.db`, or
+present there only in part. All 22 were recovered on 2026-07-21 and merged back
+in. This directory holds the dumps so the recovery does not depend on sources
+that are one `git lfs prune` from deletion.
 
-Recovered 2026-07-21. Both experiments were absent from the canonical
-`data/odmi.db` and from all 41 worktree copies of it.
+## What happened
 
-### What happened
+`data/odmi.db` is Git LFS tracked. An experiment dispatched from a worktree
+writes its rows to that worktree's copy, and lands on main only if someone
+commits the database. Repeatedly, the code, prereg and analysis JSON were
+committed while the database was not, and deleting the worktree took the rows
+with it.
 
-EXP-40 ran on 2026-07-19 in a worktree that was later deleted. The run's code,
-prereg and analysis JSON were committed (`5b663d9`, `8d699d2`, `5d2213f`,
-`2106efd`), but the SQLite rows never were: `data/odmi.db` is Git LFS tracked,
-and no commit in that sequence touched it. Deleting the worktree took the only
-copy of the rows with it.
+EXP-40 is the clearest case. Its four commits (`5b663d9`, `8d699d2`, `5d2213f`,
+`2106efd`) carry the cooperative arm's implementation, its pre-registration and
+its published result, and not one of them touches `data/odmi.db`.
 
-The rows survived by accident. Git LFS had already staged a snapshot of that
-worktree's database into the local object store, where it sat unreferenced by
-any commit. Object
-`b37d933dd6f5b9b27cc5bda5d2cb0d423fbde5d898a6ae0d2af2d388f775df9c`
-(plus its `-wal` and `-shm` sidecars) held the completed run.
+`evaluation/results/model_landscape_rows.sql` shows the same failure caught
+halfway: someone exported the exp32/exp36 rows and wrote "migrate into canonical
+with sqlite3 data/odmi.db < model_landscape_rows.sql" at the top of the file.
+Nobody ran it. Both experiments were still absent a week later.
 
-That object was one prune away from being lost for good: `git lfs prune
---dry-run` lists 169 unreferenced objects totalling 26 GB, and this was among
-them. These dumps exist so the data no longer depends on it.
+## Where the rows survived
 
-### What the dumps contain
+Two places, neither of them durable.
 
-`exp40_cooperative_recovered.sql.gz` (999 rows)
+**Unreferenced Git LFS objects.** LFS had staged snapshots of deleted worktrees'
+databases into `.git/lfs/objects/`, unreferenced by any commit. EXP-40 came back
+from `b37d933d` (with its `-wal` sidecar), `d50_neg_licence_confirm` from
+`7fde9393`, `exp28_arch_ablation` from `7fbc8f7e`. At the time of recovery
+`git lfs prune --dry-run` listed 169 such objects totalling 26 GB, so this was
+one routine cleanup away from being unrecoverable.
 
-| table | rows |
-|---|---|
-| `experiments` | 1 |
-| `phase2_final` | 157 (156 distinct pairs; `PT9:MT` has an `agent_failure` row plus its retry) |
-| `phase2_researcher_runs` | 433 |
-| `phase2_verifier_runs` | 231 |
-| `subtrio_status` | 177 |
+**Other worktrees.** `exp36-run`, `beef-ai-lesswrong-feedback-f15c91`,
+`nice-hermann-e2609b`, `vibrant-chaum-e1e17c`, `stupefied-dubinsky-9beec8` and
+`language-accuracy-experiment-a40577` each still held rows nothing else had.
 
-Battery MT 60 / NL 52 / AL 44. Terminal statuses `accepted_cooperative` 63,
-`abstained_cooperative` 93, `agent_failure` 1. No adjudications, as the
-cooperative pipeline has no Adjudicator by design. Model `claude-sonnet-4-6`
-throughout.
+For every experiment the richest available source was used, which is why some
+dumps come from a worktree and others from an LFS object.
 
-`exp34_retrieval_strategy_recovered.sql.gz` (1,172 rows) carries
-`exp34_retrieval_strategy_s46` and `_s5`: 314 finals and 856 researcher runs.
-EXP-40's trio / no_adjudicator / researcher_only arms are replays off the
-`wide_only` condition of that run, so the analysis needs it present.
+## What came back
 
-### Verification
+Twenty-two experiments, 2,141 `phase2_final` rows and 15,623 rows in total.
 
-Restoring both dumps into a copy of the canonical database and re-running
-`evaluation/exp40_analysis.py` reproduces the committed
-`evaluation/results/exp40_analysis.json` byte for byte: all four arms, and the
-primary McNemar contrast at 8-vs-8, p = 1.00. The published numbers in
-`docs/RESULTS.md` stand on recovered data, not on a re-run.
+Sixteen were missing outright, including `exp40_cooperative_contrast` (157),
+`exp34_retrieval_strategy_s46` (314, the replay seed EXP-40's other three arms
+are computed from), `d50_neg_licence_confirm` (194), `exp32_model_haiku` (156)
+and `exp36_model_opus` (157).
 
-### Restoring
+Six more were in canonical but **incomplete**, which is the worse failure: they
+looked present and were not. `exp28_arch_ablation` held 99 of its 460 rows,
+`exp20_chaining_committing` 212 of 316, `exp23_narrow_then_widen_nl` 58 of 131,
+`exp19_verifier_search_multicountry` 275 of 318.
 
-The canonical database predates EXP-40's CHECK constraints, so migrate first or
-every `phase2_final` insert fails:
+That partial data explains a standing defect. Before the restore, canonical
+failed `PRAGMA foreign_key_check` with 1,592 violations: verifier rows whose
+researcher row had never arrived. Restoring the missing researcher rows brought
+that to **0**.
+
+## Verification
+
+`evaluation/exp40_analysis.py` run against the restored canonical database
+reproduces the committed `evaluation/results/exp40_analysis.json` byte for byte
+across all four arms, McNemar 8-vs-8 at p = 1.00 included. The numbers in
+`docs/RESULTS.md` therefore rest on the original rows, not on a re-run.
+
+`exp36_frozen_headline` is unchanged at 1,151 rows, and no table lost a row.
+
+## Restoring
+
+**Do not pipe these dumps into sqlite3.** Their INTEGER PRIMARY KEYs belong to
+the database they came from; replaying them with `INSERT OR REPLACE` overwrites
+whichever canonical rows happen to share those ids. Tried on a scratch copy,
+that silently destroyed 831 rows of `exp36_frozen_headline`.
+
+Use the merge script, which strips the ids, rewrites
+`phase2_verifier_runs.researcher_run_id` through an old-to-new map, matches
+prompts on `(prompt_name, version)` rather than id, and skips rows already
+present:
 
 ```bash
+# once: canonical's CHECK constraints predate EXP-40's terminal statuses
 uv run python scripts/migrate_corroborate_strategy_label.py --db data/odmi.db
-gunzip -c data/recovery/exp34_retrieval_strategy_recovered.sql.gz | sqlite3 data/odmi.db
-gunzip -c data/recovery/exp40_cooperative_recovered.sql.gz | sqlite3 data/odmi.db
-uv run python evaluation/exp40_analysis.py --db data/odmi.db \
-    --out evaluation/results/exp40_analysis.json
+
+uv run python scripts/merge_recovered_experiment.py \
+    --db data/odmi.db \
+    --dump data/recovery/exp40_cooperative_contrast_recovered.sql.gz
 ```
 
-Inserts are `INSERT OR REPLACE`, so re-running is safe. Run this against the
-canonical checkout, never a worktree copy.
+`--dry-run` reports what would be inserted and rolls back. The merge is
+idempotent, so re-running it is safe. Run it against the canonical checkout,
+never a worktree copy.
 
-### Why not just re-run it
+## Two traps in this data
 
-A re-run costs about £8.71 and 1.5 hours, which is affordable, but it would
-produce different numbers. The swarm is not deterministic, so a fresh run
-cannot reproduce the figures already published in `docs/RESULTS.md` and in the
-`2106efd` commit message. Recovering the original rows keeps the paper trail
-intact; re-running would mean restating the result.
+`exp29_sonnet5_model` ran on **claude-sonnet-4-6**, not Sonnet 5, whatever its
+name says. `exp34_retrieval_strategy_s5` really is Sonnet 5, as is
+`exp28_arch_ablation`. Check `model_version` before using any of these as a
+baseline rather than trusting the experiment id.
 
-### The general lesson
+## The rule this cost us
 
 An experiment is not finished when its analysis JSON is committed. It is
 finished when its rows are in the canonical database and that database is
-committed. Between those two points the data lives only in a worktree, and
+committed. Between those two points the data exists only inside a worktree, and
 worktrees get deleted.
