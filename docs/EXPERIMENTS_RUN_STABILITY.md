@@ -658,6 +658,17 @@ pre-registered bar is the finding, and the bar is not moved afterwards.
   model determinism alone. This is the honest framing and matches what §2.2
   asks for, which is whether the same assessment run again returns the same
   answers.
+- Replicate 1 finalised 155 of 156 pairs. PT16:AL hung in `researching` at
+  retry 1 (a slow Albanian search that never returned, the known low-resource
+  AL/SE search-stall pattern), and the orchestrator abandoned it and completed
+  `healthy=True` rather than hanging. The pair's stale subtrio is not
+  resumable and carries replicate 1's experiment_id, so it cannot leak into
+  replicate 2 or 3. If the same pair stalls on the other runs the analysis
+  simply drops it: n is the three-way intersection, so one consistently-stalling
+  pair costs at most one pair from 156. Recovering it was rejected, because a
+  same-experiment_id top-up dispatched alongside a running replicate would
+  contend for search capacity, which is the between-run confound this design
+  exists to exclude.
 - The measurement is of the incumbent trio only. Whether the cooperative or
   researcher-only pipelines are more or less stable is not tested, and no
   claim about them is made from this.
