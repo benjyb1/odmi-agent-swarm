@@ -273,10 +273,40 @@ which is where M5 below takes it from.
 In the order §4.7 wants them. All computed over the three replicates.
 
 **M1. Three-way outcome unanimity.** Each pair takes one outcome per run from
-`{commit-yes, commit-no, abstain}`. Report the share of pairs where all three
-runs agree, and Fleiss' kappa over 156 items, 3 raters, 3 categories. Fleiss
-rather than Cohen because there are three raters. `agent_failure` pairs are
-excluded and the count disclosed.
+`{commit-yes, commit-no, no-commit}`, where `no-commit` folds abstention and
+`agent_failure` together. Report the share of pairs where all three runs agree,
+and Fleiss' kappa over 156 items, 3 raters, 3 categories. Fleiss rather than
+Cohen because there are three raters.
+
+**No pair is ever dropped, and this matters more than it looks.** An earlier
+draft of this section said `agent_failure` pairs would be excluded with the
+count disclosed. That was wrong, in the direction that would have flattered the
+result. Failures do not land on the same pairs in every run, so excluding them
+per run removes exactly those pairs where one run behaved differently from
+another, which is a disagreement deleted from the numerator. Systematic
+per-run exclusion **inflates measured agreement**. It would also let the
+denominator vary between replicates, and a metric with a moving denominator is
+not comparable across runs.
+
+Folding `agent_failure` into `no-commit` is also the semantically honest call
+on this battery. The dominant reason is `no verifier output for adjudication`
+(10 of the 17 failure rows in exp34 `wide_only`, against 7 `schema_invalid`),
+which is the Researcher exhausting its retries with nothing to show. That is an
+abstention in everything but the label, not broken machinery. It matches what
+`evaluation/exp36_analysis.py` already does: `coverage = committed / n` over
+all rows, with failures kept in the denominator and reported separately as
+`n_failed`.
+
+Reported alongside: the `agent_failure` count per run split by reason, and a
+sensitivity read of M1 with those pairs removed, so a reader can see whether
+the choice moved anything.
+
+**Amendment log.** This change was made after replicate 1 was dispatched, at
+11 of 156 pairs finalised, prompted by an early health check showing one
+`agent_failure` and a look at what its reason field said. No outcome, rate or
+agreement figure had been computed at that point, and none could have been from
+11 pairs of a single run. It is recorded here rather than quietly edited,
+because §3.10 is worth nothing if the pre-registration is revised silently.
 
 **M2. Per-run marginal commit rate and its spread.** Three coverage figures,
 their range and standard deviation, and the same for commit accuracy. This
