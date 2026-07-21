@@ -1,0 +1,32 @@
+{
+  "experiment_id": "exp36_frozen_headline",
+  "db": "data/odmi.db",
+  "canonical_pairs": 1144,
+  "superseded_duplicates": 7,
+  "non_committed_pairs": 508,
+  "codes": {
+    "E": {
+      "pairs": 208,
+      "yes_gold": 97,
+      "no_gold": 67,
+      "binary_gold": 164,
+      "excluded_non_binary_gold": 44,
+      "yes_share": 0.5914634146341463
+    },
+    "G": {
+      "pairs": 199,
+      "yes_gold": 73,
+      "no_gold": 89,
+      "binary_gold": 162,
+      "excluded_non_binary_gold": 37,
+      "yes_share": 0.4506172839506173
+    }
+  },
+  "base_rate": {
+    "yes_gold": 539,
+    "no_gold": 370,
+    "binary_gold": 909,
+    "yes_share": 0.592959295929593
+  },
+  "e_pairs_also_satisfying_G_predicate": 172
+}
