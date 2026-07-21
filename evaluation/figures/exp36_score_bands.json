@@ -1,0 +1,307 @@
+{
+  "experiment_id": "exp36_frozen_headline",
+  "n_pairs": 1144,
+  "n_committed": 636,
+  "rubric_check": {
+    "overlapping_cells": 367,
+    "disagreements": 0
+  },
+  "belgium_factsheet_check": {
+    "policy_dimension": {
+      "computed": 82.8125,
+      "factsheet": 82.8,
+      "delta": 0.012500000000002842
+    },
+    "portal_dimension": {
+      "computed": 82.83582089552239,
+      "factsheet": 82.8,
+      "delta": 0.03582089552239154
+    },
+    "quality_dimension": {
+      "computed": 75.39682539682539,
+      "factsheet": 75.4,
+      "delta": -0.0031746031746138215
+    },
+    "impact_dimension": {
+      "computed": 65.51724137931035,
+      "factsheet": 65.5,
+      "delta": 0.017241379310348748
+    },
+    "overall": {
+      "computed": 76.64059691791454,
+      "factsheet": 76.6,
+      "delta": 0.040596917914541564
+    }
+  },
+  "correlation": {
+    "pearson": 0.7210027219600186,
+    "spearman": 0.8095238095238095,
+    "n": 8
+  },
+  "countries": [
+    {
+      "country": "BA",
+      "stratum": "A",
+      "n_pairs": 143,
+      "committed": 55,
+      "coverage": 0.38461538461538464,
+      "floor": 16.967331663215123,
+      "ceiling": 47.30263157894737,
+      "published": 15.085576645201742,
+      "negative_gold": 78,
+      "dimensions": {
+        "policy_dimension": {
+          "published": 35.15625,
+          "floor": 35.15625,
+          "ceiling": 59.21052631578947
+        },
+        "portal_dimension": {
+          "published": 11.940298507462687,
+          "floor": 13.432835820895523,
+          "ceiling": 30.0
+        },
+        "quality_dimension": {
+          "published": 6.349206349206349,
+          "floor": 6.349206349206349,
+          "ceiling": 66.66666666666667
+        },
+        "impact_dimension": {
+          "published": 6.896551724137931,
+          "floor": 12.931034482758621,
+          "ceiling": 33.333333333333336
+        }
+      }
+    },
+    {
+      "country": "BE",
+      "stratum": "B",
+      "n_pairs": 143,
+      "committed": 79,
+      "coverage": 0.5524475524475524,
+      "floor": 50.239063112700045,
+      "ceiling": 88.32352941176471,
+      "published": 76.64059691791454,
+      "negative_gold": 24,
+      "dimensions": {
+        "policy_dimension": {
+          "published": 82.8125,
+          "floor": 72.65625,
+          "ceiling": 93.0
+        },
+        "portal_dimension": {
+          "published": 82.83582089552239,
+          "floor": 43.28358208955224,
+          "ceiling": 85.29411764705883
+        },
+        "quality_dimension": {
+          "published": 75.39682539682539,
+          "floor": 23.80952380952381,
+          "ceiling": 75.0
+        },
+        "impact_dimension": {
+          "published": 65.51724137931035,
+          "floor": 61.206896551724135,
+          "ceiling": 100.0
+        }
+      }
+    },
+    {
+      "country": "BG",
+      "stratum": "A",
+      "n_pairs": 143,
+      "committed": 61,
+      "coverage": 0.42657342657342656,
+      "floor": 28.753165936021862,
+      "ceiling": 70.23038958770091,
+      "published": 62.9083853234852,
+      "negative_gold": 51,
+      "dimensions": {
+        "policy_dimension": {
+          "published": 78.90625,
+          "floor": 53.90625,
+          "ceiling": 86.25
+        },
+        "portal_dimension": {
+          "published": 58.208955223880594,
+          "floor": 23.134328358208954,
+          "ceiling": 57.407407407407405
+        },
+        "quality_dimension": {
+          "published": 51.58730158730159,
+          "floor": 9.523809523809524,
+          "ceiling": 75.0
+        },
+        "impact_dimension": {
+          "published": 62.93103448275862,
+          "floor": 28.448275862068964,
+          "ceiling": 62.264150943396224
+        }
+      }
+    },
+    {
+      "country": "FI",
+      "stratum": "B",
+      "n_pairs": 143,
+      "committed": 106,
+      "coverage": 0.7412587412587412,
+      "floor": 69.94572881691705,
+      "ceiling": 91.34045584045585,
+      "published": 77.9078504874029,
+      "negative_gold": 29,
+      "dimensions": {
+        "policy_dimension": {
+          "published": 82.03125,
+          "floor": 71.875,
+          "ceiling": 92.0
+        },
+        "portal_dimension": {
+          "published": 83.58208955223881,
+          "floor": 58.208955223880594,
+          "ceiling": 92.85714285714286
+        },
+        "quality_dimension": {
+          "published": 76.19047619047619,
+          "floor": 63.492063492063494,
+          "ceiling": 87.91208791208791
+        },
+        "impact_dimension": {
+          "published": 69.82758620689656,
+          "floor": 86.20689655172414,
+          "ceiling": 92.5925925925926
+        }
+      }
+    },
+    {
+      "country": "HR",
+      "stratum": "B",
+      "n_pairs": 143,
+      "committed": 77,
+      "coverage": 0.5384615384615384,
+      "floor": 40.74195071696117,
+      "ceiling": 69.37366452991452,
+      "published": 73.46019383531848,
+      "negative_gold": 27,
+      "dimensions": {
+        "policy_dimension": {
+          "published": 86.71875,
+          "floor": 69.53125,
+          "ceiling": 92.70833333333333
+        },
+        "portal_dimension": {
+          "published": 89.55223880597015,
+          "floor": 26.865671641791046,
+          "ceiling": 60.0
+        },
+        "quality_dimension": {
+          "published": 76.19047619047619,
+          "floor": 27.77777777777778,
+          "ceiling": 55.55555555555556
+        },
+        "impact_dimension": {
+          "published": 41.37931034482759,
+          "floor": 38.793103448275865,
+          "ceiling": 69.23076923076923
+        }
+      }
+    },
+    {
+      "country": "ME",
+      "stratum": "A",
+      "n_pairs": 143,
+      "committed": 83,
+      "coverage": 0.5804195804195804,
+      "floor": 37.519158045466426,
+      "ceiling": 59.86667602911117,
+      "published": 59.86849159375536,
+      "negative_gold": 59,
+      "dimensions": {
+        "policy_dimension": {
+          "published": 68.75,
+          "floor": 61.71875,
+          "ceiling": 75.96153846153847
+        },
+        "portal_dimension": {
+          "published": 70.14925373134328,
+          "floor": 23.880597014925375,
+          "ceiling": 43.24324324324324
+        },
+        "quality_dimension": {
+          "published": 83.33333333333333,
+          "floor": 42.06349206349206,
+          "ceiling": 74.64788732394366
+        },
+        "impact_dimension": {
+          "published": 17.24137931034483,
+          "floor": 22.413793103448278,
+          "ceiling": 45.6140350877193
+        }
+      }
+    },
+    {
+      "country": "MK",
+      "stratum": "A",
+      "n_pairs": 143,
+      "committed": 74,
+      "coverage": 0.5174825174825175,
+      "floor": 32.207217772488136,
+      "ceiling": 64.29924242424242,
+      "published": 42.752650374461844,
+      "negative_gold": 73,
+      "dimensions": {
+        "policy_dimension": {
+          "published": 42.96875,
+          "floor": 57.03125,
+          "ceiling": 76.04166666666667
+        },
+        "portal_dimension": {
+          "published": 55.97014925373134,
+          "floor": 19.402985074626866,
+          "ceiling": 40.625
+        },
+        "quality_dimension": {
+          "published": 53.96825396825397,
+          "floor": 22.22222222222222,
+          "ceiling": 87.5
+        },
+        "impact_dimension": {
+          "published": 18.103448275862068,
+          "floor": 30.17241379310345,
+          "ceiling": 53.03030303030303
+        }
+      }
+    },
+    {
+      "country": "SE",
+      "stratum": "B",
+      "n_pairs": 143,
+      "committed": 101,
+      "coverage": 0.7062937062937062,
+      "floor": 61.25230975152971,
+      "ceiling": 83.86977261442743,
+      "published": 77.77796605539626,
+      "negative_gold": 27,
+      "dimensions": {
+        "policy_dimension": {
+          "published": 79.6875,
+          "floor": 73.4375,
+          "ceiling": 81.03448275862068
+        },
+        "portal_dimension": {
+          "published": 79.85074626865672,
+          "floor": 49.25373134328358,
+          "ceiling": 75.0
+        },
+        "quality_dimension": {
+          "published": 81.74603174603175,
+          "floor": 61.111111111111114,
+          "ceiling": 93.90243902439025
+        },
+        "impact_dimension": {
+          "published": 69.82758620689656,
+          "floor": 61.206896551724135,
+          "ceiling": 85.5421686746988
+        }
+      }
+    }
+  ]
+}
