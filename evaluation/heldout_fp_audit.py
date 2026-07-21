@@ -66,6 +66,7 @@ from evaluation.nl_fp_audit_adversarial import (  # noqa: E402
 from agents.tools.llm import call_for_structured  # noqa: E402
 
 CANONICAL_DB = "/Users/benjyb/Desktop/MscProject/data/odmi.db"
+EXPERIMENT_ID = "exp36_frozen_headline"  # the frozen headline this audit bounds
 MODEL = "claude-opus-4-6"  # match the NL audit judge so a difference is about the countries, not the model
 HELD_OUT = ("BA", "MK", "ME", "BG", "FI", "HR", "SE", "BE")  # D47 held-out set
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
@@ -74,7 +75,7 @@ CHARITABLE_VERDICTS = ("genuine_error", "definitional_gap", "defensible_or_stale
 ADVERSARIAL_VERDICTS = ("swarm_over_read", "ambiguous", "gold_wrong")
 
 
-def load_fps(con, countries):
+def load_fps(con, countries, experiment_id=EXPERIMENT_ID):
     """Latest committed binary false positive (swarm yes, gold no) per
     (country, question) across `countries`. Returns the FP rows plus a per-country
     max phase2_final id, to pin the snapshot. Mirrors nl_fp_audit.load_fps but
@@ -108,6 +109,15 @@ def load_fps(con, countries):
     for f in con.execute(
         f"SELECT * FROM phase2_final WHERE country_code IN ({placeholders})", countries):
         max_id[f["country_code"]] = max(max_id[f["country_code"]], f["id"])
+        # Scope to one experiment. Without this the selection filters for a
+        # false positive FIRST and takes the latest such row SECOND, so a pair
+        # whose headline answer is fine still enters the audit on the strength
+        # of an older superseded run. On the held-out eight that pulled in 28
+        # pairs from expC_held_neg_licence and exp21_frozen_headline, 24% of a
+        # 119-pair population, and the audit is meant to bound the staleness
+        # band on EXP-36 alone.
+        if experiment_id and f["experiment_id"] != experiment_id:
+            continue
         if shape.get(f["question_id"]) != "binary":
             continue
         g = gt.get((f["country_code"], f["question_id"]))
@@ -245,6 +255,8 @@ def main():
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--pass", dest="which", choices=["charitable", "adversarial", "both"],
                     default="both")
+    ap.add_argument("--experiment-id", dest="experiment_id", default=EXPERIMENT_ID,
+                    help="scope to one experiment; empty string audits all")
     ap.add_argument("--tag", default="", help="suffix for output files + condition label")
     args = ap.parse_args()
     do_char = args.which in ("charitable", "both")
@@ -252,7 +264,7 @@ def main():
 
     con = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
     con.row_factory = sqlite3.Row
-    fps, max_id = load_fps(con, args.countries)
+    fps, max_id = load_fps(con, args.countries, args.experiment_id)
     con.close()
     if args.limit:
         fps = fps[:args.limit]

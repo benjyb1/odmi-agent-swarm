@@ -16,7 +16,7 @@ needs. Nothing here is closed by being explained.
 | D3 | EXP-36 headline computed mid-run | high | **fixed** 2026-07-20 |
 | D4 | EXP-36 dedup double-counted five pairs | medium | **fixed** 2026-07-20 |
 | D5 | Dissertation abstention section built on the wrong population | high | source fixed; **docx open** |
-| D6 | Held-out false-positive audit is stale | medium | **open, needs a decision** |
+| D6 | Held-out FP audit stale and wrongly scoped | medium | **fixed** 2026-07-21 |
 | D7 | Commit floor leaked to the Researcher in retry text | high | **code fixed; EXP-36 data open** |
 | D8 | Three RDF adapter tests fail in a fresh venv | low | open, environmental |
 | D9 | 33 agent rows carry an `unknown` model tag | low | open, already disclosed |
@@ -36,7 +36,7 @@ from deletion, which is exactly how D2 happened.
 **Repair.** `scripts/rescue_orphaned_experiments.py` finds every experiment
 with rows in a worktree but none in canonical and copies them, with their full
 Researcher, Verifier and Adjudicator trails, into
-`data/rescued_experiments.db` (36.5 MB, committed). `phase2_final.id` is a
+`data/rescued_experiments.db` (36.5 MB, committed). Superseded on 2026-07-21 by `5dc7127`, which restored 22 recovered experiments straight into canonical `data/odmi.db`; the standalone file is now a redundant belt-and-braces copy and can be dropped once the canonical restore has been relied on for a while. `phase2_final.id` is a
 per-database autoincrement and collides across copies, so it is never carried
 over; `pair_run_id` is a UUID and is the key that stitches a pair to its trail.
 The script is idempotent and read-only on every source.
@@ -147,22 +147,42 @@ group 16, not 77, so repairing all of them lifts coverage from 0.556 to at most
 to satisfy the Verifier and clear the floor. Dimension abstention rates are
 Quality 57.3%, Portal 47.5%, Impact 46.1%, Policy 25.8%.
 
-## D6. The held-out false-positive audit is stale
+## D6. The held-out false-positive audit was stale and wrongly scoped
 
-`docs/SPEC.md` records the audit at n = 83 with a per-country split of BA 7,
-BE 4, BG 6, FI 17, HR 4, ME 19, MK 16, SE 10. Recomputed on the completed run
-under the same definition (committed, binary no-gold, swarm answered yes) the
-count is **91**: BA 10, BE 6, BG 10, FI 14, HR 6, ME 13, MK 22, SE 10. The
-per-country numbers move in both directions, so the audit ran against a
-different row set, not merely a smaller one.
+Two problems, not one.
 
-**What it damages.** The audit's conclusion, 0 of 83 false positives where the
-swarm is right and ODMI wrong, is what licenses the claim that the D22
-staleness band on held-out commit accuracy is negligible.
+**Stale.** Filed at n = 83; 91 on the completed run, with per-country counts
+moving in both directions (FI 17 to 14, ME 19 to 13 down; BA 7 to 10, BG 6 to
+10, MK 16 to 22 up), so it ran against a mid-run snapshot rather than simply a
+smaller one.
 
-**Decision needed.** Re-running costs Opus judge calls over roughly 91 pairs.
-The alternative is to disclose that the audit predates run completion and treat
-its conclusion as indicative. Not fixable without that call.
+**Wrongly scoped.** `load_fps` filtered for a false positive *first* and took
+the latest such row *second*, with no experiment filter, so a pair whose EXP-36
+answer is fine still entered the audit on the strength of an older superseded
+run. That pulled in 28 extra pairs, 24% of a 119-pair population: 24 from
+`expC_held_neg_licence` and 4 from `exp21_frozen_headline`. The audit exists to
+bound the staleness band on EXP-36, so those pairs do not belong in it.
+
+**Repair.** `load_fps` now takes an `experiment_id`, defaulting to
+`exp36_frozen_headline`, and yields exactly 91. The audit was re-run over all
+119 with the judge pinned to `claude-opus-4-6` to stay comparable with the NL
+audit, then scored on the correctly scoped 91.
+
+**Result, EXP-36 only, n = 91.** Charitable: definitional gap 69, genuine error
+16 (18%), defensible or stale gold 6. Adversarial: swarm over-read 68,
+ambiguous 23, **gold_wrong 0**.
+
+**The conclusion holds.** Zero of 91 held-out false positives have the swarm
+right and ODMI wrong, matching the filed 0 of 83 and the NL audit's 0 of 22.
+The D22 staleness band on held-out commit accuracy stays negligible, match /
+differ remains a fair headline metric, and RESULTS.md section 2.9 stands. The
+re-run is cleaner than the original, which produced one `gold_wrong` (SE I27)
+that had to be rejected by hand; this one produces none outright. For contrast,
+the 28 contaminating pairs carry a 32% genuine-error rate against the held-out
+set's 18%, which is why leaving them in mattered.
+
+Artefacts: `evaluation/results/heldout_fp_audit_rerun20260721.jsonl` and its
+summary; the original `heldout_fp_audit.jsonl` is kept as the filed record.
 
 ## D7. The commit floor leaked to the Researcher
 
@@ -210,3 +230,4 @@ other model string appears in the run. Related to the missing
 |---|---|
 | 2026-07-20 | File created. D1 repaired (1,134 pairs rescued). D3, D4 repaired. D7 repaired forward-only. D5 source repaired, docx outstanding. D2 confirmed unrepairable. D6 awaiting a cost decision. |
 | 2026-07-21 | **D2 repaired and closed**, overturning the 2026-07-20 "unrepairable" verdict: the rows were recovered from an orphaned Git LFS object and committed as SQL dumps under `data/recovery/`, verified to reproduce `exp40_analysis.json` byte for byte. §4.2 needs no re-run and no aggregate-only disclosure. Downstream action also closed the same day by `5dc7127`: canonical `data/odmi.db` restored and CHECK migrated, verified to reproduce the published table from the canonical DB alone. D7's forward-only fix has a consequence for EXP-41 (D65): `exp34_retrieval_strategy_s46/wide_only` carries the floor-leak artefact (0.65 on 9.4% of first-attempt commits against 32.7% of retried ones, the D7 signature), so it cannot serve as a replicate alongside runs dispatched after the fix. |
+| 2026-07-21 | D6 repaired: audit rescoped to `exp36_frozen_headline` and re-run. 0 of 91 held-out false positives have the swarm right and ODMI wrong, so the staleness band stays negligible and section 2.9 stands. The six EXP-36 figures were copied into `docs/figures`. D1's standalone rescue file is superseded by the canonical restore in `5dc7127`. |
