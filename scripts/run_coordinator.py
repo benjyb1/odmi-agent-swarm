@@ -1492,12 +1492,15 @@ def coordinate(
                 return final_status, _ro
             if attempt < max_retries:
                 feedback = VerifierFeedback(
+                    # Never name the floor. Telling the Researcher the number
+                    # it has to clear teaches it to return exactly that number:
+                    # in EXP-36, 40% of retried commits landed on 0.65 exactly
+                    # against 9% of first-attempt ones. State the requirement,
+                    # not the threshold.
                     rejection_reason=(
-                        f"The answer's confidence "
-                        f"({(_ro.answer_confidence or 0.0):.2f}) is below the "
-                        f"{COMMIT_CONFIDENCE_FLOOR} commit floor. Find stronger "
-                        f"evidence or commit only if the evidence clearly "
-                        f"supports a label."
+                        "The answer's confidence is too low to commit. Find "
+                        "stronger evidence, or commit only if the evidence "
+                        "clearly supports a label."
                     ),
                 )
                 print(f"  R{attempt+1} sub-floor in researcher_only mode, "
@@ -1672,11 +1675,11 @@ def coordinate(
                 and not _is_abstention(last_researcher_output.answer)
                 and (_conf or 0.0) < COMMIT_CONFIDENCE_FLOOR
             ):
+                # As above: state the requirement, never the number.
                 _rejection_reason = (
-                    f"The answer was accepted by the Verifier but its confidence "
-                    f"({_conf:.2f}) is below the {COMMIT_CONFIDENCE_FLOOR} commit "
-                    f"floor. Find stronger evidence or commit only if the evidence "
-                    f"clearly supports a label."
+                    "The answer was accepted by the Verifier but its "
+                    "confidence is too low to commit. Find stronger evidence, "
+                    "or commit only if the evidence clearly supports a label."
                 )
             else:
                 _rejection_reason = (
