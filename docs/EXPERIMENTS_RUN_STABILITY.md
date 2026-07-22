@@ -289,6 +289,92 @@ which is where M5 below takes it from.
 
 ---
 
+## A pre-registered gate fired, and it was the gate that was wrong
+
+Recorded because a pre-registration is only honest if it logs the checks that
+failed as well as the ones that passed, and this one halted the campaign.
+
+Replicate 2 finalised 154 of 156 and the final gate hard-failed on a single
+check: `stage size is exactly 156, found 154`. Every contamination, confound
+and configuration check passed. The two missing pairs were PT38:NL and PT9:NL,
+both hung at `search_start` with no Researcher row, not resumable, no live
+process, the same non-returning-search stall that cost replicate 1 its PT16:AL.
+The orchestrator abandoned them and exited `healthy=True`
+(finalise-rate 0.981), exactly as it had on replicate 1.
+
+So the halt was a false positive, and the fault was mine. An exact-156 hard
+check contradicts this experiment's own analysis, which runs on the three-way
+intersection precisely so that a few stalled pairs cost a few pairs and nothing
+more. The check was recalibrated before continuing: a shortfall of up to five
+pairs (about 3% of the battery) is now a soft note listing the stalled pairs, a
+shortfall beyond that stays a hard failure, because a large gap means the
+dispatch died early with many pairs unrun rather than a handful stalling. Both
+completed replicates pass the recalibrated gate; a simulated shortfall of eight
+still fails it.
+
+The recalibration was a threshold change to a monitoring script, not a change to
+the swarm or the metrics, and the analysis code and the pre-registered bars are
+untouched. It is logged here with the reasoning rather than made silently. The
+alternative, recovering the two pairs with a top-up dispatch under replicate 2's
+own experiment_id, was rejected: it would have run those pairs an hour after the
+rest, injecting the temporal offset the design exists to exclude.
+
+The stall also costs wall-clock. The orchestrator waited about an hour after its
+last real finalisation before giving up on the hung pairs. That timeout lives in
+the dispatcher, which cannot be changed mid-campaign without altering the swarm
+between replicates, so the tail is accepted rather than fixed.
+
+---
+
+## Observation during replicate 1: the abstain/fail boundary moved
+
+Malta finished with 13 of 60 pairs at `agent_failure`, against the exp34
+`wide_only` baseline of 7 of 60. Exact binomial P(X >= 13) = 0.019, so on its
+face a real elevation. It is not a capability loss, and under the
+pre-registered M1 rule it has no effect at all.
+
+Where the extra failures came from, on the 60 Malta pairs:
+
+| exp34 | rep1 | n |
+|---|---|---|
+| abstain | fail | 9 |
+| commit | fail | 2 |
+| fail | fail | 2 |
+
+Nine of the thirteen were pairs exp34 abstained on. Only two were pairs it
+committed. Malta coverage is essentially unchanged across the two runs, 0.250
+against 0.233, which is what that composition predicts: the run is not
+committing less, it is recording some of the same abstentions under a different
+terminal status.
+
+The dominant reason is `no verifier output for adjudication` at three retries,
+which means the Researcher exhausted its budget still answering `inconclusive`,
+so no Verifier ever ran. That is an abstention wearing a failure label. A
+plausible contributor is D7: exp34 ran with the retry text naming the 0.65
+floor, and a retried Researcher could clear the bar by returning exactly 0.65.
+With the leak closed it returns its honest confidence, stays inconclusive, and
+exhausts. The direct test is underpowered so far (2 of the 3 Malta pairs where
+exp34 committed at exactly 0.65 now fail, against 9 of 48 elsewhere) and is not
+claimed; M6 across all three replicates is the proper read.
+
+**Why the pre-registered M1 rule already absorbs this.** M1 folds
+`agent_failure` into `no-commit`, so a pair moving between abstention and
+failure is invisible to it. Collapsing the Malta table that way gives exp34 to
+rep1 agreement of 45 of 60, with the disagreements almost symmetric: 7 pairs
+commit to no-commit, 8 the other way. Balanced churn, not drift.
+
+That 0.750 is **not** a preview of M1. It spans three code changes as well as
+time, so it measures drift across a changed system. The pre-registered
+comparison is replicate against replicate under one runtime fingerprint, which
+excludes the code-change component and should therefore agree at least this
+well. It is recorded as a lower bound and nothing more.
+
+The amendment logged at 11 pairs, folding failures into `no-commit` rather than
+dropping them, was made before any of this was visible. It turns out to be what
+keeps the primary metric readable through it.
+
+---
+
 ## Pre-dispatch audit, 2026-07-21
 
 Two independent adversarial audits were run against the live campaign, one for
@@ -609,6 +695,17 @@ pre-registered bar is the finding, and the bar is not moved afterwards.
   model determinism alone. This is the honest framing and matches what §2.2
   asks for, which is whether the same assessment run again returns the same
   answers.
+- Replicate 1 finalised 155 of 156 pairs. PT16:AL hung in `researching` at
+  retry 1 (a slow Albanian search that never returned, the known low-resource
+  AL/SE search-stall pattern), and the orchestrator abandoned it and completed
+  `healthy=True` rather than hanging. The pair's stale subtrio is not
+  resumable and carries replicate 1's experiment_id, so it cannot leak into
+  replicate 2 or 3. If the same pair stalls on the other runs the analysis
+  simply drops it: n is the three-way intersection, so one consistently-stalling
+  pair costs at most one pair from 156. Recovering it was rejected, because a
+  same-experiment_id top-up dispatched alongside a running replicate would
+  contend for search capacity, which is the between-run confound this design
+  exists to exclude.
 - The measurement is of the incumbent trio only. Whether the cooperative or
   researcher-only pipelines are more or less stable is not tested, and no
   claim about them is made from this.
