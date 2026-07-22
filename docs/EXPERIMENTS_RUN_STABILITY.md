@@ -289,6 +289,43 @@ which is where M5 below takes it from.
 
 ---
 
+## A pre-registered gate fired, and it was the gate that was wrong
+
+Recorded because a pre-registration is only honest if it logs the checks that
+failed as well as the ones that passed, and this one halted the campaign.
+
+Replicate 2 finalised 154 of 156 and the final gate hard-failed on a single
+check: `stage size is exactly 156, found 154`. Every contamination, confound
+and configuration check passed. The two missing pairs were PT38:NL and PT9:NL,
+both hung at `search_start` with no Researcher row, not resumable, no live
+process, the same non-returning-search stall that cost replicate 1 its PT16:AL.
+The orchestrator abandoned them and exited `healthy=True`
+(finalise-rate 0.981), exactly as it had on replicate 1.
+
+So the halt was a false positive, and the fault was mine. An exact-156 hard
+check contradicts this experiment's own analysis, which runs on the three-way
+intersection precisely so that a few stalled pairs cost a few pairs and nothing
+more. The check was recalibrated before continuing: a shortfall of up to five
+pairs (about 3% of the battery) is now a soft note listing the stalled pairs, a
+shortfall beyond that stays a hard failure, because a large gap means the
+dispatch died early with many pairs unrun rather than a handful stalling. Both
+completed replicates pass the recalibrated gate; a simulated shortfall of eight
+still fails it.
+
+The recalibration was a threshold change to a monitoring script, not a change to
+the swarm or the metrics, and the analysis code and the pre-registered bars are
+untouched. It is logged here with the reasoning rather than made silently. The
+alternative, recovering the two pairs with a top-up dispatch under replicate 2's
+own experiment_id, was rejected: it would have run those pairs an hour after the
+rest, injecting the temporal offset the design exists to exclude.
+
+The stall also costs wall-clock. The orchestrator waited about an hour after its
+last real finalisation before giving up on the hung pairs. That timeout lives in
+the dispatcher, which cannot be changed mid-campaign without altering the swarm
+between replicates, so the tail is accepted rather than fixed.
+
+---
+
 ## Observation during replicate 1: the abstain/fail boundary moved
 
 Malta finished with 13 of 60 pairs at `agent_failure`, against the exp34
