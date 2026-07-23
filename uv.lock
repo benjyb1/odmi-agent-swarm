@@ -1690,17 +1690,12 @@ dependencies = [
     { name = "trafilatura" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "matplotlib" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "ruff" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pytest" },
 ]
 
 [package.metadata]
@@ -1709,19 +1704,15 @@ requires-dist = [
     { name = "anthropic", specifier = ">=0.87" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "langdetect", specifier = ">=1.0.9" },
-    { name = "matplotlib", marker = "extra == 'dev'", specifier = ">=3.9" },
     { name = "openpyxl", specifier = ">=3.1" },
     { name = "pandas", specifier = ">=2.2" },
     { name = "playwright", specifier = ">=1.40" },
     { name = "plotly", specifier = ">=5.24" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pyshacl", specifier = ">=0.26" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "python-pptx", specifier = ">=1.0" },
     { name = "rdflib", specifier = ">=7" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
     { name = "scipy", specifier = ">=1.17.1" },
     { name = "streamlit", specifier = ">=1.40" },
     { name = "supabase", specifier = ">=2.0" },
@@ -1729,10 +1720,14 @@ requires-dist = [
     { name = "tldextract", specifier = ">=5" },
     { name = "trafilatura", specifier = ">=1.6" },
 ]
-provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=9.0.2" }]
+dev = [
+    { name = "matplotlib", specifier = ">=3.9" },
+    { name = "pytest", specifier = ">=9.0.2" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+    { name = "ruff", specifier = ">=0.8" },
+]
 
 [[package]]
 name = "openpyxl"
