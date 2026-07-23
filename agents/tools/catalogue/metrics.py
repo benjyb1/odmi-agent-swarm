@@ -29,7 +29,7 @@ from agents.tools.catalogue.model import HarvestedDataset
 class MetricResult:
     question_id: str
     metric_function: str
-    raw_value: Optional[float]  # a percentage in [0,100], or a count; None if unmeasurable
+    raw_value: float            # a percentage in [0,100], or a count
     numerator: Optional[int]
     denominator: Optional[int]
     band_label: str
@@ -98,72 +98,15 @@ def band_for_count(value: int, allowed: Sequence[str]) -> str:
         return float("inf"), float("inf")  # non-numeric label, never matches
 
     count_bands = [b for b in allowed if re.search(r"\d", b)]
-    ordered = sorted(count_bands, key=lambda b: bounds(b)[0])
-    for label in ordered:
+    for label in sorted(count_bands, key=lambda b: bounds(b)[0]):
         lo, hi = bounds(label)
         if lo <= value <= hi:
             return label
-    # The value fell outside every band. Map it to the nearest band by
-    # direction: below the lowest lower-bound -> the lowest band, above the
-    # highest -> the highest. The old fallback returned `count_bands[-1]`
-    # unconditionally, which mislabelled a count of 0 (below the `1-4` band)
-    # as the top band `>10`. See HR/RO Q13 in the June/July harvests.
-    if not ordered:
-        return allowed[0] if allowed else ""
-    return ordered[0] if value < bounds(ordered[0])[0] else ordered[-1]
+    return count_bands[-1] if count_bands else (allowed[0] if allowed else "")
 
 
 def _pct(num: int, denom: int) -> float:
     return (100.0 * num / denom) if denom else 0.0
-
-
-# ------------------------------------------------------------------
-# Field-absence detection
-# ------------------------------------------------------------------
-#
-# A field that the route cannot see and a field that is genuinely empty are
-# different measurements. If a whole harvest carries no value at all for a
-# field (the SPARQL/DCAT route never emits the predicate, e.g. Croatia has no
-# dct:license and no dcat:downloadURL anywhere), a 0% reading is not "0% of
-# datasets are licensed" but "we could not observe licensing from this route".
-# The metric abstains with `not_applicable` in that case rather than emitting a
-# confident bottom band. A genuine 0-of-N, where the field IS present on the
-# route but no dataset qualifies (e.g. a licence field that everywhere reads
-# `notspecified`), keeps its real bottom band -- the field was observed.
-
-
-def _corpus_exposes_licence(datasets: Sequence[HarvestedDataset]) -> bool:
-    """True if any dataset carries any licence string at all (either level)."""
-    return any(d.all_licences() for d in datasets)
-
-
-def _corpus_exposes_dist_field(
-    datasets: Sequence[HarvestedDataset], attr: str
-) -> bool:
-    """True if any distribution anywhere carries a value for `attr`."""
-    return any(
-        getattr(dist, attr) for d in datasets for dist in d.distributions
-    )
-
-
-def _corpus_exposes_format(datasets: Sequence[HarvestedDataset]) -> bool:
-    return any(
-        (dist.fmt or dist.media_type)
-        for d in datasets for dist in d.distributions
-    )
-
-
-def _unmeasurable(
-    question_id: str, metric_function: str, why: str
-) -> MetricResult:
-    """A metric whose field is absent from the whole harvest: unmeasurable,
-    recorded as `not_applicable` with null raw value (never a 0)."""
-    return MetricResult(
-        question_id, metric_function,
-        raw_value=None, numerator=None, denominator=None,
-        band_label=NOT_APPLICABLE,
-        breakdown=f"Field not exposed by this route: {why} -> {NOT_APPLICABLE}",
-    )
 
 
 def _percentage_band(
@@ -191,11 +134,6 @@ def metric_q12_licence_presence(
     datasets: list[HarvestedDataset], shape: QuestionShape
 ) -> MetricResult:
     """Q12: percentage of datasets carrying licensing information."""
-    if datasets and not _corpus_exposes_licence(datasets):
-        return _unmeasurable(
-            "Q12", "metric_q12_licence_presence",
-            "no licence value present anywhere in the harvested metadata",
-        )
     denom = len(datasets)
     num = sum(1 for d in datasets if licences.dataset_is_licensed(d))
     pct, band = _percentage_band(num, denom, shape.allowed_answers)
@@ -210,11 +148,6 @@ def metric_q13_distinct_licences(
     datasets: list[HarvestedDataset], shape: QuestionShape
 ) -> MetricResult:
     """Q13: how many distinct licences are used on the portal."""
-    if datasets and not _corpus_exposes_licence(datasets):
-        return _unmeasurable(
-            "Q13", "metric_q13_distinct_licences",
-            "no licence value present anywhere in the harvested metadata",
-        )
     keys = licences.distinct_licence_keys(datasets)
     n = len(keys)
     band = band_for_count(n, shape.allowed_answers)
@@ -229,13 +162,6 @@ def metric_q21_download_url(
 ) -> MetricResult:
     """Q21: percentage of datasets whose metadata provides a download-URL."""
     with_dist = [d for d in datasets if d.has_distributions()]
-    if with_dist and not _corpus_exposes_dist_field(datasets, "download_url"):
-        # Distributions exist but not one carries a download URL: the route
-        # does not expose the field (HR's SPARQL graph). Unmeasurable, not 0%.
-        return _unmeasurable(
-            "Q21", "metric_q21_download_url",
-            "no dcat:downloadURL present on any distribution in the harvest",
-        )
     denom = len(with_dist)
     num = sum(
         1 for d in with_dist
@@ -254,11 +180,6 @@ def metric_q22_access_url(
 ) -> MetricResult:
     """Q22: percentage of datasets whose metadata provides an access-URL."""
     with_dist = [d for d in datasets if d.has_distributions()]
-    if with_dist and not _corpus_exposes_dist_field(datasets, "access_url"):
-        return _unmeasurable(
-            "Q22", "metric_q22_access_url",
-            "no dcat:accessURL present on any distribution in the harvest",
-        )
     denom = len(with_dist)
     num = sum(
         1 for d in with_dist
@@ -276,11 +197,6 @@ def metric_q25_open_licence(
     datasets: list[HarvestedDataset], shape: QuestionShape
 ) -> MetricResult:
     """Q25: percentage of datasets under an open licence."""
-    if datasets and not _corpus_exposes_licence(datasets):
-        return _unmeasurable(
-            "Q25", "metric_q25_open_licence",
-            "no licence value present anywhere in the harvested metadata",
-        )
     denom = len(datasets)
     num = sum(1 for d in datasets if licences.dataset_is_open(d))
     pct, band = _percentage_band(num, denom, shape.allowed_answers)
@@ -295,12 +211,6 @@ def metric_q27_open_format(
     datasets: list[HarvestedDataset], shape: QuestionShape
 ) -> MetricResult:
     """Q27: percentage of datasets in an open and machine-readable format."""
-    with_dist = [d for d in datasets if d.has_distributions()]
-    if with_dist and not _corpus_exposes_format(datasets):
-        return _unmeasurable(
-            "Q27", "metric_q27_open_format",
-            "no format or media-type present on any distribution in the harvest",
-        )
     denom = len(datasets)
     num = sum(
         1 for d in datasets
