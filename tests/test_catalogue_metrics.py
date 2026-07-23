@@ -197,3 +197,65 @@ def test_empty_denominator_abstains_not_bottom_band():
     q21 = metrics.metric_q21_download_url(no_dists, _pct_shape("Q21"))
     assert q21.denominator == 0
     assert q21.band_label == NOT_APPLICABLE
+
+
+# ------------------------------------------------------------------
+# Regression: count-band fallback must not map 0 to the top band
+# ------------------------------------------------------------------
+
+
+def test_band_for_count_zero_maps_to_lowest_not_highest():
+    # A count of 0 falls below the `1-4` band. The old fallback returned the
+    # last band `>10`, mislabelling "no licences" as "more than ten". It must
+    # now fall to the lowest band, never the highest. (HR/RO Q13 regression.)
+    assert metrics.band_for_count(0, COUNT_BANDS) == "1-4"
+    assert metrics.band_for_count(0, COUNT_BANDS) != ">10"
+
+
+# ------------------------------------------------------------------
+# Field absence -> unmeasurable (not_applicable), never a confident 0
+# ------------------------------------------------------------------
+
+
+def test_q12_unmeasurable_when_no_licence_field_anywhere():
+    # Croatia pattern: distributions with an access URL, no licence anywhere.
+    datasets = [_ds(f"d{i}", dists=[Distribution(access_url="http://x/a")]) for i in range(5)]
+    r = metrics.metric_q12_licence_presence(datasets, _pct_shape("Q12"))
+    assert r.band_label == NOT_APPLICABLE
+    assert r.raw_value is None
+    assert r.denominator is None
+
+
+def test_q13_unmeasurable_when_no_licence_field_anywhere():
+    datasets = [_ds(f"d{i}", dists=[Distribution(access_url="http://x/a")]) for i in range(5)]
+    r = metrics.metric_q13_distinct_licences(datasets, _count_shape())
+    assert r.band_label == NOT_APPLICABLE
+    assert r.raw_value is None
+
+
+def test_q21_unmeasurable_when_no_download_url_anywhere():
+    # HR pattern: accessURL present on every distribution, downloadURL on none.
+    datasets = [_ds(f"d{i}", dists=[Distribution(access_url="http://x/a")]) for i in range(5)]
+    r = metrics.metric_q21_download_url(datasets, _pct_shape("Q21"))
+    assert r.band_label == NOT_APPLICABLE
+    assert r.raw_value is None
+
+
+def test_q21_real_zero_when_download_url_present_but_sparse():
+    # SE pattern: downloadURL IS exposed by the route, just sparsely. A low
+    # share is a real measurement, not unmeasurable.
+    datasets = [_ds(f"d{i}", dists=[Distribution(access_url="http://x/a")]) for i in range(9)]
+    datasets.append(_ds("d9", dists=[Distribution(download_url="http://x/dl", access_url="http://x/a")]))
+    r = metrics.metric_q21_download_url(datasets, _pct_shape("Q21"))
+    assert r.band_label != NOT_APPLICABLE
+    assert r.numerator == 1 and r.denominator == 10
+    assert abs(r.raw_value - 10.0) < 1e-6
+
+
+def test_q12_real_zero_when_licence_field_present_but_all_sentinel():
+    # Licence field IS present (udata `notspecified` sentinel) -> observed,
+    # so a genuine 0% licensed keeps its real bottom band, not unmeasurable.
+    datasets = [_ds(f"d{i}", ["notspecified"]) for i in range(5)]
+    r = metrics.metric_q12_licence_presence(datasets, _pct_shape("Q12"))
+    assert r.band_label == "<10%"
+    assert r.raw_value == 0.0

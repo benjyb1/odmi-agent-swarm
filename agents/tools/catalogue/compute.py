@@ -137,6 +137,28 @@ def compute(
         print(f"[catalogue] {question_id}/{cc} not computable: {exc}", file=sys.stderr)
         return None
 
+    if result.band_label == answer_shapes.NOT_APPLICABLE and result.denominator is None:
+        # The field is absent from the whole harvest (e.g. HR carries no
+        # dct:license and no dcat:downloadURL on any record). This is
+        # unmeasurable, not 0%. Record a `not_applicable` receipt for the
+        # audit trail (raw_value NULL), then defer the live answer to the web
+        # path exactly as a harvest miss would. A confident bottom band here
+        # would silently contradict ODMI's published figure.
+        comp = CatalogueComputation(
+            question_id=question_id,
+            country_code=cc,
+            result=result,
+            source_url=_resolve_source_url(config),
+            snapshot_id=snapshot.snapshot_id,
+            partial=snapshot.partial,
+        )
+        if write_receipt:
+            _write_receipt(comp)
+        print(f"[catalogue] {question_id}/{cc} field unmeasurable on this "
+              "route; recorded not_applicable, falling back to web",
+              file=sys.stderr)
+        return None
+
     if result.denominator is not None and result.denominator == 0:
         # A zero denominator means nothing to measure (e.g. no datasets in
         # the relevant subset), not "0% of datasets qualify". Emitting the
