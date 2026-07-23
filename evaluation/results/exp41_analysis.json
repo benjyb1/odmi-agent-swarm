@@ -1,0 +1,158 @@
+{
+  "n_pairs_shared": 148,
+  "bars": {
+    "m1_unanimity": 0.8,
+    "m1_kappa": 0.6,
+    "m2_commit_rate_range": 0.1,
+    "m3_unanimity": 0.9,
+    "m3_kappa": 0.7,
+    "m5_divergence": 0.5
+  },
+  "verdicts": {
+    "M1": {
+      "unanimity": false,
+      "kappa": true
+    },
+    "M2": {
+      "range": true
+    },
+    "M3": {
+      "unanimity": true,
+      "kappa": true
+    },
+    "M5": {
+      "divergence": true
+    }
+  },
+  "M1": {
+    "n": 148,
+    "n_unanimous": 104,
+    "unanimity": 0.7027027027027027,
+    "unanimity_ci": [
+      0.6246923922718682,
+      0.7704562362989583
+    ],
+    "fleiss_kappa": 0.6535830032409073,
+    "fleiss_kappa_ci": [
+      0.5628093412338793,
+      0.7351505730089295
+    ]
+  },
+  "M2": {
+    "per_run": [
+      {
+        "experiment_id": "exp41_stability_rep1",
+        "commit_rate": 0.46621621621621623,
+        "n_committed": 69,
+        "commit_accuracy": 0.6911764705882353,
+        "n_scoreable": 68
+      },
+      {
+        "experiment_id": "exp41_stability_rep2",
+        "commit_rate": 0.44594594594594594,
+        "n_committed": 66,
+        "commit_accuracy": 0.676923076923077,
+        "n_scoreable": 65
+      },
+      {
+        "experiment_id": "exp41_stability_rep3",
+        "commit_rate": 0.5,
+        "n_committed": 74,
+        "commit_accuracy": 0.684931506849315,
+        "n_scoreable": 73
+      }
+    ],
+    "commit_rate_range": 0.05405405405405406,
+    "commit_rate_sd": 0.02229615976714339,
+    "commit_accuracy_range": 0.01425339366515832
+  },
+  "M3": {
+    "n": 51,
+    "n_unanimous": 47,
+    "unanimity": 0.9215686274509803,
+    "unanimity_ci": [
+      0.8149980177513917,
+      0.9690783038730685
+    ],
+    "fleiss_kappa": 0.8488888888888891,
+    "fleiss_kappa_ci": [
+      0.6720759338640538,
+      0.9669617793133234
+    ]
+  },
+  "M4": {
+    "yes_gold": {
+      "m1": {
+        "n": 70,
+        "n_unanimous": 56,
+        "unanimity": 0.8,
+        "unanimity_ci": [
+          0.6918313531091291,
+          0.8769537219705008
+        ],
+        "fleiss_kappa": 0.7401211914312539,
+        "fleiss_kappa_ci": [
+          0.617502541511352,
+          0.8510242085661082
+        ]
+      },
+      "m3_n": 27,
+      "m3_unanimous": 25
+    },
+    "no_gold": {
+      "m1": {
+        "n": 76,
+        "n_unanimous": 46,
+        "unanimity": 0.6052631578947368,
+        "unanimity_ci": [
+          0.4928609075804977,
+          0.7075358780550607
+        ],
+        "fleiss_kappa": 0.5525732734063431,
+        "fleiss_kappa_ci": [
+          0.4140914709517923,
+          0.6746696445188907
+        ]
+      },
+      "m3_n": 23,
+      "m3_unanimous": 21
+    }
+  },
+  "M5": {
+    "n_unanimously_committed_and_agreed": 47,
+    "n_with_2plus_distinct_urls": 42,
+    "n_with_3_distinct_urls": 17,
+    "divergence": 0.8936170212765957,
+    "divergence_ci": [
+      0.7740546030798721,
+      0.9536959004448006
+    ]
+  },
+  "M6": [
+    {
+      "experiment_id": "exp41_stability_rep1",
+      "first_attempt_at_floor": 0.16129032258064516,
+      "n_first": 31,
+      "retried_at_floor": 0.34210526315789475,
+      "n_retried": 38
+    },
+    {
+      "experiment_id": "exp41_stability_rep2",
+      "first_attempt_at_floor": 0.1,
+      "n_first": 30,
+      "retried_at_floor": 0.3333333333333333,
+      "n_retried": 36
+    },
+    {
+      "experiment_id": "exp41_stability_rep3",
+      "first_attempt_at_floor": 0.10714285714285714,
+      "n_first": 28,
+      "retried_at_floor": 0.391304347826087,
+      "n_retried": 46
+    }
+  ],
+  "exp34_m6_baseline": {
+    "first_attempt_at_floor": 0.09375,
+    "retried_at_floor": 0.32653061224489793
+  }
+}
