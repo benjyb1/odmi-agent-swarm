@@ -90,6 +90,34 @@ Never vouch for a number from the prose alone. Join it back:
 Watch the worktree trap: `data/odmi.db` is git-tracked and each worktree holds a
 diverging copy. Verify against the canonical checkout, not a mutated worktree DB.
 
+## What action each finding gets
+
+Every finding resolves to one of four actions. The archive-first and red-only
+rules from `dissertation-review` still hold, so none of this happens until the
+master is copied to `Dissertation/archive/`.
+
+- **Wrong number with a clean, verified replacement: swap it, in red, in-text.**
+  Before you swap, re-read the sentence and the ones around it and confirm two
+  things: that the number you are changing is the one you verified against
+  source, and that the new value does not contradict a nearby figure. A number
+  is only a clean swap when it stands alone. If the context makes the correct
+  value ambiguous, or the swap would clash with an adjacent number (a sum, a
+  rate quoted two ways, a per-class breakdown), it is a CC note, not a swap.
+  When in doubt, note it. A wrong number silently made consistent the wrong way
+  is worse than a flagged one.
+- **Small SPaG: fix it, in red, in-text.** Typos, a missing stop, agreement,
+  punctuation. One correct answer, so a direct red fix beats a note.
+- **A sentence the text is missing: add it, in red, in-text**, where it belongs.
+  Only when the gap is real and the sentence is his to keep or cut, not to
+  smuggle in an argument.
+- **Cutting or replacing his prose: never directly.** A sentence to delete, a
+  passage to move, a section reordered: leave a red `[CC: ...]` note beside the
+  spot naming what to cut and, if there is a replacement, what should go in its
+  place. He makes the cut. This covers every change that carries judgement.
+
+If a section warrants no clean swap and no sentence-add, say so. Do not
+manufacture an edit of a type to fill the quota.
+
 ## What this skill does not do
 
 - It does not judge the argument, the framing, or whether a finding is the
