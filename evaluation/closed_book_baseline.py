@@ -33,6 +33,7 @@ import json
 import random
 import sqlite3
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -46,6 +47,12 @@ from agents.tools import llm  # noqa: E402
 _DB_PATH = _REPO_ROOT / "data" / "odmi.db"
 
 DEV_COUNTRIES = ["NL", "MT", "NO", "FR", "AL"]
+# The D47 held-out eight. Safe to probe closed-book: retrieval is disabled and
+# no configuration choice follows from the result, so measuring here does not
+# spend the held-out set. It puts the contamination bound on the same pairs as
+# the EXP-36 headline, against a much harder majority-class floor (0.471) than
+# the yes-heavy dev sample (0.681).
+HELDOUT_COUNTRIES = ["BA", "MK", "ME", "BG", "FI", "HR", "SE", "BE"]
 SAMPLE_FRACTION = 0.20
 SEED = 20260709
 PROMPT_VERSION = "closed_book_v1"
@@ -178,6 +185,33 @@ def _select_battery(conn: sqlite3.Connection) -> list[dict]:
     return out
 
 
+_SELECT_COLS = ["question_id", "country_code", "country_name", "dimension",
+                "gt_response", "decision", "question_text", "allowed_answers",
+                "answer_shape"]
+
+
+def _select_countries(conn: sqlite3.Connection, codes: list[str]) -> list[dict]:
+    """Every ground-truth pair for the named countries. No sampling.
+
+    Used for the held-out probe, where the point is full coverage of the same
+    universe the headline run scored, not a stratified subsample.
+    """
+    rows = conn.execute(
+        """
+        SELECT g.question_id, g.country_code, g.country_name, g.dimension,
+               g.response AS gt_response, g.decision,
+               q.question_text, q.allowed_answers, q.answer_shape
+        FROM ground_truth g
+        JOIN questions q ON q.question_id = g.question_id
+        WHERE g.country_code IN (%s)
+        """ % ",".join("?" * len(codes)),
+        codes,
+    ).fetchall()
+    out = [dict(zip(_SELECT_COLS, r)) for r in rows]
+    out.sort(key=lambda x: (x["country_code"], x["question_id"]))
+    return out
+
+
 def classify(final: str | None, gt: str | None) -> str:
     """Python mirror of dashboard/lib/db.py::_MATCH_STATUS_SQL (essentials)."""
     if gt is None or gt.strip() == "":
@@ -218,6 +252,34 @@ def _build_prompt(rec: dict) -> tuple[str, str]:
     return system, user
 
 
+def _answer_pair(rec: dict, run_id: str) -> dict:
+    """One structured call. Runs on a worker thread; does no DB writing.
+
+    All SQLite writes stay on the main thread so the resume log keeps a single
+    writer and concurrency cannot interleave commits.
+    """
+    sys_p, usr_p = _build_prompt(rec)
+    parsed, usage = llm.call_for_structured(
+        system=sys_p,
+        user_message=usr_p,
+        output_schema=ClosedBookAnswer,
+        model="claude-sonnet-4-6",
+        temperature=0.0,
+        max_tokens=400,
+        usage_context=f"closed_book:{run_id}",
+    )
+    return {
+        "rec": rec,
+        "prompt": sys_p + "\n\n" + usr_p,
+        "answer": parsed.answer,
+        "known": parsed.known,
+        "raw": parsed.model_dump_json(),
+        "in_t": usage.input_tokens,
+        "out_t": usage.output_tokens,
+        "cost": usage.estimated_cost_usd,
+    }
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true",
@@ -233,16 +295,35 @@ def main() -> None:
                     help="Run over the class-balanced 156-pair dev battery "
                          "(NL52+MT60+AL44) instead of the 20%% dev sample. The "
                          "honest RQ1 floor: majority-class ~0.5, not yes-heavy.")
+    ap.add_argument("--countries", nargs="+", default=None, metavar="CC",
+                    help="Run every ground-truth pair for these country codes, "
+                         "unsampled. Pass 'heldout' for the D47 eight "
+                         "(BA MK ME BG FI HR SE BE = 1,144 pairs).")
+    ap.add_argument("--workers", type=int, default=1,
+                    help="Concurrent LLM calls. DB writes stay single-threaded.")
     args = ap.parse_args()
 
-    universe = "156-pair balanced battery" if args.battery \
-        else f"20% of {len(DEV_COUNTRIES)}x143 dev"
+    countries = args.countries
+    if countries and len(countries) == 1 and countries[0].lower() == "heldout":
+        countries = list(HELDOUT_COUNTRIES)
+
+    if countries:
+        universe = f"full {len(countries)} countries x143"
+    elif args.battery:
+        universe = "156-pair balanced battery"
+    else:
+        universe = f"20% of {len(DEV_COUNTRIES)}x143 dev"
     run_id = args.run_id or (
         f"cb_battery_{datetime.now(timezone.utc):%Y%m%d}" if args.battery
         else f"cb_{datetime.now(timezone.utc):%Y%m%d}")
 
     conn = sqlite3.connect(args.db, timeout=30.0)
-    sample = _select_battery(conn) if args.battery else _select_sample(conn)
+    if countries:
+        sample = _select_countries(conn, countries)
+    elif args.battery:
+        sample = _select_battery(conn)
+    else:
+        sample = _select_sample(conn)
     if args.limit:
         sample = sample[: args.limit]
 
@@ -271,37 +352,13 @@ def main() -> None:
     }
     if done:
         print(f"  resume: {len(done)} pairs already logged for {run_id}, skipping")
-    counts: dict[str, int] = {}
-    for i, rec in enumerate(sample, 1):
-        if (rec["question_id"], rec["country_code"]) in done:
-            continue
-        sys_p, usr_p = _build_prompt(rec)
-        try:
-            parsed, usage = llm.call_for_structured(
-                system=sys_p,
-                user_message=usr_p,
-                output_schema=ClosedBookAnswer,
-                model="claude-sonnet-4-6",
-                temperature=0.0,
-                max_tokens=400,
-                usage_context=f"closed_book:{run_id}",
-            )
-            answer, known, raw = parsed.answer, parsed.known, parsed.model_dump_json()
-            in_t, out_t, cost = (usage.input_tokens, usage.output_tokens,
-                                 usage.estimated_cost_usd)
-        except llm.RateLimitedShutdown:
-            # Quota / auth cooldown: stop so the resumable runner can retry
-            # the whole invocation later; already-logged pairs are skipped.
-            raise
-        except Exception as exc:  # noqa: BLE001
-            # A single unparseable pair must not sink the run. Leave it
-            # unlogged so a resume retries it, and carry on.
-            print(f"  [{i}/{len(sample)}] {rec['country_code']} "
-                  f"{rec['question_id']} SKIP {type(exc).__name__}: "
-                  f"{str(exc)[:120]}")
-            continue
-        status = classify(answer, rec["gt_response"])
-        counts[status] = counts.get(status, 0) + 1
+    pending = [r for r in sample
+               if (r["question_id"], r["country_code"]) not in done]
+    print(f"  running {len(pending)} pairs on {args.workers} worker(s)")
+
+    def _write(res: dict) -> str:
+        rec = res["rec"]
+        status = classify(res["answer"], rec["gt_response"])
         conn.execute(
             """INSERT INTO closed_book_answers
                (run_id, question_id, country_code, model, prompt_version,
@@ -310,14 +367,46 @@ def main() -> None:
                 input_tokens, output_tokens, estimated_cost_usd, created_at)
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (run_id, rec["question_id"], rec["country_code"], "claude-sonnet-4-6",
-             PROMPT_VERSION, sys_p + "\n\n" + usr_p, raw, answer,
-             1 if known else 0, rec["gt_response"], rec["decision"],
+             PROMPT_VERSION, res["prompt"], res["raw"], res["answer"],
+             1 if res["known"] else 0, rec["gt_response"], rec["decision"],
              rec["dimension"], rec["answer_shape"], status,
-             in_t, out_t, cost, _now()),
+             res["in_t"], res["out_t"], res["cost"], _now()),
         )
         conn.commit()
-        print(f"  [{i}/{len(sample)}] {rec['country_code']} {rec['question_id']} "
-              f"-> {answer!r} vs {rec['gt_response']!r} = {status}")
+        return status
+
+    n_done = 0
+    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+        futures = {pool.submit(_answer_pair, rec, run_id): rec for rec in pending}
+        try:
+            for fut in as_completed(futures):
+                rec = futures[fut]
+                n_done += 1
+                try:
+                    res = fut.result()
+                except llm.RateLimitedShutdown:
+                    # Quota / auth cooldown. Drop the queued work and stop so a
+                    # resume can retry at a lower concurrency; logged pairs are
+                    # skipped on the way back in.
+                    print("  RATE LIMITED - cancelling queued pairs")
+                    for f in futures:
+                        f.cancel()
+                    raise
+                except Exception as exc:  # noqa: BLE001
+                    # A single unparseable pair must not sink the run. Leave it
+                    # unlogged so a resume retries it, and carry on.
+                    print(f"  [{n_done}/{len(pending)}] {rec['country_code']} "
+                          f"{rec['question_id']} SKIP {type(exc).__name__}: "
+                          f"{str(exc)[:120]}")
+                    continue
+                status = _write(res)
+                print(f"  [{n_done}/{len(pending)}] {rec['country_code']} "
+                      f"{rec['question_id']} -> {res['answer']!r} vs "
+                      f"{rec['gt_response']!r} = {status}")
+        except KeyboardInterrupt:
+            for f in futures:
+                f.cancel()
+            raise
 
     # Summary from the DB so a resumed run totals every logged pair, not just
     # the ones this invocation ran.
