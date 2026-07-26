@@ -5,8 +5,8 @@
       "three_outcome": {
         "n": 156,
         "n_committed": 73,
-        "n_abstained": 83,
-        "n_failed": 0,
+        "n_abstained": 75,
+        "n_failed": 8,
         "coverage": {
           "successes": 73,
           "n": 156,
@@ -101,8 +101,8 @@
       "three_outcome": {
         "n": 156,
         "n_committed": 61,
-        "n_abstained": 95,
-        "n_failed": 0,
+        "n_abstained": 87,
+        "n_failed": 8,
         "coverage": {
           "successes": 61,
           "n": 156,
@@ -197,8 +197,8 @@
       "three_outcome": {
         "n": 156,
         "n_committed": 37,
-        "n_abstained": 119,
-        "n_failed": 0,
+        "n_abstained": 111,
+        "n_failed": 8,
         "coverage": {
           "successes": 37,
           "n": 156,
@@ -393,5 +393,338 @@
       "b_correct_not_a": 8,
       "mcnemar_p": 1.0
     }
+  },
+  "arms_completed_only": {
+    "description": "coverage denominators excluding pairs that crashed in any arm; commit-accuracy is unaffected because a crash contributes no commits",
+    "excluded_pairs": [
+      [
+        "I5",
+        "MT"
+      ],
+      [
+        "I8-a",
+        "MT"
+      ],
+      [
+        "I9-a",
+        "AL"
+      ],
+      [
+        "PT10",
+        "MT"
+      ],
+      [
+        "PT12",
+        "MT"
+      ],
+      [
+        "PT17",
+        "MT"
+      ],
+      [
+        "PT18",
+        "MT"
+      ],
+      [
+        "PT44",
+        "MT"
+      ]
+    ],
+    "arms": {
+      "trio": {
+        "n_pairs": 148,
+        "three_outcome": {
+          "n": 148,
+          "n_committed": 73,
+          "n_abstained": 75,
+          "n_failed": 0,
+          "coverage": {
+            "successes": 73,
+            "n": 148,
+            "rate": 0.49324324324324326,
+            "wilson_95": [
+              0.41389273952258826,
+              0.5729356272783277
+            ]
+          },
+          "abstention_rate": {
+            "successes": 75,
+            "n": 148,
+            "rate": 0.5067567567567568,
+            "wilson_95": [
+              0.42706437272167236,
+              0.5861072604774118
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 53,
+            "n": 73,
+            "rate": 0.726027397260274,
+            "wilson_95": [
+              0.6143701175830995,
+              0.815085550053351
+            ]
+          },
+          "n_near_match": 0,
+          "n_committed_unscoreable": {
+            "flag_review": 0,
+            "no_ground_truth": 0
+          },
+          "negative_golds": {
+            "n": 71,
+            "n_committed": 36,
+            "false_positives": 17,
+            "fp_rate": {
+              "successes": 17,
+              "n": 71,
+              "rate": 0.23943661971830985,
+              "wilson_95": [
+                0.1552094003304011,
+                0.350412208560936
+              ]
+            }
+          }
+        }
+      },
+      "no_adjudicator": {
+        "n_pairs": 148,
+        "three_outcome": {
+          "n": 148,
+          "n_committed": 61,
+          "n_abstained": 87,
+          "n_failed": 0,
+          "coverage": {
+            "successes": 61,
+            "n": 148,
+            "rate": 0.41216216216216217,
+            "wilson_95": [
+              0.3360611506910144,
+              0.49270761772089355
+            ]
+          },
+          "abstention_rate": {
+            "successes": 87,
+            "n": 148,
+            "rate": 0.5878378378378378,
+            "wilson_95": [
+              0.5072923822791064,
+              0.6639388493089855
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 42,
+            "n": 61,
+            "rate": 0.6885245901639344,
+            "wilson_95": [
+              0.5640856563035855,
+              0.7906256721938473
+            ]
+          },
+          "n_near_match": 0,
+          "n_committed_unscoreable": {
+            "flag_review": 0,
+            "no_ground_truth": 0
+          },
+          "negative_golds": {
+            "n": 71,
+            "n_committed": 28,
+            "false_positives": 17,
+            "fp_rate": {
+              "successes": 17,
+              "n": 71,
+              "rate": 0.23943661971830985,
+              "wilson_95": [
+                0.1552094003304011,
+                0.350412208560936
+              ]
+            }
+          }
+        }
+      },
+      "researcher_only": {
+        "n_pairs": 148,
+        "three_outcome": {
+          "n": 148,
+          "n_committed": 37,
+          "n_abstained": 111,
+          "n_failed": 0,
+          "coverage": {
+            "successes": 37,
+            "n": 148,
+            "rate": 0.25,
+            "wilson_95": [
+              0.1871612674106373,
+              0.3254883042232548
+            ]
+          },
+          "abstention_rate": {
+            "successes": 111,
+            "n": 148,
+            "rate": 0.75,
+            "wilson_95": [
+              0.6745116957767452,
+              0.8128387325893627
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 24,
+            "n": 37,
+            "rate": 0.6486486486486487,
+            "wilson_95": [
+              0.4875902312255084,
+              0.7817439286607287
+            ]
+          },
+          "n_near_match": 0,
+          "n_committed_unscoreable": {
+            "flag_review": 0,
+            "no_ground_truth": 0
+          },
+          "negative_golds": {
+            "n": 71,
+            "n_committed": 13,
+            "false_positives": 10,
+            "fp_rate": {
+              "successes": 10,
+              "n": 71,
+              "rate": 0.14084507042253522,
+              "wilson_95": [
+                0.07834202212357169,
+                0.240217492834758
+              ]
+            }
+          }
+        }
+      },
+      "cooperative": {
+        "n_pairs": 148,
+        "three_outcome": {
+          "n": 148,
+          "n_committed": 63,
+          "n_abstained": 85,
+          "n_failed": 0,
+          "coverage": {
+            "successes": 63,
+            "n": 148,
+            "rate": 0.42567567567567566,
+            "wilson_95": [
+              0.3488885757698126,
+              0.5062234590402633
+            ]
+          },
+          "abstention_rate": {
+            "successes": 85,
+            "n": 148,
+            "rate": 0.5743243243243243,
+            "wilson_95": [
+              0.49377654095973667,
+              0.6511114242301873
+            ]
+          },
+          "commit_accuracy": {
+            "successes": 41,
+            "n": 63,
+            "rate": 0.6507936507936508,
+            "wilson_95": [
+              0.527514607736618,
+              0.7567401098476967
+            ]
+          },
+          "n_near_match": 0,
+          "n_committed_unscoreable": {
+            "flag_review": 0,
+            "no_ground_truth": 0
+          },
+          "negative_golds": {
+            "n": 71,
+            "n_committed": 27,
+            "false_positives": 19,
+            "fp_rate": {
+              "successes": 19,
+              "n": 71,
+              "rate": 0.2676056338028169,
+              "wilson_95": [
+                0.17852803486507757,
+                0.38053988657854737
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "researcher_only_attempt1_gap": {
+    "description": "exp34 pairs with no readable retry_count=0 researcher row, so the researcher-only arm abstains on them by default; a logging gap, not a researcher decision",
+    "n_pairs": 17,
+    "pairs": [
+      [
+        "I5",
+        "AL"
+      ],
+      [
+        "I8-a",
+        "MT"
+      ],
+      [
+        "P21",
+        "MT"
+      ],
+      [
+        "P25",
+        "AL"
+      ],
+      [
+        "P4",
+        "AL"
+      ],
+      [
+        "P7",
+        "AL"
+      ],
+      [
+        "P8",
+        "AL"
+      ],
+      [
+        "PT10",
+        "MT"
+      ],
+      [
+        "PT15",
+        "MT"
+      ],
+      [
+        "PT23",
+        "AL"
+      ],
+      [
+        "PT28",
+        "MT"
+      ],
+      [
+        "PT29",
+        "MT"
+      ],
+      [
+        "PT39",
+        "AL"
+      ],
+      [
+        "PT44",
+        "MT"
+      ],
+      [
+        "PT9",
+        "MT"
+      ],
+      [
+        "Q23",
+        "AL"
+      ],
+      [
+        "Q4",
+        "MT"
+      ]
+    ]
   }
 }

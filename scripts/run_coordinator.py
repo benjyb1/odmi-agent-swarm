@@ -459,11 +459,60 @@ def _finalise_after_adjudication(
 # DB write helpers (reuse the existing per-agent write paths)
 # ============================================================
 
+# A row with no LLM usage of any kind is not necessarily a logging failure:
+# some paths deliberately make no call. Naming which path it was keeps the
+# receipts honest and keeps the deterministic route countable. `unknown` is
+# reserved for a gap nobody can explain.
+_NO_LLM_PROVENANCE = {
+    "catalogue_recompute": "deterministic",
+    "catalogue_recompute_unavailable": "deterministic",
+}
+
+
+def _served_model_version(main, fallback_usage=None, *, no_llm: str | None = None) -> str:
+    """What served a row, preferring the main call, then any secondary call.
+
+    With no usage at all the caller says why via `no_llm`; absent that the row
+    reads `unknown` so a real gap stays visible instead of being dressed up.
+    """
+    if main:
+        return main.model_version
+    if fallback_usage:
+        return fallback_usage.model_version
+    return no_llm or "unknown"
+
+
+def _researcher_model_version(main, query_gen_usage, *, seeded: bool) -> str:
+    """What served this Researcher row.
+
+    A seeded replay row (EXP-40 reuses a frozen attempt rather than paying for
+    it again) has no usage of either kind, so the old fallback wrote the bare
+    string `unknown` and made a deliberate replay indistinguishable from a
+    logging failure.
+    """
+    return _served_model_version(
+        main, query_gen_usage, no_llm="seeded_replay" if seeded else None,
+    )
+
+
+def _verifier_model_version(main, query_gen_usage, *, notes: Optional[str]) -> str:
+    """What served this Verifier row.
+
+    The deterministic catalogue route verifies by recomputing the figure and
+    makes no LLM call, so it used to land on `unknown` (48 rows, 33 of them in
+    the EXP-36 headline run). It is a deterministic verification and says so.
+    """
+    return _served_model_version(
+        main, query_gen_usage, no_llm=_NO_LLM_PROVENANCE.get(notes or ""),
+    )
+
+
 def _save_researcher_row(
     *, result: ResearcherRunResult, inp: ResearcherInput,
     run_id: str, pair_run_id: str, retry_count: int,
     condition_label: Optional[str] = None,
     experiment_id: Optional[str] = None,
+    seeded: bool = False,
 ) -> int:
     condition_label = condition_label or _current_condition_label
     experiment_id = experiment_id if experiment_id is not None else _current_experiment_id
@@ -526,8 +575,8 @@ def _save_researcher_row(
                 result.cumulative_cost_usd,
                 condition_label,
                 main.prompt_version_id if main else None,
-                main.model_version if main else (
-                    result.query_gen_usage.model_version if result.query_gen_usage else "unknown"
+                _researcher_model_version(
+                    main, result.query_gen_usage, seeded=seeded,
                 ),
                 main.raw_response if main else None,
                 experiment_id,
@@ -590,8 +639,8 @@ def _save_verifier_row(
                 result.cumulative_cost_usd,
                 condition_label,
                 main.prompt_version_id if main else None,
-                main.model_version if main else (
-                    result.query_gen_usage.model_version if result.query_gen_usage else "unknown"
+                _verifier_model_version(
+                    main, result.query_gen_usage, notes=result.notes,
                 ),
                 main.raw_response if main else None,
                 experiment_id,
@@ -1308,6 +1357,7 @@ def coordinate(
                 last_researcher_db_id = _save_researcher_row(
                     result=r_result, inp=r_inp,
                     run_id=run_id, pair_run_id=pair_run_id, retry_count=0,
+                    seeded=True,
                 )
         else:
             _upsert_subtrio_status(
@@ -1368,20 +1418,23 @@ def coordinate(
                 # commit as a junk `differ` (B1 fix). Retry; on exhaustion,
                 # adjudicate on any prior valid attempt or abstain honestly.
                 print(f"  Researcher failed: {r_result.failure_mode}", flush=True)
-                # R12 receipts: a shape-invalid attempt still produced a raw
-                # response and a (rejected) answer. Persist the row so the retry
-                # trail stays auditable, exactly as it was before the B1 gate
-                # intercepted this branch. The row carries failure_mode set, so
-                # `_find_resumable_researcher` (failure_mode IS NULL) never
-                # resumes from it and the Adjudicator (researcher_outputs) never
-                # weighs it. A genuine unrecoverable failure has no output and
-                # nothing to persist here.
-                if r_result.output is not None:
-                    _save_researcher_row(
-                        result=r_result, inp=r_inp,
-                        run_id=run_id, pair_run_id=pair_run_id,
-                        retry_count=retry_count,
-                    )
+                # R12 receipts: persist every failed attempt, with or without an
+                # output. A shape-invalid attempt has a raw response and a
+                # (rejected) answer; an unrecoverable one has neither, but it
+                # still ran, still spent a call, and still needs a row. Skipping
+                # the output-less case lost the attempt entirely and made the
+                # retry the first logged attempt, which silently renumbered the
+                # trail: 17 exp34 pairs have no retry_count=0 row for this
+                # reason, so any reader keying on attempt 1 mistook a lost
+                # attempt for a researcher that declined. The row carries
+                # failure_mode set, so `_find_resumable_researcher`
+                # (failure_mode IS NULL) never resumes from it and the
+                # Adjudicator (researcher_outputs) never weighs it.
+                _save_researcher_row(
+                    result=r_result, inp=r_inp,
+                    run_id=run_id, pair_run_id=pair_run_id,
+                    retry_count=retry_count,
+                )
                 if attempt == max_retries:
                     if researcher_outputs:
                         # A prior attempt already produced an answer. Do not

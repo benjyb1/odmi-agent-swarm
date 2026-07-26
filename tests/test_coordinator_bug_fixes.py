@@ -225,6 +225,113 @@ def test_b1_all_invalid_never_reaches_verifier(calls, monkeypatch):
     )
 
 
+def _researcher_crash(failure_mode: str = "url_unreachable") -> ResearcherRunResult:
+    """What run_researcher returns when the attempt produced no output at all."""
+    return ResearcherRunResult(
+        output=None,
+        failure_mode=failure_mode,
+        query_gen_usage=None,
+        main_usage=None,
+        search_queries_used=["fake query"],
+        fetched_urls=[],
+        search_results=[],
+    )
+
+
+def test_outputless_attempt_is_persisted_as_a_receipt(calls, monkeypatch):
+    """B3: an attempt that produced no output still happened and still cost a
+    call, so it must leave a row. Skipping the write loses the attempt entirely
+    and makes the retry the first logged attempt, which silently renumbers the
+    trail (the 17 exp34 pairs with no retry_count=0 row)."""
+    saved = _spy_researcher_saves(monkeypatch)
+    seq = iter([
+        _researcher_crash("url_unreachable"),               # attempt 0, no output
+        _researcher_result(answer="yes", confidence=0.9),    # attempt 1, recovers
+    ])
+    calls.researcher_factory = lambda: next(seq)
+
+    status, _out = _coordinate(max_retries=1)
+
+    assert status == "accepted_by_verifier", f"pair should commit; got {status!r}"
+    assert saved == ["url_unreachable", None], (
+        "the output-less attempt must be persisted before the retry, so the "
+        f"first logged attempt is attempt 0; got {saved!r}"
+    )
+
+
+def test_every_outputless_attempt_is_persisted(calls, monkeypatch):
+    """B3: when no attempt produces output the pair fails, and every attempt
+    still leaves its own receipt."""
+    saved = _spy_researcher_saves(monkeypatch)
+    calls.researcher_factory = lambda: _researcher_crash("search_empty")
+
+    status, _out = _coordinate(max_retries=1)
+
+    assert status == "agent_failure", f"all-crash pair must not commit; got {status!r}"
+    assert saved == ["search_empty", "search_empty"], (
+        f"both output-less attempts must be persisted; got {saved!r}"
+    )
+
+
+def test_seeded_row_records_seeded_provenance_not_unknown():
+    """B4: a seeded replay row has no live usage, so the model_version fallback
+    fired and wrote the bare string 'unknown', which is indistinguishable from a
+    logging failure. A seeded row must say it was seeded."""
+    assert rc._researcher_model_version(None, None, seeded=True) == "seeded_replay"
+
+
+def test_live_row_records_the_served_model():
+    """B4: a live call's served model still wins over any fallback."""
+    from types import SimpleNamespace
+
+    main = SimpleNamespace(model_version="claude-sonnet-4-6")
+    assert rc._researcher_model_version(main, None, seeded=False) == "claude-sonnet-4-6"
+
+
+def test_query_gen_model_is_the_second_choice():
+    """B4: with no main usage, the query-generation call's model is the best
+    available evidence of what served the row."""
+    from types import SimpleNamespace
+
+    qg = SimpleNamespace(model_version="claude-haiku-4-5")
+    assert rc._researcher_model_version(None, qg, seeded=False) == "claude-haiku-4-5"
+
+
+def test_unknown_survives_for_a_real_logging_gap():
+    """B4: 'unknown' must still be written when a row is neither seeded nor
+    backed by usage, so a real gap stays visible instead of being dressed up."""
+    assert rc._researcher_model_version(None, None, seeded=False) == "unknown"
+
+
+def test_catalogue_recompute_verifier_row_is_marked_deterministic():
+    """B5: the deterministic catalogue route verifies with no LLM call, so the
+    old fallback wrote 'unknown' on 48 rows, 33 of them in the EXP-36 headline.
+    A deterministic verification must be countable as such."""
+    assert rc._verifier_model_version(None, None, notes="catalogue_recompute") == (
+        "deterministic"
+    )
+
+
+def test_unavailable_recompute_is_also_deterministic():
+    """B5: the recompute-unavailable branch makes no LLM call either."""
+    assert rc._verifier_model_version(
+        None, None, notes="catalogue_recompute_unavailable"
+    ) == "deterministic"
+
+
+def test_llm_verifier_row_records_the_served_model():
+    """B5: the ordinary LLM verifier path is untouched."""
+    from types import SimpleNamespace
+
+    main = SimpleNamespace(model_version="claude-sonnet-4-6")
+    assert rc._verifier_model_version(main, None, notes=None) == "claude-sonnet-4-6"
+
+
+def test_verifier_unknown_survives_for_a_real_gap():
+    """B5: an unexplained usage-less verifier row still reads 'unknown'."""
+    assert rc._verifier_model_version(None, None, notes=None) == "unknown"
+
+
 def test_shape_invalid_wins_over_url_unreachable(monkeypatch):
     """B1 (gap closed): the Researcher must report `invalid_answer_shape` even
     when the cited URL is also unreachable. `url_unreachable` is set first in the

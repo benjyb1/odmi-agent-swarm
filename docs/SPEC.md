@@ -2671,10 +2671,69 @@ miss follows from the pile-up at the D37 floor: of 81 committed exp34
 is descriptive and is the result the experiment is for. No adoption rule;
 production stays trio (D45).
 
+### D66: a row with no LLM call says which path it took; a crashed pair is never an abstention
+
+Three logging defects, all the same shape: a code path recorded "nothing to
+report" where it should have recorded what actually happened. Found while
+checking whether the §4.2 ablation ladder was contaminated by the cut Sonnet 5
+(it is not: all four arms are `claude-sonnet-4-6`, replayed off
+`exp34_retrieval_strategy_s46` / `wide_only` by `evaluation/exp40_analysis.py`;
+the Sonnet-5 `exp28_arch_ablation` arms are not what the table reads).
+
+**1. An output-less Researcher attempt left no row.** `run_coordinator.py`
+persisted a failed attempt only when it still carried an output, on the
+reasoning that an unrecoverable failure "has nothing to persist". It has the
+fact that it ran. Skipping the write made the retry the first logged attempt, so
+the trail renumbered itself silently: 17 of the 156 `exp34_retrieval_strategy_s46`
+pairs have no `retry_count=0` row for this reason, while the other 139 are
+0-indexed. Any reader keying on attempt 1 mistakes a lost attempt for a
+Researcher that declined, which is what the researcher-only arm does. Now every
+failed attempt is persisted with `failure_mode` set, so
+`_find_resumable_researcher` (`failure_mode IS NULL`) still never resumes from it
+and the Adjudicator still never weighs it. Historical rows are not
+reconstructible and are disclosed instead: the arm reports the gap count, and the
+bound on it is small (commit rate 0.237 -> 0.244, commit-accuracy 0.649 -> 0.658
+under an earliest-attempt fallback), and it leans conservative, since it moves
+the weakest arm up and makes the ladder's own claim marginally weaker.
+
+**2. `model_version` collapsed three different situations into `unknown`.** The
+fallback wrote the bare string whenever no usage was attached, so a deliberate
+no-call path was indistinguishable from a logging failure. Two real cases were
+hiding there: 49 seeded EXP-40 Researcher rows (a frozen attempt reused rather
+than paid for again) now read `seeded_replay`, and 48 deterministic
+catalogue-recompute Verifier rows, 33 of them in the EXP-36 headline, now read
+`deterministic`. The second matters beyond tidiness: it makes the deterministic
+verification route countable, which §3.5's convergent-validity argument relies
+on. `unknown` is retained for a gap nobody can explain. Historical rows are left
+as they are; rewriting recorded values to look tidier is worse for an audit trail
+than leaving them and saying so here.
+
+**3. The ablation adapter recoded crashes as abstentions.** `_pair_row` in
+`exp40_analysis.py` mapped every non-commit to `abstained_adjudicator`, so
+`three_outcome` reported `n_failed: 0` while the source carried 8 `agent_failure`
+pairs (MT I5, I8-a, PT10, PT12, PT17, PT18, PT44; AL I9-a). The reader already
+separates crashes from abstentions; the adapter defeated it before it got there.
+A crash is not a decision to decline, and abstention quality is the Selectivity
+claim the ablation exists to measure. The cooperative arm has 0 crashes over its
+156, so the shared denominator was also mildly unfair to the three adversarial
+arms. Crashes now survive the mapping, and `completed_only()` reports coverage on
+the pairs that completed in every arm, which keeps the arms paired and the
+McNemar contrast valid.
+
+**Consequence for §4.2.** Commit-accuracy and the McNemar null are unchanged (a
+crash contributes no commits; n=154 at 8-vs-8, p=1.00). Coverage gains a second,
+honest denominator: trio 0.468 -> 0.493, no_adjudicator 0.391 -> 0.412,
+researcher_only 0.237 -> 0.250, cooperative 0.404 -> 0.426 on n=148. Every
+ordering is preserved, so no conclusion moves. The report should quote one
+denominator and name it; the full-universe figures remain in the JSON as the
+sensitivity. New tests `tests/test_exp40_analysis.py` (5) and 10 added to
+`tests/test_coordinator_bug_fixes.py`.
+
 ## Change log
 
 | Date | Change |
 |---|---|
+| 2026-07-26 (D66: three logging defects fixed) | Checked the §4.2 ablation ladder for Sonnet-5 contamination and cleared it: all four arms are `claude-sonnet-4-6`, replayed off `exp34_retrieval_strategy_s46` / `wide_only`, not the banned `exp28_arch_ablation` arms (which do still sit in canonical, 155-156 pairs each, and must not be read; the planned `exp28_s46_rerun` never got past its 8-pair pilot). The check surfaced three logging defects, fixed here with tests first. (1) `run_coordinator.py` skipped the Researcher receipt when an attempt produced no output, which renumbered the retry trail and cost 17 exp34 pairs their `retry_count=0` row; every failed attempt is now persisted with `failure_mode` set, leaving resume and adjudication behaviour untouched. Historical rows are unrecoverable, so `attempt1_gap_pairs()` reports the gap and the bound is disclosed (0.237 -> 0.244 commit rate under an earliest-attempt fallback, conservative in direction). (2) The `model_version` fallback wrote `unknown` for any usage-less row; 49 seeded EXP-40 Researcher rows now read `seeded_replay` and 48 deterministic catalogue-recompute Verifier rows (33 in the EXP-36 headline) now read `deterministic`, which makes the deterministic route countable for §3.5. Historical values left alone deliberately. (3) `exp40_analysis.py` recoded 8 `agent_failure` pairs as abstentions, so `n_failed` read 0 and a crash counted as a decision to decline; crashes now survive the mapping and `completed_only()` gives coverage on the 148 pairs that completed in every arm. §4.2 consequence: commit-accuracy and the McNemar null unchanged, coverage rises uniformly (trio 0.468 -> 0.493, no_adj 0.391 -> 0.412, researcher_only 0.237 -> 0.250, cooperative 0.404 -> 0.426), all orderings preserved. `evaluation/results/exp40_analysis.json` regenerated. Tests: 20 pass across `tests/test_exp40_analysis.py` (new, 5) and `tests/test_coordinator_bug_fixes.py` (10 added); full suite 881 pass, 13 skip, with 3 pre-existing `test_catalogue_adapter_rdf.py` failures unrelated to this work (`dcat_rdf.py:44` TypeError, present on a clean tree). Separately noted: running the suite mutates `data/odmi.db`, so the worktree copy was restored and is not part of this commit. |
 | 2026-07-21 (EXP-41 pre-registration; EXP-40 rows recovered) | Audit found the EXP-40 cooperative arm had zero rows in all 46 `odmi.db` copies on disk and no `experiments` registry row anywhere; `evaluation/exp40_analysis.py --db data/odmi.db` returned n=0 for all four arms while still printing `McNemar p=1.000`, the p-value the dissertation reports, so the documented reproduction path yielded a plausible null from an empty database. The rows were then recovered from an orphaned Git LFS object (one prune away from loss) and committed as SQL dumps under `data/recovery/`; verified independently here by restoring them into a copy of canonical and reproducing `evaluation/results/exp40_analysis.json` byte for byte, all four arms, n=154 at 8-vs-8, p=1.00. §4.2 needs no re-run. Outstanding: canonical `data/odmi.db` has not yet been restored from the dumps and still carries the pre-EXP-40 CHECK. EXP-41 (D65, `docs/EXPERIMENTS_RUN_STABILITY.md`) accordingly narrowed from 624 pairs to 468: three fresh incumbent-trio replicates over the 156-pair dev battery, closing §4.7's open second Reproducibility condition and giving §4.2 an empirical noise floor for its ladder. New tooling: `scripts/purge_search_cache.py` (`--no-cache` disables cache reads but not writes, so the cache must be archived and purged before every run, not once, and the existing purge clears only the held-out eight), `scripts/gen_exp41_specs.py` (three specs from one FROZEN_KNOBS dict), `scripts/register_exp41.py`, `tests/test_exp41_prereg.py` (14 pass). Six further leak carriers found and controlled; two would have voided the experiment silently, since replicates sharing an `experiment_id` are skipped outright by `finalised_pairs` and share evidence via `_find_resumable_researcher`. All three dry-runs preflight-pass at 156 pairs with `no_cache=True` and all 21 knobs on the command line. Not dispatched: awaiting Benjy's review. |
 | 2026-07-17 (held-out false-positive audit, n=83) | Generalised the NL FP audit (2026-06-25 entry) to the eight D47 held-out countries that carry the frozen EXP-36 headline, at Benjy's direction (a post-hoc disagreement audit for the D22 staleness band, not a config experiment: no swarm run, no knob change, canonical DB read-only). New `evaluation/heldout_fp_audit.py` runs the same two-pass method as NL over the frozen stored evidence, same `claude-opus-4-6` judge, with the pass-1 (charitable: genuine_error / definitional_gap / defensible_or_stale_gold) and pass-2 (adversarial advocate: swarm_over_read / ambiguous / gold_wrong) rubrics imported verbatim from `nl_fp_audit.py` / `nl_fp_audit_adversarial.py`, so the two audits are directly comparable. All 83 committed binary false positives (swarm yes / gold no): BA 7, BE 4, BG 6, FI 17, HR 4, ME 19, MK 16, SE 10. Automated verdicts: charitable 17/83 genuine error, 60/83 definitional gap, 6/83 defensible/stale gold; adversarial 60/83 over-read, 22/83 ambiguous, 1/83 gold_wrong. The single `gold_wrong` (SE I27) and all six `defensible_or_stale_gold` were then checked by hand against the actual stored snippets (`evaluation/results/heldout_fp_audit_verification.md`); none holds as a swarm win. SE I27's advocate fabricated Sweden-specific figures (a Lantmäteriet 10-21bn SEK/yr estimate, an SSE/Vinnova study) that are absent from the one stored snippet (a 2020 entryscape.com blog citing the generic pan-EU "Economic Impact of Open Data" report); the swarm's real evidence is an over-read of a Europe-wide report, so the gold "no" stands. Evidence-checked headline: **0/83** false positives where the swarm is right and ODMI wrong, matching NL 0/22. Genuine swarm-error rate is 20% (vs NL ~0-9%): the held-out countries are harder (thinner, lower-resource portals) so the swarm over-reads more, but the errors are swarm-side, not stale gold. Consequence: the D22 staleness band on the EXP-36 held-out commit-accuracy is negligible, so match/differ is a fair headline metric. Method caveat recorded in the verification note: an adversarial advocate prompted for the best case will import facts not present in the shown snippets, so `gold_wrong` / `defensible_or_stale_gold` are human-review flags, not conclusions. Artefacts: `evaluation/heldout_fp_audit.py`, `results/heldout_fp_audit.jsonl` (83 rows), `_summary.md`, `_verification.md`. Committed `d003ae5` plus this entry. |
 | 2026-07-16 (supervision addendum: freeze-gate bug; EXP-36 ownership) | `scripts/assert_freeze.py` bug found and fixed: the `_git()` helper's `strip()` ate the leading status column of the first `git status --porcelain` line, so ` M data/odmi.db` (the explicitly allowed DB write) read as dirty and `run_exp36.sh` aborted every resume after the run had mutated the DB - the one-command launcher could start a fresh run but never restart one. Fix: `rstrip(chr(10))` only; validated against the frozen exp36-run worktree (FROZEN with the DB modified, HEAD at tag). Operational note: the second window-exhaustion stall (finals 672/1,144) was resumed not by this session's supervisor (its relaunches hit the gate bug) but by the haiku-sonnet-opus-comparison window, which drives per-country night specs through `run_experiments.py` directly and owns the EXP-36 resume; this session's auto-relaunch supervisor was stood down in favour of a passive completion watch to avoid cross-window double-dispatch. The 5-hour Claude window, not the monthly cap, is the binding constraint (confirmed by Benjy 2026-07-16). |

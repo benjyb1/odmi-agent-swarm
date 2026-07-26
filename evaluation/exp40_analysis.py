@@ -52,6 +52,7 @@ EXP40 = "exp40_cooperative_contrast"
 # Normalised terminal statuses the exp36 readers understand.
 _COMMIT = "accepted_by_verifier"     # any committed answer
 _ABSTAIN = "abstained_adjudicator"   # any honest abstention
+_FAILED = "agent_failure"            # a crash, never an abstention
 
 
 def _gold(conn, q, cc):
@@ -77,19 +78,74 @@ def _match_status(committed: bool, answer, gold, shape) -> str:
     return "match" if norm(answer) == norm(gold) else "differ"
 
 
-def _pair_row(conn, q, cc, committed, answer, idx) -> PairRow:
+def _pair_row(conn, q, cc, committed, answer, idx, failed: bool = False) -> PairRow:
+    """One pair in the exp36 reader vocabulary.
+
+    `failed` must survive the mapping. The reader already separates crashes from
+    abstentions (`three_outcome.n_failed`); recoding a crash to an abstention
+    here defeated that and reported eight `agent_failure` pairs as decisions to
+    decline, which is exactly the Selectivity property the ablation measures.
+    """
     gold, decision, dim = _gold(conn, q, cc)
     shape = _shape(conn, q)
+    if failed:
+        status = _FAILED
+    elif committed:
+        status = _COMMIT
+    else:
+        status = _ABSTAIN
     return PairRow(
         row_id=idx,
         question_id=q, country_code=cc, condition_label="x",
-        terminal_status=_COMMIT if committed else _ABSTAIN,
+        terminal_status=status,
         final_answer=answer if committed else "inconclusive",
         final_confidence=None,
         gold_answer=gold, gold_decision=decision, dimension=dim,
         answer_shape=shape,
         match_status=_match_status(committed, answer, gold, shape),
     )
+
+
+def attempt1_gap_pairs(conn) -> list[tuple[str, str]]:
+    """Pairs in the exp34 arm with no readable attempt-1 researcher row.
+
+    The coordinator used to skip the write when an attempt produced no output,
+    so the retry became the first logged attempt. 17 pairs lost their
+    `retry_count=0` row this way. The researcher-only arm cannot read an answer
+    for them and therefore abstains, but that is a logging gap rather than a
+    researcher decision, so report which pairs it affects instead of letting
+    them sink silently into the abstention count.
+    """
+    rows = conn.execute(
+        """SELECT question_id, country_code FROM phase2_researcher_runs
+           WHERE experiment_id=? AND condition_label=?
+           GROUP BY question_id, country_code
+           HAVING MIN(retry_count) > 0
+           ORDER BY question_id, country_code""",
+        (EXP34, EXP34_COND),
+    ).fetchall()
+    return [(q, cc) for q, cc in rows]
+
+
+def completed_only(arms: dict[str, list[PairRow]]) -> dict[str, list[PairRow]]:
+    """The same arms restricted to pairs that completed in every arm.
+
+    Coverage divides by all pairs, so a crash silently depresses it. Dropping
+    the crashed pairs gives the coverage the pipeline actually achieved where it
+    ran. The same pairs go from every arm, so the arms stay paired and the
+    McNemar contrast remains valid.
+    """
+    crashed = {
+        (r.question_id, r.country_code)
+        for rows in arms.values() for r in rows
+        if r.terminal_status == _FAILED
+    }
+    return {
+        name: [
+            r for r in rows if (r.question_id, r.country_code) not in crashed
+        ]
+        for name, rows in arms.items()
+    }
 
 
 def _trio_canonical(conn):
@@ -115,11 +171,14 @@ def build_arms(conn) -> dict[str, list[PairRow]]:
 
     trio, no_adj, res_only = [], [], []
     for i, (q, cc, st, ans, _rid) in enumerate(trio_raw):
+        # A crash is a crash in all three replay arms: they share the run, so a
+        # pair the pipeline never resolved has no outcome to reinterpret.
+        failed = st == _FAILED
         committed = st in committed_trio and norm(ans) != "inconclusive"
-        trio.append(_pair_row(conn, q, cc, committed, ans, i))
+        trio.append(_pair_row(conn, q, cc, committed, ans, i, failed))
         # no_adjudicator: only a verifier-accept commits; adjudicated -> abstain
         na_commit = st == "accepted_by_verifier" and norm(ans) != "inconclusive"
-        no_adj.append(_pair_row(conn, q, cc, na_commit, ans, i))
+        no_adj.append(_pair_row(conn, q, cc, na_commit, ans, i, failed))
         # researcher_only: exp34 attempt-1 answer at/above the floor
         r = conn.execute(
             """SELECT answer, answer_confidence FROM phase2_researcher_runs
@@ -129,9 +188,9 @@ def build_arms(conn) -> dict[str, list[PairRow]]:
             (EXP34, EXP34_COND, q, cc),
         ).fetchone()
         if r and r[0] and norm(r[0]) != "inconclusive" and (r[1] or 0) >= FLOOR:
-            res_only.append(_pair_row(conn, q, cc, True, r[0], i))
+            res_only.append(_pair_row(conn, q, cc, True, r[0], i, failed))
         else:
-            res_only.append(_pair_row(conn, q, cc, False, None, i))
+            res_only.append(_pair_row(conn, q, cc, False, None, i, failed))
 
     # cooperative: exp40 finals (canonical latest per pair)
     coop_raw = conn.execute(
@@ -146,7 +205,7 @@ def build_arms(conn) -> dict[str, list[PairRow]]:
     coop = []
     for i, (q, cc, st, ans, _rid) in enumerate(coop_canon.values()):
         committed = st == "accepted_cooperative" and norm(ans) != "inconclusive"
-        coop.append(_pair_row(conn, q, cc, committed, ans, i))
+        coop.append(_pair_row(conn, q, cc, committed, ans, i, st == _FAILED))
 
     return {"trio": trio, "no_adjudicator": no_adj,
             "researcher_only": res_only, "cooperative": coop}
@@ -194,6 +253,33 @@ def main() -> int:
             "balance_aware": binary_headline(rows),
         }
 
+    # Coverage on the pairs that actually completed. The crashed pairs sit in
+    # the full-universe denominator above and depress every arm's coverage; the
+    # same pairs leave every arm here, so the arms stay paired.
+    trimmed = completed_only(arms)
+    result["arms_completed_only"] = {
+        "description": "coverage denominators excluding pairs that crashed in "
+                       "any arm; commit-accuracy is unaffected because a crash "
+                       "contributes no commits",
+        "excluded_pairs": sorted(
+            {(r.question_id, r.country_code) for rows in arms.values()
+             for r in rows if r.terminal_status == "agent_failure"}
+        ),
+        "arms": {
+            name: {"n_pairs": len(rows), "three_outcome": three_outcome(rows)}
+            for name, rows in trimmed.items()
+        },
+    }
+
+    gaps = attempt1_gap_pairs(conn)
+    result["researcher_only_attempt1_gap"] = {
+        "description": "exp34 pairs with no readable retry_count=0 researcher "
+                       "row, so the researcher-only arm abstains on them by "
+                       "default; a logging gap, not a researcher decision",
+        "n_pairs": len(gaps),
+        "pairs": sorted(gaps),
+    }
+
     result["primary_contrast"] = {
         "description": "no_adjudicator vs cooperative: one variable (verifier "
                        "stance), neither has an adjudicator",
@@ -203,7 +289,7 @@ def main() -> int:
 
     # compact console summary
     print(f"{'arm':16} {'n':>4} {'cov':>5} {'commit-acc':>11} "
-          f"{'neg-FPR':>8} {'bal-acc':>8} {'J':>6}")
+          f"{'neg-FPR':>8} {'bal-acc':>8} {'J':>6} {'fail':>5}")
     for name, rows in arms.items():
         t = result["arms"][name]["three_outcome"]
         h = result["arms"][name]["balance_aware"]
@@ -215,7 +301,17 @@ def main() -> int:
         print(f"{name:16} {t['n']:>4} "
               f"{(cov or 0):>5.2f} {(acc or 0):>11.2f} {(fpr or 0):>8.2f} "
               f"{(ba if ba is not None else 0):>8.2f} "
-              f"{(j if j is not None else 0):>6.2f}")
+              f"{(j if j is not None else 0):>6.2f} {t['n_failed']:>5}")
+
+    ex = result["arms_completed_only"]["excluded_pairs"]
+    print(f"\ncoverage excluding {len(ex)} crashed pair(s):")
+    for name, block in result["arms_completed_only"]["arms"].items():
+        t = block["three_outcome"]
+        print(f"  {name:16} n={t['n']:>4} cov={t['coverage']['rate'] or 0:.3f} "
+              f"commit-acc={t['commit_accuracy']['rate'] or 0:.3f}")
+    print(f"\nresearcher_only attempt-1 logging gap: {len(gaps)} pair(s) "
+          f"abstained for want of a readable attempt")
+
     pc = result["primary_contrast"]["mcnemar_committed_correctness"]
     print(f"\nprimary no_adj vs cooperative: n={pc['n_shared_binary']} "
           f"no_adj-only-correct={pc['a_correct_not_b']} "
