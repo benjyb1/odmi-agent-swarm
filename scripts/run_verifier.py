@@ -37,7 +37,7 @@ from agents.models import (
     VerifierStrategy,
 )
 from agents.verifier import VerifierRunResult, run_verifier
-from agents.tools.db import DB_PATH, connect
+from agents.tools.db import connect
 
 VALID_STRATEGIES: list[VerifierStrategy] = [
     "verifier-disprove",
@@ -55,7 +55,7 @@ def _load_researcher_row(
     question_id: str,
     country_code: str,
     researcher_run_id: Optional[int],
-    db_path: Path = DB_PATH,
+    db_path: Path | None = None,
 ) -> dict:
     """Fetch a phase2_researcher_runs row from SQLite.
 
@@ -112,7 +112,7 @@ def _row_to_researcher_output(row: dict) -> ResearcherOutput:
     )
 
 
-def _load_question_text(question_id: str, db_path: Path = DB_PATH) -> str:
+def _load_question_text(question_id: str, db_path: Path | None = None) -> str:
     """Fetch question_text from the questions table."""
     with connect(db_path) as conn:
         cur = conn.execute(
@@ -247,7 +247,7 @@ def save_run(
     pair_run_id: str,
     retry_count: int,
     condition_label: str,
-    db_path: Path = DB_PATH,
+    db_path: Path | None = None,
 ) -> int:
     """Insert one phase2_verifier_runs row. Returns the new row id."""
     o = result.output

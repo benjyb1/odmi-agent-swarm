@@ -26,7 +26,7 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from agents.models import ResearcherInput
 from agents.researcher import ResearcherRunResult, run_researcher
-from agents.tools.db import DB_PATH, connect
+from agents.tools.db import connect
 
 QUESTIONS_JSON = REPO_ROOT / "data" / "questions" / "odmi_2025_questions.json"
 
@@ -188,7 +188,7 @@ def save_run(
     pair_run_id: str,
     retry_count: int,
     condition_label: str,
-    db_path: Path = DB_PATH,
+    db_path: Path | None = None,
 ) -> int:
     """Insert one phase2_researcher_runs row. Returns the new row id."""
     o = result.output

@@ -16,12 +16,16 @@ DB_PATH = Path(__file__).resolve().parents[2] / "data" / "odmi.db"
 
 
 @contextmanager
-def connect(db_path: Path = DB_PATH) -> Iterator[sqlite3.Connection]:
+def connect(db_path: Path | None = None) -> Iterator[sqlite3.Connection]:
     """Open a connection with WAL mode and foreign keys enabled.
 
     Always close on exit. Caller is responsible for commit.
+
+    ``db_path`` is resolved at call time rather than bound as a default
+    argument, so redirecting ``DB_PATH`` (the test suite points it at a
+    scratch copy) reaches every caller that relies on the default.
     """
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(DB_PATH if db_path is None else db_path)
     conn.execute("PRAGMA foreign_keys=ON")
     try:
         yield conn
@@ -34,7 +38,7 @@ def ensure_prompt_version(
     version: int,
     prompt_text: str,
     description: str = "",
-    db_path: Path = DB_PATH,
+    db_path: Path | None = None,
 ) -> int:
     """Look up or insert a prompt_versions row. Idempotent.
 
