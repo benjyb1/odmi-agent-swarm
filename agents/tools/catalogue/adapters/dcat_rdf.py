@@ -36,23 +36,6 @@ _PAGE_FETCH_TIMEOUT_S = 120.0
 # up and truncates. Total patience per page ~2 minutes.
 _PAGE_FETCH_BACKOFF = (2.0, 4.0, 8.0, 16.0, 32.0, 60.0)
 
-
-def _fetch_page(fetcher: "BytesFetcher", url: str) -> bytes:
-    last_exc: Optional[Exception] = None
-    for attempt in range(_PAGE_FETCH_RETRIES):
-        try:
-            return fetcher(url, timeout_s=_PAGE_FETCH_TIMEOUT_S)
-        except (httpx.TimeoutException, httpx.TransportError, OSError) as exc:
-            last_exc = exc
-            print(
-                f"[harvest] page fetch stalled (attempt "
-                f"{attempt + 1}/{_PAGE_FETCH_RETRIES}) {type(exc).__name__}: {url}",
-                file=sys.stderr,
-            )
-            if attempt < len(_PAGE_FETCH_BACKOFF):
-                time.sleep(_PAGE_FETCH_BACKOFF[attempt])
-    assert last_exc is not None
-    raise last_exc
 from agents.tools.catalogue.model import Distribution, HarvestedDataset
 from agents.tools.catalogue.registry import PortalConfig
 
@@ -69,8 +52,30 @@ DCAT_ACCESS_URL = URIRef(_DCAT + "accessURL")
 DCAT_DOWNLOAD_URL = URIRef(_DCAT + "downloadURL")
 DCT_IDENTIFIER = URIRef(_DCT + "identifier")
 
-BytesFetcher = Callable[[str], bytes]
+# An injected fetcher is called as `fetcher(url, timeout_s=...)`, so it must
+# absorb keyword arguments (the default, `_fetch.fetch_bytes`, does). The
+# signature is deliberately loose: pinning it to `Callable[[str], bytes]` said
+# something the retry path below no longer honours.
+BytesFetcher = Callable[..., bytes]
 RawPageSink = Callable[[int, bytes], None]
+
+
+def _fetch_page(fetcher: BytesFetcher, url: str) -> bytes:
+    last_exc: Optional[Exception] = None
+    for attempt in range(_PAGE_FETCH_RETRIES):
+        try:
+            return fetcher(url, timeout_s=_PAGE_FETCH_TIMEOUT_S)
+        except (httpx.TimeoutException, httpx.TransportError, OSError) as exc:
+            last_exc = exc
+            print(
+                f"[harvest] page fetch stalled (attempt "
+                f"{attempt + 1}/{_PAGE_FETCH_RETRIES}) {type(exc).__name__}: {url}",
+                file=sys.stderr,
+            )
+            if attempt < len(_PAGE_FETCH_BACKOFF):
+                time.sleep(_PAGE_FETCH_BACKOFF[attempt])
+    assert last_exc is not None
+    raise last_exc
 
 
 def _rdf_format_for(url: str) -> str:

@@ -5,6 +5,9 @@ from __future__ import annotations
 
 import hashlib
 
+import pytest
+from rdflib import Graph
+
 from agents.tools.answer_shapes import QuestionShape
 from agents.tools.catalogue import metrics, shacl, synthesise
 from agents.tools.catalogue.adapters import dcat_rdf, estonia_json
@@ -119,7 +122,8 @@ def _harvest_content_hash(raw_page: bytes) -> str:
     hasher = hashlib.sha256()
     calls = {"n": 0}
 
-    def _fetcher(url: str) -> bytes:
+    def _fetcher(url: str, **_kw) -> bytes:
+        # Absorbs the adapter's timeout_s kwarg (see BytesFetcher).
         # First page returns the fixture; subsequent pages are empty so the
         # Hydra loop terminates.
         calls["n"] += 1
@@ -184,7 +188,8 @@ def test_dcat_rdf_cached_payload_is_canonical_not_turtle():
     calls = {"n": 0}
     captured: list[bytes] = []
 
-    def _fetcher(url: str) -> bytes:
+    def _fetcher(url: str, **_kw) -> bytes:
+        # Absorbs the adapter's timeout_s kwarg (see BytesFetcher).
         calls["n"] += 1
         return raw if calls["n"] == 1 else b""
 
@@ -207,6 +212,71 @@ def test_dcat_rdf_cached_payload_is_canonical_not_turtle():
     # And it must still replay as Turtle (N-Triples is valid Turtle).
     replayed = dcat_rdf.normalise_page(captured[0])
     assert any(d.identifier == "https://data.gouv.fr/dataset/x" for d in replayed)
+
+
+# One malformed IRI (a space in the path) on an otherwise sound page. rdflib
+# parses it but refuses to serialise it, so before the drop guard the whole
+# page raised and every dataset on it was lost. That is what truncated the
+# Croatian harvest at 1,400 of 3,867 datasets.
+_TURTLE_WITH_MALFORMED_IRI = """
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+<https://portal.hr/ds/1> a dcat:Dataset ;
+    dct:title "Sound" ;
+    dcat:distribution <https://portal.hr/files/ok.csv> .
+
+<https://portal.hr/ds/2> a dcat:Dataset ;
+    dct:title "Carries a malformed distribution IRI" ;
+    dcat:distribution <https://portal.hr/files/bad file.csv> .
+"""
+
+
+def test_dcat_rdf_malformed_iri_drops_the_triple_not_the_page():
+    page = Graph()
+    page.parse(data=_TURTLE_WITH_MALFORMED_IRI, format="turtle")
+    # Precondition: plain serialisation of this page raises. Without the
+    # guard the harvest loses the page.
+    with pytest.raises(Exception):
+        page.serialize(format="nt")
+
+    payload = dcat_rdf._canonical_turtle_bytes(page)
+    replayed = dcat_rdf.normalise_page(payload)
+    ids = {d.identifier for d in replayed}
+    assert ids == {"https://portal.hr/ds/1", "https://portal.hr/ds/2"}
+    assert b"bad file.csv" not in payload
+
+
+def test_dcat_rdf_harvest_survives_a_page_with_a_malformed_iri():
+    config = _portal_config_for_ttl()
+    calls = {"n": 0}
+    captured: list[bytes] = []
+
+    def _fetcher(url: str, **_kw) -> bytes:
+        calls["n"] += 1
+        return _TURTLE_WITH_MALFORMED_IRI.encode("utf-8") if calls["n"] == 1 else b""
+
+    datasets = list(
+        dcat_rdf.harvest(
+            config, fetcher=_fetcher, on_raw_page=lambda i, p: captured.append(p)
+        )
+    )
+    assert len(datasets) == 2
+    assert len(captured) == 1
+
+
+def test_dcat_rdf_fetcher_is_called_with_the_page_timeout():
+    """The retry path passes `timeout_s`; an injected fetcher must receive it.
+    Pins the contract that `BytesFetcher` documents."""
+    config = _portal_config_for_ttl()
+    seen: list[float] = []
+
+    def _fetcher(url: str, *, timeout_s: float = 0.0, **_kw) -> bytes:
+        seen.append(timeout_s)
+        return _TURTLE_PAGE.encode("utf-8") if len(seen) == 1 else b""
+
+    list(dcat_rdf.harvest(config, fetcher=_fetcher))
+    assert seen and all(t == dcat_rdf._PAGE_FETCH_TIMEOUT_S for t in seen)
 
 
 def test_estonia_normalise_detail():
