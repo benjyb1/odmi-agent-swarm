@@ -114,25 +114,40 @@ The Adjudicator is never called. Verified structurally: `run_adjudicator` has on
 call site, `run_coordinator.py:1862`, which sits after the unconditional cooperative
 return at `1811`.
 
-### Arm C: adversarial, `no_adjudicator`. Live drift control. 200 pairs.
+### There is no third arm. Drift is checked for free instead.
 
-A pre-specified 200-pair stratified subsample (25 per country, drawn by fixed
-seed from the 1,144, stratified by ODMI dimension), run live under the arm A
-configuration in the same dispatch window as arm B.
+An earlier draft of this pre-registration carried a third arm: a live adversarial
+control on a 200-pair subsample, to measure how much of any A-vs-B difference was
+the web having moved between exp36's window and this one. It was cut, and the
+reasoning is recorded here because the temptation to add it will recur.
 
-Arm C exists because arm A is frozen at the 2026-07-15..17 dispatch window and
-arm B runs roughly ten days later. Without arm C, any A-vs-B difference confounds
-stance with the web having moved and with run-to-run stochasticity. Arm C measures
-that combined nuisance directly: A-vs-C discordance on the same 200 pairs is
-drift plus noise with stance held constant, and it is the yardstick the A-vs-B
-discordance has to beat. It converts the largest limitation from an assumption
-into a measured quantity for about 9% extra spend, which is why it is registered
-rather than left optional.
+Two reasons. First, drift and run-to-run stochasticity add discordance
+**symmetrically**, to both off-diagonal cells. McNemar tests the *asymmetry* of
+discordance, so a symmetric nuisance costs power, not validity. It cannot
+manufacture a directional stance effect. The only version of drift that could
+bias the result is the web systematically improving or degrading over ten days by
+enough to move commit accuracy several points, which is not plausible for national
+open-data portals on that timescale. Second, the arm would have spent about 10,000
+calls and, more expensively, 200 further pairs of exposure on a frozen set where
+exposure is the scarce resource, to re-measure a configuration EXP-36 has already
+characterised.
+
+**The free substitute.** Arm B's 392 seeded pairs start from exp36's stored
+attempt-1 evidence, so retrieval is identical to arm A's on those pairs. The 752
+unseeded pairs search live. If drift were doing real work, the stance effect would
+differ between the seeded and unseeded subsets. That contrast is computed from
+data arm B already produces, costs nothing, and spends no extra held-out exposure.
+It is registered as a diagnostic below.
+
+It is a weaker instrument than a dedicated control arm: the two subsets differ in
+difficulty as well as in retrieval freshness, so a difference between them is not
+cleanly attributable to drift. That is stated as a limitation rather than
+papered over.
 
 ## What is held constant, and what varies
 
 The one intended variable is the Verifier's verdict prompt. Everything below is
-pinned identically across arms A, B and C.
+pinned identically across both arms.
 
 | Held constant | Value | Enforced by |
 |---|---|---|
@@ -148,9 +163,9 @@ pinned identically across arms A, B and C.
 | Honesty layer | D35, on | code |
 | Deny-list | D24, on | pre-retrieval, three layers (below) |
 | Cache regime | cold (`no_cache: true`) | matches EXP-36's own setting |
-| Adjudicator | absent in every arm | arm A by replay rule, arm B by construction, arm C by `pipeline_mode` |
+| Adjudicator | absent in both arms | arm A by replay rule, arm B by construction |
 
-| Varies | Arm A / C | Arm B |
+| Varies | Arm A | Arm B |
 |---|---|---|
 | Verifier verdict prompt | `verifier-disprove` V4 (`prompt_versions.id=23`) | `verifier-corroborate` V3 (new, see below) |
 | Burden of proof | pass unless refuted | pass only if corroborated |
@@ -232,7 +247,7 @@ name, and the seed predicate pins a single scalar label. A single-arm spec copie
 from the EXP-40 template would match zero seed rows and silently run everything
 live, because the seed miss path only prints (`run_coordinator.py:1298-1303`).
 
-EXP-42 is therefore specified as **eight arms, one per country**, each with
+EXP-42 is therefore dispatched as **eight per-country sub-batches**, each with
 `--seed-condition-label <CC>` matching its own `--countries <CC>`. Seed hit counts
 per country are logged and checked against the table above before analysis. A run
 whose seed count deviates from 392 is a failed dispatch, not a result.
@@ -323,9 +338,12 @@ with Holm correction across the pair:
 
 **Nuisance quantification**, reported before the primary is interpreted:
 
-- Arm A vs arm C on the 200 shared pairs: outcome discordance and label
-  discordance, with stance held constant. This is drift plus run-to-run noise.
-- The A-vs-B discordance is interpreted against that yardstick.
+- Stance effect computed separately on the 392 seeded pairs (retrieval identical
+  to arm A) and the 752 unseeded pairs (live retrieval). A materially different
+  effect across the two is the signal that drift is doing work. Confounded with
+  difficulty, so read as a diagnostic, not a clean drift estimate.
+- Discordance rate compared against EXP-41's measured run-to-run floor
+  (outcome unanimity 0.703, label agreement 0.922).
 
 **Equivalence.** If the primary returns a null, a TOST equivalence test is run
 against a pre-registered margin of **±0.05 commit accuracy**, chosen as the
@@ -406,10 +424,9 @@ calls are about 4.12 times reasoning calls.
 |---|---|---|---|---|
 | A (replay) | 1,144 | 0 | 0 | **0** |
 | B (live cooperative) | 1,144 | ~3,490 | ~13,960 | **~57,500** |
-| C (live adversarial control) | 200 | ~610 | ~2,440 | **~10,100** |
-| **total** | | | | **~68,000** |
+| **total** | | | | **~57,500** |
 
-Budget ceiling 80,000 calls, with the orchestrator budget pause as the hard guard.
+Budget ceiling 60,000 calls, with the orchestrator budget pause as the hard guard.
 
 There is no API billing (CLIProxyAPI on the Claude Max subscription). The real
 constraint is DIY concurrency: Serper and WAF limits, the roughly 20-process RAM
@@ -464,8 +481,8 @@ live in canonical.
    preamble in `agents/prompts/verifier.py`, bump `_CORROBORATE_VERSION` to 3,
    insert the `prompt_versions` row. Assert in tests that steps 1 to 3 remain
    byte-identical to disprove V4 and that the new sentence is present.
-2. **Spec** `evaluation/specs/exp42_stance_heldout.json`: eight arms, one per
-   country, each pinning `seed_experiment_id: "exp36_frozen_headline"` and
+2. **Spec** `evaluation/specs/exp42_stance_heldout.json`: eight per-country
+   sub-batches, each pinning `seed_experiment_id: "exp36_frozen_headline"` and
    `seed_condition_label: "<CC>"`, plus the full knob set from the held-constant
    table. Pin `max_retries`, `num_queries`, `max_results_per_query` and `strategy`
    explicitly rather than inheriting dispatch defaults, which the EXP-40 spec did
@@ -476,14 +493,12 @@ live in canonical.
    `EXP34` / `EXP34_COND` / `EXP40` constants repointed. The `researcher_only`
    attempt-1 query needs the same treatment. Unit-test the adapted replay against
    the known arm A yield of 526 commits before trusting it.
-5. **Arm C subsample.** Fixed-seed stratified draw of 200 pairs, 25 per country,
-   written to the spec as an explicit pair list so it is reproducible.
-6. **Seed-count preflight.** Assert 392 total seed hits, per the country table,
+5. **Seed-count preflight.** Assert 392 total seed hits, per the country table,
    and abort the dispatch if the count differs.
-7. **Dispatch runbook.** Resume-safe launcher plus supervisor, on the EXP-36
+6. **Dispatch runbook.** Resume-safe launcher plus supervisor, on the EXP-36
    pattern. Detached via nohup or setsid, with 30-minute polling; background
    notifications alone are not sufficient.
-8. **Runtime freeze.** Pin the dispatch to a frozen commit. A parallel edit under
+7. **Runtime freeze.** Pin the dispatch to a frozen commit. A parallel edit under
    `agents/` voided an EXP-41 replicate and forced a re-run.
 
 ## Rules compliance
@@ -494,7 +509,7 @@ live in canonical.
 - **R4** Balance-aware, three-outcome endpoints on a battery carrying a real base
   rate (370 negative golds).
 - **R8** Statistics fixed above, including the equivalence margin.
-- **R9** Cold cache on both live arms, matching EXP-36.
+- **R9** Cold cache on the live arm, matching EXP-36.
 - **R10** Deny-list applied pre-retrieval; committed-evidence audit post-hoc.
 - **R11** n fixed at 1,144 before dispatch. No peeking, no stopping early.
 - **R12** A negative result is a result. JSONL receipts per call.
@@ -502,8 +517,10 @@ live in canonical.
 ## Limitations, disclosed up front
 
 - Arm A is a decision-layer replay of a run from 2026-07-15..17, so it is frozen
-  in time relative to the live arms. Arm C measures that gap rather than assuming
-  it away, but it measures it on 200 pairs, not all 1,144.
+  in time relative to the live arm. No dedicated control measures that gap; the
+  seeded-vs-unseeded diagnostic is a partial substitute, confounded with
+  difficulty. The defence is that drift is symmetric and McNemar tests asymmetry,
+  so drift costs power rather than validity.
 - Seeding covers 392 of 1,144 pairs, and the unseeded remainder is the harder
   subset by construction.
 - The design cannot separate "corroborative stance" from "no arbitration" within
