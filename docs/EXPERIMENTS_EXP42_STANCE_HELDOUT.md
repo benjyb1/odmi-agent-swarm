@@ -35,6 +35,11 @@ adversarial (seek to refute, accept unless refuted) to corroborative (seek to
 support, accept only if supported) change system-level commit accuracy or the
 negative-gold false-positive rate, on the held-out eight?
 
+"Stance" here means the pair of things that make a stance coherent: the direction
+the Verifier searches, and the burden its verdict rule applies. Both move together
+in arm B. EXP-38 already isolated the verdict rule on its own, search-free, so the
+decomposition exists across the two experiments rather than inside this one.
+
 ## Battery
 
 The eight D47 held-out countries at the full 143 questions: BA, MK, ME, BG, FI,
@@ -144,6 +149,30 @@ difficulty as well as in retrieval freshness, so a difference between them is no
 cleanly attributable to drift. That is stated as a limitation rather than
 papered over.
 
+## This is a steel-man, and that framing is load-bearing
+
+The corroborative arm is built to do as well as it possibly can. Its prompt is
+repaired (V3), its retrieval is aligned to its verdict rule (confirmation probes),
+its parse path is verified. The adversarial comparator is frozen production,
+replayed off EXP-36 and not re-tuned.
+
+That asymmetry is deliberate, and the direction it runs matters:
+
+- **If the steel-manned corroborative arm still fails to beat adversarial**, the
+  section 2.5 claim is supported far more strongly than EXP-40 supported it,
+  because the alternative was given every advantage and still did not win. This is
+  the conservative direction and it is the reason the asymmetry is acceptable.
+- **If the corroborative arm wins**, the result is confounded with the tuning: we
+  cannot say whether corroboration is better or whether an optimised arm beat an
+  un-optimised one. That outcome is reportable as "a well-built corroborative
+  verifier is at least competitive with frozen production", and no more. It cannot
+  be written up as "corroboration beats adversarialism".
+
+Both readings are fixed here, before the data exists, so neither can be chosen
+after seeing the result. Anyone tempted to optimise the corroborative arm further
+mid-run should note that doing so only strengthens the first reading and further
+weakens the second.
+
 ## What is held constant, and what varies
 
 The one intended variable is the Verifier's verdict prompt. Everything below is
@@ -165,11 +194,11 @@ pinned identically across both arms.
 | Cache regime | cold (`no_cache: true`) | matches EXP-36's own setting |
 | Adjudicator | absent in both arms | arm A by replay rule, arm B by construction |
 
-| Varies | Arm A | Arm B |
+| Varies (jointly, as one construct: verifier stance) | Arm A | Arm B |
 |---|---|---|
 | Verifier verdict prompt | `verifier-disprove` V4 (`prompt_versions.id=23`) | `verifier-corroborate` V3 (new, see below) |
 | Burden of proof | pass unless refuted | pass only if corroborated |
-| Verifier search direction | counter-evidence | supporting evidence |
+| Verifier search direction | counter-evidence (`generate_adversarial_queries`) | supporting evidence (`generate_confirmation_probes`) |
 
 ## Known asymmetries, and what is done about each
 
@@ -205,17 +234,49 @@ sentence, and any EXP-40-to-EXP-42 comparison must say so. That cost is worth
 paying, because the alternative is a headline held-out result running a
 verifier that is missing a gate the comparator has.
 
-### 2. The query generator is shared. DISCLOSED, and it is the fair choice.
+### 2. The corroborative arm currently searches adversarially. FIXED before dispatch.
 
-`generate_adversarial_queries` (`agents/verifier.py:628-630`) produces the
-Verifier's independent search queries in both stances. It is not swapped for the
-corroborative arm. Only the verdict prompt differs.
+This is the most serious defect found, and an earlier draft of this document got
+it wrong by calling the shared generator "the tighter design". It is not. It is a
+handicap on the corroborative arm, and it contradicts what EXP-40's own
+pre-registration said the arm was doing.
 
-This is deliberate and it is the tighter design: it isolates the variable to the
-verdict rule rather than confounding stance with a different search generator. It
-does mean the corroborative arm searches with adversarially generated queries and
-then judges them under a corroborative burden. An examiner will ask about it, so
-the dissertation states it rather than waiting to be asked.
+`generate_adversarial_queries` (`agents/verifier.py:628-630`, prompt at
+`103-125`) produces the Verifier's independent search queries in **both** stances.
+`scripts/run_coordinator.py:1585-1593` swaps only `v_strategy`, leaving `v_search`
+untouched. That generator's prompt instructs:
+
+> "produce 2-3 short web search queries that are specifically designed to find
+> evidence AGAINST the Researcher's answer... binary: search for the opposite
+> label (yes -> no, no -> yes)."
+
+Meanwhile corroborate V2's step 4 instructs the verifier to "Search for a second,
+independent source that **supports** the Researcher's answer". So the corroborating
+verifier is told to seek support and then handed snippets selected to contradict.
+Its verdict rule requires positive corroboration; its evidence supply is optimised
+to contain none. EXP-40's prereg claimed "step 4 flips the search direction
+(support, not counter-evidence)", which the implementation never did.
+
+**Resolution.** Wire `generate_confirmation_probes` (`agents/verifier.py:208`,
+already written, currently reachable only from the offline harness at
+`evaluation/verifier_redesign.py`) into the cooperative path, so each stance
+retrieves in the direction its verdict rule requires. Adversarial keeps
+counter-search with a refutation burden; corroborative gets support-search with a
+corroboration burden. Both are then internally coherent.
+
+**This widens the treatment, and the pre-registration owns that.** EXP-42 now
+varies two coupled things: the verdict rule and the search direction. That is the
+correct definition of a verifier *stance*: a verifier that searches one way and
+judges the other is not a stance, it is a chimera, and measuring it answers no
+question anyone asked. The cost is that EXP-42 alone cannot separate verdict rule
+from search direction. It does not need to: **EXP-38 already isolated the verdict
+rule** on frozen candidates with no search at all (disprove J 0.41 vs corroborate
+J 0.16). EXP-38 gives the verdict rule in isolation, EXP-42 gives the whole stance
+in the pipeline, and together they decompose the effect. That is a better
+decomposition than either alone.
+
+Requires a production-readiness test on `generate_confirmation_probes`, which has
+never run outside the offline harness. Listed as a build item.
 
 ### 3. Seed coverage is 34%, and it is not random. DISCLOSED with a pre-specified subgroup.
 
@@ -314,6 +375,48 @@ the scrub.
 **Gate.** A committed-evidence audit runs post-hoc on arm B, as EXP-36's did. Any
 committed pair citing a deny-listed source is a failed run, not a finding.
 
+## One hypothesis tested and refuted before dispatch
+
+A corroborative verifier looks like it should be structurally unable to pass a
+correct *negative* answer: you cannot usually find a source positively
+establishing that a thing does not exist. With 370 negative golds in the battery,
+that would have crippled arm B on merit rather than on stance, and it would have
+been an implementation defect rather than the treatment.
+
+It was checked against the EXP-40 data and it is **false**:
+
+| conditional | corroborate | disprove |
+|---|---|---|
+| P(verifier pass \| researcher answered `no`) | 0.648 (59/91) | 0.693 (70/101) |
+| P(verifier pass \| researcher answered `yes`) | 0.647 (66/102) | 0.606 (63/104) |
+| P(pass) on *correct* negatives | 0.710 (44/62) | 0.766 (49/64) |
+| commit rate on negative golds | 27/78 | 28/78 |
+
+The corroborative verifier's pass rate on negative answers is identical to its
+rate on positive ones (0.648 vs 0.647, Fisher p = 1.00), and its commit rate on
+negative golds matches the adversarial arm's (Fisher p = 1.00). It passes correct
+negatives by citing real independent evidence, not by defaulting. Neither stance
+has any negative-specific commit route in code: `absence_corroborated` and the
+tristate commit rule from `docs/VERIFIER_REDESIGN.md` were **never implemented**
+(zero code hits, zero DB columns; that document's own header says so), and D44,
+the only negative-specific logic in the pipeline, is a restriction that lives in
+the Adjudicator path and therefore never fires in cooperative mode. The stances
+are symmetric here.
+
+**The real stance mechanism, pre-registered as the expected one.** The only
+significant verdict difference in the EXP-40 data is on `inconclusive` researcher
+answers: corroborate passes 0.147 of them against disprove's 0.514, Fisher
+p = 0.0013. That is the stance working as intended, since an abstention has
+nothing to corroborate, and it is the treatment rather than a defect. Its
+practical consequence is limited, because `_should_accept_verifier_pass` blocks a
+commit on an abstention regardless of verdict, so the effect runs through retry
+behaviour rather than through commits.
+
+Caveat: all of the above is the 156-pair dev battery, 62 correct-negative verifier
+rows. It is enough to refute a claimed *structural* block. It is not powered to
+exclude a 5 to 10 point effect, and the observed 5.6-point gap on correct negatives
+sits inside that unresolvable band. EXP-42 will resolve it at 370 negative golds.
+
 ## Endpoints
 
 Pre-specified now, balance-aware and three-outcome throughout (D38 R4, D47).
@@ -335,6 +438,17 @@ with Holm correction across the pair:
 - The 392-pair seeded subgroup, primary endpoints repeated.
 - Per-dimension strata (Policy / Portal / Quality / Impact).
 - RQ3 resource-stratum contrast, mirroring EXP-36's A-vs-B split.
+- **Architecture-level contrast: production trio (3 agents) vs cooperative (2).**
+  Not matched, and reported as such: the trio gets an arbitration stage the
+  cooperative design has no role for. It is the practically interesting comparison
+  because it asks what a cheaper two-agent architecture gives up against shipped
+  production, so it is reported with a cost normalisation rather than suppressed.
+  Verified cost, matched dev battery: cooperative 4.26 agent calls per pair against
+  trio's 6.30, **32% fewer**. Attempts per pair are near-identical (2.78 vs 2.81),
+  so the saving is the Adjudicator, not fewer retries. On the held-out set the
+  Adjudicator fires on 0.55 of pairs against 1.92 on dev, so the expected saving
+  there is smaller, nearer 15%; the run will measure it. Any claim that the
+  cooperative architecture is cheaper cites these numbers, not an estimate.
 
 **Nuisance quantification**, reported before the primary is interpreted:
 
@@ -391,6 +505,10 @@ Registered directionally, per R12.
 The corroborative arm commits at a similar or slightly higher rate than the
 adversarial arm, with a similar or slightly higher negative-gold false-positive
 rate, and the difference on both primary endpoints does not reach significance.
+The two repairs (V3 and confirmation probes) are expected to raise arm B's
+coverage relative to EXP-40's cooperative arm, since that arm was searching in the
+wrong direction for its own verdict rule; whether they move commit accuracy is
+the open question.
 This is EXP-40's observed direction carried forward, not its original prediction,
 which EXP-40 refuted.
 
@@ -477,28 +595,35 @@ live in canonical.
 
 0. **Guard decision and, if approved, the auditable override** described above.
    Nothing else on this list matters until that call is made.
-1. **`verifier-corroborate` V3.** Add the corroboration-mirror sentence to the
+1. **Wire `generate_confirmation_probes` into the cooperative path.** The
+   function exists (`agents/verifier.py:208`) but has only ever run in the offline
+   harness (`evaluation/verifier_redesign.py`), so it needs a production-readiness
+   pass: schema, failure handling, deny-list applied to its queries on the same
+   pre-retrieval path as the adversarial generator, and a smoke test on a handful
+   of dev pairs before it touches held-out. Without this the corroborative arm
+   searches adversarially and the experiment measures a chimera.
+2. **`verifier-corroborate` V3.** Add the corroboration-mirror sentence to the
    preamble in `agents/prompts/verifier.py`, bump `_CORROBORATE_VERSION` to 3,
    insert the `prompt_versions` row. Assert in tests that steps 1 to 3 remain
    byte-identical to disprove V4 and that the new sentence is present.
-2. **Spec** `evaluation/specs/exp42_stance_heldout.json`: eight per-country
+3. **Spec** `evaluation/specs/exp42_stance_heldout.json`: eight per-country
    sub-batches, each pinning `seed_experiment_id: "exp36_frozen_headline"` and
    `seed_condition_label: "<CC>"`, plus the full knob set from the held-constant
    table. Pin `max_retries`, `num_queries`, `max_results_per_query` and `strategy`
    explicitly rather than inheriting dispatch defaults, which the EXP-40 spec did
    not do.
-3. **Registry row** in `experiments` before any data (R1).
-4. **Replay adaptation.** `evaluation/exp40_analysis.py` needs its
+4. **Registry row** in `experiments` before any data (R1).
+5. **Replay adaptation.** `evaluation/exp40_analysis.py` needs its
    `condition_label = ?` filter widened to accept the eight country codes, and its
    `EXP34` / `EXP34_COND` / `EXP40` constants repointed. The `researcher_only`
    attempt-1 query needs the same treatment. Unit-test the adapted replay against
    the known arm A yield of 526 commits before trusting it.
-5. **Seed-count preflight.** Assert 392 total seed hits, per the country table,
+6. **Seed-count preflight.** Assert 392 total seed hits, per the country table,
    and abort the dispatch if the count differs.
-6. **Dispatch runbook.** Resume-safe launcher plus supervisor, on the EXP-36
+7. **Dispatch runbook.** Resume-safe launcher plus supervisor, on the EXP-36
    pattern. Detached via nohup or setsid, with 30-minute polling; background
    notifications alone are not sufficient.
-7. **Runtime freeze.** Pin the dispatch to a frozen commit. A parallel edit under
+8. **Runtime freeze.** Pin the dispatch to a frozen commit. A parallel edit under
    `agents/` voided an EXP-41 replicate and forced a re-run.
 
 ## Rules compliance
