@@ -1,0 +1,465 @@
+{
+  "run_id": "exp42_drift_control",
+  "headline": false,
+  "global_parallel": 3,
+  "budget_calls": 12000,
+  "_note": "EXP-42 arm C: live ADVERSARIAL no_adjudicator control on a fixed 200-pair subsample (25/country, proportional across ODMI dimension, random.Random(42), pairs pinned explicitly below for reproducibility). Runs in the same dispatch window as arm B. Purpose: arm A is a replay frozen at the exp36 window 2026-07-15..17 while arm B runs live ~10 days later, so A-vs-B discordance confounds stance with web drift and run-to-run stochasticity. Arm C holds stance constant and measures that nuisance directly; it is the yardstick the A-vs-B discordance must beat. No seed flags: this arm must reproduce a live adversarial trajectory, not inherit exp36's attempt 1.",
+  "experiments": [
+    {
+      "experiment_id": "exp42_drift_control",
+      "type": "accuracy",
+      "countries": [
+        "FI"
+      ],
+      "questions": [
+        "I19",
+        "I2",
+        "I20",
+        "I8",
+        "I8-c",
+        "I8-d",
+        "I9",
+        "P13",
+        "P18",
+        "P25",
+        "P28",
+        "P3",
+        "PT1",
+        "PT24",
+        "PT26",
+        "PT27",
+        "PT33",
+        "PT35",
+        "PT43",
+        "PT45",
+        "Q1",
+        "Q14",
+        "Q17",
+        "Q3",
+        "Q7"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-disprove"
+      },
+      "arms": [
+        {
+          "condition_label": "FI",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_drift_control",
+      "type": "accuracy",
+      "countries": [
+        "BE"
+      ],
+      "questions": [
+        "I10",
+        "I19",
+        "I21",
+        "I23",
+        "I8-c",
+        "I9-a",
+        "I9-b",
+        "P1",
+        "P10-a",
+        "P26-a",
+        "P4",
+        "P9",
+        "PT18",
+        "PT28",
+        "PT32",
+        "PT35",
+        "PT36",
+        "PT37",
+        "PT4",
+        "PT42",
+        "Q11",
+        "Q23",
+        "Q27",
+        "Q29",
+        "Q3"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-disprove"
+      },
+      "arms": [
+        {
+          "condition_label": "BE",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_drift_control",
+      "type": "accuracy",
+      "countries": [
+        "HR"
+      ],
+      "questions": [
+        "I11",
+        "I20",
+        "I24",
+        "I27",
+        "I28",
+        "I9",
+        "I9-a",
+        "P1",
+        "P16",
+        "P17",
+        "P24",
+        "P26-b",
+        "PT16",
+        "PT19",
+        "PT20",
+        "PT26",
+        "PT29",
+        "PT31",
+        "PT35",
+        "PT5",
+        "Q12",
+        "Q25",
+        "Q26",
+        "Q3",
+        "Q5"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-disprove"
+      },
+      "arms": [
+        {
+          "condition_label": "HR",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_drift_control",
+      "type": "accuracy",
+      "countries": [
+        "BG"
+      ],
+      "questions": [
+        "I10",
+        "I18",
+        "I20",
+        "I23",
+        "I24",
+        "I9-b",
+        "I9-c",
+        "P10-a",
+        "P11",
+        "P12",
+        "P4",
+        "P7",
+        "PT10",
+        "PT18",
+        "PT22",
+        "PT23",
+        "PT26",
+        "PT38",
+        "PT41",
+        "PT43",
+        "Q10",
+        "Q11",
+        "Q13",
+        "Q22",
+        "Q3"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-disprove"
+      },
+      "arms": [
+        {
+          "condition_label": "BG",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_drift_control",
+      "type": "accuracy",
+      "countries": [
+        "ME"
+      ],
+      "questions": [
+        "I17",
+        "I18",
+        "I2",
+        "I24",
+        "I31",
+        "I6",
+        "I8-d",
+        "P1",
+        "P10-a",
+        "P13",
+        "P16",
+        "P29",
+        "PT12",
+        "PT16",
+        "PT24",
+        "PT30",
+        "PT32",
+        "PT34",
+        "PT37",
+        "PT5",
+        "Q17",
+        "Q21",
+        "Q24",
+        "Q3",
+        "Q6"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-disprove"
+      },
+      "arms": [
+        {
+          "condition_label": "ME",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_drift_control",
+      "type": "accuracy",
+      "countries": [
+        "MK"
+      ],
+      "questions": [
+        "I17",
+        "I20",
+        "I21",
+        "I26",
+        "I27",
+        "I6",
+        "I9-c",
+        "P10-a",
+        "P20",
+        "P22",
+        "P26-a",
+        "P26-b",
+        "PT10",
+        "PT24",
+        "PT27",
+        "PT39",
+        "PT41",
+        "PT43",
+        "PT45",
+        "PT9",
+        "Q10",
+        "Q17",
+        "Q20",
+        "Q24",
+        "Q7"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-disprove"
+      },
+      "arms": [
+        {
+          "condition_label": "MK",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_drift_control",
+      "type": "accuracy",
+      "countries": [
+        "BA"
+      ],
+      "questions": [
+        "I10",
+        "I2",
+        "I26",
+        "I28",
+        "I4",
+        "I7",
+        "I8-b",
+        "P10-b",
+        "P16",
+        "P29",
+        "P5",
+        "P9",
+        "PT19",
+        "PT20",
+        "PT21",
+        "PT24",
+        "PT3",
+        "PT38",
+        "PT43",
+        "PT6",
+        "Q14",
+        "Q20",
+        "Q22",
+        "Q24",
+        "Q3"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-disprove"
+      },
+      "arms": [
+        {
+          "condition_label": "BA",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_drift_control",
+      "type": "accuracy",
+      "countries": [
+        "SE"
+      ],
+      "questions": [
+        "I12",
+        "I13",
+        "I20",
+        "I21",
+        "I25",
+        "I30",
+        "I31",
+        "P13",
+        "P19",
+        "P23",
+        "P26-b",
+        "P6",
+        "PT14",
+        "PT2",
+        "PT20",
+        "PT29",
+        "PT39",
+        "PT4",
+        "PT43",
+        "PT6",
+        "Q11",
+        "Q19",
+        "Q27",
+        "Q5",
+        "Q8"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-disprove"
+      },
+      "arms": [
+        {
+          "condition_label": "SE",
+          "knobs": {
+            "pipeline_mode": "no_adjudicator"
+          }
+        }
+      ]
+    }
+  ]
+}

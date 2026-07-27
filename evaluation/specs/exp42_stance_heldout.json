@@ -1,0 +1,281 @@
+{
+  "run_id": "exp42_stance_heldout",
+  "headline": false,
+  "global_parallel": 3,
+  "budget_calls": 60000,
+  "_note": "EXP-42 arm B: corroborative (cooperative) verifier over the eight D47 held-out countries at full 143. Prereg docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md. Comparator arm A is a zero-cost decision-layer replay off exp36_frozen_headline, not dispatched. Eight per-country arms are REQUIRED, not cosmetic: exp36 stored condition_label as the country code, and the attempt-1 seed predicate pins a single scalar label, so one combined arm would match zero seed rows and silently run everything live. Expected seed hits total 392 (per-country in _expected_seed_hits); a dispatch whose seed count differs is a failed dispatch, not a result. Requires verifier-corroborate V3 (V2 plus the corroboration mirror of the dropped staleness criterion) before dispatch. Order is stratum B first with SE last: dataportal.se SPARQL has hung dispatch in rdflib for ~90 min with no per-arm timeout, so it needs a stall watchdog. budget_calls 60000: 1144 pairs x 45 worst-case CALLS_PER_PAIR = 51,480, plus headroom.",
+  "experiments": [
+    {
+      "experiment_id": "exp42_stance_heldout",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "FI"
+      ],
+      "_expected_seed_hits": 82,
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-corroborate",
+        "seed_experiment_id": "exp36_frozen_headline",
+        "seed_condition_label": "FI"
+      },
+      "arms": [
+        {
+          "condition_label": "FI",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_stance_heldout",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "BE"
+      ],
+      "_expected_seed_hits": 54,
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-corroborate",
+        "seed_experiment_id": "exp36_frozen_headline",
+        "seed_condition_label": "BE"
+      },
+      "arms": [
+        {
+          "condition_label": "BE",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_stance_heldout",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "HR"
+      ],
+      "_expected_seed_hits": 48,
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-corroborate",
+        "seed_experiment_id": "exp36_frozen_headline",
+        "seed_condition_label": "HR"
+      },
+      "arms": [
+        {
+          "condition_label": "HR",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_stance_heldout",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "BG"
+      ],
+      "_expected_seed_hits": 27,
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-corroborate",
+        "seed_experiment_id": "exp36_frozen_headline",
+        "seed_condition_label": "BG"
+      },
+      "arms": [
+        {
+          "condition_label": "BG",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_stance_heldout",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "ME"
+      ],
+      "_expected_seed_hits": 51,
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-corroborate",
+        "seed_experiment_id": "exp36_frozen_headline",
+        "seed_condition_label": "ME"
+      },
+      "arms": [
+        {
+          "condition_label": "ME",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_stance_heldout",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "MK"
+      ],
+      "_expected_seed_hits": 40,
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-corroborate",
+        "seed_experiment_id": "exp36_frozen_headline",
+        "seed_condition_label": "MK"
+      },
+      "arms": [
+        {
+          "condition_label": "MK",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_stance_heldout",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "BA"
+      ],
+      "_expected_seed_hits": 20,
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-corroborate",
+        "seed_experiment_id": "exp36_frozen_headline",
+        "seed_condition_label": "BA"
+      },
+      "arms": [
+        {
+          "condition_label": "BA",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    },
+    {
+      "experiment_id": "exp42_stance_heldout",
+      "type": "accuracy",
+      "questions_from": "data/questions/all_questions.json",
+      "countries": [
+        "SE"
+      ],
+      "_expected_seed_hits": 70,
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true,
+        "strategy": "verifier-corroborate",
+        "seed_experiment_id": "exp36_frozen_headline",
+        "seed_condition_label": "SE"
+      },
+      "arms": [
+        {
+          "condition_label": "SE",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    }
+  ]
+}
