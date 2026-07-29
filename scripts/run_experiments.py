@@ -200,6 +200,21 @@ def preflight(spec: Dict[str, Any]) -> List[str]:
                 f"{eid}: held-out D47 eval countries present {bad}; these are "
                 f"frozen until the headline run and must never appear here"
             )
+        # `verifier-corroborate` is not a `--strategy` CLI choice. The
+        # coordinator derives it from `pipeline_mode == "cooperative"` and
+        # overwrites whatever was passed, so a spec that pins it looks correct,
+        # preflights clean, and then every subtrio dies on an argparse error
+        # after dispatch has started. Fail here instead.
+        knob_sources = [exp.get("baseline_knobs") or {}]
+        knob_sources += [a.get("knobs") or {} for a in exp.get("arms", [])]
+        if any(k.get("strategy") == "verifier-corroborate" for k in knob_sources):
+            errors.append(
+                f"{eid}: strategy 'verifier-corroborate' is not dispatchable on "
+                f"the command line; it is derived from "
+                f"pipeline_mode='cooperative'. Drop the strategy pin and set "
+                f"pipeline_mode instead"
+            )
+
         unknown = sorted(countries_in_exp - DEV - HELD_OUT)
         if unknown:
             errors.append(

@@ -1,0 +1,47 @@
+{
+  "run_id": "exp42_smoke_dev",
+  "headline": false,
+  "global_parallel": 3,
+  "budget_calls": 600,
+  "_note": "EXP-42 build item 1: production-readiness smoke for the new corroborative query generator, on DEV countries only. Spends no held-out exposure. Knobs are the EXP-42 arm B set verbatim except the seed pins, which are dropped because exp36 has no dev rows. Purpose is to confirm the cooperative path runs end to end on `generate_corroborative_queries`, that the queries come back support-seeking, that the deny-list still applies to them, and that verdicts parse. Not a result: 12 pairs answers no research question and is not analysed as one.",
+  "experiments": [
+    {
+      "experiment_id": "exp42_smoke_dev",
+      "type": "accuracy",
+      "questions": [
+        "P1",
+        "PT1",
+        "Q1",
+        "I1",
+        "P10",
+        "PT10"
+      ],
+      "countries": [
+        "NL",
+        "MT"
+      ],
+      "baseline_knobs": {
+        "provider": "diy",
+        "max_results_per_query": 5,
+        "num_queries": 3,
+        "max_retries": 3,
+        "verifier_search": "always",
+        "search_strategy": "wide_only",
+        "prompt_variant": "full",
+        "researcher_model": "claude-sonnet-4-6",
+        "verifier_model": "claude-sonnet-4-6",
+        "adjudicator_model": "claude-sonnet-4-6",
+        "picker_model": "claude-sonnet-4-6",
+        "no_cache": true
+      },
+      "arms": [
+        {
+          "condition_label": "smoke_cooperative",
+          "knobs": {
+            "pipeline_mode": "cooperative"
+          }
+        }
+      ]
+    }
+  ]
+}

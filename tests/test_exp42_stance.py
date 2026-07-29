@@ -211,7 +211,10 @@ def _heldout_spec():
                 "type": "accuracy",
                 "questions": ["P1", "P2"],
                 "countries": ["FI"],
-                "baseline_knobs": {"strategy": "verifier-corroborate"},
+                # No `strategy` pin: the coordinator derives
+                # `verifier-corroborate` from pipeline_mode, and pinning it on
+                # the command line is an argparse error. See the guard below.
+                "baseline_knobs": {"verifier_search": "always"},
                 "arms": [{"condition_label": "FI", "knobs": {"pipeline_mode": "cooperative"}}],
             }
         ],
@@ -248,6 +251,29 @@ def test_second_touch_will_not_smuggle_a_dev_country():
     spec["heldout_second_touch_justification"] = "supervisor sign-off"
     spec["experiments"][0]["countries"] = ["FI", "NL"]
     assert any("held-out" in e for e in preflight(spec))
+
+
+def test_cooperative_spec_may_not_pin_the_corroborate_strategy():
+    """`verifier-corroborate` is not a `--strategy` CLI choice: the coordinator
+    derives it from `pipeline_mode=cooperative` and overrides whatever was
+    passed. A spec that pins it dies at dispatch with an argparse error, after
+    the orchestrator has already reported preflight clean. Catch it at preflight.
+    """
+    spec = _heldout_spec()
+    spec["heldout_second_touch"] = True
+    spec["heldout_second_touch_justification"] = "supervisor sign-off"
+    spec["experiments"][0]["baseline_knobs"]["strategy"] = "verifier-corroborate"
+    errors = preflight(spec)
+    assert any("verifier-corroborate" in e and "pipeline_mode" in e for e in errors)
+
+
+def test_arm_level_corroborate_pin_is_caught_too():
+    """Arm knobs override baseline knobs, so both levels need the check."""
+    spec = _heldout_spec()
+    spec["heldout_second_touch"] = True
+    spec["heldout_second_touch_justification"] = "supervisor sign-off"
+    spec["experiments"][0]["arms"][0]["knobs"]["strategy"] = "verifier-corroborate"
+    assert any("verifier-corroborate" in e for e in preflight(spec))
 
 
 def test_second_touch_must_not_claim_headline():
