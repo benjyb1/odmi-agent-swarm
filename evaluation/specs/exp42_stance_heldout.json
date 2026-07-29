@@ -1,7 +1,7 @@
 {
   "run_id": "exp42_stance_heldout",
   "headline": false,
-  "global_parallel": 3,
+  "global_parallel": 6,
   "budget_calls": 60000,
   "_note": "EXP-42 arm B: corroborative (cooperative) verifier over the eight D47 held-out countries at full 143. Prereg docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md. Comparator arm A is a zero-cost decision-layer replay off exp36_frozen_headline, not dispatched. Eight per-country arms are REQUIRED, not cosmetic: exp36 stored condition_label as the country code, and the attempt-1 seed predicate pins a single scalar label, so one combined arm would match zero seed rows and silently run everything live. Expected seed hits total 392 (per-country in _expected_seed_hits); a dispatch whose seed count differs is a failed dispatch, not a result. Requires verifier-corroborate V3 (V2 plus the corroboration mirror of the dropped staleness criterion) before dispatch. Order is stratum B first with SE last: dataportal.se SPARQL has hung dispatch in rdflib for ~90 min with no per-arm timeout, so it needs a stall watchdog. budget_calls 60000: 1144 pairs x 45 worst-case CALLS_PER_PAIR = 51,480, plus headroom.",
   "experiments": [
@@ -269,5 +269,7 @@
         }
       ]
     }
-  ]
+  ],
+  "heldout_second_touch": true,
+  "heldout_second_touch_justification": "EXP-42 registered run, full 1,144-pair held-out battery, arm B (corroborative verifier). Authorised by Benjy on 2026-07-29 in session, after the 112-pair operational pilot (exp42_pilot_heldout) passed 8/8 checks. NO supervisor sign-off is recorded and none is claimed here; the pre-registration states the second touch is Benjy's call with his supervisor, and only Benjy's is on record. Characterisation with no adoption rule; production stays trio (D45). This is the second touch of the D47 frozen set and burns it for any later tuning. Disclosed here, in docs/SPEC.md, in docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md and owed in the dissertation limitations."
 }
