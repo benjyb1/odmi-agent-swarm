@@ -107,12 +107,20 @@ def orchestrator_pids() -> list[int]:
 
 
 def coordinators_running() -> int:
+    """Count live per-pair coordinators.
+
+    BSD pgrep has no -c (count) flag, unlike the procps one; passing it makes
+    pgrep print usage and exit non-zero, which silently read as zero here. That
+    matters: a zero count skips the grace period below, so the supervisor could
+    sweep while coordinators were still writing their final rows and
+    re-dispatch pairs that were about to finalise. Count the lines instead.
+    """
     try:
         out = subprocess.run(
-            ["pgrep", "-cf", "run_coordinator.py"],
+            ["pgrep", "-f", "run_coordinator.py"],
             capture_output=True, text=True, timeout=10,
-        ).stdout.strip()
-        return int(out or 0)
+        ).stdout
+        return len([ln for ln in out.split() if ln.strip().isdigit()])
     except Exception:
         return 0
 
