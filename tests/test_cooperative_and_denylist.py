@@ -56,9 +56,16 @@ def test_denylist_scrub_ignores_pass_with_no_source():
     assert _scrub_forbidden_counter_source(out) is None
 
 
-def test_corroborate_v2_is_fair_not_strawman():
+def test_corroborate_is_fair_not_strawman():
+    """The properties EXP-40 needed from the corroborative prompt.
+
+    Version bumped 2 -> 3 for EXP-42, which added the staleness mirror to the
+    preamble. The fairness properties below are unchanged by that and are
+    asserted here for both versions; the V3-specific checks live in
+    tests/test_exp42_stance.py.
+    """
     spec = vp.STRATEGIES["verifier-corroborate"]
-    assert spec.version == 2
+    assert spec.version >= 2, "V1 was the strawman and must never be live again"
     sys = spec.system
     # the anti-rubber-stamp guard is present
     assert "Adjacency is not corroboration" in sys

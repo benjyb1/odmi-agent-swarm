@@ -171,6 +171,87 @@ def generate_adversarial_queries(
 
 
 # ============================================================
+# Corroborative query generation (EXP-42).
+#
+# The mirror of the adversarial generator above: same shape-awareness,
+# opposite direction. Until EXP-42 the cooperative arm shared the
+# adversarial generator, so the corroborating verifier was handed
+# counter-evidence and asked to corroborate from it while its own step 4
+# told it to look for support. That measures neither stance. A verifier
+# that searches one way and judges the other measures nothing, so the
+# search direction and the verdict burden move together.
+#
+# EXP-38's search-free replay isolates the verdict rule on its own, so
+# the decomposition sits across the two experiments rather than inside
+# this one. See docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md.
+# ============================================================
+
+_CORROBORATIVE_QUERY_GEN_NAME = "phase2_verifier_corroborative_query_gen"
+_CORROBORATIVE_QUERY_GEN_VERSION = 1
+_CORROBORATIVE_QUERY_GEN_DESCRIPTION = (
+    "Generate 2-3 corroborative web search queries for a Verifier run. "
+    "Queries are framed to surface independent support for the "
+    "Researcher's answer, not counter-evidence. Shape-aware in the same "
+    "way as the adversarial generator: for ordered-band questions, "
+    "queries target a figure inside the claimed band; for categoricals, "
+    "the claimed category; for binary, the claimed label."
+)
+
+_CORROBORATIVE_QUERY_GEN_SYSTEM = """You are a search query generator for a corroborative verification step.
+
+Given an ODMI question, a country, and the Researcher's claimed answer,
+produce 2-3 short web search queries that are specifically designed to
+find independent evidence that SUPPORTS the Researcher's answer.
+
+Guidance:
+- Prefer 5-10 word queries.
+- Corroborative direction depends on the question's answer shape:
+  * binary: search for the label the Researcher gave. Where the answer is
+    'no', search for an authoritative statement that the thing is absent
+    or excluded, rather than for the thing itself.
+  * percentage_band / ordinal_magnitude / count_band: search for a
+    precise underlying figure that falls inside the Researcher's band.
+  * categorical: search for evidence naming the category the Researcher
+    chose.
+  If the Researcher answered 'inconclusive', search for a source
+  definitive enough to settle the question either way.
+- Include at least one query in the country's national language.
+- Do not repeat the Researcher's own queries verbatim; approach the
+  question from a different angle, so any support you find is
+  independent of the source the Researcher already cited.
+- Target official government, legislative, and regulatory sources.
+
+Return JSON matching the schema."""
+
+
+def generate_corroborative_queries(
+    inp: VerifierInput,
+    *,
+    subtrio_id: str | None = None,
+    model: str | None = None,
+) -> tuple[List[str], LLMUsage]:
+    """Generate support-seeking queries for the corroborative stance."""
+    prompt_id = db_helpers.ensure_prompt_version(
+        _CORROBORATIVE_QUERY_GEN_NAME, _CORROBORATIVE_QUERY_GEN_VERSION,
+        _CORROBORATIVE_QUERY_GEN_SYSTEM, _CORROBORATIVE_QUERY_GEN_DESCRIPTION,
+    )
+    parsed, usage = call_for_structured(
+        system=_CORROBORATIVE_QUERY_GEN_SYSTEM,
+        user_message=_build_query_gen_message(inp),
+        output_schema=_Queries,
+        model=model,
+        max_tokens=200,
+        condition_label="verifier_corroborative_query_gen",
+        prompt_version_id=prompt_id,
+        usage_context=(
+            f"verifier_corroborative_query_gen:{inp.question_id}:{inp.country_code}"
+        ),
+        subtrio_id=subtrio_id,
+    )
+    return parsed.queries, usage
+
+
+# ============================================================
 # Confirmation-probe query generation (EXP-11 P2, query-gen v3).
 # For an absence claim, generate queries that hunt for the POSITIVE
 # thing the answer says is missing, so the verifier can try to refute
@@ -624,10 +705,18 @@ def run_verifier(
         search_results = []
         independent_snippets = []
     else:
-        # ----- Stage 2: adversarial query generation -----
-        on_step("query_gen_start", {})
+        # ----- Stage 2: query generation, in the direction of the stance -----
+        # EXP-42: the corroborative stance searches for support. Before this
+        # the cooperative arm shared the adversarial generator, so it looked
+        # for counter-evidence while its verdict step asked for corroboration.
+        seek_support = strategy == "verifier-corroborate"
+        gen = (
+            generate_corroborative_queries if seek_support
+            else generate_adversarial_queries
+        )
+        on_step("query_gen_start", {"direction": "support" if seek_support else "counter"})
         try:
-            queries, query_usage = generate_adversarial_queries(
+            queries, query_usage = gen(
                 inp, subtrio_id=subtrio_id, model=model,
             )
         except StructuredOutputError as exc:
