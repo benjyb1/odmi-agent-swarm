@@ -152,8 +152,8 @@ papered over.
 ## This is a steel-man, and that framing is load-bearing
 
 The corroborative arm is built to do as well as it possibly can. Its prompt is
-repaired (V3), its retrieval is aligned to its verdict rule (confirmation probes),
-its parse path is verified. The adversarial comparator is frozen production,
+repaired (V3), its retrieval is aligned to its verdict rule (corroborative query
+generation), its parse path is verified. The adversarial comparator is frozen production,
 replayed off EXP-36 and not re-tuned.
 
 That asymmetry is deliberate, and the direction it runs matters:
@@ -198,7 +198,7 @@ pinned identically across both arms.
 |---|---|---|
 | Verifier verdict prompt | `verifier-disprove` V4 (`prompt_versions.id=23`) | `verifier-corroborate` V3 (new, see below) |
 | Burden of proof | pass unless refuted | pass only if corroborated |
-| Verifier search direction | counter-evidence (`generate_adversarial_queries`) | supporting evidence (`generate_confirmation_probes`) |
+| Verifier search direction | counter-evidence (`generate_adversarial_queries`) | supporting evidence (`generate_corroborative_queries`) |
 
 ## Known asymmetries, and what is done about each
 
@@ -257,12 +257,32 @@ Its verdict rule requires positive corroboration; its evidence supply is optimis
 to contain none. EXP-40's prereg claimed "step 4 flips the search direction
 (support, not counter-evidence)", which the implementation never did.
 
-**Resolution.** Wire `generate_confirmation_probes` (`agents/verifier.py:208`,
-already written, currently reachable only from the offline harness at
-`evaluation/verifier_redesign.py`) into the cooperative path, so each stance
-retrieves in the direction its verdict rule requires. Adversarial keeps
+**Resolution.** Give the corroborative stance its own query generator, so each
+stance retrieves in the direction its verdict rule requires. Adversarial keeps
 counter-search with a refutation burden; corroborative gets support-search with a
 corroboration burden. Both are then internally coherent.
+
+**Corrected 2026-07-29.** This section originally specified wiring
+`generate_confirmation_probes` (`agents/verifier.py`, reachable only from the
+offline harness at `evaluation/verifier_redesign.py`) into the cooperative path.
+That was wrong on inspection. The probe generator is absence-specific: its system
+prompt opens "The Researcher has answered that some feature, API, dataset, or
+policy instrument does NOT exist for this country", and it asks for queries that
+would find that thing if it existed. On a positive answer the prompt does not
+apply. On a negative answer it hunts for the positive thing, which is refutation,
+the opposite of what arm B needs. Wiring it in would have left arm B searching
+adversarially on every positive claim and refutationally on every negative one,
+which is the same chimera under a different name.
+
+Built instead as `generate_corroborative_queries`, a direction mirror of
+`generate_adversarial_queries` carrying the same shape-awareness: for binary, the
+claimed label rather than the opposite one, and for a claimed absence an
+authoritative statement of exclusion rather than the thing itself; for ordered
+bands, a figure inside the claimed band rather than one step off; for
+categoricals, the claimed category. Same 2-3 query budget, same national-language
+requirement, same official-source targeting, same `_build_query_gen_message`
+input. The arms therefore still differ by stance alone, and the mirror is a
+smaller change than adapting an absence-only generator would have been.
 
 **This widens the treatment, and the pre-registration owns that.** EXP-42 now
 varies two coupled things: the verdict rule and the search direction. That is the
@@ -275,8 +295,10 @@ J 0.16). EXP-38 gives the verdict rule in isolation, EXP-42 gives the whole stan
 in the pipeline, and together they decompose the effect. That is a better
 decomposition than either alone.
 
-Requires a production-readiness test on `generate_confirmation_probes`, which has
-never run outside the offline harness. Listed as a build item.
+Built and tested 2026-07-29 (`83d193a`). `tests/test_exp42_stance.py` pins that
+`verifier-corroborate` calls the corroborative generator and never the
+adversarial one, that `verifier-disprove` is untouched, and that the EXP-14
+`never` policy still skips both.
 
 ### 3. Seed coverage is 34%, and it is not random. DISCLOSED with a pre-specified subgroup.
 
@@ -593,34 +615,45 @@ live in canonical.
 
 ## Build required before dispatch
 
-0. **Guard decision and, if approved, the auditable override** described above.
-   Nothing else on this list matters until that call is made.
-1. **Wire `generate_confirmation_probes` into the cooperative path.** The
-   function exists (`agents/verifier.py:208`) but has only ever run in the offline
-   harness (`evaluation/verifier_redesign.py`), so it needs a production-readiness
-   pass: schema, failure handling, deny-list applied to its queries on the same
-   pre-retrieval path as the adversarial generator, and a smoke test on a handful
-   of dev pairs before it touches held-out. Without this the corroborative arm
-   searches adversarially and the experiment measures a chimera.
-2. **`verifier-corroborate` V3.** Add the corroboration-mirror sentence to the
-   preamble in `agents/prompts/verifier.py`, bump `_CORROBORATE_VERSION` to 3,
-   insert the `prompt_versions` row. Assert in tests that steps 1 to 3 remain
-   byte-identical to disprove V4 and that the new sentence is present.
-3. **Spec** `evaluation/specs/exp42_stance_heldout.json`: eight per-country
+Status 2026-07-29: items 0 to 4 are **done** (`83d193a`). Items 5 to 7 are
+**outstanding** and are analysis and operations work, not gates on correctness of
+the arms. Item 0's *decision* is still owed; the mechanism it needs now exists.
+
+0. **DONE (mechanism), OWED (decision).** The auditable override is built:
+   `heldout_second_touch` plus a non-empty
+   `heldout_second_touch_justification`, with every country held-out and no
+   `headline` claim, is the only way past the D47 guard, and the justification is
+   written to the run manifest and the event log. **The spec deliberately does
+   not carry the flag**, so dispatch stays blocked until Benjy and his supervisor
+   make the call and the sign-off is recorded in the justification text.
+1. **DONE. Corroborative search direction.** Built as
+   `generate_corroborative_queries` rather than by wiring
+   `generate_confirmation_probes`, for the reason given in defect 2 above: the
+   probe generator is absence-specific and would have searched refutationally on
+   negative claims. Deny-list coverage is unchanged, since both generators feed
+   the same `search_many` path and the scrub is applied there rather than per
+   generator. A dev-pair smoke test before the held-out dispatch is still worth
+   running and is folded into item 7.
+2. **DONE. `verifier-corroborate` V3.** Mirror sentence added to the preamble,
+   `_CORROBORATE_VERSION` bumped to 3, registry description updated. Tests assert
+   the new sentence is present, that disprove's rejection wording was not
+   imported, and that steps 1 to 3 remain byte-identical to disprove V4.
+3. **DONE. Spec** `evaluation/specs/exp42_stance_heldout.json`: eight per-country
    sub-batches, each pinning `seed_experiment_id: "exp36_frozen_headline"` and
    `seed_condition_label: "<CC>"`, plus the full knob set from the held-constant
    table. Pin `max_retries`, `num_queries`, `max_results_per_query` and `strategy`
    explicitly rather than inheriting dispatch defaults, which the EXP-40 spec did
    not do.
-4. **Registry row** in `experiments` before any data (R1).
-5. **Replay adaptation.** `evaluation/exp40_analysis.py` needs its
+4. **DONE. Registry row** in `experiments` before any data (R1). Present in the
+   canonical DB since 2026-07-27, zero data rows against it as of 2026-07-29.
+5. **OUTSTANDING. Replay adaptation.** `evaluation/exp40_analysis.py` needs its
    `condition_label = ?` filter widened to accept the eight country codes, and its
    `EXP34` / `EXP34_COND` / `EXP40` constants repointed. The `researcher_only`
    attempt-1 query needs the same treatment. Unit-test the adapted replay against
    the known arm A yield of 526 commits before trusting it.
-6. **Seed-count preflight.** Assert 392 total seed hits, per the country table,
+6. **OUTSTANDING. Seed-count preflight.** Assert 392 total seed hits, per the country table,
    and abort the dispatch if the count differs.
-7. **Dispatch runbook.** Resume-safe launcher plus supervisor, on the EXP-36
+7. **OUTSTANDING. Dispatch runbook.** Resume-safe launcher plus supervisor, on the EXP-36
    pattern. Detached via nohup or setsid, with 30-minute polling; background
    notifications alone are not sufficient.
 8. **Runtime freeze.** Pin the dispatch to a frozen commit. A parallel edit under
@@ -668,3 +701,4 @@ live in canonical.
 | Date | Entry |
 |---|---|
 | 2026-07-27 | Pre-registration written. No data collected. Awaiting Benjy's approval and a supervisor call on the second held-out touch. |
+| 2026-07-29 | **Build complete, dispatch still blocked.** The three defects this prereg identified were described as fixed on 2026-07-27; an audit found none of the wiring in the code. All three are now built and tested (`83d193a`, `tests/test_exp42_stance.py`, 13 tests). Still no data. **(1) Search direction.** `generate_adversarial_queries` was called unconditionally in `run_verifier`, so the cooperative arm searched for counter-evidence while corroborate step 4 asked for support. `verifier-corroborate` now calls the new `generate_corroborative_queries`. **Deviation from the prereg**, which named `generate_confirmation_probes`: that generator is absence-specific ("the Researcher has answered that some feature does NOT exist"), so it does not apply to a positive claim, and for an absence claim it hunts the positive thing, which is refutation rather than corroboration. Wiring it in would have made arm B search adversarially on every positive answer and refutationally on every negative one. The replacement is a direction mirror of the adversarial generator, same shape-awareness, so the arms still differ by stance alone. **(2) Corroborate V3.** V2's preamble is missing disprove V4's staleness criterion; V3 adds the corroborative mirror, "vague, paraphrased, or out-of-date evidence does not constitute corroboration". Steps 1-3 remain byte-identical to disprove V4, now pinned by test rather than by inspection. **(3) The D47 door.** `heldout_second_touch` did not exist; the only exemption was `headline: true`, which EXP-42 must not claim. A second touch now requires the flag, a non-empty justification, every country held-out, and no headline claim, and the justification is written to the run manifest and the event log so the disclosure survives with the rows. **The spec deliberately does not carry the flag.** Dry-run against the canonical DB with the flag added by hand passes clean at 8 arms / 1,144 pairs / `--no-cache` on every arm / SE last. Adding the flag plus a justification naming the sign-off is the only remaining step, and it is Benjy's and his supervisor's to take. |

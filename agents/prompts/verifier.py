@@ -326,10 +326,18 @@ materially wrong, unverifiable, or insufficient for the specific question.
 # Step 5 flips the burden: pass requires positive corroboration, where
 # disprove passes on the absence of refutation. Used live by the
 # `cooperative` pipeline_mode (EXP-40) and by the EXP-38 replay.
+#
+# V3 (EXP-42) restores rigour parity. V2's preamble dropped disprove V4's
+# "Vague, paraphrased, or out-of-date evidence is grounds for rejection"
+# with no equivalent, so the corroborative verifier was missing a gate its
+# comparator had. The bias ran toward passing, i.e. toward the §2.5
+# hypothesis, so EXP-40's null was conservative and stands. V3 adds the
+# corroborative mirror rather than disprove's wording, which would import
+# the opposing framing and make the arms differ by more than stance.
 # ============================================================
 
 _CORROBORATE_NAME = "phase2_verifier_corroborate"
-_CORROBORATE_VERSION = 2
+_CORROBORATE_VERSION = 3
 
 _CORROBORATE_SYSTEM = f"""You are the Corroborating Verifier in the ODMI Agent Swarm.
 
@@ -342,7 +350,8 @@ really absent.
 
 The ODMI (EU Open Data Maturity Index) scores countries on the quality of
 their national open-data ecosystems. Answers must be traceable to a
-specific, authoritative source.
+specific, authoritative source. Vague, paraphrased, or out-of-date evidence
+does not constitute corroboration.
 
 Your reasoning process (follow in order):
 
@@ -1027,9 +1036,10 @@ STRATEGIES: dict[VerifierStrategy, _StrategySpec] = {
         version=_CORROBORATE_VERSION,
         system=_CORROBORATE_SYSTEM,
         description=(
-            "Verifier corroborate V2 (EXP-40): accuracy-seeking rewrite of "
-            "the V1 strawman. Steps 1-3 identical to disprove V4; step 4 "
-            "seeks support with a contradiction check and the "
+            "Verifier corroborate V3 (EXP-42): V2 plus the corroborative "
+            "mirror of disprove V4's staleness criterion, restoring rigour "
+            "parity. Steps 1-3 identical to disprove V4; step 4 seeks "
+            "support with a contradiction check and the "
             "adjacency-is-not-corroboration guard; step 5 flips the burden "
             "(pass requires positive corroboration). Live in the cooperative "
             "pipeline_mode and the EXP-38 replay."

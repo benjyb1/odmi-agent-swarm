@@ -141,6 +141,30 @@ def preflight(spec: Dict[str, Any]) -> List[str]:
     except Exception as exc:  # noqa: BLE001
         errors.append(f"deny-list module not importable ({exc}); D24 unverified")
 
+    # D47 second touch (EXP-42). The frozen set had one door, `headline: true`,
+    # which EXP-36 has already used and which a later run must not claim: the
+    # headline is the receipt for the reported result, so a second flag would
+    # corrupt it. A characterisation re-measurement therefore needs its own
+    # door, and it is a door rather than a removed check: the flag alone is not
+    # enough, a justification is logged with it so the second touch is visible
+    # in the run record and in the dissertation's limitations.
+    second_touch = spec.get("heldout_second_touch") is True
+    justification = (spec.get("heldout_second_touch_justification") or "").strip()
+    if second_touch and not justification:
+        errors.append(
+            "heldout_second_touch is set without "
+            "'heldout_second_touch_justification'; a second touch of the D47 "
+            "frozen set is only admissible with a logged reason naming the "
+            "sign-off, so it can be disclosed"
+        )
+    if second_touch and spec.get("headline") is True:
+        errors.append(
+            "heldout_second_touch and headline are both set; EXP-36 is the "
+            "headline and a second claim on it corrupts the receipts. A "
+            "second touch is characterisation, never the headline"
+        )
+    second_touch_ok = second_touch and bool(justification) and spec.get("headline") is not True
+
     for exp in spec["experiments"]:
         eid = exp.get("experiment_id")
         if not eid:
@@ -159,15 +183,19 @@ def preflight(spec: Dict[str, Any]) -> List[str]:
             errors.append(str(exc))
             continue
 
-        # D47 hold-out: no eval country may appear in a development run. The one
-        # sanctioned exception is the frozen headline run (EXP-21): it requires
-        # spec-level `headline: true` AND that every country in the experiment is
-        # held-out. A development run can never lift the guard by accident, since
-        # any dev country in the mix breaks the subset condition.
+        # D47 hold-out: no eval country may appear in a development run. Two
+        # sanctioned exceptions, both requiring that EVERY country in the
+        # experiment is held-out: the frozen headline run (EXP-21, later
+        # EXP-36) via `headline: true`, and a disclosed second touch via
+        # `heldout_second_touch` plus its justification (EXP-42). A development
+        # run can never lift the guard by accident, since any dev country in
+        # the mix breaks the subset condition and shuts both doors.
         countries_in_exp = {p.split(":", 1)[1] for p in pairs}
-        headline_ok = spec.get("headline") is True and countries_in_exp <= HELD_OUT
+        all_held_out = countries_in_exp <= HELD_OUT
+        headline_ok = spec.get("headline") is True and all_held_out
+        second_touch_arm_ok = second_touch_ok and all_held_out
         bad = sorted(countries_in_exp & HELD_OUT)
-        if bad and not headline_ok:
+        if bad and not (headline_ok or second_touch_arm_ok):
             errors.append(
                 f"{eid}: held-out D47 eval countries present {bad}; these are "
                 f"frozen until the headline run and must never appear here"
@@ -443,7 +471,7 @@ def run(spec: Dict[str, Any], dry_run: bool) -> int:
         for arm in exp["arms"]:
             queue.append((exp, arm, pairs))
 
-    (run_dir / "manifest.json").write_text(json.dumps({
+    manifest = {
         "run_id": spec["run_id"], "started": started,
         "global_parallel": spec["global_parallel"],
         "budget_calls": spec["budget_calls"],
@@ -452,12 +480,24 @@ def run(spec: Dict[str, Any], dry_run: bool) -> int:
              "condition_label": a["condition_label"], "n_pairs": len(p)}
             for e, a, p in queue
         ],
-    }, indent=2))
+    }
+    # A second touch of the D47 frozen set is recorded in the run's own
+    # receipts, not just in the spec, so the disclosure survives alongside the
+    # rows it produced. Preflight has already refused a flag with no reason.
+    if spec.get("heldout_second_touch") is True:
+        manifest["heldout_second_touch"] = True
+        manifest["heldout_second_touch_justification"] = (
+            spec.get("heldout_second_touch_justification")
+        )
+    (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2))
 
     total_pairs = sum(len(p) for _, _, p in queue)
     log("run_start", run_id=spec["run_id"], arms=len(queue),
         total_pairs=total_pairs, budget_calls=spec["budget_calls"],
         global_parallel=spec["global_parallel"])
+    if spec.get("heldout_second_touch") is True:
+        log("heldout_second_touch",
+            justification=spec.get("heldout_second_touch_justification"))
 
     if dry_run:
         for exp, arm, pairs in queue:
