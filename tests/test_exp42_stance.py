@@ -288,7 +288,8 @@ def test_no_warm_catalogue_knob_reaches_the_dispatch_command():
     """
     from scripts.run_experiments import build_command
 
-    exp = {"experiment_id": "e", "baseline_knobs": {"provider": "diy"}}
+    exp = {"experiment_id": "e", "type": "accuracy",
+           "baseline_knobs": {"provider": "diy"}}
     arm = {"condition_label": "SE", "knobs": {"no_warm_catalogue": True}}
     cmd = build_command(exp, arm, ["Q2:SE"], 6)
     assert "--no-warm-catalogue" in cmd
