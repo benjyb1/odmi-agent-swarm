@@ -168,9 +168,50 @@ def main() -> int:
             f"  (+{len(missing_in_started) - 18} more)"
         print(f"    {shown}{more}")
 
+    # ---------- duplicates ----------
+    # A resume can re-dispatch a pair it should have skipped. `finalised_pairs`
+    # in the orchestrator identifies done pairs by joining phase2_final to
+    # phase2_researcher_runs for the condition_label, so a final with no
+    # researcher row is invisible to it and gets run twice. Harmless to the
+    # answer when both rows agree, but it inflates counts past 143 and must be
+    # deduped on (question_id, country_code) before any analysis, exactly as
+    # EXP-36 does.
+    print("\n--- duplicate finals ---")
+    dupes = c.execute(
+        "SELECT question_id, country_code, COUNT(*) n FROM phase2_final "
+        "WHERE experiment_id=? GROUP BY 1,2 HAVING n>1 ORDER BY n DESC", (eid,)
+    ).fetchall()
+    at_risk = c.execute(
+        "SELECT COUNT(*) FROM phase2_final f WHERE f.experiment_id=? "
+        "AND NOT EXISTS (SELECT 1 FROM phase2_researcher_runs r "
+        "WHERE r.pair_run_id=f.pair_run_id AND r.condition_label=f.country_code)",
+        (eid,)
+    ).fetchone()[0]
+    print(f"  finals invisible to the resume skip-set : {at_risk}"
+          f"   (each can be re-run once per sweep)")
+    if dupes:
+        disagree = 0
+        for q, cc, _n in dupes:
+            outcomes = {
+                (st, (ans or "").strip().lower()) for st, ans in c.execute(
+                    "SELECT terminal_status, final_answer FROM phase2_final "
+                    "WHERE experiment_id=? AND question_id=? AND country_code=?",
+                    (eid, q, cc))
+            }
+            if len(outcomes) > 1:
+                disagree += 1
+        print(f"  duplicated pairs: {len(dupes)}  "
+              f"({', '.join(f'{q}:{cc}' for q, cc, _ in dupes[:8])})")
+        print(f"  of those, DISAGREEING on the outcome: {disagree}"
+              f"{'   <-- must be resolved by hand' if disagree else '  (all agree)'}")
+    else:
+        print("  duplicated pairs: 0")
+
     # ---------- verdict ----------
     print("\n" + "=" * 70)
     problems = []
+    if dupes:
+        problems.append(f"{len(dupes)} duplicated pair(s); dedup before analysis")
     if bad_status:
         problems.append(f"{bad_status} pair(s) with a non-result terminal status")
     if missing_in_started:

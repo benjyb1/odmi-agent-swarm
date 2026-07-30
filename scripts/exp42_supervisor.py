@@ -51,7 +51,21 @@ STOP = RUN_DIR / "SUPERVISOR_STOP"
 EXPERIMENT_ID = "exp42_stance_heldout"
 TARGET_PAIRS = 1144
 HEARTBEAT_S = 60
-MAX_SWEEPS = 6
+MAX_SWEEPS = 24
+# A sweep that recovers nothing is not proof the remaining pairs are hopeless.
+# The 5-hour Claude window can be exhausted (it stalled EXP-36 twice), a WAF can
+# be blocking a host, a portal can be down. All three clear on their own. So a
+# barren sweep triggers a cooldown and another attempt, and only a run of them
+# is treated as "these pairs cannot be recovered".
+# Observed 2026-07-30 02:12: the 5-hour Claude window exhausted, dispatch
+# returned 42 on a RATE LIMIT, and the orchestrator exited on
+# PAUSE_dispatch_error. Two orchestrators died that way inside three minutes.
+# The cooldown recovered it. A window can take well over an hour to roll, so
+# give it 8 attempts (~3.5h of patience) rather than 3: the cost of waiting too
+# long is a late finish, the cost of giving up too early is an abandoned battery
+# at 90%.
+ZERO_RECOVERY_LIMIT = 8
+COOLDOWN_S = 1500          # 25 min, enough for a rate-limit window to roll
 # After the orchestrator exits, give in-flight coordinator children a moment to
 # write their final rows before counting, or a sweep looks emptier than it is.
 SETTLE_S = 45
@@ -157,8 +171,10 @@ def main() -> int:
 
     sweeps = 0
     last_sweep_count = -1
+    zero_recoveries = 0
     log(f"SUPERVISOR START pid={os.getpid()} target={TARGET_PAIRS} "
-        f"max_sweeps={MAX_SWEEPS}")
+        f"max_sweeps={MAX_SWEEPS} zero_recovery_limit={ZERO_RECOVERY_LIMIT} "
+        f"cooldown={COOLDOWN_S}s")
 
     while not stopping:
         if STOP.exists():
@@ -209,10 +225,20 @@ def main() -> int:
                 break
 
             if sweeps > 0 and n == last_sweep_count:
-                log(f"STOP sweep {sweeps} recovered 0 pairs at "
-                    f"finalised={n}/{TARGET_PAIRS}; remaining failures are not "
-                    f"transient. Human review needed.")
-                break
+                zero_recoveries += 1
+                if zero_recoveries >= ZERO_RECOVERY_LIMIT:
+                    log(f"STOP {zero_recoveries} consecutive sweeps recovered 0 "
+                        f"pairs at finalised={n}/{TARGET_PAIRS}; the remaining "
+                        f"{TARGET_PAIRS - n} are hard failures, not transient. "
+                        f"Human review needed.")
+                    break
+                log(f"COOLDOWN sweep {sweeps} recovered 0 pairs "
+                    f"({zero_recoveries}/{ZERO_RECOVERY_LIMIT} barren); waiting "
+                    f"{COOLDOWN_S}s in case a rate-limit window, WAF block or "
+                    f"portal outage is the cause, then trying again")
+                time.sleep(COOLDOWN_S)
+            else:
+                zero_recoveries = 0
 
             last_sweep_count = n
             sweeps += 1
