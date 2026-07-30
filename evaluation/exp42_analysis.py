@@ -74,6 +74,35 @@ def canonical(c, eid: str) -> dict:
     return {(q, cc): (st, ans) for q, cc, st, ans, _ in rows}
 
 
+def deterministic_pairs(c) -> set:
+    """Pairs decided by the D30 catalogue recompute rather than by the Verifier.
+
+    On these the Verifier never runs an LLM call: it recomputes the statistic
+    from the cached snapshot and passes iff the band matches. Stance cannot
+    reach them, so both arms return the same thing by construction (verified:
+    32 of 33 identical, the one difference being a snapshot taken at a
+    different time, not a stance effect).
+
+    They are therefore excluded from the stance contrast. Keeping them would
+    add guaranteed-tied pairs that shrink the observed difference and make
+    equivalence easier to declare than the evidence warrants, which matters
+    most for the TOST.
+
+    Both arms are scanned. The label differs by run epoch: the EXP-36 rows
+    carry `unknown` where the current code writes `deterministic` (the D66
+    logging inconsistency), so matching on either alone would miss half.
+    """
+    out = set()
+    for eid in (ARM_B, ARM_A):
+        for q, cc in c.execute(
+            "SELECT DISTINCT question_id, country_code FROM phase2_verifier_runs "
+            "WHERE experiment_id=? AND model_version IN ('deterministic','unknown')",
+            (eid,),
+        ):
+            out.add((q, cc))
+    return out
+
+
 def gold(c) -> dict:
     return {
         (q, cc): norm(r) for q, cc, r in c.execute(
@@ -105,8 +134,14 @@ def main() -> int:
         print(f"*** INCOMPLETE: {len(B)}/1144 pairs. Figures below are interim. ***")
 
     # restrict both arms to the pairs arm B has actually produced
-    pairs = sorted(set(B) & set(A_all))
-    print(f"paired against arm A on {len(pairs)} pairs")
+    all_pairs = sorted(set(B) & set(A_all))
+    det = deterministic_pairs(c)
+    pairs = [k for k in all_pairs if k not in det]
+    dropped = len(all_pairs) - len(pairs)
+    print(f"paired against arm A on {len(all_pairs)} pairs")
+    print(f"excluding {dropped} decided by the D30 catalogue recompute "
+          f"(stance cannot reach them)")
+    print(f"stance-sensitive pairs analysed: {len(pairs)}")
 
     def committed(row, commit_status):
         st, ans = row
