@@ -264,10 +264,12 @@
         {
           "condition_label": "SE",
           "knobs": {
-            "pipeline_mode": "cooperative"
+            "pipeline_mode": "cooperative",
+            "no_warm_catalogue": true
           }
         }
-      ]
+      ],
+      "_se_note": "SE only. The pre-dispatch catalogue warm (D30/D46) harvests dataportal.se over SPARQL and fails in rdflib, returning exit 1 before any pair is dispatched, which blocked all 30 remaining SE pairs across three sweeps. Skipping the warm is NOT a confound against arm A: exp36's SE Quality rows are claude-sonnet-4-6, not deterministic, so arm A answered them by web search too. Without a snapshot the Quality questions fall back to the agent pipeline, which is exactly what arm A did."
     }
   ],
   "heldout_second_touch": true,

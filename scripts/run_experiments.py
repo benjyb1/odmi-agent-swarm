@@ -460,6 +460,10 @@ def build_command(exp: Dict[str, Any], arm: Dict[str, Any], pairs: List[str],
             cmd += [flag, str(knobs[key])]
     if knobs.get("chained"):
         cmd.append("--chained")
+    # Store-true knobs need their own line; the flag_map above emits
+    # "--flag value" pairs and would render these as "--no-warm-catalogue True".
+    if knobs.get("no_warm_catalogue"):
+        cmd.append("--no-warm-catalogue")
     return cmd
 
 

@@ -276,6 +276,28 @@ def test_arm_level_corroborate_pin_is_caught_too():
     assert any("verifier-corroborate" in e for e in preflight(spec))
 
 
+def test_no_warm_catalogue_knob_reaches_the_dispatch_command():
+    """Store-true knobs need their own branch in build_command.
+
+    `flag_map` emits "--flag value" pairs, so a boolean routed through it would
+    render as "--no-warm-catalogue True" and argparse would reject it. Worse, a
+    knob absent from build_command entirely is dropped in silence and the spec
+    runs with defaults. That happened here: the SE catalogue warm harvests
+    dataportal.se over SPARQL, fails in rdflib, and exits 1 before dispatching
+    any pair, which blocked all 30 remaining SE pairs across three sweeps.
+    """
+    from scripts.run_experiments import build_command
+
+    exp = {"experiment_id": "e", "baseline_knobs": {"provider": "diy"}}
+    arm = {"condition_label": "SE", "knobs": {"no_warm_catalogue": True}}
+    cmd = build_command(exp, arm, ["Q2:SE"], 6)
+    assert "--no-warm-catalogue" in cmd
+    assert "True" not in cmd, "a store-true flag must not emit its value"
+
+    off = build_command(exp, {"condition_label": "SE", "knobs": {}}, ["Q2:SE"], 6)
+    assert "--no-warm-catalogue" not in off
+
+
 def test_second_touch_must_not_claim_headline():
     """EXP-36 is the headline. A second flag would corrupt the receipts."""
     spec = _heldout_spec()
