@@ -1,7 +1,47 @@
 # EXP-42: verifier stance on the held-out eight (corroborative vs adversarial)
 
-Status: **pre-registration, written before any EXP-42 data exists (R1).**
-Drafted 2026-07-27. Registered id: `exp42_stance_heldout`.
+Status: **COMPLETE 2026-07-30.** All 1,144 held-out pairs run. Result below,
+under "Result". The pre-registration text is unchanged from 2026-07-27 and was
+written before any data existed (R1). Registered id: `exp42_stance_heldout`.
+
+## Result (2026-07-30)
+
+Stance-sensitive pairs 1,111 of 1,144, after excluding 33 decided by the D30
+catalogue recompute, where the Verifier makes no LLM call and stance cannot
+reach the outcome.
+
+| Endpoint | Arm A adversarial | Arm B corroborative | Test |
+|---|---|---|---|
+| Coverage | 0.444 [0.415, 0.473] | 0.461 [0.432, 0.490] | |
+| Commit accuracy (binary golds) | 0.740 [0.696, 0.779] | 0.727 [0.684, 0.766] | |
+| Negative-gold FPR (all 370) | 0.232 [0.192, 0.278] | 0.270 [0.228, 0.318] | paired exact p = 0.065, 18 vs 32 discordant |
+| Committed-correctness | | | paired exact p = 0.562, 50 vs 57 discordant |
+| Delivered accuracy | 0.353 | 0.361 | TOST +/-0.05: **p = 0.0001, equivalent** |
+
+**The registered reading.** Stance does not change how often the system is
+right: the two arms are statistically equivalent on delivered accuracy within
+the +/-0.05 margin fixed before data. This is the equivalence result EXP-40
+could not supply, and it settles the question EXP-40's McNemar null was
+over-read to answer.
+
+Stance does appear to change what the system is willing to assert. The
+corroborative arm commits more (0.461 vs 0.444) and carries a higher
+negative-gold false-positive rate (0.270 vs 0.232, +3.8pp), the direction
+section 2.5 predicts, on the reasoning that corroboration compounds the
+model's guessing bias where refutation checks it. At p = 0.065 that is not
+significant at the conventional threshold and must not be reported as though it
+were. The honest statement is a consistent direction on the pre-registered
+mechanism, at 370 negative golds, that falls short of significance.
+
+Read together: the accuracy claim is settled by equivalence, the precision
+claim is suggestive and unresolved. That is a more informative outcome than
+EXP-40's flat null, and it does not licence changing production. Per D45 the
+trio stays.
+
+**Superseded claim.** Section 4.2's "the Verifier's stance does not matter" and
+section 5.2's use of it are now supported for accuracy and NOT supported for the
+negative-gold false-positive rate, where the point estimate moves against the
+corroborative arm. Both sections need revising rather than deleting.
 Supersedes EXP-40's stance contrast as the powered read; EXP-40 remains the
 dev-battery characterisation.
 
@@ -701,5 +741,6 @@ the arms. Item 0's *decision* is still owed; the mechanism it needs now exists.
 | Date | Entry |
 |---|---|
 | 2026-07-27 | Pre-registration written. No data collected. Awaiting Benjy's approval and a supervisor call on the second held-out touch. |
+| 2026-07-30 (COMPLETE) | **All 1,144 pairs finalised.** Run took ~17h across two nights of dispatch. Result in the Result section above. Four incidents, all recovered, none costing data. **(1)** The dispatch was launched inside the CLI session's process tree and died silently on a session restart, unnoticed for an hour; relaunched detached (PPID 1) and a heartbeat supervisor built so it cannot recur. **(2)** The 5-hour Claude window exhausted at 02:12, killing two orchestrators via RATE LIMIT -> dispatch exit 42 -> PAUSE_dispatch_error; the 25-minute cooldown recovered it, and the earlier stop-on-barren-sweep logic would have abandoned the battery at 62%. **(3)** SE stalled at 113/143 for three sweeps: the pre-dispatch catalogue warm harvests dataportal.se over SPARQL, dies in rdflib on malformed xsd:date literals and exits 1 BEFORE dispatching any pair, blocking all 30 remaining SE pairs including 3 unrelated to the catalogue. `--no-warm-catalogue` exists for this but was missing from `build_command`'s flag_map, so setting it in a spec did nothing silently. Added with a regression test. Verified non-confounding first: exp36's SE Quality rows are `claude-sonnet-4-6`, so arm A answered them through the agent pipeline too. **(4)** Two pairs duplicated (`PT39:FI`, `PT8:BE`) because a final with no researcher row is invisible to the resume skip-set, which identifies done pairs by joining to researcher rows for the condition_label; both duplicates agree, and analysis dedups on (question_id, country_code). **Catalogue-decided pairs excluded** at Benjy's suggestion and on the evidence: 33 pairs go through the D30 recompute where the Verifier makes no LLM call, both arms commit on all 33 and agree on 32, so they are guaranteed ties that would shrink the difference and make equivalence easier to declare than warranted. Finding them required matching BOTH `deterministic` and `unknown` model_version labels, since the two run epochs log the same path differently (D66); matching one alone made arm A look as though it never used the catalogue. **Data quality across the run:** 0 deny-list violations, 0 agent crashes, 0 verifier failures, every commit carrying a non-empty source URL and evidence quote, abstained pairs exhausting all 4 attempts against 1.56 for commits. Arm A's replayed negative-gold FPR reproduces EXP-36's published 0.255 at 0.232 on the stance-sensitive subset (0.253 on the full set before exclusion), validating the replay rule. Merged into canonical (`exp42_stance_heldout` 1,146 rows, `exp42_pilot_heldout` 111, `exp42_smoke_dev` 10); analysis reproduces off canonical byte for byte. |
 | 2026-07-29 (pilot passed; full battery dispatched) | **A fourth defect, then a clean pilot, then the registered run.** The dev smoke (`exp42_smoke_dev`, NL+MT, 12 pairs, no held-out exposure) caught the fourth defect at zero cost: `verifier-corroborate` is not a `--strategy` CLI choice, the coordinator derives it from `pipeline_mode='cooperative'` at `run_coordinator.py:1592` and overwrites whatever is passed, so all 12 pairs died on argparse. **The registered spec pinned it in all eight arms and would have failed identically.** Stripped from both specs; preflight now rejects the pin at baseline or arm level (`5af7417`). Two environment faults fixed alongside: the worktree had no `.env`, and `model_defaults` were `claude-sonnet-5`, reset to 4.6 on the dispatch DB. **Pilot** `exp42_pilot_heldout`, a deterministic 10% sample (14 questions evenly spaced through each ODMI dimension x 8 countries = 112 pairs), separate registry id so pilot rows never mix with the registered run. Pre-dispatch gates: held-out cache purge VERIFIED CLEAN, deny-list baseline locked at 36 verifier / 19 final. Result: **8/8 operational checks pass** (`evaluation/exp42_pilot_analysis.py`). 111/112 finalised, 0 agent failures, all eight arms `healthy: True` with blocker rate 0.0 throughout; the single loss was one SIGABRT on Q10/BE which left no partial row and did not recur in 88 subsequent pairs. All 158 verifier rows ran `verifier-corroborate`; 162 corroborative query-gen calls and **zero** adversarial ones; negation-cue rate in the queries 4.4%; zero deny-list violations attributable to the run; every row `claude-sonnet-4-6`; seeding 41/111 = 36.9% against the battery's 34.3%. Commit rate 0.514, verdicts 102 pass / 56 fail. Cost £32, 4,384 calls, 39.5 calls per pair. Arm A replayed on the same 111 pairs gives 0.459, reproducing its full-battery 0.460, so the replay is consistent. Descriptive contrast only: arm B 0.514 vs arm A 0.459, discordant 12 only-B against 6 only-A, exact two-sided p = 0.238. **Not a stance result and not reported as one**: 111 pairs cannot resolve the registered endpoints, and the direction is recorded here purely so it cannot later look like it was discovered after the fact. **Registered run dispatched** on the full 1,144 at `global_parallel` 6 (the pilot showed blocker rate 0.0 at 4), with `heldout_second_touch` set and the justification recording Benjy's 2026-07-29 authorisation and stating plainly that no supervisor sign-off is on record. |
 | 2026-07-29 | **Build complete, dispatch still blocked.** The three defects this prereg identified were described as fixed on 2026-07-27; an audit found none of the wiring in the code. All three are now built and tested (`83d193a`, `tests/test_exp42_stance.py`, 13 tests). Still no data. **(1) Search direction.** `generate_adversarial_queries` was called unconditionally in `run_verifier`, so the cooperative arm searched for counter-evidence while corroborate step 4 asked for support. `verifier-corroborate` now calls the new `generate_corroborative_queries`. **Deviation from the prereg**, which named `generate_confirmation_probes`: that generator is absence-specific ("the Researcher has answered that some feature does NOT exist"), so it does not apply to a positive claim, and for an absence claim it hunts the positive thing, which is refutation rather than corroboration. Wiring it in would have made arm B search adversarially on every positive answer and refutationally on every negative one. The replacement is a direction mirror of the adversarial generator, same shape-awareness, so the arms still differ by stance alone. **(2) Corroborate V3.** V2's preamble is missing disprove V4's staleness criterion; V3 adds the corroborative mirror, "vague, paraphrased, or out-of-date evidence does not constitute corroboration". Steps 1-3 remain byte-identical to disprove V4, now pinned by test rather than by inspection. **(3) The D47 door.** `heldout_second_touch` did not exist; the only exemption was `headline: true`, which EXP-42 must not claim. A second touch now requires the flag, a non-empty justification, every country held-out, and no headline claim, and the justification is written to the run manifest and the event log so the disclosure survives with the rows. **The spec deliberately does not carry the flag.** Dry-run against the canonical DB with the flag added by hand passes clean at 8 arms / 1,144 pairs / `--no-cache` on every arm / SE last. Adding the flag plus a justification naming the sign-off is the only remaining step, and it is Benjy's and his supervisor's to take. |
