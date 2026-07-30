@@ -1,18 +1,34 @@
 {
-  "run_id": "exp42_stance_heldout",
+  "run_id": "exp42_pilot_heldout",
   "headline": false,
-  "global_parallel": 6,
-  "budget_calls": 60000,
-  "_note": "EXP-42 arm B: corroborative (cooperative) verifier over the eight D47 held-out countries at full 143. Prereg docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md. Comparator arm A is a zero-cost decision-layer replay off exp36_frozen_headline, not dispatched. Eight per-country arms are REQUIRED, not cosmetic: exp36 stored condition_label as the country code, and the attempt-1 seed predicate pins a single scalar label, so one combined arm would match zero seed rows and silently run everything live. Expected seed hits total 392 (per-country in _expected_seed_hits); a dispatch whose seed count differs is a failed dispatch, not a result. Requires verifier-corroborate V3 (V2 plus the corroboration mirror of the dropped staleness criterion) before dispatch. Order is stratum B first with SE last: dataportal.se SPARQL has hung dispatch in rdflib for ~90 min with no per-arm timeout, so it needs a stall watchdog. budget_calls 60000: 1144 pairs x 45 worst-case CALLS_PER_PAIR = 51,480, plus headroom.",
+  "heldout_second_touch": true,
+  "heldout_second_touch_justification": "EXP-42 operational pilot, 112 of 1,144 pairs (9.8%). Authorised by Benjy on 2026-07-29 in session; NO supervisor sign-off is recorded for this pilot and none is claimed here. Purpose is to confirm the corroborative arm runs correctly end to end before any full-battery dispatch, not to answer the research question: 112 pairs is under-powered for the registered endpoints and will not be reported as a result. Characterisation only, no adoption rule, cannot tune production (D45). This is a second touch of the D47 frozen set and burns it for later tuning; disclosed here, in docs/SPEC.md and in the dissertation limitations.",
+  "global_parallel": 4,
+  "budget_calls": 6000,
+  "_note": "Deterministic 10% sample, evenly spaced through each ODMI dimension's sorted question list: I 4/38, P 3/31, PT 4/45, Q 3/29 = 14 questions x 8 countries. Seed coverage 41/112 = 36.6%, against the full battery's 392/1,144 = 34.3%, so the sample is representative on the seeded/unseeded axis. Separate experiment_id from exp42_stance_heldout so pilot rows never mix with the registered run. `strategy` is deliberately NOT pinned: the coordinator derives verifier-corroborate from pipeline_mode=cooperative and --strategy rejects it.",
   "experiments": [
     {
-      "experiment_id": "exp42_stance_heldout",
+      "experiment_id": "exp42_pilot_heldout",
       "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
+      "questions": [
+        "I1",
+        "I8-b",
+        "I13",
+        "I22",
+        "P1",
+        "P10-b",
+        "P20",
+        "PT1",
+        "PT12",
+        "PT23",
+        "PT34",
+        "Q1",
+        "Q10",
+        "Q20"
+      ],
       "countries": [
         "FI"
       ],
-      "_expected_seed_hits": 82,
       "baseline_knobs": {
         "provider": "diy",
         "max_results_per_query": 5,
@@ -39,13 +55,27 @@
       ]
     },
     {
-      "experiment_id": "exp42_stance_heldout",
+      "experiment_id": "exp42_pilot_heldout",
       "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
+      "questions": [
+        "I1",
+        "I8-b",
+        "I13",
+        "I22",
+        "P1",
+        "P10-b",
+        "P20",
+        "PT1",
+        "PT12",
+        "PT23",
+        "PT34",
+        "Q1",
+        "Q10",
+        "Q20"
+      ],
       "countries": [
         "BE"
       ],
-      "_expected_seed_hits": 54,
       "baseline_knobs": {
         "provider": "diy",
         "max_results_per_query": 5,
@@ -72,13 +102,27 @@
       ]
     },
     {
-      "experiment_id": "exp42_stance_heldout",
+      "experiment_id": "exp42_pilot_heldout",
       "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
+      "questions": [
+        "I1",
+        "I8-b",
+        "I13",
+        "I22",
+        "P1",
+        "P10-b",
+        "P20",
+        "PT1",
+        "PT12",
+        "PT23",
+        "PT34",
+        "Q1",
+        "Q10",
+        "Q20"
+      ],
       "countries": [
         "HR"
       ],
-      "_expected_seed_hits": 48,
       "baseline_knobs": {
         "provider": "diy",
         "max_results_per_query": 5,
@@ -105,13 +149,27 @@
       ]
     },
     {
-      "experiment_id": "exp42_stance_heldout",
+      "experiment_id": "exp42_pilot_heldout",
       "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
+      "questions": [
+        "I1",
+        "I8-b",
+        "I13",
+        "I22",
+        "P1",
+        "P10-b",
+        "P20",
+        "PT1",
+        "PT12",
+        "PT23",
+        "PT34",
+        "Q1",
+        "Q10",
+        "Q20"
+      ],
       "countries": [
         "BG"
       ],
-      "_expected_seed_hits": 27,
       "baseline_knobs": {
         "provider": "diy",
         "max_results_per_query": 5,
@@ -138,13 +196,27 @@
       ]
     },
     {
-      "experiment_id": "exp42_stance_heldout",
+      "experiment_id": "exp42_pilot_heldout",
       "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
+      "questions": [
+        "I1",
+        "I8-b",
+        "I13",
+        "I22",
+        "P1",
+        "P10-b",
+        "P20",
+        "PT1",
+        "PT12",
+        "PT23",
+        "PT34",
+        "Q1",
+        "Q10",
+        "Q20"
+      ],
       "countries": [
         "ME"
       ],
-      "_expected_seed_hits": 51,
       "baseline_knobs": {
         "provider": "diy",
         "max_results_per_query": 5,
@@ -171,13 +243,27 @@
       ]
     },
     {
-      "experiment_id": "exp42_stance_heldout",
+      "experiment_id": "exp42_pilot_heldout",
       "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
+      "questions": [
+        "I1",
+        "I8-b",
+        "I13",
+        "I22",
+        "P1",
+        "P10-b",
+        "P20",
+        "PT1",
+        "PT12",
+        "PT23",
+        "PT34",
+        "Q1",
+        "Q10",
+        "Q20"
+      ],
       "countries": [
         "MK"
       ],
-      "_expected_seed_hits": 40,
       "baseline_knobs": {
         "provider": "diy",
         "max_results_per_query": 5,
@@ -204,13 +290,27 @@
       ]
     },
     {
-      "experiment_id": "exp42_stance_heldout",
+      "experiment_id": "exp42_pilot_heldout",
       "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
+      "questions": [
+        "I1",
+        "I8-b",
+        "I13",
+        "I22",
+        "P1",
+        "P10-b",
+        "P20",
+        "PT1",
+        "PT12",
+        "PT23",
+        "PT34",
+        "Q1",
+        "Q10",
+        "Q20"
+      ],
       "countries": [
         "BA"
       ],
-      "_expected_seed_hits": 20,
       "baseline_knobs": {
         "provider": "diy",
         "max_results_per_query": 5,
@@ -237,13 +337,27 @@
       ]
     },
     {
-      "experiment_id": "exp42_stance_heldout",
+      "experiment_id": "exp42_pilot_heldout",
       "type": "accuracy",
-      "questions_from": "data/questions/all_questions.json",
+      "questions": [
+        "I1",
+        "I8-b",
+        "I13",
+        "I22",
+        "P1",
+        "P10-b",
+        "P20",
+        "PT1",
+        "PT12",
+        "PT23",
+        "PT34",
+        "Q1",
+        "Q10",
+        "Q20"
+      ],
       "countries": [
         "SE"
       ],
-      "_expected_seed_hits": 70,
       "baseline_knobs": {
         "provider": "diy",
         "max_results_per_query": 5,
@@ -264,14 +378,10 @@
         {
           "condition_label": "SE",
           "knobs": {
-            "pipeline_mode": "cooperative",
-            "no_warm_catalogue": true
+            "pipeline_mode": "cooperative"
           }
         }
-      ],
-      "_se_note": "SE only. The pre-dispatch catalogue warm (D30/D46) harvests dataportal.se over SPARQL and fails in rdflib, returning exit 1 before any pair is dispatched, which blocked all 30 remaining SE pairs across three sweeps. Skipping the warm is NOT a confound against arm A: exp36's SE Quality rows are claude-sonnet-4-6, not deterministic, so arm A answered them by web search too. Without a snapshot the Quality questions fall back to the agent pipeline, which is exactly what arm A did."
+      ]
     }
-  ],
-  "heldout_second_touch": true,
-  "heldout_second_touch_justification": "EXP-42 registered run, full 1,144-pair held-out battery, arm B (corroborative verifier). Authorised by Benjy on 2026-07-29 in session, after the 112-pair operational pilot (exp42_pilot_heldout) passed 8/8 checks. NO supervisor sign-off is recorded and none is claimed here; the pre-registration states the second touch is Benjy's call with his supervisor, and only Benjy's is on record. Characterisation with no adoption rule; production stays trio (D45). This is the second touch of the D47 frozen set and burns it for any later tuning. Disclosed here, in docs/SPEC.md, in docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md and owed in the dissertation limitations."
+  ]
 }

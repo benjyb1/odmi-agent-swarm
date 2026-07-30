@@ -211,7 +211,10 @@ def _heldout_spec():
                 "type": "accuracy",
                 "questions": ["P1", "P2"],
                 "countries": ["FI"],
-                "baseline_knobs": {"strategy": "verifier-corroborate"},
+                # No `strategy` pin: the coordinator derives
+                # `verifier-corroborate` from pipeline_mode, and pinning it on
+                # the command line is an argparse error. See the guard below.
+                "baseline_knobs": {"verifier_search": "always"},
                 "arms": [{"condition_label": "FI", "knobs": {"pipeline_mode": "cooperative"}}],
             }
         ],
@@ -248,6 +251,52 @@ def test_second_touch_will_not_smuggle_a_dev_country():
     spec["heldout_second_touch_justification"] = "supervisor sign-off"
     spec["experiments"][0]["countries"] = ["FI", "NL"]
     assert any("held-out" in e for e in preflight(spec))
+
+
+def test_cooperative_spec_may_not_pin_the_corroborate_strategy():
+    """`verifier-corroborate` is not a `--strategy` CLI choice: the coordinator
+    derives it from `pipeline_mode=cooperative` and overrides whatever was
+    passed. A spec that pins it dies at dispatch with an argparse error, after
+    the orchestrator has already reported preflight clean. Catch it at preflight.
+    """
+    spec = _heldout_spec()
+    spec["heldout_second_touch"] = True
+    spec["heldout_second_touch_justification"] = "supervisor sign-off"
+    spec["experiments"][0]["baseline_knobs"]["strategy"] = "verifier-corroborate"
+    errors = preflight(spec)
+    assert any("verifier-corroborate" in e and "pipeline_mode" in e for e in errors)
+
+
+def test_arm_level_corroborate_pin_is_caught_too():
+    """Arm knobs override baseline knobs, so both levels need the check."""
+    spec = _heldout_spec()
+    spec["heldout_second_touch"] = True
+    spec["heldout_second_touch_justification"] = "supervisor sign-off"
+    spec["experiments"][0]["arms"][0]["knobs"]["strategy"] = "verifier-corroborate"
+    assert any("verifier-corroborate" in e for e in preflight(spec))
+
+
+def test_no_warm_catalogue_knob_reaches_the_dispatch_command():
+    """Store-true knobs need their own branch in build_command.
+
+    `flag_map` emits "--flag value" pairs, so a boolean routed through it would
+    render as "--no-warm-catalogue True" and argparse would reject it. Worse, a
+    knob absent from build_command entirely is dropped in silence and the spec
+    runs with defaults. That happened here: the SE catalogue warm harvests
+    dataportal.se over SPARQL, fails in rdflib, and exits 1 before dispatching
+    any pair, which blocked all 30 remaining SE pairs across three sweeps.
+    """
+    from scripts.run_experiments import build_command
+
+    exp = {"experiment_id": "e", "type": "accuracy",
+           "baseline_knobs": {"provider": "diy"}}
+    arm = {"condition_label": "SE", "knobs": {"no_warm_catalogue": True}}
+    cmd = build_command(exp, arm, ["Q2:SE"], 6)
+    assert "--no-warm-catalogue" in cmd
+    assert "True" not in cmd, "a store-true flag must not emit its value"
+
+    off = build_command(exp, {"condition_label": "SE", "knobs": {}}, ["Q2:SE"], 6)
+    assert "--no-warm-catalogue" not in off
 
 
 def test_second_touch_must_not_claim_headline():
