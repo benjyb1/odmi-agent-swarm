@@ -85,3 +85,6 @@ evaluation/runs/
 
 # Migration backups (timestamped DB copies)
 data/odmi.*.pre-*.db
+
+# Generated QA output
+build/
