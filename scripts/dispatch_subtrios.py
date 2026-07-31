@@ -1046,7 +1046,7 @@ def main() -> int:
         refresh_catalogue=args.refresh_catalogue,
     )
 
-    print(f"\n=== DISPATCH COMPLETE ===")
+    print("\n=== DISPATCH COMPLETE ===")
     print(f"batch_id: {result.batch_id}")
     print(f"jobs: {len(result.jobs)}")
     print(f"rate_limited: {result.rate_limited}")

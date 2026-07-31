@@ -416,7 +416,7 @@ def main() -> None:
             print(f"  Notes:             {result.notes}")
 
     print()
-    print(f"  Cost receipts (cumulative):")
+    print("  Cost receipts (cumulative):")
     print(f"    input_tokens:   {result.cumulative_input_tokens}")
     print(f"    output_tokens:  {result.cumulative_output_tokens}")
     print(f"    wall_clock_ms:  {result.cumulative_wall_clock_ms}")

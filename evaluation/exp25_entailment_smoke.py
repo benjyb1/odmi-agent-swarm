@@ -217,7 +217,7 @@ def main():
         corr = [r for r in ok if r["outcome"] in ("correct_yes", "correct_no")]
         fp = [r for r in ok if r["outcome"] == "false_positive"]
         if corr and fp:
-            print(f"\n  CORRECT vs FALSE-POSITIVE separation:")
+            print("\n  CORRECT vs FALSE-POSITIVE separation:")
             print(f"    entailment_for : correct {mean(corr,'entailment_for'):.2f}  vs  FP {mean(fp,'entailment_for'):.2f}")
             print(f"    margin         : correct {mean(corr,'margin'):+.2f}  vs  FP {mean(fp,'margin'):+.2f}")
             print(f"    answer_conf    : correct {mean(corr,'answer_confidence'):.2f}  vs  FP {mean(fp,'answer_confidence'):.2f}  (the floor's blind spot)")

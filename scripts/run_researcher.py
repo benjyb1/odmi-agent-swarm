@@ -284,7 +284,7 @@ def main() -> None:
         if result.notes:
             print(f"  Notes:         {result.notes}")
     print()
-    print(f"  Cost receipts (cumulative across all LLM calls):")
+    print("  Cost receipts (cumulative across all LLM calls):")
     print(f"    input_tokens:   {result.cumulative_input_tokens}")
     print(f"    output_tokens:  {result.cumulative_output_tokens}")
     print(f"    wall_clock_ms:  {result.cumulative_wall_clock_ms}")

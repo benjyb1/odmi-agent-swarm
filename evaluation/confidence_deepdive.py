@@ -560,7 +560,7 @@ def report(db=None):
     _p(f"  conf>=0.9 band (all shapes): n={len(hi_band)}, of which catalogue={len(hi_cat)} "
        f"({len(hi_cat)/len(hi_band):.0%})")
     _p(f"  catalogue rows inside the BINARY population: {len(bin_cat)}")
-    _p(f"  => the 0.9-1.0 binary band cannot be a catalogue artefact (0 catalogue pairs are binary).")
+    _p("  => the 0.9-1.0 binary band cannot be a catalogue artefact (0 catalogue pairs are binary).")
     out["catalogue_theory"] = dict(
         catalogue_committed=len(cat_all), hi_band=len(hi_band),
         hi_band_catalogue=len(hi_cat), binary_catalogue=len(bin_cat),

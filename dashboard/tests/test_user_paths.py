@@ -243,7 +243,7 @@ def test_questions_to_run_console_flow(browser: Browser) -> dict:
     if err_count > 0:
         print(f"  WARN ERRORS detected: {err_count}")
     else:
-        print(f"  ok   hand-off flow OK")
+        print("  ok   hand-off flow OK")
     return result
 
 

@@ -329,7 +329,7 @@ def main(argv: list[str] | None = None) -> int:
     print("  Classification distribution:")
     for shape in SHAPES:
         print(f"    {shape:18s} {counts.get(shape, 0):3d}")
-    print(f"  Relabel `other` -> `inconclusive`:")
+    print("  Relabel `other` -> `inconclusive`:")
     for table, n in relabel.items():
         print(f"    {table:28s} {n:3d}")
     return 0
