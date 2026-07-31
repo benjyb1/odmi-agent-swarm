@@ -68,6 +68,10 @@ def _evidence_blocked(row: dict) -> bool:
     sees all three.
     """
     urls = [row.get("source_url") or ""]
+    # Both columns are free-form JSON written by several generations of the
+    # dispatcher, so early rows hold shapes the current parse rejects. A row
+    # that will not parse contributes no URLs and is judged on the ones that
+    # did. source_url is read outside the try and is always checked.
     try:
         urls += [u for u in json.loads(row.get("fetched_urls") or "[]")]
     except Exception:
@@ -659,6 +663,9 @@ def run(limit: Optional[int] = None, workers: int = 1,
         for line in out_path.read_text().splitlines():
             if not line.strip():
                 continue
+            # A run killed mid-write leaves a truncated final line. Skipping it
+            # loses one candidate from the done set, so the resume re-runs that
+            # candidate. Cheaper than refusing to resume at all.
             try:
                 obj = json.loads(line)
             except Exception:

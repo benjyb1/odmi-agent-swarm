@@ -123,6 +123,9 @@ def load_sample(con, limit):
         rr = res.get(f["pair_run_id"])
         if not rr or not rr["search_snippets"]:
             continue
+        # search_snippets is free-form JSON spanning several dispatcher
+        # generations. A pair whose column will not parse is dropped from the
+        # smoke sample instead of failing the run; the sample is descriptive.
         try:
             snips = [d.get("snippet", "") if isinstance(d, dict) else str(d)
                      for d in json.loads(rr["search_snippets"])]

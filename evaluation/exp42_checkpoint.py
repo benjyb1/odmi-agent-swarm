@@ -60,6 +60,10 @@ def completed_arms(eid: str) -> set[str]:
         return set()
     done = set()
     for line in path.read_text().splitlines():
+        # A killed supervisor can leave a half-written final line. Skipping it
+        # under-reports completed arms, which makes the resume re-run an arm it
+        # need not have. Treating it as a parse error the other way would abort
+        # the resume entirely.
         try:
             ev = json.loads(line)
         except Exception:
