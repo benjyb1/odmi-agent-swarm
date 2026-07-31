@@ -38,7 +38,6 @@ from __future__ import annotations
 
 import argparse
 import gzip
-import shutil
 import sqlite3
 import sys
 import tempfile

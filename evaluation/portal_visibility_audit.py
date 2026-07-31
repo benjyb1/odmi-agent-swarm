@@ -32,7 +32,6 @@ import ssl
 import sys
 import urllib.request
 from pathlib import Path
-from urllib.parse import urljoin
 
 ROOT = Path(__file__).resolve().parents[1]
 COORD = ROOT / "scripts" / "run_coordinator.py"

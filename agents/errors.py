@@ -20,7 +20,6 @@ source of truth.
 
 from __future__ import annotations
 
-
 EXIT_CODE_RATE_LIMITED = 42
 EXIT_CODE_BLOCKER = 43
 

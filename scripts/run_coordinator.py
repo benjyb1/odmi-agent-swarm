@@ -30,9 +30,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sqlite3
 import sys
-import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -59,7 +57,7 @@ from agents.models import (
     VerifierStrategy,
 )
 from agents.researcher import ResearcherRunResult, run_researcher
-from agents.tools.db import DB_PATH, connect
+from agents.tools.db import connect
 from agents.tools.search import SearchResult
 from agents.verifier import VerifierRunResult, run_verifier
 

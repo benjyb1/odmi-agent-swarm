@@ -31,7 +31,6 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
-from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent

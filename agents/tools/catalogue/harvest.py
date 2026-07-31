@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from agents.tools.catalogue.model import HarvestedDataset
-from agents.tools.catalogue.registry import PortalConfig, load_portal
+from agents.tools.catalogue.registry import load_portal
 from agents.tools.db import connect
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]

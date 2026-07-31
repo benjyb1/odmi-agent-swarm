@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re
 import sqlite3
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 DB = Path("/Users/benjyb/Desktop/MscProject/data/odmi.db")

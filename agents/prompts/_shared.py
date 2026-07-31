@@ -17,7 +17,6 @@ Researcher), and unifying it here is the point.
 
 from __future__ import annotations
 
-
 # D24 forbidden-source list, the canonical comprehensive version. Used
 # by the Researcher, Verifier and Adjudicator system prompts to state
 # which URLs are off-limits because they are the ground truth we are

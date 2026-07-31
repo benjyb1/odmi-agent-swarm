@@ -24,8 +24,6 @@ See docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md.
 
 from __future__ import annotations
 
-import pytest
-
 from agents import verifier
 from agents.models import LLMUsage, ResearcherOutput, VerifierInput, VerifierOutput
 from agents.prompts import verifier as vp

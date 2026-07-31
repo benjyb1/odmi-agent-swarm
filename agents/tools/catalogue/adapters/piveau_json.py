@@ -19,7 +19,6 @@ datasets needs FDK-style sampling, so v1 stays on the JSON pages.
 
 from __future__ import annotations
 
-import json
 import time
 from typing import Callable, Iterator, Optional
 

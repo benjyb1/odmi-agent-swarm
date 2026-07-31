@@ -16,10 +16,8 @@ atomic specification.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
-from typing import Callable, List, Optional, Sequence
-from urllib.parse import urlparse
+from typing import Callable, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -27,7 +25,6 @@ from agents.models import LLMUsage, ResearcherInput, ResearcherOutput
 from agents.prompts import researcher as researcher_prompt
 from agents.tools import answer_shapes
 from agents.tools import db as db_helpers
-from agents.tools import substring
 from agents.tools.fetch import head_ok
 from agents.tools.llm import StructuredOutputError, call_for_structured
 from agents.tools.search import SearchResult, search_many

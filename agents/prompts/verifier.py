@@ -42,7 +42,7 @@ Adding a fifth strategy
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable, List, Optional
+from typing import List, Optional
 
 from agents.models import ResearcherOutput, VerifierStrategy
 from agents.prompts._shared import FORBIDDEN_SOURCES_BULLETS

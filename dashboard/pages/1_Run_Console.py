@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import json
-import os
 import sqlite3
 import subprocess
 import sys
-import threading
 import uuid
 from pathlib import Path
 
@@ -23,7 +20,6 @@ from dashboard.lib.currency import format_gbp
 from dashboard.lib.sidebar import page_header, render_session_widget
 from scripts.dispatch_subtrios import (
     MAX_PAIRS_PER_DISPATCH,
-    dispatch,
     estimate_pair_cost,
 )
 

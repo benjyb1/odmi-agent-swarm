@@ -14,7 +14,6 @@ from agents.models import (
     AdjudicatorInput,
     ResearcherInput,
     ResearcherOutput,
-    VerifierInput,
     VerifierOutput,
 )
 from agents.prompts import adjudicator as adj_prompt

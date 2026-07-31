@@ -282,7 +282,6 @@ def test_prompt_builder_never_swaps_block():
 
 def test_run_coordinator_cli_default_is_always():
     import argparse
-    import scripts.run_coordinator as rc
 
     # Reconstruct the parser exactly as main() builds it is heavy; instead
     # assert the choices and default on a minimal parser mirroring the flag.

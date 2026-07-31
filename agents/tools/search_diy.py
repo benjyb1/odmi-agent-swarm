@@ -19,14 +19,13 @@ from concurrent.futures import (
 )
 from typing import List, Optional
 
-from agents.errors import BlockerShutdown
 from agents.tools.search import SearchResult
 from agents.tools.search_serper import serper_search
 from agents.tools.blocked_domains import is_blocked
 from agents.tools.fetch import fetch_html, fetch_rendered_html
 from agents.tools.extract import extract_text
 from agents.tools.snippet_picker import (
-    pick_snippet, aggregate_snippet, aggregate_score, PickedChunk,
+    pick_snippet, aggregate_snippet, aggregate_score,
 )
 from agents.prompts.snippet_picker import PAGE_TEXT_CAP
 from agents.tools import search_cache as cache

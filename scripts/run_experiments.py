@@ -37,7 +37,7 @@ import sqlite3
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 REPO = Path(__file__).resolve().parents[1]
 DB_PATH = REPO / "data" / "odmi.db"

@@ -22,7 +22,6 @@ See `docs/AGENT_DESIGN.md` Section 4 for the full atomic specification.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from typing import Callable, List, Literal, Optional
 
@@ -42,7 +41,7 @@ from agents.tools import substring
 from agents.tools.blocked_domains import is_blocked
 from agents.tools.fetch import FetchResult, fetch_rendered_text, fetch_text
 from agents.tools.llm import StructuredOutputError, call_for_structured
-from agents.tools.search import SearchResult, format_for_prompt, search_many
+from agents.tools.search import SearchResult, search_many
 
 
 # EXP-14: Verifier web counter-search policy.

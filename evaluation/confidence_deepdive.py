@@ -41,7 +41,7 @@ import math
 import sqlite3
 import statistics
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent

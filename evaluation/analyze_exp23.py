@@ -26,7 +26,7 @@ import argparse
 import json
 import math
 import sqlite3
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
 

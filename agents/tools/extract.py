@@ -13,8 +13,6 @@ knows the input is already cleaned text, pass is_html=False to short-circuit.
 """
 from __future__ import annotations
 
-from typing import Optional
-
 import trafilatura
 
 

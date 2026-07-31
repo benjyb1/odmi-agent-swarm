@@ -31,7 +31,7 @@ import httpx
 from dotenv import load_dotenv
 from pathlib import Path
 from pydantic import BaseModel
-from tavily import TavilyClient, UsageLimitExceededError
+from tavily import TavilyClient
 
 from agents.tools.blocked_domains import BLOCKED_DOMAINS, is_blocked
 

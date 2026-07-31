@@ -24,8 +24,6 @@ No network, Serper, Playwright, or Claude calls are made.
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 import agents.tools.search_cache as sc

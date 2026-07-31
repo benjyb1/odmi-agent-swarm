@@ -15,11 +15,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import sqlite3
 import sys
 import uuid
 from pathlib import Path
-from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))

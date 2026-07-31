@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import List
 
-import pytest
 
 from agents.models import LLMUsage
 from agents.tools.snippet_picker import (

@@ -4,7 +4,6 @@ All network calls are mocked at each layer seam. No real HTTP, Serper,
 Playwright, or Claude calls are made.
 """
 import pytest
-from unittest.mock import patch, MagicMock
 from agents.tools.search import SearchResult
 from agents.tools.snippet_picker import PickedChunk
 from agents.models import LLMUsage

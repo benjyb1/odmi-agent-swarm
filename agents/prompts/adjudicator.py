@@ -10,9 +10,6 @@ See AGENT_DESIGN.md section 5.11.
 
 from __future__ import annotations
 
-import json
-from typing import List
-
 from agents.models import (
     AdjudicatorInput,
     ResearcherOutput,

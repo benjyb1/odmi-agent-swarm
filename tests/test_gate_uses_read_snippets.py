@@ -14,10 +14,8 @@ required behaviour:
 
 from __future__ import annotations
 
-from typing import Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
 
 from agents.models import ResearcherOutput, VerifierInput
 

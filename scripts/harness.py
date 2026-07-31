@@ -52,7 +52,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from dashboard.lib.currency import format_gbp, to_gbp  # noqa: E402
+from dashboard.lib.currency import format_gbp  # noqa: E402
 
 DB_PATH = REPO_ROOT / "data" / "odmi.db"
 GBP_PER_USD = 0.79   # mirror of USD_TO_GBP in dashboard.lib.currency

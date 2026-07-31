@@ -23,7 +23,6 @@ import argparse
 import hashlib
 import json
 import sqlite3
-import sys
 from math import comb
 from pathlib import Path
 

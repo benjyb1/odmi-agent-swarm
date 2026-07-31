@@ -1,5 +1,5 @@
 """Read-only trail dumper for failure-mode analysis. No writes."""
-import sqlite3, json, sys, textwrap
+import sqlite3, json, sys
 
 db = sqlite3.connect("data/odmi.db")
 db.row_factory = sqlite3.Row
