@@ -103,7 +103,7 @@ def test_page(browser: Browser, label: str, url_path: str) -> dict:
     console_msgs: list[dict] = []
 
     # Streamlit pages each load a favicon that Streamlit doesn't serve;
-    # the browser logs a 404 console error every time. That's noise — we
+    # the browser logs a 404 console error every time. That's noise, we
     # only care about errors from our own code.
     IGNORE_CONSOLE = (
         "favicon",
@@ -159,15 +159,15 @@ def test_page(browser: Browser, label: str, url_path: str) -> dict:
 
     err_count = sum(1 for e in result["errors"] if e.get("is_error"))
     if err_count > 0 or result["console"]:
-        print(f"  ⚠ ERRORS detected on {label}: {err_count} alerts, "
+        print(f"  WARN ERRORS detected on {label}: {err_count} alerts, "
               f"{len(result['console'])} console errors")
     else:
-        print(f"  ✓ {label} OK")
+        print(f"  ok   {label} OK")
     return result
 
 
 def test_questions_to_run_console_flow(browser: Browser) -> dict:
-    """Walk the Questions → Run Console state hand-off."""
+    """Walk the Questions -> Run Console state hand-off."""
     print("\n[questions_to_run_console] testing hand-off...", flush=True)
     ctx = browser.new_context(viewport={"width": 1500, "height": 900})
     page = ctx.new_page()
@@ -241,9 +241,9 @@ def test_questions_to_run_console_flow(browser: Browser) -> dict:
 
     err_count = sum(1 for e in result["errors"] if e.get("is_error"))
     if err_count > 0:
-        print(f"  ⚠ ERRORS detected: {err_count}")
+        print(f"  WARN ERRORS detected: {err_count}")
     else:
-        print(f"  ✓ hand-off flow OK")
+        print(f"  ok   hand-off flow OK")
     return result
 
 
@@ -258,17 +258,14 @@ def main() -> int:
         for label, url_path in PAGES:
             results.append(test_page(browser, label, url_path))
 
-        # The Questions → Run Console hand-off workflow is covered by
+        # The Questions -> Run Console hand-off workflow is covered by
         # `test_apptest_handoff.py`, which uses Streamlit's first-party
         # AppTest framework. Driving the baseweb multiselect from outside
         # the React tree via Playwright is unreliable across versions.
 
         browser.close()
 
-    # Summarise.
-    print("\n" + "=" * 60)
-    print("SUMMARY")
-    print("=" * 60)
+    print("\nSUMMARY")
 
     n_pass = sum(
         1 for r in results

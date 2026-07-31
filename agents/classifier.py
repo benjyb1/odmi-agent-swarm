@@ -3,7 +3,7 @@
 Takes a question + country pair, probes for evidence, and scores it on the
 3-dimension rubric (Evidence Accessibility, Answer Determinism, Source Complexity).
 
-This is deliberately simple for Phase A — a single LLM call with structured
+This is deliberately simple for Phase A: a single LLM call with structured
 output, not a multi-agent graph. We save the graph architecture for Phase 2.
 """
 
@@ -91,7 +91,7 @@ class ClassificationResult:
 
 
 # ── Prompt template ──────────────────────────────────────────
-# Version 1 — initial rubric prompt. Will iterate on this.
+# Version 1: initial rubric prompt. Will iterate on this.
 
 CLASSIFIER_PROMPT_V1 = """You are an expert evaluator assessing whether an AI agent system could
 automatically answer questions from the EU Open Data Maturity Index (ODMI).

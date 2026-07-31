@@ -52,14 +52,14 @@ from agents.tools.search import SearchResult, search_many
 # the verdict, substring gate, or the counter-evidence-from-Researcher-
 # snippets logic.
 #
-#   "always"   — DEFAULT, current production behaviour, byte-identical.
+#   "always":  DEFAULT, current production behaviour, byte-identical.
 #                Generate adversarial queries, run them live, feed the
 #                snippets to the verdict call.
-#   "never"    — skip the independent query-gen and search entirely. The
+#   "never":   skip the independent query-gen and search entirely. The
 #                Verifier reasons only over the evidence the Researcher
 #                already gathered (its snippets remain in the substring
 #                gate and are surfaced to the verdict call).
-#   "elective" — let the Verifier decide whether to counter-search after
+#   "elective": let the Verifier decide whether to counter-search after
 #                reading the Researcher's evidence. NOT IMPLEMENTED yet;
 #                wired to the flag but raises NotImplementedError.
 #
@@ -354,7 +354,7 @@ def _run_substring_check(
     fetch = fetch_text(source_url, max_chars=8000)
 
     if fetch.failure_mode is not None:
-        # httpx failed — try Playwright.
+        # httpx failed: try Playwright.
         fetch = fetch_rendered_text(source_url, max_chars=8000)
 
     if fetch.failure_mode is not None:
@@ -865,7 +865,7 @@ def run_verifier(
     # seeing the Researcher's. If they differ, override verdict to fail.
     if strategy == "verifier-blind":
         if output.verifier_answer != inp.researcher_output.answer:
-            # Answers diverge — flag as fail if the model didn't already.
+            # Answers diverge: flag as fail if the model didn't already.
             if output.verdict == "pass":
                 notes_parts.append(
                     f"blind: verifier answered {output.verifier_answer!r} "

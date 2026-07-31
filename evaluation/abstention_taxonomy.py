@@ -241,7 +241,7 @@ def main():
         elif any(m in (explan_all + notes_all) for m in SELFREPORT_MARKERS):
             cat, reason = "H_selfreport_or_undocumented", "agent text cites no formal/public documentation"
 
-        # 9. researcher never committed at all (genuinely could not answer)
+        # 9. researcher never committed at all (could not answer)
         elif not ever_committed:
             cat, reason = "I_researcher_never_committed", "all attempts inconclusive/other"
 

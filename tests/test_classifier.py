@@ -1,6 +1,6 @@
 """Tests for the Phase 1 classifier data models and logic.
 
-These test the rubric scoring, tier mapping, and data formatting —
+These test the rubric scoring, tier mapping, and data formatting, 
 not the LLM calls themselves.
 """
 

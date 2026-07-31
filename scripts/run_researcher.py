@@ -267,11 +267,8 @@ def main() -> None:
         on_step=on_step,
     )
 
-    # Print summary
     print()
-    print("=" * 64)
     print(f"RESEARCHER FINISHED  question={input.question_id} country={input.country_code}")
-    print("=" * 64)
     if result.output is None:
         print(f"  Outcome: FAILED  failure_mode={result.failure_mode}")
         print(f"  Notes: {result.notes}")

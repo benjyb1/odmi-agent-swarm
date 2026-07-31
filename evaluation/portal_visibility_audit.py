@@ -9,16 +9,16 @@ script generalises that check to all 36 portals so the catalogue route gap is
 mapped rather than discovered one country at a time.
 
 Classes:
-  static-ok : server-rendered HTML, trafilatura/search can read it
-  spa       : client-rendered shell, needs an API or a browser render
-  waf       : firewall challenge / 403, needs a browser or residential egress
-  dead      : unreachable after retries
+  static-ok: server-rendered HTML, trafilatura/search can read it
+  spa:       client-rendered shell, needs an API or a browser render
+  waf:       firewall challenge / 403, needs a browser or residential egress
+  dead:      unreachable after retries
 
 API discovery probes (first JSON-ish hit wins):
-  swagger   : /swagger/v1/swagger.json
-  ckan      : /api/3/action/package_search?rows=0
-  dcat-json : /data.json, /dcat3.jsonld, /dcat2.jsonld
-  dcat-xml  : /catalog.xml
+  swagger:   /swagger/v1/swagger.json
+  ckan:      /api/3/action/package_search?rows=0
+  dcat-json: /data.json, /dcat3.jsonld, /dcat2.jsonld
+  dcat-xml:  /catalog.xml
 
 Usage:
   uv run python evaluation/portal_visibility_audit.py

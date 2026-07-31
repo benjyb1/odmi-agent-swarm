@@ -49,7 +49,7 @@ def _make_adj_output(
     )
 
 
-# Import the helper under test (does NOT exist yet — test should fail until
+# Import the helper under test (does NOT exist yet, test should fail until
 # the implementation is added to scripts/run_coordinator.py).
 
 def _import_helper():
@@ -59,7 +59,7 @@ def _import_helper():
     return _finalise_after_adjudication
 
 
-# Case 1: researcher_correct — must use adjudicator_answer, not the stale
+# Case 1: researcher_correct, must use adjudicator_answer, not the stale
 # last researcher output.
 
 def test_researcher_correct_uses_adjudicator_answer():
@@ -76,7 +76,7 @@ def test_researcher_correct_uses_adjudicator_answer():
     )
 
 
-# Case 2: verifier_correct — must also use adjudicator_answer.
+# Case 2: verifier_correct, must also use adjudicator_answer.
 
 def test_verifier_correct_uses_adjudicator_answer():
     helper = _import_helper()
@@ -89,7 +89,7 @@ def test_verifier_correct_uses_adjudicator_answer():
     assert chosen.answer == "no"
 
 
-# Case 3: neither — must use adjudicator_answer.
+# Case 3: neither, must use adjudicator_answer.
 
 def test_neither_uses_adjudicator_answer():
     helper = _import_helper()
@@ -102,7 +102,7 @@ def test_neither_uses_adjudicator_answer():
     assert chosen.answer == "not_applicable"
 
 
-# Case 4: abstain — answer downgrades to inconclusive (D37 abstain floor).
+# Case 4: abstain, answer downgrades to inconclusive (D37 abstain floor).
 
 def test_abstain_writes_inconclusive():
     """The Adjudicator could not pick a winner. Don't finalise the last
@@ -126,7 +126,7 @@ def test_abstain_writes_inconclusive():
     assert str(chosen.source_url) == str(last_r.source_url)
 
 
-# Case 5: adj_output is None — same abstain behaviour, the agent failed.
+# Case 5: adj_output is None, same abstain behaviour, the agent failed.
 
 def test_none_output_writes_inconclusive():
     helper = _import_helper()

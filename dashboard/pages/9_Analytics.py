@@ -1,4 +1,4 @@
-"""Analytics — slice the main-results dataset on any axis.
+"""Analytics: slice the main-results dataset on any axis.
 
 A read-only "slice and dice" view for the dissertation's main runs.
 Filter by country / dimension / model / strategy / search provider,

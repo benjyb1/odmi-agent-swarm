@@ -9,7 +9,7 @@ dashboard, the slide deck, and every CLI message render costs in
 pounds.
 
 Update `USD_TO_GBP` below by hand when the exchange rate drifts more
-than ~5%. Not load-bearing — every cost figure is notional.
+than ~5%. Not load-bearing, every cost figure is notional.
 """
 
 from __future__ import annotations

@@ -49,6 +49,6 @@ def test_usage_log_timestamp_format_is_naive_utc_z():
         .replace(tzinfo=None)
         .isoformat(timespec="seconds") + "Z"
     )
-    # e.g. 2026-06-04T12:34:56Z — no "+00:00" offset, no microseconds.
+    # e.g. 2026-06-04T12:34:56Z, no "+00:00" offset, no microseconds.
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", ts), ts
     assert "+00:00" not in ts

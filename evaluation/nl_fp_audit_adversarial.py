@@ -11,7 +11,7 @@ outdated, then to say honestly whether that defence holds. The category names
 from the first pass are not shown, to avoid anchoring.
 
 If the advocate still concedes the swarm over-read on ~20, the first pass is
-robust. If many flip to "gold wrong" or "genuinely ambiguous", it is fragile and
+holds up. If many flip to "gold wrong" or "ambiguous", it is fragile and
 the writeup must say so. Same frozen evidence, same model, one call per question.
 
   uv run python evaluation/nl_fp_audit_adversarial.py --limit 1   # reachability

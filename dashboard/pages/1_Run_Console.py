@@ -1,4 +1,4 @@
-"""Run Console — release subtrios and watch them live."""
+"""Run Console: release subtrios and watch them live."""
 
 from __future__ import annotations
 

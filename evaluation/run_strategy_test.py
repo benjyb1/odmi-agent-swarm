@@ -2,7 +2,7 @@
 
 Unlike the frozen EXP-6 harness, this runs the PRODUCTION verifier
 (`run_verifier`) per (candidate, strategy), so EACH strategy does its OWN live
-counter-search — which is the whole point of the verifier and the only way
+counter-search, which is the whole point of the verifier and the only way
 disprove and negation actually differ.
 
 Dataset: data/questions/exp6_h123_dataset.json (build_h123.py).

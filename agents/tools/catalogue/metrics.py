@@ -116,7 +116,7 @@ def _pct(num: int, denom: int) -> float:
 
 
 # Field-absence detection
-# A field that the route cannot see and a field that is genuinely empty are
+# A field that the route cannot see and a field that is actually empty are
 # different measurements. If a whole harvest carries no value at all for a
 # field (the SPARQL/DCAT route never emits the predicate, e.g. Croatia has no
 # dct:license and no dcat:downloadURL anywhere), a 0% reading is not "0% of

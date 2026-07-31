@@ -168,7 +168,7 @@ COUNTRIES = {
 
 # Dry-run and walkthrough flags
 # `_dry_run` is a module-level switch set by `coordinate()` at entry.
-# When True, every DB write helper short-circuits — no row touches
+# When True, every DB write helper short-circuits; no row touches
 # subtrio_status, phase2_researcher_runs, phase2_verifier_runs,
 # phase2_adjudications, or phase2_final. `claude_usage_log` is NOT
 # gated because the underlying tokens are billed regardless; suppressing
@@ -358,7 +358,7 @@ def _finalise_after_adjudication(
     """Return (final_status, chosen_output) after the Adjudicator has run.
 
     For all resolved verdicts (researcher_correct / verifier_correct /
-    neither) the Adjudicator's own authoritative fields are used — its
+    neither) the Adjudicator's own authoritative fields are used, its
     answer, reasoning, source URL, and evidence quote. The last
     researcher output is only kept on an escalation.
 
@@ -882,7 +882,7 @@ def _seed_researcher_from_experiment(
     EXP-40's cooperative arm seeds its first pass from the frozen full-trio
     run (exp34 wide_only) so every arm starts from identical attempt-1
     evidence (Benjy's "start on the frozen evidence"). The Researcher's first
-    attempt is Verifier-independent, so this is the one part genuinely shared
+    attempt is Verifier-independent, so this is the one part shared
     across the stance contrast; the retries diverge live under the corroborate
     Verifier. Returns the row and the reconstructed snippets (so the Verifier
     uses the D34 stored-snippet path, not a re-fetch), or None if there is no
@@ -1643,8 +1643,9 @@ def coordinate(
         verifier_outputs.append(v_result.output)
         # EXP-7 chained arm: the Verifier searches the web every round and
         # often finds real counter-evidence; the baseline loop keeps only the
-        # verdict and bins the rest. Here we fold its independent snippets and
-        # counter-evidence into the corpus so they are not thrown away.
+        # verdict and bins the rest. The chained arm folds its independent
+        # snippets and counter-evidence into the corpus instead of discarding
+        # them.
         if chained:
             evidence_corpus = _merge_evidence(
                 evidence_corpus,

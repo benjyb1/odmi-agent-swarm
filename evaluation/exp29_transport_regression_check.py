@@ -12,8 +12,8 @@ experiments (expA/expB/expC), which commit far less and more precisely on NL
 than Sonnet has ever done. Holding the comparator model fixed at
 claude-sonnet-4-6 makes the June and post-D62 numbers indistinguishable:
 
-    naive June comparator : June cov 0.456 acc 0.758 | now cov 0.551 acc 0.640
-    sonnet-4-6 comparator : June cov 0.526 acc 0.646 | now cov 0.532 acc 0.651
+    naive June comparator: June cov 0.456 acc 0.758 | now cov 0.551 acc 0.640
+    sonnet-4-6 comparator: June cov 0.526 acc 0.646 | now cov 0.532 acc 0.651
 
 Run against a DB that holds the exp29_sonnet5_model trio_s46 rows:
 

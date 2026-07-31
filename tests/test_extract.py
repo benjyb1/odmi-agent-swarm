@@ -1,4 +1,4 @@
-"""Tests for agents/tools/extract.py — trafilatura boilerplate-stripping wrapper."""
+"""Tests for agents/tools/extract.py: trafilatura boilerplate-stripping wrapper."""
 from __future__ import annotations
 
 from agents.tools.extract import extract_text

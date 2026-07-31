@@ -181,7 +181,7 @@ def _drop_unserialisable(page: Graph) -> tuple[Graph, int]:
 # rdflib's blank-node canonicalisation (to_canonical_graph) is worst-case
 # exponential in the number of blank nodes on a page. Sweden's EntryScape feed
 # carries ~230 bnodes per 100-dataset page, where canonicalisation takes ~110s
-# PER PAGE (a 233-page harvest would need ~7h of pure CPU) — this is the real
+# PER PAGE (a 233-page harvest would need ~7h of pure CPU). This is the real
 # cause of the long-observed "SE SPARQL hang". Above this many bnodes we skip
 # canonicalisation: blank-node labels are then not stable across re-harvests,
 # so content_sha256 is not cross-run reproducible for that page, but the data
@@ -199,7 +199,7 @@ def _canonical_turtle_bytes(page: Graph) -> bytes:
     valid Turtle, so the replay path still parses it as Turtle), and sort the
     lines for a stable byte sequence.
 
-    Two guards keep this robust on messy real feeds: malformed-IRI triples are
+    Two guards hold this up on messy real feeds: malformed-IRI triples are
     dropped first (`_drop_unserialisable`), and canonicalisation is skipped for
     blank-node-heavy pages where it would be pathologically slow (see
     `_MAX_BNODES_FOR_CANON`).

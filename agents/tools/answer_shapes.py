@@ -3,12 +3,12 @@
 The ODMI 2025 questionnaire has 143 questions across five answer
 shapes:
 
-  - binary             — yes / no (optionally + other / not applicable /
+  - binary:            yes / no (optionally + other / not applicable /
                           i don't know variants from the ODMI rubric)
-  - percentage_band    — ordered list of band labels (e.g. >90% … <10%)
-  - ordinal_magnitude  — ordered list (all / majority / half / few / none)
-  - count_band         — ordered list of count thresholds (e.g. 1-4 / 5-10 / >10)
-  - categorical        — small fixed enum (P14 top-down / bottom-up / hybrid;
+  - percentage_band:   ordered list of band labels (e.g. >90% … <10%)
+  - ordinal_magnitude: ordered list (all / majority / half / few / none)
+  - count_band:        ordered list of count thresholds (e.g. 1-4 / 5-10 / >10)
+  - categorical:       small fixed enum (P14 top-down / bottom-up / hybrid;
                           Q3 within one day / week / month / longer)
 
 Each question's shape and the canonical list of allowed answers live
@@ -18,12 +18,12 @@ populated by `scripts/migrate_d28_shapes.py`.
 Two escape-valve labels are always permitted on top of the shape's
 allowed list:
 
-  - `inconclusive`     — the swarm could not reach a confident answer
+  - `inconclusive`:    the swarm could not reach a confident answer
                           (low confidence, D24 forbidden-source refusal,
                           honest uncertainty). Distinct from a literal
                           `other`, which is only valid where ODMI's
                           rubric lists it.
-  - `not_applicable`   — the question does not apply to this country.
+  - `not_applicable`:  the question does not apply to this country.
 
 Shape-aware verification (D28 phase C) sits on top of this module.
 """

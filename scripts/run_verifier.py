@@ -133,7 +133,7 @@ def _load_question_text(question_id: str, db_path: Path | None = None) -> str:
     return str(row[0])
 
 
-# Country metadata — mirrors run_researcher.py.
+# Country metadata: mirrors run_researcher.py.
 COUNTRIES = {
     "FR": {
         "country_name": "France",
@@ -385,14 +385,11 @@ def main() -> None:
         on_step=on_step,
     )
 
-    # Print summary
     print()
-    print("=" * 64)
     print(
         f"VERIFIER FINISHED  question={inp.question_id} "
         f"country={inp.country_code}  strategy={inp.strategy}"
     )
-    print("=" * 64)
     print(f"  Researcher said:   {researcher_output.answer!r} "
           f"(conf={researcher_output.answer_confidence:.2f})")
 

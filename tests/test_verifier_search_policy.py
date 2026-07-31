@@ -2,12 +2,12 @@
 
 `run_verifier(..., verifier_search=...)` takes three values:
 
-- 'always' (default) — current production behaviour, byte-identical. The
+- 'always' (default): current production behaviour, byte-identical. The
   Verifier generates adversarial queries and runs its own live web search.
-- 'never' — the Verifier does NOT run its own web search. It reasons only
+- 'never': the Verifier does NOT run its own web search. It reasons only
   over the Researcher's evidence and snippets. The substring gate and all
   verdict post-processing are untouched.
-- 'elective' — not built; raises NotImplementedError.
+- 'elective': not built; raises NotImplementedError.
 
 These tests pin the three behaviours by mocking the network and LLM calls.
 The default ('always' / absent) path must be byte-identical to production:
@@ -93,7 +93,7 @@ def _install_common_mocks(monkeypatch):
     return captured
 
 
-# 'always' / default — byte-identical to production
+# 'always' / default: byte-identical to production
 
 def test_always_runs_search_and_prompt_is_default(monkeypatch):
     """With the flag absent (default 'always') the Verifier runs its own
@@ -166,7 +166,7 @@ def test_explicit_always_matches_default(monkeypatch):
     assert "NOT RUN" not in captured["user_message"]
 
 
-# 'never' — no independent web search
+# 'never': no independent web search
 
 def test_never_skips_web_search(monkeypatch):
     """'never' must not invoke the query-gen LLM call or search_many at all."""
@@ -215,7 +215,7 @@ def test_never_prompt_carries_no_search_note(monkeypatch):
     assert "NOT RUN" not in captured["system"]
 
 
-# 'elective' — not built, fails loud
+# 'elective': not built, fails loud
 
 def test_elective_raises_not_implemented(monkeypatch):
     _install_common_mocks(monkeypatch)

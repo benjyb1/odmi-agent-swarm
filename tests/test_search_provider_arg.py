@@ -140,7 +140,7 @@ def test_provider_tavily_returns_tavily_results(monkeypatch):
 
 
 def test_provider_tavily_no_brave_fallback(monkeypatch):
-    """provider='tavily': if Tavily raises, error propagates — Brave is NOT called."""
+    """provider='tavily': if Tavily raises, error propagates. Brave is NOT called."""
     monkeypatch.setattr(
         "agents.tools.search._tavily_search",
         lambda q, **k: (_ for _ in ()).throw(RuntimeError("tavily down")),

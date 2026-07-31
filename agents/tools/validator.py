@@ -70,7 +70,7 @@ def _looks_authoritative(domain: str) -> bool:
     """Heuristic: government, EU institution, or known portal patterns.
 
     Excludes the ODMI publishing surface (data.europa.eu, op.europa.eu,
-    publications.europa.eu) — those are caught by `is_blocked` first.
+    publications.europa.eu): those are caught by `is_blocked` first.
     """
     domain = domain.lower()
     return (

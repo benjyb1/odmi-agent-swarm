@@ -40,7 +40,7 @@ def _make_input(
     )
 
 
-# Case 1: retry with feedback + prior queries — message must carry all three.
+# Case 1: retry with feedback + prior queries, message must carry all three.
 
 def test_retry_message_contains_rejection_reason_and_prior_queries():
     from agents.researcher import _build_query_gen_message  # type: ignore[attr-defined]
@@ -62,7 +62,7 @@ def test_retry_message_contains_rejection_reason_and_prior_queries():
     assert "baz qux" in msg, "second prior query must appear"
 
 
-# Case 2: first attempt — message must NOT contain retry-specific language.
+# Case 2: first attempt, message must NOT contain retry-specific language.
 
 def test_first_attempt_message_unchanged():
     from agents.researcher import _build_query_gen_message  # type: ignore[attr-defined]
@@ -78,7 +78,7 @@ def test_first_attempt_message_unchanged():
     )
 
 
-# Case 3: feedback present but no suggested_search_query — must not error.
+# Case 3: feedback present but no suggested_search_query, must not error.
 
 def test_feedback_without_suggested_query():
     from agents.researcher import _build_query_gen_message  # type: ignore[attr-defined]
@@ -98,7 +98,7 @@ def test_feedback_without_suggested_query():
     assert "trial query one" in msg
 
 
-# Case 4: prior queries present but no feedback — must still list them.
+# Case 4: prior queries present but no feedback, must still list them.
 
 def test_prior_queries_without_feedback():
     from agents.researcher import _build_query_gen_message  # type: ignore[attr-defined]

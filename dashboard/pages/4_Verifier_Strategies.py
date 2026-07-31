@@ -1,4 +1,4 @@
-"""Verifier Strategies — compare the four adversarial prompt strategies
+"""Verifier Strategies: compare the four adversarial prompt strategies
 on the same Researcher row (D15, Q12)."""
 
 from __future__ import annotations

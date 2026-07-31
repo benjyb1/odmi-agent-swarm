@@ -3,7 +3,7 @@
 Observed 2026-07-02: the shared Claude Max auth-file pool ran out of a free
 session under concurrent-window load and CLIProxyAPI returned a 503. That
 propagated as an uncaught `anthropic.InternalServerError`, crashing the
-coordinator subprocess mid-stage with no DB update — the subtrio_status row
+coordinator subprocess mid-stage with no DB update, the subtrio_status row
 was orphaned and no phase2_final row was ever written, so the pair silently
 vanished from the resume set. These tests pin the fix: the 503 is caught in
 `call_for_structured` and re-raised as `AuthUnavailableShutdown`, a

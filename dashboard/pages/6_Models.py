@@ -1,4 +1,4 @@
-"""Models — defaults + analytics."""
+"""Models: defaults + analytics."""
 
 from __future__ import annotations
 

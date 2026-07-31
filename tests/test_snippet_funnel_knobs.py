@@ -105,7 +105,7 @@ def test_default_does_not_pass_funnel_kwargs_to_picker(mock_layers, monkeypatch)
     assert len(out) == 2
 
 
-# 2. --snippet-picker off : BYPASS the LLM picker entirely.
+# 2. --snippet-picker off: BYPASS the LLM picker entirely.
 
 def test_picker_off_bypasses_llm_and_keeps_all_urls(mock_layers, monkeypatch):
     """With use_snippet_picker=False the picker function is NEVER called and
@@ -142,7 +142,7 @@ def test_picker_off_truncates_to_page_text_cap(mock_layers, monkeypatch):
     assert all(len(r.snippet) == 50 for r in out)
 
 
-# 3. --max-snippet-chars : per-snippet prompt truncation in format_for_prompt.
+# 3. --max-snippet-chars: per-snippet prompt truncation in format_for_prompt.
 
 def test_format_for_prompt_default_truncation_is_600():
     """Default max_chars_per_snippet stays at 600 (byte-identical)."""

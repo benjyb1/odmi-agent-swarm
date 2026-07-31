@@ -1,4 +1,4 @@
-"""Database — every (question, country) pair from ODMI, with the
+"""Database: every (question, country) pair from ODMI, with the
 latest swarm answer joined in. 5,148 rows. Filter by country,
 dimension, indicator, or coverage status. Delete a pair's swarm rows
 in-page when one needs a clean re-run.

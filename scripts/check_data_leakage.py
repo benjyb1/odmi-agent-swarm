@@ -80,7 +80,7 @@ def _scan(conn: sqlite3.Connection) -> list[tuple[str, str, str, str, str]]:
     return violations
 
 
-# (table, id_column) — the swarm tables that key off pair_run_id, plus
+# (table, id_column), the swarm tables that key off pair_run_id, plus
 # subtrio_status which uses subtrio_id but holds the same UUID value.
 _PURGE_TARGETS: tuple[tuple[str, str], ...] = (
     ("phase2_researcher_runs", "pair_run_id"),

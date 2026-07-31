@@ -32,9 +32,9 @@ Abstentions
 508 of the 1,144 pairs abstained, so the reconstruction is an interval, not a
 point. Two policies bound it, and they are the two the figure draws:
 
-- **floor** — an abstention is worth nothing, but still counts against the
+- **floor**, an abstention is worth nothing, but still counts against the
   denominator. What the swarm can defend on public evidence alone.
-- **ceiling** — abstentions leave both numerator and denominator, so the
+- **ceiling**, abstentions leave both numerator and denominator, so the
   committed pairs are extrapolated to the whole dimension. What the swarm would
   score if the pairs it could not reach behaved like the ones it could.
 

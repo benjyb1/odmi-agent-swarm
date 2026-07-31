@@ -1,4 +1,4 @@
-"""udata adapter (data.gouv.fr) — JSON fallback.
+"""udata adapter (data.gouv.fr): JSON fallback.
 
 France's primary route is `dcat_rdf` (its first-party DCAT-AP feed), which
 gives real graphs for the conformance metrics. This adapter is the

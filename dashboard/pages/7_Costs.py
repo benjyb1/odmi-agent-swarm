@@ -1,4 +1,4 @@
-"""Costs — D12 cost surface."""
+"""Costs: D12 cost surface."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""ODMI Swarm Dashboard — Home page.
+"""ODMI Swarm Dashboard: Home page.
 
 Entry point. Run with:
     streamlit run dashboard/Home.py

@@ -1,4 +1,4 @@
-"""Questions — browsable table; tick rows and send to Run Console."""
+"""Questions: browsable table; tick rows and send to Run Console."""
 
 from __future__ import annotations
 

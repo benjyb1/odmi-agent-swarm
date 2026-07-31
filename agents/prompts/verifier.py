@@ -1,4 +1,4 @@
-"""Verifier prompts — one module, four strategies.
+"""Verifier prompts: one module, four strategies.
 
 Each strategy is a separate entry in `prompt_versions` (per D5) and
 produces a distinct `strategy_label` on the verifier run row (per D15).
@@ -13,20 +13,20 @@ SYSTEM vs user message
 ----------------------
 SYSTEM sets the agent's role and hard rules that apply regardless of
 what the Researcher produced. The user message carries the actual
-evidence to evaluate — it changes every call. Keeping them separate
+evidence to evaluate: it changes every call. Keeping them separate
 makes it easy to A/B test the system prompt without rewiring the
 user-message builder, and vice versa.
 
 Strategy notes
 --------------
-A  disprove  — Default. Explicit sceptical stance. Asks "what is wrong
+A  disprove: Default. Explicit sceptical stance. Asks "what is wrong
                with this claim" before asking whether to accept it.
-B  negation  — Logical inversion. Asks the model to find evidence for
+B  negation: Logical inversion. Asks the model to find evidence for
                the opposite answer. Clean for yes/no questions.
-C  steelman  — Two-step: articulate the strongest case for the claim,
+C  steelman: Two-step: articulate the strongest case for the claim,
                then attack even that. Catches plausible-but-fragile
                answers. Highest token cost.
-D  blind     — The model never sees the Researcher's answer. It forms
+D  blind:    The model never sees the Researcher's answer. It forms
                its own position from the evidence and Python compares.
                Removes agreement bias structurally.
 
@@ -247,7 +247,7 @@ def build_user_message(
     return "\n".join(sections)
 
 
-# Strategy A — disprove
+# Strategy A: disprove
 
 _DISPROVE_NAME = "phase2_verifier_disprove"
 _DISPROVE_VERSION = 4
@@ -305,7 +305,7 @@ materially wrong, unverifiable, or insufficient for the specific question.
 """ + _SCHEMA_NOTE
 
 
-# Strategy — corroborate (EXP-40 cooperative arm; fair rewrite)
+# Strategy: corroborate (EXP-40 cooperative arm; fair rewrite)
 #
 # V2 replaces the V1 strawman ("your default stance is
 # confirmation-seeking"; "related material counts toward support"),
@@ -393,7 +393,7 @@ whether the answer is genuinely supported.
 """ + _SCHEMA_NOTE
 
 
-# Strategy B — negation
+# Strategy B: negation
 
 _NEGATION_NAME = "phase2_verifier_negation"
 _NEGATION_VERSION = 3
@@ -453,7 +453,7 @@ is a valid reason to fail.
 """ + _SCHEMA_NOTE
 
 
-# Strategy C — steelman
+# Strategy C: steelman
 
 _STEELMAN_NAME = "phase2_verifier_steelman"
 _STEELMAN_VERSION = 3
@@ -503,7 +503,7 @@ dissertation analysis can read your full chain of reasoning.
 """ + _SCHEMA_NOTE
 
 
-# Strategy D — blind
+# Strategy D: blind
 
 _BLIND_NAME = "phase2_verifier_blind"
 _BLIND_VERSION = 3

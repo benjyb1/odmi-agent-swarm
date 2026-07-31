@@ -3,17 +3,17 @@
 Each candidate carries a known verdict (gold_label) and everything needed to
 build a VerifierInput at test time.
 
-  H1 grounding  : FAIL = a correct answer whose evidence_quote is replaced by a
+  H1 grounding:  FAIL = a correct answer whose evidence_quote is replaced by a
                   real-but-non-proving fragment of the SAME snippet (LLM-picked);
                   PASS = a correct answer with its genuine supporting quote.
                   H1-fail and H1-pass use disjoint questions.
-  H2 confident  : FAIL = confidently-wrong commits (conf>=0.70); PASS = confidently
+  H2 confident:  FAIL = confidently-wrong commits (conf>=0.70); PASS = confidently
                   -correct commits.
-  H3 yes-bias   : FAIL = no-gold questions the swarm wrongly answered 'yes';
+  H3 yes-bias:   FAIL = no-gold questions the swarm wrongly answered 'yes';
                   PASS = correct 'yes' answers.
 
 H1-fail items are CORRECT answers with swapped evidence, so they never collide
-with H2/H3 fails (which are genuinely wrong answers). Pass items are assigned to
+with H2/H3 fails (which are wrong answers). Pass items are assigned to
 one stratum each (no double-count).
 
 Output: data/questions/exp6_h123_dataset.json

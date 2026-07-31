@@ -701,7 +701,7 @@ def slide_data_leakage(prs: Presentation) -> None:
         )
         set_text(body.text_frame, body_text, size=9.5, colour=BODY)
 
-    # Bottom callout — why five layers.
+    # Bottom callout: why five layers.
     callout_y = row_y + row_h + Inches(0.2)
     add_outlined_rect(
         slide, Inches(0.5), callout_y,
