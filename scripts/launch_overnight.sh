@@ -36,11 +36,12 @@ except Exception:
   fi
 fi
 
-setsid nohup caffeinate -dimsu \
-  python3 scripts/overnight_watchdog.py --out "$OUT" \
-  >> "$OUT/launcher.log" 2>&1 &
+# The watchdog daemonises itself and holds its own caffeinate assertion tied
+# to its pid. macOS has no setsid(1), so detaching cannot be done from here.
+python3 scripts/overnight_watchdog.py --out "$OUT" --daemon \
+  >> "$OUT/launcher.log" 2>&1
 
-sleep 3
+sleep 5
 echo "launched. out=$OUT"
 echo "watchdog log:   $OUT/watchdog.log"
 echo "supervisor log: $OUT/supervisor.log"

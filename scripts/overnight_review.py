@@ -174,6 +174,10 @@ class Supervisor:
             "--tools", ",".join(tools),
             "--allowedTools", " ".join(tools),
             "--output-format", "text",
+            # No MCP servers. One of the configured servers needs interactive
+            # auth, which would stall an unattended call, and none of them are
+            # any use for reading local files.
+            "--strict-mcp-config",
         ]
         try:
             proc = subprocess.run(

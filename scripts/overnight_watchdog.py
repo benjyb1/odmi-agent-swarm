@@ -162,11 +162,60 @@ class Watchdog:
             started = time.time()
 
 
+def daemonise(out):
+    """Detach from the launching shell and terminal.
+
+    macOS has no setsid(1), so the double fork is done here instead. Without
+    it the whole tree stays in the caller's process group and dies with the
+    session that started it.
+    """
+    if os.fork() > 0:
+        os._exit(0)
+    os.setsid()
+    if os.fork() > 0:
+        os._exit(0)
+    os.chdir(HERE)
+    os.umask(0)
+    log = os.path.join(out, "daemon.log")
+    fd = os.open(log, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o644)
+    devnull = os.open(os.devnull, os.O_RDONLY)
+    os.dup2(devnull, 0)
+    os.dup2(fd, 1)
+    os.dup2(fd, 2)
+
+
+def hold_caffeinate(out):
+    """Keep the machine awake for exactly as long as this process lives.
+
+    -w ties the assertion to our pid, so there is no stray caffeinate left
+    holding the machine awake if the watchdog dies.
+    """
+    try:
+        proc = subprocess.Popen(
+            ["caffeinate", "-dimsu", "-w", str(os.getpid())],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        return proc.pid
+    except (OSError, FileNotFoundError):
+        return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="build/overnight")
+    ap.add_argument("--daemon", action="store_true",
+                    help="detach and run in the background")
     args = ap.parse_args()
-    sys.exit(Watchdog(args.out).run())
+
+    out = os.path.abspath(args.out)
+    os.makedirs(out, exist_ok=True)
+    if args.daemon:
+        daemonise(out)
+
+    caff = hold_caffeinate(out)
+    wd = Watchdog(out)
+    wd.log(f"caffeinate pid {caff}" if caff else "caffeinate UNAVAILABLE")
+    sys.exit(wd.run())
 
 
 if __name__ == "__main__":
