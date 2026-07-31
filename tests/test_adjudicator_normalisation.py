@@ -16,9 +16,7 @@ from agents.prompts.search_adjudicator import _format_evidence, _registrable_dom
 from agents.tools.search_adjudicator import _equalise_counts
 
 
-# ---------------------------------------------------------------------------
 # _equalise_counts: equal passage count across the two arms
-# ---------------------------------------------------------------------------
 
 def test_equalise_counts_truncates_longer_arm_to_shorter():
     a = [{"url": "1"}, {"url": "2"}, {"url": "3"}, {"url": "4"}, {"url": "5"}]
@@ -66,9 +64,7 @@ def test_equalise_counts_does_not_mutate_inputs():
     assert len(a) == 3 and len(b) == 1
 
 
-# ---------------------------------------------------------------------------
 # _registrable_domain: strip the provider-revealing host detail
-# ---------------------------------------------------------------------------
 
 def test_registrable_domain_plain_com():
     assert _registrable_domain("https://example.com/a/b?c=d") == "example.com"
@@ -97,9 +93,7 @@ def test_registrable_domain_empty_or_missing_is_safe():
     assert _registrable_domain(None) == ""  # type: ignore[arg-type]
 
 
-# ---------------------------------------------------------------------------
 # Renderer: domains in, full paths and scores out
-# ---------------------------------------------------------------------------
 
 def test_format_evidence_shows_domain_not_full_url_or_score():
     block = _format_evidence(

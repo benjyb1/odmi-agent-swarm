@@ -240,10 +240,7 @@ Web search results:
 Return your answer as JSON matching the ResearcherOutput schema."""
 
 
-# ============================================================
 # Compressed variant (EXP-8 `prompt-compressed` cost arm)
-# ============================================================
-#
 # Same task, same hard rules, but the worked examples are dropped and
 # the instructions are terser. The aim is to cut input tokens on the
 # main Researcher call and measure what that costs in accuracy. This is
@@ -302,10 +299,7 @@ class PromptVariant(NamedTuple):
     description: str
 
 
-# ============================================================
 # Calibrated variant (EXP-A `calibration anchors` arm).
-# ============================================================
-#
 # Same V4 ten-rule structure with concrete anchors added to Rule 8 for
 # retrieval_confidence and answer_confidence, so the [0, 1] scores carry a
 # consistent meaning across runs and models. Hypothesis: a calibrated
@@ -365,10 +359,7 @@ CALIBRATED_SYSTEM = SYSTEM.replace(
 )
 
 
-# ============================================================
 # Negative-evidence licence variant (EXP-C `neg_licence` arm).
-# ============================================================
-#
 # V4 plus a controlled exception to Rule 2 that licenses a committed
 # `no` on a BINARY question after a documented exhaustive non-discovery:
 # the queries explicitly targeted the positive existence of the thing,

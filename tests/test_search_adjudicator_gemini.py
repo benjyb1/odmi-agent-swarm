@@ -55,9 +55,7 @@ def _gemini_body(payload: dict, *, prompt_tokens: int = 120, out_tokens: int = 4
     }
 
 
-# --------------------------------------------------------------------------
 # Answer-blind prompt variant
-# --------------------------------------------------------------------------
 
 
 def test_answer_blind_user_message_omits_gold_answer():
@@ -116,9 +114,7 @@ def test_system_for_blind_withholds_gold_and_differs():
     assert "NOT given the correct answer" in blind_system
 
 
-# --------------------------------------------------------------------------
 # Gemini response parser
-# --------------------------------------------------------------------------
 
 
 def test_parse_gemini_adjudication_maps_fields():
@@ -163,9 +159,7 @@ def test_parse_gemini_adjudication_raises_on_bad_schema():
         parse_gemini_adjudication(_gemini_body(bad))
 
 
-# --------------------------------------------------------------------------
 # adjudicate_gemini end-to-end (network mocked)
-# --------------------------------------------------------------------------
 
 
 def test_adjudicate_gemini_returns_parsed_verdict_and_usage():
@@ -248,9 +242,7 @@ def test_adjudicate_gemini_answer_blind_withholds_gold():
     assert "establishes an answer" in sent_text
 
 
-# --------------------------------------------------------------------------
 # Auth probe callability (no live call)
-# --------------------------------------------------------------------------
 
 
 def test_probe_auth_is_callable_and_reports_outcome():

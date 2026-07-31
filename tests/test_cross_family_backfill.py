@@ -30,9 +30,7 @@ from agents.tools.search_adjudicator import AdjudicationResult
 from evaluation.stats import krippendorff_alpha
 
 
-# --------------------------------------------------------------------------
 # compute_reliability: pairing + agreement + alpha + confusion
-# --------------------------------------------------------------------------
 
 def test_perfect_agreement_alpha_one():
     """Identical verdicts on every pair => agreement 1.0 and alpha 1.0."""
@@ -109,9 +107,7 @@ def test_empty_subsample_is_safe():
     assert rel["krippendorff_alpha"] is None
 
 
-# --------------------------------------------------------------------------
 # run_backfill: end-to-end on a hand-made frozen result, Groq mocked
-# --------------------------------------------------------------------------
 
 def _write_result(path, pair_ids, verdict_by_pair, seed=99):
     """Write a minimal EXP-1-shaped JSONL: summary line then per-pair records."""
@@ -231,9 +227,7 @@ def test_run_backfill_catches_per_pair_judge_error(tmp_path):
     assert summary["raw_agreement"] == 1.0
 
 
-# --------------------------------------------------------------------------
 # judge_verdict_for: position-swap + DIY-frame combination (adjudicate mocked)
-# --------------------------------------------------------------------------
 
 def _adj(winner):
     return AdjudicationResult(

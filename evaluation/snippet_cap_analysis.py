@@ -169,7 +169,7 @@ def main() -> int:
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # ----- A0: dataset shape -----
+    # A0: dataset shape
     rule("A0. dataset shape (sanity)")
     shape = cur.execute(
         "SELECT COUNT(*) total, "
@@ -182,7 +182,7 @@ def main() -> int:
     for k in shape.keys():
         print(f"  {k}: {shape[k]}")
 
-    # ----- A1: cited-quote position within its own snippet -----
+    # A1: cited-quote position within its own snippet
     rule("A1. cited evidence_quote position within its own snippet")
     print("# The Researcher only saw the first 600 chars of each snippet, so a")
     print("# quote that ends up cited must locate at 0..600 in some snippet of its row.")
@@ -226,7 +226,7 @@ def main() -> int:
     for idx, n in sorted(snippet_idx_counter.items())[:10]:
         print(f"    snippet[{idx}]: {n} ({pct(n, total_idx)})")
 
-    # ----- A2: hidden-answer scan on abstained binary pairs -----
+    # A2: hidden-answer scan on abstained binary pairs
     rule(f"A2. abstained pairs: relevant content past 600 in same snippet "
          f"(min snippet {A2_MIN_SNIPPET_CHARS}c, "
          f"cluster {A2_MIN_DISTINCT_KEYWORDS}kw/{A2_KEYWORD_WINDOW}c)")
@@ -308,7 +308,7 @@ def main() -> int:
     for q, cc, pos, snip in examples:
         print(f"    {q}/{cc} pos={pos}: {snip[:140]}...")
 
-    # ----- A3: cost projection -----
+    # A3: cost projection
     rule("A3. cost projection per cap (extra input tokens vs current 600 cap)")
     cap_chars = {c: 0 for c in PROJECTION_CAPS}
     cap_rows = {c: 0 for c in PROJECTION_CAPS}

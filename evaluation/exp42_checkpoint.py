@@ -81,7 +81,7 @@ def main() -> int:
     print(f"EXP-42 CHECKPOINT  ({eid})")
     print("=" * 70)
 
-    # ---------- progress ----------
+    # progress
     per_cc = dict(c.execute(
         "SELECT country_code, COUNT(*) FROM phase2_final WHERE experiment_id=? "
         "GROUP BY 1", (eid,)))
@@ -92,7 +92,7 @@ def main() -> int:
         bar = "#" * int(n / PER_COUNTRY * 24)
         print(f"  {cc} {n:>4}/{PER_COUNTRY} |{bar:<24}|")
 
-    # ---------- outcomes ----------
+    # outcomes
     print("\n--- terminal statuses ---")
     statuses = Counter(dict(c.execute(
         "SELECT terminal_status, COUNT(*) FROM phase2_final WHERE experiment_id=? "
@@ -104,7 +104,7 @@ def main() -> int:
             bad_status += n
         print(f"  {st:<28} {n:>5}{tag}")
 
-    # ---------- agent-side failures ----------
+    # agent-side failures
     print("\n--- agent failure_mode (researcher / verifier rows) ---")
     any_fm = False
     retryable_pairs = set()
@@ -133,7 +133,7 @@ def main() -> int:
     if not any_fm:
         print("  (no agent failure_mode recorded)")
 
-    # ---------- the real recovery target ----------
+    # the real recovery target
     # A pair only needs retrying if it has NO terminal row. Everything else
     # already has an outcome, transient failures included, because the retry
     # loop absorbed them.
@@ -168,7 +168,7 @@ def main() -> int:
             f"  (+{len(missing_in_started) - 18} more)"
         print(f"    {shown}{more}")
 
-    # ---------- duplicates ----------
+    # duplicates
     # A resume can re-dispatch a pair it should have skipped. `finalised_pairs`
     # in the orchestrator identifies done pairs by joining phase2_final to
     # phase2_researcher_runs for the condition_label, so a final with no
@@ -207,7 +207,7 @@ def main() -> int:
     else:
         print("  duplicated pairs: 0")
 
-    # ---------- verdict ----------
+    # verdict
     print("\n" + "=" * 70)
     problems = []
     if dupes:

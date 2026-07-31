@@ -81,9 +81,7 @@ _SEARCH_NAME = {"serper": "serper_raw"}
 _ALIAS = {"serper_raw": "serper"}
 
 
-# ===========================================================================
 # Pure logic (unit-tested in tests/test_provider_ab.py)
-# ===========================================================================
 
 def normalise_provider(name: str) -> str:
     """Canonical user-facing provider key: lower-cased, serper_raw -> serper."""
@@ -267,9 +265,7 @@ def filter_live_providers(
     return live, dropped
 
 
-# ===========================================================================
 # Live harness (network + DB + LLM)
-# ===========================================================================
 
 def probe_provider(name: str, *, query: str = PROBE_QUERY,
                    max_results: int = PROBE_MAX_RESULTS) -> dict:
@@ -635,7 +631,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     requested = [normalise_provider(p) for p in args.providers]
     print(f"Requested providers: {requested}")
 
-    # --- Provider probe FIRST: drop any arm that cannot return results -----
+    # Provider probe FIRST: drop any arm that cannot return results
     probes = probe_all(requested)
     _print_probe_table(requested, probes)
     live, dropped = filter_live_providers(requested, probes)
@@ -686,7 +682,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         finally:
             _save_cache(cache)
 
-    # --- Aggregate: head-to-head matrix + Copeland ranking -----------------
+    # Aggregate: head-to-head matrix + Copeland ranking
     matrix = aggregate_matrix(records, live)
 
     print("\n=== Provider ranking (Copeland) ===")
@@ -709,7 +705,7 @@ def main(argv: Optional[List[str]] = None) -> int:
               f"x share {hh['x_win_share']:.0%} "
               f"CI [{hh['wilson_low']:.0%}, {hh['wilson_high']:.0%}]")
 
-    # --- Seeded 30% subsample: robustness checks (section 4) ---------------
+    # Seeded 30% subsample: robustness checks (section 4)
     subsample = select_subsample(records, seed=args.subsample_seed,
                                  frac=args.subsample_frac)
     subsample_ids = [_pair_id(r) for r in subsample]

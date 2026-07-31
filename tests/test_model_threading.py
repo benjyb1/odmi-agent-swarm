@@ -81,9 +81,7 @@ def _researcher_output() -> ResearcherOutput:
     )
 
 
-# ---------------------------------------------------------------------------
 # 1. Researcher threads the model to both calls
-# ---------------------------------------------------------------------------
 
 def test_run_researcher_threads_model_to_query_gen_and_main(monkeypatch):
     captured: dict = {}
@@ -135,9 +133,7 @@ def test_run_researcher_default_model_is_none(monkeypatch):
     assert captured["main_model"] is None
 
 
-# ---------------------------------------------------------------------------
 # 2. Verifier threads the model to both calls
-# ---------------------------------------------------------------------------
 
 def test_run_verifier_threads_model_to_query_gen_and_main(monkeypatch):
     captured: dict = {}
@@ -171,9 +167,7 @@ def test_run_verifier_threads_model_to_query_gen_and_main(monkeypatch):
     assert captured["main_model"] == OPUS
 
 
-# ---------------------------------------------------------------------------
 # 3. Receipts: the resolved model ID is logged, not the requested alias
-# ---------------------------------------------------------------------------
 
 class _Out(BaseModel):
     value: int
@@ -227,9 +221,7 @@ def test_usage_log_records_resolved_model(monkeypatch, tmp_path):
     assert rows == [("claude-haiku-4-5-20251001",)]
 
 
-# ---------------------------------------------------------------------------
 # 4. model-fallback escalation selector (EXP-8)
-# ---------------------------------------------------------------------------
 
 class TestModelForAttempt:
     def test_attempt_zero_uses_base(self):
@@ -249,9 +241,7 @@ class TestModelForAttempt:
         assert _model_for_attempt(None, None, 1) is None
 
 
-# ---------------------------------------------------------------------------
 # 5. dispatch forwards the model flags to the subprocess
-# ---------------------------------------------------------------------------
 
 def _neutralise_dispatch(ds, monkeypatch, captured):
     class _FakeProc:

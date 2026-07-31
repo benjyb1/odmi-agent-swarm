@@ -168,10 +168,7 @@ COUNTRIES = {
 }
 
 
-# ============================================================
 # Dry-run and walkthrough flags
-# ============================================================
-#
 # `_dry_run` is a module-level switch set by `coordinate()` at entry.
 # When True, every DB write helper short-circuits — no row touches
 # subtrio_status, phase2_researcher_runs, phase2_verifier_runs,
@@ -206,9 +203,7 @@ def _print_step(prefix: str, event: str, payload: dict) -> None:
     print(" ".join(str(p) for p in parts), flush=True)
 
 
-# ============================================================
 # subtrio_status helpers
-# ============================================================
 
 def _iso_now() -> str:
     return (
@@ -306,9 +301,7 @@ def _upsert_subtrio_status(
         print(f"[coordinator] subtrio_status write failed: {exc}", file=sys.stderr)
 
 
-# ============================================================
 # Question / input loaders
-# ============================================================
 
 def _load_question(question_id: str) -> dict:
     if not QUESTIONS_JSON.exists():
@@ -358,9 +351,7 @@ def _build_researcher_input(
     )
 
 
-# ============================================================
 # Adjudicator finalisation helper (Change 1)
-# ============================================================
 
 def _finalise_after_adjudication(
     adj_output: Optional["AdjudicatorOutput"],
@@ -455,9 +446,7 @@ def _finalise_after_adjudication(
     return ("accepted_by_adjudicator", chosen)
 
 
-# ============================================================
 # DB write helpers (reuse the existing per-agent write paths)
-# ============================================================
 
 # A row with no LLM usage of any kind is not necessarily a logging failure:
 # some paths deliberately make no call. Naming which path it was keeps the
@@ -752,9 +741,7 @@ def _save_final_row(
         return int(cur.lastrowid)
 
 
-# ============================================================
 # The Coordinator's state machine
-# ============================================================
 
 def _find_resumable_researcher(
     question_id: str, country_code: str,
@@ -952,10 +939,7 @@ def _seed_researcher_from_experiment(
     return row, snippets
 
 
-# ============================================================
 # EXP-7: evidence accumulation across the retry loop (chained arm)
-# ============================================================
-#
 # These helpers are pure and offline. They turn a Researcher/Verifier run
 # into EvidenceItem records and merge them into a running corpus, de-duped
 # on (source_url, first 160 chars of snippet) so a page seen twice across
@@ -1304,7 +1288,7 @@ def coordinate(
     for attempt in range(max_retries + 1):
         retry_count = attempt
 
-        # --- Researcher stage ---
+        # Researcher stage
         if attempt == 0 and (resumable is not None or seeded):
             # No live Researcher call: attempt 1 is reused. Either resumed
             # from a prior incomplete subtrio of THIS arm (resumable), or
@@ -1512,7 +1496,7 @@ def coordinate(
                   flush=True)
             continue
 
-        # --- EXP-28 researcher_only arm: no verification layer ---
+        # EXP-28 researcher_only arm: no verification layer
         # Commit iff the answer is a real label at or above the D37 floor.
         # A sub-floor answer retries with the same floor-feedback message
         # the trio uses on a sub-floor Verifier pass, so the Researcher
@@ -1561,7 +1545,7 @@ def coordinate(
                 continue
             break  # exhausted -> post-loop abstention finaliser
 
-        # --- Verifier stage ---
+        # Verifier stage
         # EXP-35 researcher_self_verify: the critique call is the same
         # model the Researcher attempt used, never runs its own web
         # search (the EXP-14 'never' policy), and carries the
@@ -1678,7 +1662,7 @@ def coordinate(
               f"({v_result.output.verifier_confidence:.2f}) "
               f"£{(v_result.cumulative_cost_usd or 0) * 0.79:.4f}", flush=True)
 
-        # --- Verdict branching ---
+        # Verdict branching
         if _should_accept_verifier_pass(
             v_result.output.verdict,
             last_researcher_output.answer,
@@ -1759,7 +1743,7 @@ def coordinate(
         # Retries exhausted → Adjudicator.
         break
 
-    # --- EXP-28/35/40 ablation arms: no Adjudicator recovery ---
+    # EXP-28/35/40 ablation arms: no Adjudicator recovery
     # researcher_only, no_adjudicator, researcher_self_verify and cooperative
     # terminate retry exhaustion in an honest abstention. The cooperative arm
     # (EXP-40) has no Adjudicator by construction: a corroborative Verifier
@@ -1810,7 +1794,7 @@ def coordinate(
         )
         return final_status, chosen
 
-    # --- Adjudicator stage ---
+    # Adjudicator stage
     _upsert_subtrio_status(
         subtrio_id=subtrio_id, batch_id=batch_id,
         question_id=question_id, country_code=country_code,
@@ -1904,9 +1888,7 @@ def coordinate(
     return final_status, chosen_output
 
 
-# ============================================================
 # CLI
-# ============================================================
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run one Coordinator pass.")

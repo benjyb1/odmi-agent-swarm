@@ -34,9 +34,7 @@ runs_per_qid = (
     if len(finals) > 0 and "question_id" in finals.columns else {}
 )
 
-# ============================================================
 # Filters
-# ============================================================
 
 col1, col2, col3 = st.columns([2, 1, 1])
 with col1:
@@ -64,9 +62,7 @@ filtered["runs"] = filtered["question_id"].map(
     lambda q: runs_per_qid.get(q, 0)
 )
 
-# ============================================================
 # Selection widget + table
-# ============================================================
 
 # The matching rows are shown read-only. Selection happens through a
 # proper multiselect below the table so it works reliably across

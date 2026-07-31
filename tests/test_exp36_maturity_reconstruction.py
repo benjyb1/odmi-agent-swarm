@@ -27,7 +27,7 @@ def _cell(qid: str, dim: str, response: str, awarded: float,
     )
 
 
-# --- the rubric ------------------------------------------------------------
+# the rubric
 
 def test_rubric_maps_answer_to_awarded_fraction() -> None:
     rubric = build_rubric([
@@ -61,7 +61,7 @@ def test_rubric_skips_unmarked_questions() -> None:
     assert rubric == {}
 
 
-# --- the score -------------------------------------------------------------
+# the score
 
 def test_dimension_mean_averages_dimensions_not_questions() -> None:
     """The published formula weights each dimension equally however many

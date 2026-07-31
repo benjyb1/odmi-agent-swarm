@@ -68,9 +68,7 @@ def is_committed(answer) -> bool:
     return norm(answer) not in ABST
 
 
-# ----------------------------------------------------------------------------
 # Record building
-# ----------------------------------------------------------------------------
 
 def ro(db=None):
     conn = sqlite3.connect(f"file:{db or DB}?mode=ro", uri=True)
@@ -191,9 +189,7 @@ def population(recs, *, scope="pooled", shape=None, countries=None,
     return out
 
 
-# ----------------------------------------------------------------------------
 # A. Calibration
-# ----------------------------------------------------------------------------
 
 def calibration(pop, conf_key="final_conf", correct_key="correct", nbins=10):
     """Reliability table over equal-width bins, plus ECE, MCE and Brier."""
@@ -236,9 +232,7 @@ def calib_by_commit_band(pop, conf_key="final_conf", correct_key="correct"):
     return rows
 
 
-# ----------------------------------------------------------------------------
 # B. Threshold sweep (candidate confidence is the gate)
-# ----------------------------------------------------------------------------
 
 def threshold_sweep(pop_with_candidates, floors=SWEEP_FLOORS):
     """For each floor t, COMMIT a pair iff its candidate confidence >= t.
@@ -285,9 +279,7 @@ def verifier_optimism(pop_with_candidates):
                 other=len(abst) - rejected - passed)
 
 
-# ----------------------------------------------------------------------------
 # C. Two-confidence predictive power
-# ----------------------------------------------------------------------------
 
 def auroc(scores, labels):
     """Area under ROC = P(score of a positive > score of a negative), ties .5.
@@ -383,9 +375,7 @@ def predictive_power(pop):
     return out
 
 
-# ----------------------------------------------------------------------------
 # Theory 1: are the false positives the swarm's MOST confident commits?
-# ----------------------------------------------------------------------------
 
 def theory1(pop):
     """Compare answer_confidence of correct vs false-positive vs false-negative
@@ -416,9 +406,7 @@ def theory1(pop):
                 false_negative=stat(fn), neg_fp_per_band=per_band)
 
 
-# ----------------------------------------------------------------------------
 # Reliability-diagram SVG (manuscript drop-in)
-# ----------------------------------------------------------------------------
 
 def reliability_svg(series, path):
     """series: list of (label, colour, calibration_dict). Plots mean_conf (x)
@@ -478,9 +466,7 @@ def reliability_svg(series, path):
     Path(path).write_text("\n".join(parts))
 
 
-# ----------------------------------------------------------------------------
 # Reporting
-# ----------------------------------------------------------------------------
 
 def _p(s=""):
     print(s)
@@ -499,7 +485,7 @@ def report(db=None):
     _p(f"DB: {db or DB}  ({n_final} phase2_final rows)")
     _p("=" * 80)
 
-    # ---- headline reproduction + population decomposition ------------------
+    # headline reproduction + population decomposition
     _p("\n## Headline: binary committed answers, by population")
     _p(f"  {'population':28s} {'n':>5s} {'acc':>6s} {'FP':>5s} {'FN':>5s} "
        f"{'neg':>5s} {'negFP%':>7s}")
@@ -527,7 +513,7 @@ def report(db=None):
         out["headline"][label] = dict(n=n, acc=correct / n, fp=fp, fn=fn,
                                       neg=neg, neg_fp=negfp)
 
-    # ---- A. calibration ----------------------------------------------------
+    # A. calibration
     _p("\n" + "=" * 80)
     _p("A. CALIBRATION of answer_confidence (committed binary answers)")
     _p("=" * 80)
@@ -559,7 +545,7 @@ def report(db=None):
         _p(f"  [{b['lo']:.1f},{b['hi']:.1f})  {b['n']:4d}   {b['conf']:.2f}     "
            f"{b['acc']:.2f}  {b['gap']:+.2f}")
 
-    # ---- catalogue theory --------------------------------------------------
+    # catalogue theory
     _p("\n" + "=" * 80)
     _p("A'. Catalogue-route theory: is the high-confidence band 'largely catalogue'?")
     _p("=" * 80)
@@ -580,7 +566,7 @@ def report(db=None):
         hi_band_catalogue=len(hi_cat), binary_catalogue=len(bin_cat),
         catalogue_confs=sorted({round(r["final_conf"], 2) for r in cat_all if r["final_conf"] is not None}))
 
-    # ---- Theory 1: are FPs the most confident commits? ---------------------
+    # Theory 1: are FPs the most confident commits?
     _p("\n" + "=" * 80)
     _p("A''. Theory 1: do false positives carry HIGHER confidence than correct answers?")
     _p("=" * 80)
@@ -609,7 +595,7 @@ def report(db=None):
     ], svg_path)
     _p(f"\nWrote reliability diagram: {svg_path}")
 
-    # ---- B. threshold sweep ------------------------------------------------
+    # B. threshold sweep
     _p("\n" + "=" * 80)
     _p("B. THRESHOLD SWEEP on candidate confidence (commit iff cand_conf >= t)")
     _p("=" * 80)
@@ -651,7 +637,7 @@ def report(db=None):
            f"@.80 cov={r80['coverage']:.0%} prec={(r80['precision'] or 0):.0%}")
         out["per_shape"][shp] = dict(N=sw["N"], at_065=r65, at_080=r80)
 
-    # ---- C. predictive power ----------------------------------------------
+    # C. predictive power
     _p("\n" + "=" * 80)
     _p("C. Do retrieval_confidence and answer_confidence each predict correctness?")
     _p("=" * 80)

@@ -33,9 +33,7 @@ page_header("Run Console", "Release subtrios and watch them progress live.")
 render_session_widget()
 
 
-# ============================================================
 # State helpers
-# ============================================================
 
 VERIFIER_STRATEGIES = [
     "verifier-disprove",
@@ -74,9 +72,7 @@ def _all_questions() -> pd.DataFrame:
     return db.all_questions()
 
 
-# ============================================================
 # Launcher
-# ============================================================
 
 def render_launcher() -> None:
     st.subheader("Release subtrios")
@@ -407,9 +403,7 @@ def _trigger_release(
     st.toast("Dispatched. Watch the cards below.", icon="▶")
 
 
-# ============================================================
 # Active subtrio cards
-# ============================================================
 
 @st.fragment(run_every=1.5)
 def render_active_cards() -> None:
@@ -557,9 +551,7 @@ def _pipeline_block(label: str, state: str, verdict: str | None = None) -> str:
     )
 
 
-# ============================================================
 # Live progress strip
-# ============================================================
 
 _ACTIVE_STAGES = {"queued", "researching", "verifying", "adjudicating"}
 
@@ -613,9 +605,7 @@ def render_progress_strip() -> None:
         st.caption(f"Active: {previews}")
 
 
-# ============================================================
 # Layout
-# ============================================================
 
 render_progress_strip()
 st.divider()

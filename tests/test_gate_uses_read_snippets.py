@@ -22,10 +22,8 @@ import pytest
 from agents.models import ResearcherOutput, VerifierInput
 
 
-# ============================================================
 # Helper: build a minimal ResearcherOutput so VerifierInput
 # validates without real data.
-# ============================================================
 
 def _minimal_researcher_output() -> ResearcherOutput:
     return ResearcherOutput(
@@ -38,9 +36,7 @@ def _minimal_researcher_output() -> ResearcherOutput:
     )
 
 
-# ============================================================
 # Test 1: snippet path — pass when quote is in the snippets
-# ============================================================
 
 def test_substring_check_pass_from_snippets_no_network() -> None:
     """Pass when the quote is present in the researcher snippets.
@@ -79,9 +75,7 @@ def test_substring_check_pass_from_snippets_no_network() -> None:
     assert fetch_obj is None
 
 
-# ============================================================
 # Test 2: snippet path — fail when quote is absent from snippets
-# ============================================================
 
 def test_substring_check_fail_quote_absent_from_snippets() -> None:
     """Fail when the evidence quote is not in the researcher snippets.
@@ -106,9 +100,7 @@ def test_substring_check_fail_quote_absent_from_snippets() -> None:
     assert fetch_obj is None
 
 
-# ============================================================
 # Test 3a: back-compat with researcher_snippets=None — uses fetch path
-# ============================================================
 
 def test_substring_check_backcompat_none_uses_fetch_pass() -> None:
     """With researcher_snippets=None the live-fetch path runs as before.
@@ -138,9 +130,7 @@ def test_substring_check_backcompat_none_uses_fetch_pass() -> None:
     mock_ft.assert_called_once()
 
 
-# ============================================================
 # Test 3b: back-compat with researcher_snippets=[] — uses fetch path
-# ============================================================
 
 def test_substring_check_backcompat_empty_list_uses_fetch_pass() -> None:
     """With researcher_snippets=[] the live-fetch path runs as before."""
@@ -166,9 +156,7 @@ def test_substring_check_backcompat_empty_list_uses_fetch_pass() -> None:
     assert result == "pass", f"expected 'pass', got {result!r}"
 
 
-# ============================================================
 # Test 3c: back-compat — fetch failure → not_attempted
-# ============================================================
 
 def test_substring_check_backcompat_fetch_failure_not_attempted() -> None:
     """With researcher_snippets=None and a failing fetch, return not_attempted."""
@@ -196,9 +184,7 @@ def test_substring_check_backcompat_fetch_failure_not_attempted() -> None:
     assert notes is not None
 
 
-# ============================================================
 # Test 4: VerifierInput accepts researcher_snippets, defaults to []
-# ============================================================
 
 def test_verifier_input_researcher_snippets_field() -> None:
     """VerifierInput has researcher_snippets and it defaults to []."""

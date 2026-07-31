@@ -45,7 +45,7 @@ from evaluation.exp36_analysis import (  # noqa: E402
 EXPERIMENT_ID = "exp36_frozen_headline"
 EXPECTED_CANONICAL_PAIRS = 1144
 
-# --- predicate constants, mirroring evaluation/abstention_taxonomy.py -------
+# predicate constants, mirroring evaluation/abstention_taxonomy.py
 DENY_HOSTS = ("data.europa.eu",)
 MQA_MARKERS = ("data.europa.eu/mqa", "/mqa/", "metadata-quality")
 FETCH_ERROR_MARKERS = (

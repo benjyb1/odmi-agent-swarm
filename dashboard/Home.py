@@ -23,9 +23,7 @@ from dashboard.lib.currency import format_gbp
 from dashboard.lib.sidebar import render_session_widget
 
 
-# ============================================================
 # Page setup + theme
-# ============================================================
 
 st.set_page_config(
     page_title="ODMI Swarm",
@@ -226,9 +224,7 @@ st.markdown(
 render_session_widget()
 
 
-# ============================================================
 # Hero
-# ============================================================
 
 def render_hero() -> None:
     summary = db.rolling_window_summary()
@@ -281,9 +277,7 @@ def render_hero() -> None:
     )
 
 
-# ============================================================
 # KPI tiles
-# ============================================================
 
 def _kpi_html(label: str, value: str, caption: str, accent: str) -> str:
     return (
@@ -377,9 +371,7 @@ def kpi_tiles() -> None:
         )
 
 
-# ============================================================
 # Country chart
-# ============================================================
 
 @st.fragment(run_every=5)
 def country_outcomes_chart() -> None:
@@ -491,9 +483,7 @@ def country_outcomes_chart() -> None:
     )
 
 
-# ============================================================
 # Recent runs (left column)
-# ============================================================
 
 @st.fragment(run_every=3)
 def recent_runs_panel() -> None:
@@ -526,9 +516,7 @@ def recent_runs_panel() -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ============================================================
 # Coverage summary + Human queue (right column)
-# ============================================================
 
 def render_coverage_summary() -> None:
     """Per-country ground-truth coverage from ODMI 2025."""
@@ -621,9 +609,7 @@ def render_abstentions() -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-# ============================================================
 # Layout
-# ============================================================
 
 render_hero()
 

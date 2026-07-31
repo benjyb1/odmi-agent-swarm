@@ -50,7 +50,7 @@ def _trusted_list() -> list[str]:
     return ["data.overheid.nl", "overheid.nl"]
 
 
-# ---------- 1. narrow_then_wide (explicit; the former default) ----------
+# 1. narrow_then_wide (explicit; the former default)
 
 def test_narrow_then_wide_passes_trusted_and_widens_on_empty(monkeypatch):
     _stub_query_gen(monkeypatch)
@@ -125,7 +125,7 @@ def test_narrow_then_wide_no_widen_when_trusted_empty(monkeypatch):
     assert calls[0]["include_domains"] is None
 
 
-# ---------- 1b. Default is now wide_only (EXP-34 adoption) ----------
+# 1b. Default is now wide_only (EXP-34 adoption)
 
 def test_default_strategy_is_wide_only(monkeypatch):
     """After the EXP-34 adoption the production default is wide_only: a call
@@ -148,7 +148,7 @@ def test_default_strategy_is_wide_only(monkeypatch):
     assert calls[0]["include_domains"] is None
 
 
-# ---------- 2. wide_only ----------
+# 2. wide_only
 
 def test_wide_only_never_sends_include_domains(monkeypatch):
     _stub_query_gen(monkeypatch)
@@ -189,7 +189,7 @@ def test_wide_only_does_not_widen_even_on_empty(monkeypatch):
     assert n_calls["n"] == 1
 
 
-# ---------- 3. narrow_only ----------
+# 3. narrow_only
 
 def test_narrow_only_sends_include_domains(monkeypatch):
     _stub_query_gen(monkeypatch)
@@ -229,7 +229,7 @@ def test_narrow_only_skips_widen_on_empty(monkeypatch):
     assert n_calls["n"] == 1
 
 
-# ---------- 4. Unknown value is rejected ----------
+# 4. Unknown value is rejected
 
 def test_unknown_strategy_raises(monkeypatch):
     _stub_query_gen(monkeypatch)

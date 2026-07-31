@@ -94,9 +94,7 @@ BE_FACTSHEET = {
 ABSTENTION = "inconclusive"
 
 
-# ---------------------------------------------------------------------------
 # Normalisation
-# ---------------------------------------------------------------------------
 
 def norm(value):
     """Lower, collapse whitespace, underscores to spaces.
@@ -124,9 +122,7 @@ def stratum_of(country_code: str) -> str:
     raise KeyError(f"{country_code} is in neither held-out stratum")
 
 
-# ---------------------------------------------------------------------------
 # Load
-# ---------------------------------------------------------------------------
 
 def load_rubric(conn) -> dict:
     """Official answer-to-score map per question."""
@@ -192,9 +188,7 @@ def load_canonical_pairs(conn, experiment_id: str) -> list:
     ]
 
 
-# ---------------------------------------------------------------------------
 # Rubric validation
-# ---------------------------------------------------------------------------
 
 def validate_rubric(rubric: dict, gt: dict) -> dict:
     """Check the official rubric against the empirically derived one.
@@ -241,9 +235,7 @@ def validate_rubric(rubric: dict, gt: dict) -> dict:
     return {"overlapping_cells": overlap, "disagreements": 0}
 
 
-# ---------------------------------------------------------------------------
 # Scoring
-# ---------------------------------------------------------------------------
 
 def score_country(country_code, pairs, rubric, gt, shapes):
     """The three scores for one country, dimension-equal weighted."""
@@ -346,9 +338,7 @@ def check_belgium(result) -> list:
     return lines
 
 
-# ---------------------------------------------------------------------------
 # Correlation
-# ---------------------------------------------------------------------------
 
 def _pearson(xs, ys):
     mx, my = statistics.mean(xs), statistics.mean(ys)
@@ -377,9 +367,7 @@ def _spearman(xs, ys):
     return _pearson(ranks(xs), ranks(ys))
 
 
-# ---------------------------------------------------------------------------
 # Style
-# ---------------------------------------------------------------------------
 
 # Greyscale-safe: the stratum reads from hatch and marker shape, never hue.
 # Near-black rather than pure black; at print size 000 rings harsh against
@@ -436,9 +424,7 @@ def save(fig, stem: str, out_dir: Path) -> list:
     return written
 
 
-# ---------------------------------------------------------------------------
 # Figure 1
-# ---------------------------------------------------------------------------
 
 def figure_band(results, out_dir: Path) -> list:
     rows = sorted(results, key=lambda r: r["coverage"], reverse=True)
@@ -569,9 +555,7 @@ def figure_band(results, out_dir: Path) -> list:
     return save(fig, "fig_exp36_score_bands", out_dir)
 
 
-# ---------------------------------------------------------------------------
 # Figure 2
-# ---------------------------------------------------------------------------
 
 # Croatia and Belgium sit 3 points apart on both axes, and Finland and
 # Sweden differ by 0.1 on the x axis. Nudged by hand so no label overlaps a
@@ -664,9 +648,7 @@ def figure_scatter(results, out_dir: Path, stats: dict) -> list:
     return save(fig, "fig_exp36_coverage_vs_published", out_dir)
 
 
-# ---------------------------------------------------------------------------
 # Main
-# ---------------------------------------------------------------------------
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)

@@ -48,10 +48,8 @@ from agents.models import ResearcherOutput, VerifierStrategy
 from agents.prompts._shared import FORBIDDEN_SOURCES_BULLETS
 
 
-# ============================================================
 # Shared schema note appended to every system prompt.
 # This is the authoritative JSON contract the model must match.
-# ============================================================
 
 _SCHEMA_NOTE = """
 You will return a JSON object matching the VerifierOutput schema:
@@ -90,12 +88,10 @@ Rules:
 """
 
 
-# ============================================================
 # Shared user-message builder.
 # All four strategies receive the same evidence block; only the
 # system prompt changes the reasoning framing.
 # Strategy D (blind) omits the Researcher's answer label.
-# ============================================================
 
 def _researcher_evidence_block(
     researcher: ResearcherOutput,
@@ -251,9 +247,7 @@ def build_user_message(
     return "\n".join(sections)
 
 
-# ============================================================
 # Strategy A — disprove
-# ============================================================
 
 _DISPROVE_NAME = "phase2_verifier_disprove"
 _DISPROVE_VERSION = 4
@@ -311,7 +305,6 @@ materially wrong, unverifiable, or insufficient for the specific question.
 """ + _SCHEMA_NOTE
 
 
-# ============================================================
 # Strategy — corroborate (EXP-40 cooperative arm; fair rewrite)
 #
 # V2 replaces the V1 strawman ("your default stance is
@@ -334,7 +327,6 @@ materially wrong, unverifiable, or insufficient for the specific question.
 # hypothesis, so EXP-40's null was conservative and stands. V3 adds the
 # corroborative mirror rather than disprove's wording, which would import
 # the opposing framing and make the arms differ by more than stance.
-# ============================================================
 
 _CORROBORATE_NAME = "phase2_verifier_corroborate"
 _CORROBORATE_VERSION = 3
@@ -401,9 +393,7 @@ whether the answer is genuinely supported.
 """ + _SCHEMA_NOTE
 
 
-# ============================================================
 # Strategy B — negation
-# ============================================================
 
 _NEGATION_NAME = "phase2_verifier_negation"
 _NEGATION_VERSION = 3
@@ -463,9 +453,7 @@ is a valid reason to fail.
 """ + _SCHEMA_NOTE
 
 
-# ============================================================
 # Strategy C — steelman
-# ============================================================
 
 _STEELMAN_NAME = "phase2_verifier_steelman"
 _STEELMAN_VERSION = 3
@@ -515,9 +503,7 @@ dissertation analysis can read your full chain of reasoning.
 """ + _SCHEMA_NOTE
 
 
-# ============================================================
 # Strategy D — blind
-# ============================================================
 
 _BLIND_NAME = "phase2_verifier_blind"
 _BLIND_VERSION = 3
@@ -570,10 +556,7 @@ Verdict.
 """ + _SCHEMA_NOTE
 
 
-# ============================================================
 # EXP-B structured fit-check variant of `verifier-disprove`.
-# ============================================================
-#
 # Replaces Step 3 of the V4 disprove prompt with an explicit
 # per-dimension fit-check (entity / scope / tense / metric / scale).
 # Every other step and the schema-note are identical to V4. Selected
@@ -633,10 +616,7 @@ _DISPROVE_STRUCTURED_SYSTEM = _DISPROVE_SYSTEM.replace(
 )
 
 
-# ============================================================
 # EXP-35 self-critique variant of `verifier-disprove`.
-# ============================================================
-#
 # The `researcher_self_verify` pipeline mode (EXP-35) replaces the
 # adversarial Verifier with one self-critique call: the same model that
 # produced the answer argues against it, over only the evidence already
@@ -718,10 +698,7 @@ wrong answer twice does not make it right.
 """ + _SCHEMA_NOTE
 
 
-# ============================================================
 # Disprove variants (selected by --verifier-prompt-variant)
-# ============================================================
-#
 # The `verifier-disprove` strategy can be served by more than one
 # prompt body. The strategy_label on the per-run DB row stays
 # "verifier-disprove" across variants; only the `prompt_version_id`
@@ -780,9 +757,7 @@ def disprove_variant(name: str = "default") -> _DisproveVariant:
         ) from None
 
 
-# ============================================================
 # Strategy registry
-# ============================================================
 
 @dataclass(frozen=True)
 class _StrategySpec:
@@ -792,12 +767,10 @@ class _StrategySpec:
     description: str
 
 
-# ============================================================
 # EXP-11 tristate strategies (P1/P2). Evaluation-only: the harness
 # parses these with VerifierOutputTristate. Production run_verifier
 # hardcodes the binary VerifierOutput schema, so it must not be pointed
 # at these labels; the coordinator never requests them.
-# ============================================================
 
 _TRISTATE_SCHEMA_NOTE = """
 You will return a JSON object matching the VerifierOutputTristate schema:

@@ -18,9 +18,7 @@ def _count_shape() -> QuestionShape:
     return QuestionShape(question_id="Q13", shape="count_band", allowed_answers=COUNT_BANDS)
 
 
-# ------------------------------------------------------------------
 # Band assignment
-# ------------------------------------------------------------------
 
 
 def test_band_for_percentage_boundaries():
@@ -47,9 +45,7 @@ def test_band_for_count():
     assert b(250, COUNT_BANDS) == ">10"
 
 
-# ------------------------------------------------------------------
 # Licence helpers
-# ------------------------------------------------------------------
 
 
 def test_licence_family_open_and_restricted():
@@ -84,9 +80,7 @@ def test_canonical_licence_versions_kept():
     assert licences.canonical_licence("notspecified") == "sentinel"
 
 
-# ------------------------------------------------------------------
 # Format helpers
-# ------------------------------------------------------------------
 
 
 def test_open_machine_readable_formats():
@@ -99,9 +93,7 @@ def test_open_machine_readable_formats():
     assert omr("SHP") is False        # machine-readable but not open; excluded
 
 
-# ------------------------------------------------------------------
 # Metric functions over small fixtures
-# ------------------------------------------------------------------
 
 
 def _ds(identifier, dataset_lics=None, dists=None):
@@ -175,9 +167,7 @@ def test_q27_open_format():
     assert r.band_label == "31-50%"
 
 
-# ------------------------------------------------------------------
 # Empty denominator (B3): abstain, never the bottom band
-# ------------------------------------------------------------------
 
 
 def test_empty_denominator_abstains_not_bottom_band():
@@ -199,9 +189,7 @@ def test_empty_denominator_abstains_not_bottom_band():
     assert q21.band_label == NOT_APPLICABLE
 
 
-# ------------------------------------------------------------------
 # Regression: count-band fallback must not map 0 to the top band
-# ------------------------------------------------------------------
 
 
 def test_band_for_count_zero_maps_to_lowest_not_highest():
@@ -212,9 +200,7 @@ def test_band_for_count_zero_maps_to_lowest_not_highest():
     assert metrics.band_for_count(0, COUNT_BANDS) != ">10"
 
 
-# ------------------------------------------------------------------
 # Field absence -> unmeasurable (not_applicable), never a confident 0
-# ------------------------------------------------------------------
 
 
 def test_q12_unmeasurable_when_no_licence_field_anywhere():

@@ -30,11 +30,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 _CACHE_ROOT = _REPO_ROOT / "data" / "catalogue_snapshots"
 
 
-# ------------------------------------------------------------------
 # Adapter registry. Each route plugs in a harvest generator, a
 # page-normaliser (for replay), and a page format ("json" | "rdf") so
 # the cache writer knows how to serialise the raw page.
-# ------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -246,9 +244,7 @@ def _write_snapshot_row(s: Snapshot) -> None:
         conn.commit()
 
 
-# ------------------------------------------------------------------
 # Replay from cache
-# ------------------------------------------------------------------
 
 
 def find_latest_snapshot_dir(country_code: str) -> Optional[Path]:
@@ -324,9 +320,7 @@ def get_snapshot(
     return harvest_country(country_code, max_pages=max_pages)
 
 
-# ------------------------------------------------------------------
 # CLI
-# ------------------------------------------------------------------
 
 
 def main() -> int:

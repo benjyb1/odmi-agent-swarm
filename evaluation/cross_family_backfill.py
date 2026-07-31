@@ -89,9 +89,7 @@ DEFAULT_OUT = RESULTS_DIR / "cross_family_exp1.jsonl"
 VERDICTS = ("diy", "tavily", "tie", "both_fail")
 
 
-# ===========================================================================
 # Frozen-result parsing
-# ===========================================================================
 
 def load_result(path: Path) -> tuple[dict, dict[str, dict]]:
     """Read an EXP-1 result JSONL into its summary line and a record index.
@@ -145,9 +143,7 @@ def subsample_records(summary: dict, by_pair_id: dict[str, dict]) -> List[dict]:
     return out
 
 
-# ===========================================================================
 # Cross-family re-judge of one frozen pair
-# ===========================================================================
 
 def judge_verdict_for(
     rec: dict,
@@ -210,9 +206,7 @@ def judge_verdict_for(
     }
 
 
-# ===========================================================================
 # Pairing + agreement + alpha (pure, unit-tested)
-# ===========================================================================
 
 def compute_reliability(per_pair: List[dict]) -> dict:
     """Raw agreement, Krippendorff's alpha, and a confusion breakdown.
@@ -272,9 +266,7 @@ def _confusion_lines(confusion: dict[str, dict[str, int]]) -> List[str]:
     return diag + off
 
 
-# ===========================================================================
 # Driver
-# ===========================================================================
 
 def run_backfill(
     result_path: Path,

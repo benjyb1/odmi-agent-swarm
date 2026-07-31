@@ -46,7 +46,6 @@ def contains(haystack: str, needle: str) -> bool:
     return normalise(needle) in normalise(haystack)
 
 
-# ============================================================
 # Matcher v2 (EXP-11 P4): per-snippet, ellipsis-aware, with provenance.
 #
 # v1 (`contains`) joins all snippets into one corpus before matching,
@@ -64,7 +63,6 @@ def contains(haystack: str, needle: str) -> bool:
 #
 # See docs/EXPERIMENTS_VERIFIER_REDESIGN.md S0.1 and
 # docs/VERIFIER_REDESIGN.md section 7.
-# ============================================================
 
 # Minimum length, in normalised characters, of every quote fragment.
 # A fragment shorter than this is too weak to be a grounding match

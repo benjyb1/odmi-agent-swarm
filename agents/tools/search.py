@@ -52,9 +52,7 @@ class SearchResult(BaseModel):
     provider: str = "tavily"
 
 
-# ============================================================
 # Tavily
-# ============================================================
 
 def _tavily_client() -> TavilyClient:
     return TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
@@ -88,9 +86,7 @@ def _tavily_search(
     return out
 
 
-# ============================================================
 # Brave Search (fallback)
-# ============================================================
 
 _BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search"
 
@@ -146,9 +142,7 @@ def _brave_search(
     return out
 
 
-# ============================================================
 # Public interface
-# ============================================================
 
 def _scrub_blocked(results: List[SearchResult]) -> List[SearchResult]:
     """Last-line defence: drop any result whose URL hits the deny-list.
@@ -225,9 +219,7 @@ def search(
             "error": error,
         })
 
-    # ------------------------------------------------------------------
     # Explicit single-provider paths (no fallback in either direction)
-    # ------------------------------------------------------------------
 
     if provider == "tavily":
         t0 = time.perf_counter()
@@ -289,12 +281,10 @@ def search(
             _emit("serper_raw", t0, [], ok=False, error=str(exc)[:200])
             raise
 
-    # ------------------------------------------------------------------
     # provider == "auto" — DIY only (D43). Tavily and Brave are retired
     # from production; "auto" is an alias for "diy" so no call site can
     # silently fall back to a paid provider. Errors propagate untouched
     # (a BlockerShutdown from the 30s fetch ceiling rides straight out).
-    # ------------------------------------------------------------------
     from agents.tools.search_diy import diy_search  # local import
     t0 = time.perf_counter()
     try:

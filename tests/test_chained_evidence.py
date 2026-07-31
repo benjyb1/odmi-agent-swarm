@@ -46,9 +46,7 @@ from scripts.run_coordinator import (
 )
 
 
-# ---------------------------------------------------------------------------
 # Builders
-# ---------------------------------------------------------------------------
 
 def _researcher_input(prior_evidence=None, feedback=None) -> ResearcherInput:
     return ResearcherInput(
@@ -111,9 +109,7 @@ def _evidence(snippet="carried snippet", url="https://example.mt/x",
     )
 
 
-# ---------------------------------------------------------------------------
 # 1. The chained path carries evidence forward
-# ---------------------------------------------------------------------------
 
 def test_researcher_prompt_includes_carried_evidence():
     inp = _researcher_input(prior_evidence=[
@@ -158,9 +154,7 @@ def test_researcher_feedback_block_shows_counter_evidence():
     assert "FEEDBACK_COUNTER_TOKEN" in msg
 
 
-# ---------------------------------------------------------------------------
 # 2. The baseline path is byte-identical
-# ---------------------------------------------------------------------------
 
 def test_researcher_prompt_baseline_byte_identical():
     """An empty corpus must render exactly as no corpus at all."""
@@ -206,9 +200,7 @@ def test_baseline_researcher_feedback_block_unchanged():
     assert "Counter-evidence the Verifier found" not in msg
 
 
-# ---------------------------------------------------------------------------
 # 3. The flag defaults off
-# ---------------------------------------------------------------------------
 
 def test_coordinate_chained_defaults_false():
     sig = inspect.signature(coordinate)
@@ -247,9 +239,7 @@ def test_run_coordinator_cli_chained_defaults_off():
     assert '"--chained", action="store_true"' in src
 
 
-# ---------------------------------------------------------------------------
 # 4. Accumulation helpers
-# ---------------------------------------------------------------------------
 
 def test_evidence_from_researcher_maps_snippets():
     result = SimpleNamespace(search_results=_search_results())

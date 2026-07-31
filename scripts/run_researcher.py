@@ -40,9 +40,7 @@ COUNTRIES = {
 }
 
 
-# ============================================================
 # CLI helpers
-# ============================================================
 
 
 def _load_question(question_id: str) -> dict:
@@ -87,9 +85,7 @@ def _build_input(question_id: str, country_code: str) -> ResearcherInput:
     )
 
 
-# ============================================================
 # Walkthrough printing
-# ============================================================
 
 
 def make_walkthrough_callback(*, enabled: bool):
@@ -175,9 +171,7 @@ def make_walkthrough_callback(*, enabled: bool):
     return _on_step
 
 
-# ============================================================
 # DB row writer
-# ============================================================
 
 
 def save_run(
@@ -237,9 +231,7 @@ def save_run(
         return int(cur.lastrowid)
 
 
-# ============================================================
 # Main
-# ============================================================
 
 
 def main() -> None:
@@ -277,7 +269,7 @@ def main() -> None:
         on_step=on_step,
     )
 
-    # ----- Print summary -----
+    # Print summary
     print()
     print("=" * 64)
     print(f"RESEARCHER FINISHED  question={input.question_id} country={input.country_code}")

@@ -20,9 +20,7 @@ from evaluation import stats
 _HAS_SCIPY = importlib.util.find_spec("scipy") is not None
 
 
-# ---------------------------------------------------------------------------
 # wilson_interval
-# ---------------------------------------------------------------------------
 
 def test_wilson_known_8_of_10() -> None:
     # Reference: Newcombe (1998) / Wallis (2013) Wilson score interval for
@@ -60,9 +58,7 @@ def test_wilson_confidence_widens_interval() -> None:
     assert (hi99 - lo99) > (hi95 - lo95)
 
 
-# ---------------------------------------------------------------------------
 # sign_test
-# ---------------------------------------------------------------------------
 
 def test_sign_test_all_wins_is_significant() -> None:
     assert stats.sign_test(10, 0) < 0.01
@@ -85,9 +81,7 @@ def test_sign_test_no_decided_trials_is_one() -> None:
     assert stats.sign_test(0, 0) == 1.0
 
 
-# ---------------------------------------------------------------------------
 # mcnemar_exact
-# ---------------------------------------------------------------------------
 
 def test_mcnemar_all_one_direction_is_significant() -> None:
     assert stats.mcnemar_exact(0, 10) < 0.01
@@ -106,9 +100,7 @@ def test_mcnemar_no_discordants_is_one() -> None:
     assert stats.mcnemar_exact(0, 0) == 1.0
 
 
-# ---------------------------------------------------------------------------
 # wilcoxon_signed_rank
-# ---------------------------------------------------------------------------
 
 @pytest.mark.skipif(_HAS_SCIPY, reason="scipy present: NotImplementedError path not taken")
 def test_wilcoxon_raises_without_scipy() -> None:
@@ -126,9 +118,7 @@ def test_wilcoxon_sanity_with_scipy() -> None:
     assert p < 0.05
 
 
-# ---------------------------------------------------------------------------
 # krippendorff_alpha
-# ---------------------------------------------------------------------------
 
 def test_krippendorff_perfect_agreement_is_one() -> None:
     units = [[1, 1], [2, 2], [3, 3], [1, 1], [2, 2]]

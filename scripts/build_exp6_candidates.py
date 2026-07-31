@@ -160,7 +160,7 @@ def main() -> None:
     excluded = Counter()
     skipped_examples = defaultdict(list)
 
-    # ---- Natural strata: MT primary, NL secondary ----
+    # Natural strata: MT primary, NL secondary
     for role, (cc, path) in (("primary", PRIMARY_WORKLIST),
                              ("secondary", SECONDARY_WORKLIST)):
         worklist = _worklist_pairs(path)
@@ -191,7 +191,7 @@ def main() -> None:
                 source_row_id=r["id"], injected=0,
             ))
 
-    # ---- Injected flips (robustness): flip correct FR/EE binary candidates ----
+    # Injected flips (robustness): flip correct FR/EE binary candidates
     inj_latest = _latest_runs(conn, INJECTION_COUNTRIES)
     inj_pool = []
     for (qid, c), r in inj_latest.items():
@@ -219,7 +219,7 @@ def main() -> None:
             source_row_id=r["id"], injected=1,
         ))
 
-    # ---- Write (idempotent for this experiment_id) ----
+    # Write (idempotent for this experiment_id)
     conn.execute("delete from exp6_candidates where experiment_id = ?", (EXPERIMENT_ID,))
     conn.executemany(
         """insert into exp6_candidates
@@ -243,7 +243,7 @@ def main() -> None:
     )
     conn.commit()
 
-    # ---- Report ----
+    # Report
     by_role = Counter((c["role"], c["gold_label"]) for c in cands)
     by_stratum = Counter(c["stratum"] for c in cands)
     by_country = Counter(c["country_code"] for c in cands)

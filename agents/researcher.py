@@ -35,9 +35,7 @@ from agents.tools.trusted_domains import trusted_domains_for
 from agents.tools.validator import trust_score
 
 
-# ============================================================
 # Query generation prompt (a tiny LLM call before the main one).
-# ============================================================
 
 
 class _Queries(BaseModel):
@@ -195,9 +193,7 @@ def generate_queries(
     return parsed.queries, usage
 
 
-# ============================================================
 # Researcher run result
-# ============================================================
 
 
 @dataclass
@@ -261,9 +257,7 @@ class ResearcherRunResult:
         return sum(parts) if parts else None
 
 
-# ============================================================
 # Researcher entry point
-# ============================================================
 
 
 StepCallback = Callable[[str, dict], None]
@@ -389,7 +383,7 @@ def run_researcher(
     prompt_spec = researcher_prompt.variant(prompt_variant)
     on_step("start", {"question_id": input.question_id, "country": input.country_code})
 
-    # ----- Step 0: deterministic catalogue route (D30) -----
+    # Step 0: deterministic catalogue route (D30)
     # Percentage/count Quality questions that ask for a proportion of the
     # national catalogue are computed from harvested metadata, not the web.
     # Near-zero tokens. On any failure we fall through to the web path.
@@ -397,7 +391,7 @@ def run_researcher(
     if catalogue_result is not None:
         return catalogue_result
 
-    # ----- Step 1: generate search queries -----
+    # Step 1: generate search queries
     on_step("query_gen_start", {})
     try:
         queries, query_usage = generate_queries(
@@ -424,7 +418,7 @@ def run_researcher(
         "cost_usd": query_usage.estimated_cost_usd,
     })
 
-    # ----- Step 2: search -----
+    # Step 2: search
     # Default (`narrow_then_wide`, SRCH-5/6): narrow to the country's
     # trusted domains so authoritative sources rank above generic ones,
     # then widen on an empty first pass. `wide_only` skips the include
@@ -485,7 +479,7 @@ def run_researcher(
             notes="No results across all queries (narrow and wide).",
         )
 
-    # ----- Step 3: register prompt version and call the LLM -----
+    # Step 3: register prompt version and call the LLM
     # The variant chooses the system prompt and its prompt_versions row.
     # The baseline ("full") keeps NAME/VERSION/SYSTEM unchanged; the
     # compressed arm carries its own NAME/VERSION so the receipts trace to
@@ -544,7 +538,7 @@ def run_researcher(
         "cost_usd": main_usage.estimated_cost_usd,
     })
 
-    # ----- Step 4: post-call validation -----
+    # Step 4: post-call validation
     on_step("validation_start", {})
     head_status_ok, head_status = head_ok(str(output.source_url))
     domain = trust_score(str(output.source_url), country_code=input.country_code)

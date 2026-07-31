@@ -66,9 +66,7 @@ CAUSE_CLASS = {
 }
 
 
-# ============================================================
 # Pure logic (unit-tested, no DB or network)
-# ============================================================
 
 def classify_match(final_answer, gold, allowed_answers=None, answer_shape=None) -> str:
     """Mirror _MATCH_STATUS_SQL, but split the `inconclusive` abstention literal
@@ -222,9 +220,7 @@ def decide_floor(sweep: dict, baseline: float,
     return dict(recommended_floor=recommended, baseline=baseline, verdicts=verdicts)
 
 
-# ============================================================
 # DB load
-# ============================================================
 
 def _connect(db_path: Optional[str]):
     p = db_path or str(REPO_ROOT / "data" / "odmi.db")
@@ -351,9 +347,7 @@ def load_pairs(conn, country: str = "MT", experiment_id: Optional[str] = None,
     return pairs
 
 
-# ============================================================
 # Optional LLM residual (genuine error vs stale gold)
-# ============================================================
 
 def review_differ(pair: dict) -> dict:
     """Opus judge over the frozen evidence: is this `differ` a genuine swarm error
@@ -386,9 +380,7 @@ def review_differ(pair: dict) -> dict:
         return dict(call="unclear", reason=f"judge error: {type(e).__name__}")
 
 
-# ============================================================
 # Run / analyse
-# ============================================================
 
 def run(country: str = "MT", experiment_id: Optional[str] = None,
         floors: Optional[list] = None, use_llm: bool = False,

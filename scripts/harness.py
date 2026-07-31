@@ -68,9 +68,7 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
-# ============================================================
 # Status / inspection
-# ============================================================
 
 def cmd_status(args: argparse.Namespace) -> int:
     conn = _connect()
@@ -184,9 +182,7 @@ def cmd_recent(args: argparse.Namespace) -> int:
         conn.close()
 
 
-# ============================================================
 # Data-leakage audit / purge
-# ============================================================
 
 def _run_audit_script(*extra: str) -> int:
     cmd = ["uv", "run", "python", str(REPO_ROOT / "scripts" / "check_data_leakage.py"), *extra]
@@ -213,9 +209,7 @@ def cmd_purge_leakage(args: argparse.Namespace) -> int:
     return _run_audit_script("--purge")
 
 
-# ============================================================
 # Run
-# ============================================================
 
 def _avg_pair_cost_usd(conn: sqlite3.Connection) -> float:
     """Average cost per finalised pair, in USD.
@@ -335,9 +329,7 @@ def cmd_run_pair(args: argparse.Namespace) -> int:
     return subprocess.call(cmd, cwd=REPO_ROOT)
 
 
-# ============================================================
 # Argparse wiring
-# ============================================================
 
 def main() -> int:
     parser = argparse.ArgumentParser(

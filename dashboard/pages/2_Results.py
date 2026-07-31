@@ -26,9 +26,7 @@ page_header(
 render_session_widget()
 
 
-# ============================================================
 # Cards view
-# ============================================================
 
 def _status_chip(status: str) -> str:
     """Coloured Streamlit-friendly chip text for a terminal status."""
@@ -381,9 +379,7 @@ def render_cards_tab() -> None:
         _render_card(row)
 
 
-# ============================================================
 # Raw tables (unchanged — kept for the audit trail)
-# ============================================================
 
 def render_raw_researcher_tab() -> None:
     rdf = db.researcher_runs(limit=500)
@@ -495,9 +491,7 @@ def render_raw_finals_tab() -> None:
     st.dataframe(filtered, use_container_width=True, hide_index=True)
 
 
-# ============================================================
 # Layout
-# ============================================================
 
 tab_cards, tab_r, tab_v, tab_f = st.tabs(
     ["Cards", "Researcher runs", "Verifier runs", "Finals"]

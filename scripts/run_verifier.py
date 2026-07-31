@@ -47,9 +47,7 @@ VALID_STRATEGIES: list[VerifierStrategy] = [
 ]
 
 
-# ============================================================
 # DB helpers
-# ============================================================
 
 def _load_researcher_row(
     question_id: str,
@@ -143,9 +141,7 @@ COUNTRIES = {
 }
 
 
-# ============================================================
 # Walkthrough printing
-# ============================================================
 
 def make_walkthrough_callback(*, enabled: bool):
     def _on_step(event: str, payload: dict) -> None:
@@ -234,9 +230,7 @@ def make_walkthrough_callback(*, enabled: bool):
     return _on_step
 
 
-# ============================================================
 # DB row writer
-# ============================================================
 
 def save_run(
     *,
@@ -311,9 +305,7 @@ def save_run(
         return int(cur.lastrowid)
 
 
-# ============================================================
 # Main
-# ============================================================
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -393,7 +385,7 @@ def main() -> None:
         on_step=on_step,
     )
 
-    # ----- Print summary -----
+    # Print summary
     print()
     print("=" * 64)
     print(

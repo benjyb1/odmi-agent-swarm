@@ -29,9 +29,7 @@ MODEL_OPTIONS = [
 ]
 
 
-# ============================================================
 # Defaults
-# ============================================================
 
 st.subheader("Defaults")
 defaults = db.model_defaults()
@@ -53,9 +51,7 @@ for i, role in enumerate(["researcher", "verifier", "adjudicator"]):
 
 st.divider()
 
-# ============================================================
 # Analytics
-# ============================================================
 
 st.subheader("Researcher analytics by model")
 r_an = db.model_analytics_researcher()
@@ -81,10 +77,8 @@ else:
     st.dataframe(v_an, use_container_width=True, hide_index=True)
 
 
-# ============================================================
 # Cross-product heatmap (researcher model × verifier model → pass rate)
 # Per D18.
-# ============================================================
 
 st.subheader("Researcher × Verifier pass-rate heatmap (D18)")
 

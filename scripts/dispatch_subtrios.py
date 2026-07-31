@@ -64,10 +64,7 @@ DEFAULT_RETRY_UPLIFT = 1.2
 MAX_PAIRS_PER_DISPATCH = 500
 
 
-# ============================================================
 # Cost prediction
-# ============================================================
-#
 # The dispatcher predicts and reports spend, but does NOT enforce a cap.
 # The only real ceiling is whatever Claude Max enforces; a local soft
 # limit only ever got in the way, so it was removed. The rolling-window
@@ -166,9 +163,7 @@ def rolling_window_cost_usd(window_hours: float = 5.0) -> float:
     return float(row[0]) if row else 0.0
 
 
-# ============================================================
 # Dispatch
-# ============================================================
 
 @dataclass
 class SubtrioJob:
@@ -191,7 +186,6 @@ class DispatchResult:
     messages: List[str] = field(default_factory=list)
 
 
-# ------------------------------------------------------------------
 # Pre-dispatch catalogue warm step (D30/D46).
 #
 # A batch can mix web questions with the nine catalogue questions. The
@@ -201,7 +195,6 @@ class DispatchResult:
 # ~71k datasets) holds a parallel slot for the whole harvest, starving the
 # web questions. Warming each distinct catalogue country once, up front,
 # turns every in-dispatch catalogue question into a fast cache replay.
-# ------------------------------------------------------------------
 
 
 # Wall-clock bound on one country's catalogue harvest. A portal that accepts the
@@ -744,9 +737,7 @@ def _mark_interrupted(subtrio_id: str) -> None:
         print(f"[dispatch] _mark_interrupted failed: {exc}", file=sys.stderr)
 
 
-# ============================================================
 # Auto-publish to the public dashboard (per D25)
-# ============================================================
 
 def publish_to_main(
     result: DispatchResult,
@@ -822,9 +813,7 @@ def publish_to_main(
     log("pushed to origin/main; Streamlit Cloud will rebuild in ~30 s")
 
 
-# ============================================================
 # CLI
-# ============================================================
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Dispatch N coordinator subprocesses.")

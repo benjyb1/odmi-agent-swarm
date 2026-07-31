@@ -28,9 +28,7 @@ def _brave_result(query: str = "q", **_kwargs) -> list[SearchResult]:
                          score=None, provider="brave")]
 
 
-# ---------------------------------------------------------------------------
 # provider="auto"
-# ---------------------------------------------------------------------------
 
 def _diy_result(query: str = "q", **_kwargs) -> list[SearchResult]:
     return [SearchResult(title="d", url="https://diy.example", snippet="s",
@@ -128,9 +126,7 @@ def test_auto_propagates_blocker_shutdown(monkeypatch):
         search("test", provider="auto")
 
 
-# ---------------------------------------------------------------------------
 # provider="tavily"
-# ---------------------------------------------------------------------------
 
 def test_provider_tavily_returns_tavily_results(monkeypatch):
     """provider='tavily' calls Tavily and returns its results."""
@@ -157,9 +153,7 @@ def test_provider_tavily_no_brave_fallback(monkeypatch):
         search("test", provider="tavily")
 
 
-# ---------------------------------------------------------------------------
 # provider="brave"
-# ---------------------------------------------------------------------------
 
 def test_provider_brave_skips_tavily(monkeypatch):
     """provider='brave' must NOT call Tavily at all."""
@@ -190,9 +184,7 @@ def test_provider_brave_returns_brave_results(monkeypatch):
     assert all(r.provider == "brave" for r in out)
 
 
-# ---------------------------------------------------------------------------
 # on_call telemetry
-# ---------------------------------------------------------------------------
 
 def test_on_call_fires_for_explicit_tavily(monkeypatch):
     """on_call telemetry must fire for provider='tavily' path."""
@@ -233,9 +225,7 @@ def test_on_call_fires_on_tavily_error(monkeypatch):
     assert records[0]["ok"] is False
 
 
-# ---------------------------------------------------------------------------
 # search_many() mirrors provider kwarg
-# ---------------------------------------------------------------------------
 
 def test_search_many_plumbs_provider_brave(monkeypatch):
     """search_many() with provider='brave' must never call Tavily."""
@@ -261,9 +251,7 @@ def test_search_many_plumbs_provider_tavily(monkeypatch):
     assert all(r.provider == "tavily" for r in out)
 
 
-# ---------------------------------------------------------------------------
 # provider="diy"
-# ---------------------------------------------------------------------------
 
 def test_provider_diy_dispatches_to_diy_search(monkeypatch):
     """provider='diy' must call diy_search and return its results."""
@@ -278,9 +266,7 @@ def test_provider_diy_dispatches_to_diy_search(monkeypatch):
     assert out[0].provider == "diy"
 
 
-# ---------------------------------------------------------------------------
 # provider="serper_raw"
-# ---------------------------------------------------------------------------
 
 def test_provider_serper_raw_dispatches(monkeypatch):
     monkeypatch.setattr(

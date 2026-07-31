@@ -103,7 +103,7 @@ def main():
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
-    # --- population: every non-committed pair -------------------------------
+    # population: every non-committed pair
     finals = cur.execute(
         """
         SELECT * FROM phase2_final
@@ -114,7 +114,7 @@ def main():
     pair_ids = [f["pair_run_id"] for f in finals]
     print(f"Non-committed pairs: {len(finals)}")
 
-    # --- pull all trail rows for those pairs in bulk ------------------------
+    # pull all trail rows for those pairs in bulk
     def rows_for(table):
         out = defaultdict(list)
         for r in cur.execute(f"SELECT * FROM {table}").fetchall():
@@ -195,7 +195,7 @@ def main():
         is_failure = f["terminal_status"] == "agent_failure"
         null_answer = (f["final_answer"] is None) or (f["final_answer"] == "")
 
-        # --- classification (priority ordered) ------------------------------
+        # classification (priority ordered)
         cat = None
         reason = ""
 

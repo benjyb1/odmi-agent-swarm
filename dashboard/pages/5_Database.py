@@ -30,9 +30,7 @@ page_header(
 render_session_widget()
 
 
-# ============================================================
 # Data
-# ============================================================
 
 grid = db.coverage_grid()
 
@@ -44,9 +42,7 @@ if len(grid) == 0:
     st.stop()
 
 
-# ============================================================
 # Coverage KPI strip
-# ============================================================
 
 n_total = len(grid)
 n_covered = int((grid["swarm_runs"] > 0).sum())
@@ -86,9 +82,7 @@ k5.metric(
 )
 
 
-# ============================================================
 # Filters
-# ============================================================
 
 st.divider()
 
@@ -160,9 +154,7 @@ if text_filter:
     ]
 
 
-# ============================================================
 # Coverage by country (small bar)
-# ============================================================
 
 cov_per_country = (
     filtered.assign(covered=(filtered["swarm_runs"] > 0).astype(int))
@@ -174,9 +166,7 @@ if len(cov_per_country) > 0 and cov_per_country.sum() > 0:
         st.bar_chart(cov_per_country, horizontal=False)
 
 
-# ============================================================
 # The grid
-# ============================================================
 
 st.caption(
     f"{len(filtered):,} of {n_total:,} rows match the filters. "
@@ -226,9 +216,7 @@ event = st.dataframe(
 )
 
 
-# ============================================================
 # Selection-driven action panel
-# ============================================================
 
 selected_rows = []
 if event is not None and event.selection:

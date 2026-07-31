@@ -19,9 +19,7 @@ from agents.tools.search import SearchResult
 from agents.tools.snippet_picker import PickedChunk
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def _make_results(n: int = 2) -> List[SearchResult]:
     return [
@@ -50,9 +48,7 @@ def _isolate_db(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sc, "_READ_DISABLED", False)
 
 
-# ---------------------------------------------------------------------------
 # ensure_tables
-# ---------------------------------------------------------------------------
 
 class TestEnsureTables:
     def test_creates_all_three_tables(self) -> None:
@@ -79,9 +75,7 @@ class TestEnsureTables:
         assert sc._TABLES_ENSURED is True
 
 
-# ---------------------------------------------------------------------------
 # SERP cache
-# ---------------------------------------------------------------------------
 
 class TestSerpCache:
     def test_miss_on_empty(self) -> None:
@@ -149,9 +143,7 @@ class TestSerpCache:
         assert hit[0].provider == "brave"
 
 
-# ---------------------------------------------------------------------------
 # Fetch cache
-# ---------------------------------------------------------------------------
 
 class TestFetchCache:
     def test_miss_on_empty(self) -> None:
@@ -209,9 +201,7 @@ class TestFetchCache:
         assert sc.fetch_get("https://not-stored.example.com") is None
 
 
-# ---------------------------------------------------------------------------
 # Snippet cache
-# ---------------------------------------------------------------------------
 
 class TestSnippetCache:
     def test_miss_on_empty(self) -> None:

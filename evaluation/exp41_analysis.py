@@ -59,7 +59,7 @@ BARS = {
 }
 
 
-# --- outcome vocabulary ----------------------------------------------------
+# outcome vocabulary
 
 def outcome(terminal_status: str, answer: str | None) -> str:
     """One of commit-yes / commit-no / no-commit.
@@ -96,7 +96,7 @@ def normalise_url(u: str | None) -> str:
     return f"{scheme}://{host}{path}" if host else u.strip().lower()
 
 
-# --- Fleiss' kappa ---------------------------------------------------------
+# Fleiss' kappa
 
 def fleiss_kappa(rows: list[list[int]]) -> float:
     """Fleiss' kappa. `rows` is one row per item, counts per category.
@@ -151,7 +151,7 @@ def wilson(k: int, n: int) -> tuple[float, float]:
     return (max(0.0, (c - m) / d), min(1.0, (c + m) / d))
 
 
-# --- data ------------------------------------------------------------------
+# data
 
 def load(conn: sqlite3.Connection, eid: str) -> dict[str, dict]:
     """Canonical row per pair: the latest finalised row wins."""

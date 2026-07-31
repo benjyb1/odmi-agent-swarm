@@ -133,9 +133,7 @@ def is_open_licence(raw: str) -> bool:
     return licence_family(raw) in _open_families()
 
 
-# ------------------------------------------------------------------
 # Dataset-level decisions used by the metrics.
-# ------------------------------------------------------------------
 
 
 def dataset_is_licensed(dataset: HarvestedDataset) -> bool:

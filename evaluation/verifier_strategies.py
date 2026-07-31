@@ -141,9 +141,7 @@ def _role_of(cc: str) -> Optional[str]:
 RESULTS_DIR = REPO_ROOT / "evaluation" / "results"
 
 
-# ============================================================
 # Labelling: mirror _MATCH_STATUS_SQL (exact / yes-prefix / no / band-adjacent)
-# ============================================================
 
 def _label(researcher_answer: str, gold: str, shape, allowed) -> str:
     """Return 'should_pass' / 'should_fail' / 'abstain' / 'no_gt'."""
@@ -163,9 +161,7 @@ def _label(researcher_answer: str, gold: str, shape, allowed) -> str:
     return "should_fail"
 
 
-# ============================================================
 # Candidate construction
-# ============================================================
 
 @dataclass
 class Candidate:
@@ -253,7 +249,7 @@ def build_candidates(limit: Optional[int] = None):
 
     dim_order = ["Policy", "Portal", "Impact", "Quality"]
 
-    # ---- NAT-fail: take every natural error in a targeted country, tagged by role ----
+    # NAT-fail: take every natural error in a targeted country, tagged by role
     cands = []
     nat_fail_by_role = Counter()
     for b in sorted(nat_fail, key=lambda x: (x["country_code"], x["question_id"])):
@@ -265,7 +261,7 @@ def build_candidates(limit: Optional[int] = None):
             cand_id=f"NATF::{b['question_id']}::{b['country_code']}",
             stratum="NAT-fail", role=role, gold_label="should_fail", injected=False, **b))
 
-    # ---- NAT-pass: matched per role, round-robin across dimension within the role's countries ----
+    # NAT-pass: matched per role, round-robin across dimension within the role's countries
     # Robustness also carries the negatives for the injected arm, so its pass target
     # adds INJ_TARGET. Primary/secondary match their own natural-fail count, so an
     # empty Malta dispatch yields an empty (not unbalanced) primary stratum.
@@ -303,7 +299,7 @@ def build_candidates(limit: Optional[int] = None):
                 cand_id=f"NATP::{b['question_id']}::{b['country_code']}",
                 stratum="NAT-pass", role=role, gold_label="should_pass", injected=False, **b))
 
-    # ---- INJ-fail: flip binary robustness candidates not used in NAT-pass ----
+    # INJ-fail: flip binary robustness candidates not used in NAT-pass
     inj_pool = [
         b for b in correct_pool
         if b["answer_shape"] == "binary"
@@ -366,9 +362,7 @@ def build_candidates(limit: Optional[int] = None):
     return cands
 
 
-# ============================================================
 # FR augmented robustness set (50% label-flip injection)
-# ============================================================
 
 FR_AUGMENTED_FILE = REPO_ROOT / "data" / "questions" / "fr_augmented_eval_pairs.json"
 
@@ -427,9 +421,7 @@ def build_fr_augmented_candidates(path: Optional[Path] = None) -> list[Candidate
     return cands
 
 
-# ============================================================
 # Reconstruct ResearcherOutput from a row (tolerant)
-# ============================================================
 
 def _researcher_output(row: dict, answer_override: str) -> Optional[ResearcherOutput]:
     quote = (row.get("evidence_quote") or "").strip()
@@ -458,9 +450,7 @@ def _researcher_output(row: dict, answer_override: str) -> Optional[ResearcherOu
         return None
 
 
-# ============================================================
 # Freeze evidence once, then run the four strategies
-# ============================================================
 
 def _snippet_to_text(s) -> str:
     """Researcher search_snippets rows are stored either as plain strings or as
@@ -595,9 +585,7 @@ def _run_strategy(cand: Candidate, ro: ResearcherOutput, frozen: dict, strategy:
     }
 
 
-# ============================================================
 # Registry
-# ============================================================
 
 def _register_experiment(n_cands: int, counts: dict):
     try:
@@ -617,9 +605,7 @@ def _register_experiment(n_cands: int, counts: dict):
         print(f"[registry] could not register: {e}")
 
 
-# ============================================================
 # Run
-# ============================================================
 
 def _assert_serper_available() -> None:
     """Fail loudly if the sole search provider (Serper/DIY) is unavailable.
@@ -667,7 +653,7 @@ def run(limit: Optional[int] = None, workers: int = 1,
     RESULTS_DIR.mkdir(exist_ok=True)
     out_path = RESULTS_DIR / (out_name or f"verifier_strategies_{EXPERIMENT_ID}.jsonl")
 
-    # ---- Resume support: never overwrite a partial run. ----
+    # Resume support: never overwrite a partial run.
     done_ids: set[str] = set()
     if out_path.exists():
         for line in out_path.read_text().splitlines():
@@ -761,9 +747,7 @@ def run(limit: Optional[int] = None, workers: int = 1,
     return out_path
 
 
-# ============================================================
 # Analysis
-# ============================================================
 
 def _confusion(records, strategy, predicate=lambda r: True):
     tp = fp = tn = fn = 0

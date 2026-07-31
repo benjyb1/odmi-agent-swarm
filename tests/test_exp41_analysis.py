@@ -19,7 +19,7 @@ from evaluation.exp41_analysis import (  # noqa: E402
 )
 
 
-# --- outcome vocabulary ----------------------------------------------------
+# outcome vocabulary
 
 @pytest.mark.parametrize("status,answer,expected", [
     ("accepted_by_verifier", "yes", "commit-yes"),
@@ -52,7 +52,7 @@ def test_non_binary_answers_stay_visible():
     assert outcome("accepted_by_verifier", "10-25%") == "commit-other"
 
 
-# --- URL normalisation (M5) ------------------------------------------------
+# URL normalisation (M5)
 
 def test_normalisation_is_the_pre_registered_rule():
     a = normalise_url("HTTPS://Data.Gov.MT/en/dataset/x/")
@@ -74,7 +74,7 @@ def test_empty_url_is_empty():
     assert normalise_url(None) == "" and normalise_url("") == ""
 
 
-# --- Fleiss' kappa ---------------------------------------------------------
+# Fleiss' kappa
 
 def test_perfect_agreement_is_one():
     rows = [[3, 0, 0], [0, 3, 0], [3, 0, 0], [0, 3, 0]]
@@ -108,7 +108,7 @@ def test_known_worked_example():
     assert fleiss_kappa(rows) == pytest.approx(0.0, abs=0.34)
 
 
-# --- intervals and bars ----------------------------------------------------
+# intervals and bars
 
 def test_wilson_brackets_the_point_estimate():
     lo, hi = wilson(8, 10)

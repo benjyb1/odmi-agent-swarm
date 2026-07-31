@@ -14,9 +14,7 @@ from agents.tools.snippet_picker import (
     pick_snippet,
 )
 
-# ---------------------------------------------------------------------------
 # Fake LLMUsage for monkeypatching
-# ---------------------------------------------------------------------------
 
 _FAKE_USAGE = LLMUsage(
     input_tokens=10,
@@ -34,9 +32,7 @@ def _make_result(chunks: List[PickedChunk]):
     return _ChunksOut(chunks=chunks), _FAKE_USAGE
 
 
-# ---------------------------------------------------------------------------
 # pick_snippet: threshold logic
-# ---------------------------------------------------------------------------
 
 
 def test_top_chunk_above_threshold_returns_single(monkeypatch):
@@ -115,9 +111,7 @@ def test_empty_chunks_means_drop(monkeypatch):
     assert isinstance(usage, LLMUsage)
 
 
-# ---------------------------------------------------------------------------
 # aggregate_snippet
-# ---------------------------------------------------------------------------
 
 
 def test_aggregate_snippet_joins_chunks():
@@ -140,9 +134,7 @@ def test_aggregate_snippet_empty():
     assert aggregate_snippet([]) == ""
 
 
-# ---------------------------------------------------------------------------
 # aggregate_score
-# ---------------------------------------------------------------------------
 
 
 def test_aggregate_score_is_top():
@@ -159,9 +151,7 @@ def test_aggregate_score_empty():
     assert aggregate_score([]) is None
 
 
-# ---------------------------------------------------------------------------
 # PickedChunk: truncation validator
-# ---------------------------------------------------------------------------
 
 
 def test_picked_chunk_text_truncated_at_500():

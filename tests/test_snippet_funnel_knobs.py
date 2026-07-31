@@ -20,9 +20,7 @@ from agents.tools.snippet_picker import PickedChunk
 from agents.models import LLMUsage
 
 
-# ---------------------------------------------------------------------------
 # Shared fixture: isolate the cache and stub every layer of the DIY pipeline.
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def mock_layers(monkeypatch, tmp_path):
@@ -67,10 +65,8 @@ _USAGE = LLMUsage(
 )
 
 
-# ---------------------------------------------------------------------------
 # 1. Defaults byte-identical: the picker IS called and an empty pick drops
 #    the URL, exactly as before EXP-17.
-# ---------------------------------------------------------------------------
 
 def test_default_calls_picker_and_drops_empty(mock_layers, monkeypatch):
     """Default funnel: picker runs; a URL with no chunks is dropped."""
@@ -109,9 +105,7 @@ def test_default_does_not_pass_funnel_kwargs_to_picker(mock_layers, monkeypatch)
     assert len(out) == 2
 
 
-# ---------------------------------------------------------------------------
 # 2. --snippet-picker off : BYPASS the LLM picker entirely.
-# ---------------------------------------------------------------------------
 
 def test_picker_off_bypasses_llm_and_keeps_all_urls(mock_layers, monkeypatch):
     """With use_snippet_picker=False the picker function is NEVER called and
@@ -148,9 +142,7 @@ def test_picker_off_truncates_to_page_text_cap(mock_layers, monkeypatch):
     assert all(len(r.snippet) == 50 for r in out)
 
 
-# ---------------------------------------------------------------------------
 # 3. --max-snippet-chars : per-snippet prompt truncation in format_for_prompt.
-# ---------------------------------------------------------------------------
 
 def test_format_for_prompt_default_truncation_is_600():
     """Default max_chars_per_snippet stays at 600 (byte-identical)."""
@@ -197,9 +189,7 @@ def test_researcher_build_user_message_threads_max_snippet_chars():
     assert "w" * 81 not in msg
 
 
-# ---------------------------------------------------------------------------
 # 4. --picker-max-chunks and --page-text-cap thread into the picker.
-# ---------------------------------------------------------------------------
 
 def test_picker_max_chunks_forwarded(mock_layers, monkeypatch):
     """A non-default picker_max_chunks is forwarded to pick_snippet."""

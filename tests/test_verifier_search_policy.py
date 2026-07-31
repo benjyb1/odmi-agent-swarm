@@ -24,9 +24,7 @@ from agents.prompts import verifier as v_prompt
 from agents.tools.search import SearchResult
 
 
-# ============================================================
 # Fixtures
-# ============================================================
 
 def _usage(label: str) -> LLMUsage:
     return LLMUsage(
@@ -95,9 +93,7 @@ def _install_common_mocks(monkeypatch):
     return captured
 
 
-# ============================================================
 # 'always' / default — byte-identical to production
-# ============================================================
 
 def test_always_runs_search_and_prompt_is_default(monkeypatch):
     """With the flag absent (default 'always') the Verifier runs its own
@@ -170,9 +166,7 @@ def test_explicit_always_matches_default(monkeypatch):
     assert "NOT RUN" not in captured["user_message"]
 
 
-# ============================================================
 # 'never' — no independent web search
-# ============================================================
 
 def test_never_skips_web_search(monkeypatch):
     """'never' must not invoke the query-gen LLM call or search_many at all."""
@@ -221,9 +215,7 @@ def test_never_prompt_carries_no_search_note(monkeypatch):
     assert "NOT RUN" not in captured["system"]
 
 
-# ============================================================
 # 'elective' — not built, fails loud
-# ============================================================
 
 def test_elective_raises_not_implemented(monkeypatch):
     _install_common_mocks(monkeypatch)
@@ -240,9 +232,7 @@ def test_elective_raises_not_implemented(monkeypatch):
         verifier.run_verifier(_verifier_input(), verifier_search="elective")
 
 
-# ============================================================
 # Prompt builder: default rendering unchanged
-# ============================================================
 
 def test_prompt_builder_default_unchanged():
     """build_user_message with the new arg absent renders exactly as before."""
@@ -288,9 +278,7 @@ def test_prompt_builder_never_swaps_block():
     assert "Substring check" in msg
 
 
-# ============================================================
 # CLI threading
-# ============================================================
 
 def test_run_coordinator_cli_default_is_always():
     import argparse

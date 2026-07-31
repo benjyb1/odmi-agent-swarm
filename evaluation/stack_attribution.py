@@ -149,9 +149,7 @@ def load_rows(conn: sqlite3.Connection, countries: list[str]):
     return qshape, gold, researcher, verifier, adjudications, finals
 
 
-# ---------------------------------------------------------------------------
 # A. Verifier discrimination
-# ---------------------------------------------------------------------------
 
 def verifier_discrimination(qshape, gold, researcher, verifier) -> dict:
     rbyid = {r["id"]: r for r in researcher}
@@ -197,9 +195,7 @@ def verifier_discrimination(qshape, gold, researcher, verifier) -> dict:
     return out
 
 
-# ---------------------------------------------------------------------------
 # B. Retry dynamics
-# ---------------------------------------------------------------------------
 
 def retry_dynamics(qshape, gold, researcher, verifier, finals) -> dict:
     rbypair = defaultdict(list)
@@ -259,9 +255,7 @@ def retry_dynamics(qshape, gold, researcher, verifier, finals) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # C. Adjudicator value
-# ---------------------------------------------------------------------------
 
 def adjudicator_value(qshape, gold, researcher, adjudications, finals) -> dict:
     rbypair = defaultdict(list)
@@ -303,9 +297,7 @@ def adjudicator_value(qshape, gold, researcher, adjudications, finals) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # D. Snippet utilisation
-# ---------------------------------------------------------------------------
 
 def _norm_url(u: str | None) -> str:
     if not u:
@@ -368,18 +360,14 @@ def snippet_utilisation(qshape, gold, researcher) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # E. Substring gate
-# ---------------------------------------------------------------------------
 
 def substring_gate(verifier) -> dict:
     c = Counter((v["substring_check_result"], v["verdict"]) for v in verifier)
     return {f"{sub}|{verdict}": n for (sub, verdict), n in sorted(c.items())}
 
 
-# ---------------------------------------------------------------------------
 # F. Researcher confidence calibration (attempt 0, definite, gold-bearing)
-# ---------------------------------------------------------------------------
 
 def confidence_calibration(qshape, gold, researcher) -> dict:
     bands = [(0.9, "0.90+"), (0.8, "0.80-0.89"), (0.65, "0.65-0.79"),
@@ -414,9 +402,7 @@ def confidence_calibration(qshape, gold, researcher) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # G. Verifier counter-evidence source overlap (duplicate-work proxy)
-# ---------------------------------------------------------------------------
 
 def counter_url_overlap(researcher, verifier, conn=None) -> dict:
     rbyid = {r["id"]: r for r in researcher}

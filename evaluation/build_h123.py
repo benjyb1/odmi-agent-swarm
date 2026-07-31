@@ -118,18 +118,18 @@ def main() -> None:
     used_q: set = set()
     cands: list[dict] = []
 
-    # ---- H3 fail: no-gold answered yes (wrong) ----
+    # H3 fail: no-gold answered yes (wrong)
     for r in wrong:
         if (r["gold"] or "").strip().lower() == "no" and (r["ans"] or "").strip().lower() == "yes":
             cands.append(base(r, r["ans"], r["quote"], "H3", "should_fail")); used_q.add((r["question_id"], r["country_code"]))
-    # ---- H2 fail: confidently wrong ----
+    # H2 fail: confidently wrong
     for r in wrong:
         k = (r["question_id"], r["country_code"])
         if k in used_q: continue
         if (r["conf"] or 0) >= CONF_FLOOR:
             cands.append(base(r, r["ans"], r["quote"], "H2", "should_fail")); used_q.add(k)
 
-    # ---- H1 fail: correct answers, evidence swapped to non-proving (LLM) ----
+    # H1 fail: correct answers, evidence swapped to non-proving (LLM)
     swaps_done = []
     h1_fail_pool = [r for r in correct if (r["question_id"], r["country_code"]) not in used_q][:H1_TARGET]
     for r in h1_fail_pool:
@@ -150,7 +150,7 @@ def main() -> None:
         except Exception as e:
             print(f"  swap failed {r['question_id']}/{r['country_code']}: {e}")
 
-    # ---- passes: assign each correct answer to one stratum ----
+    # passes: assign each correct answer to one stratum
     pass_pool = [r for r in correct if (r["question_id"], r["country_code"]) not in used_q]
     # H1 pass (disjoint questions, with genuine quote)
     h1_pass = pass_pool[:H1_TARGET]

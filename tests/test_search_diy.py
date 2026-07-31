@@ -10,9 +10,7 @@ from agents.tools.snippet_picker import PickedChunk
 from agents.models import LLMUsage
 
 
-# ---------------------------------------------------------------------------
 # Shared fixture: isolate cache to a temp DB and stub all four layers
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def mock_layers(monkeypatch, tmp_path):
@@ -71,9 +69,7 @@ def mock_layers(monkeypatch, tmp_path):
     return {"serper_calls": serper_calls}
 
 
-# ---------------------------------------------------------------------------
 # Tests
-# ---------------------------------------------------------------------------
 
 def test_diy_returns_searchresults_with_provider_diy(mock_layers):
     from agents.tools.search_diy import diy_search
@@ -195,10 +191,8 @@ def test_diy_score_comes_from_aggregate_score(mock_layers, monkeypatch):
         assert r.score == pytest.approx(0.77)
 
 
-# ---------------------------------------------------------------------------
 # Root-cause fix: extraction must run on RAW HTML before any truncation.
 # These exercise the real trafilatura extract (not the passthrough mock).
-# ---------------------------------------------------------------------------
 
 _RAW_ARTICLE = """
 <!DOCTYPE html><html lang="en"><head><title>Portal</title>
@@ -298,9 +292,7 @@ def test_diy_fetch_cache_hit_skips_fetch_html(mock_layers, monkeypatch):
     assert second_count == first_count
 
 
-# ---------------------------------------------------------------------------
 # 30s fetch-stage ceiling (D43)
-# ---------------------------------------------------------------------------
 
 def test_fetch_stage_deadline_returns_partial_no_blocker(monkeypatch, tmp_path):
     """A fetch stage that blows the wall-clock ceiling returns partial results.

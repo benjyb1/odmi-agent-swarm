@@ -192,9 +192,7 @@ def _rubric_keys_in_insertion_order(rubric: dict) -> list[str]:
     return out
 
 
-# ============================================================
 # Migration
-# ============================================================
 
 
 SCHEMA_MIGRATION = """

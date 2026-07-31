@@ -28,9 +28,7 @@ from urllib.parse import urlparse, urlunparse
 from agents.tools.search import SearchResult
 from agents.tools.snippet_picker import PickedChunk
 
-# ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------
 
 _DB_PATH: Path = Path(__file__).resolve().parents[2] / "data" / "odmi.db"
 
@@ -49,9 +47,7 @@ _TABLES_ENSURED: bool = False
 # --no-cache flag. Default False keeps normal behaviour unchanged.
 _READ_DISABLED: bool = False
 
-# ---------------------------------------------------------------------------
 # Schema
-# ---------------------------------------------------------------------------
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS search_cache_serp (
@@ -88,9 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_snippet_picked_at
   ON search_cache_snippet (picked_at);
 """
 
-# ---------------------------------------------------------------------------
 # Internal helpers
-# ---------------------------------------------------------------------------
 
 
 def _now_iso() -> str:
@@ -145,9 +139,7 @@ def _normalise_url(url: str) -> str:
     return urlunparse(normalised)
 
 
-# ---------------------------------------------------------------------------
 # Public API
-# ---------------------------------------------------------------------------
 
 
 def set_read_disabled(value: bool) -> None:
@@ -178,7 +170,7 @@ def ensure_tables() -> None:
     _TABLES_ENSURED = True
 
 
-# ---- SERP layer ------------------------------------------------------------
+# SERP layer
 
 
 def serp_get(
@@ -236,7 +228,7 @@ def serp_put(
         conn.close()
 
 
-# ---- Fetch layer ------------------------------------------------------------
+# Fetch layer
 
 
 def fetch_get(url: str) -> Optional[str]:
@@ -292,7 +284,7 @@ def fetch_put(
         conn.close()
 
 
-# ---- Snippet layer ----------------------------------------------------------
+# Snippet layer
 
 
 def snippet_get(
