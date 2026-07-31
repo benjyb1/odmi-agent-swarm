@@ -53,6 +53,8 @@ US_SPELLINGS = [
     (r"\blabeled\b", "labelled"),
     (r"\bfulfill\b", "fulfil"),
     (r"\bdefense\b", "defence"),
+    (r"\bjudgment(s)?\b", "judgement"),
+    (r"\bprogram(s)?\b(?! synthesis)", "programme"),
 ]
 
 # Scaffolding that must never survive into a submitted document.
@@ -69,6 +71,15 @@ SCAFFOLDING = [
     r"\[\s*\]", r"\bREF\b\s*\]", r"\[TBA\]",
     r"§\s*\?+", r"Figure\s+\?+", r"Table\s+\?+",
     r"\bYet to be written\b",
+]
+
+# Patterns that only mean anything with case preserved. Everything in
+# SCAFFOLDING is matched case-insensitively, which would turn these into
+# matches on ordinary Title Case prose.
+SCAFFOLDING_CASE_SENSITIVE = [
+    r"\b(?:FIGURE|TABLE|SECTION|APPENDIX)\s+[XYN]\b",
+    # Four or more consecutive shouted words is an author note, not prose.
+    r"\b[A-Z]{3,}(?:\s+[A-Z']{2,}){3,}",
 ]
 
 NOTE_PATTERNS = [
@@ -293,9 +304,11 @@ def check_scaffolding(paragraphs, chapters, notes):
             note_spans[n["paragraph"]].append(n["note"])
 
     out = []
+    cased = [(pat, re.I) for pat in SCAFFOLDING] + \
+            [(pat, 0) for pat in SCAFFOLDING_CASE_SENSITIVE]
     for p in paragraphs:
-        for pat in SCAFFOLDING:
-            for m in re.finditer(pat, p["text"], re.I):
+        for pat, flags in cased:
+            for m in re.finditer(pat, p["text"], flags):
                 inside_note = any(m.group(0) in nt for nt in note_spans.get(p["i"], []))
                 if inside_note:
                     continue
