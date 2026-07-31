@@ -70,9 +70,7 @@ def build_ledger(root="."):
     return ledger
 
 
-# --------------------------------------------------------------------------
 # 1. arithmetic
-# --------------------------------------------------------------------------
 
 FRACTION_PATTERNS = [
     re.compile(r"(?<![\d.])(\d[\d,]*)\s*/\s*(\d[\d,]*)(?![\d.])"),
@@ -162,9 +160,7 @@ def check_arithmetic(claims):
     return out
 
 
-# --------------------------------------------------------------------------
 # 2. ledger
-# --------------------------------------------------------------------------
 
 def ledger_lookup(ledger, value, unit):
     """Exact or rounding-equal presence in the canonical packs.
