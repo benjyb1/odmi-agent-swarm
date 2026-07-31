@@ -64,6 +64,11 @@ SCAFFOLDING = [
     r"\bLorem ipsum\b",
     r"\[insert\b", r"\[add\b", r"\[cite\b",
     r"\?\?\?",
+    # Unresolved cross-reference and citation placeholders.
+    r"\[REF\]", r"\[ref\]", r"\[CITATION\]", r"\[citation needed\]",
+    r"\[\s*\]", r"\bREF\b\s*\]", r"\[TBA\]",
+    r"§\s*\?+", r"Figure\s+\?+", r"Table\s+\?+",
+    r"\bYet to be written\b",
 ]
 
 NOTE_PATTERNS = [
