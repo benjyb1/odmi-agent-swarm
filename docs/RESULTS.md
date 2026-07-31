@@ -12,6 +12,76 @@ results count (R12).
 
 ---
 
+## EXP-42: the architecture ladder and the verifier stance, on the held-out eight
+
+**Design.** The same four-arm ladder as EXP-40, moved from the 156-pair dev
+battery to the eight D47 held-out countries the results chapter is framed
+around: 1,144 pairs, 909 binary golds, 370 negative golds. Seven times the
+power, and on the right population.
+
+Three of the four rungs cost nothing. EXP-36 is a completed trio run, so every
+arm below it is recoverable from its stored rows: `researcher_only` is the
+attempt-1 answer at or above the D37 floor, `no_adjudicator` commits iff the
+Verifier accepted, `trio` is the outcome as it stands. Only `cooperative` needed
+new calls, and that is EXP-42 arm B (1,144 pairs, ~17h, £330, prereg
+`docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md`).
+
+| arm | coverage | commit-acc | neg-gold FPR | balanced-acc | Youden J |
+|---|---|---|---|---|---|
+| researcher_only | 0.266 | 0.767 | 0.124 (46/370) | 0.173 | -0.654 |
+| no_adjudicator | 0.460 | 0.740 | 0.232 (86/370) | 0.315 | -0.371 |
+| **trio** | 0.556 | 0.735 | 0.246 (91/370) | 0.395 | -0.209 |
+| cooperative | 0.476 | 0.727 | 0.270 (100/370) | 0.316 | -0.369 |
+
+Wilson 95% on the FPR column: researcher_only [0.095, 0.162], no_adjudicator
+[0.192, 0.278], trio [0.205, 0.292], cooperative [0.228, 0.318].
+
+**Result 1: the Verifier still does not filter for precision, now at n=1,144.**
+Adding the adversarial Verifier nearly doubles the negative-gold
+false-positive rate, 0.124 to 0.232 (paired 8 vs 48, p < 0.0001), while lifting
+coverage 0.266 to 0.460. The dev battery said this at n=156 and it holds on the
+held-out set. It remains the opposite of what section 2.5 predicts.
+
+**Result 2: the Adjudicator earns its place.** trio over no_adjudicator adds
+9.6 points of coverage and 64 pairs it gets right that no_adjudicator misses
+against 0 the other way (p < 0.0001), for 5 extra false positives out of 370
+(p = 0.0625). Coverage and accuracy for almost nothing in precision.
+
+**Result 3: stance is equivalent on accuracy, unresolved on precision.**
+no_adjudicator vs cooperative is the one-variable stance contrast, since both
+are two-agent arms with no arbitration. Committed-correctness 50 vs 57
+discordant, p = 0.562. Delivered accuracy 0.353 vs 0.361, and **TOST against the
+pre-registered +/-0.05 margin gives p = 0.0001, equivalent**. That is the result
+EXP-40 could not supply: a McNemar null fails to reject, it does not establish
+equivalence.
+
+The negative-gold false-positive rate moves the other way, 0.232 to 0.270 (18 vs
+32 discordant, p = 0.065). That is the direction section 2.5 predicts, on the
+reasoning that corroboration compounds the guessing bias where refutation checks
+it, but it is not significant and must not be written as though it were.
+
+**Reading.** Stance does not change how often the system is right, and that is
+now settled by an equivalence test rather than by a failure to reject. Stance may
+change what the system is willing to assert, and that question stays open at 370
+negative golds. Section 4.2's "the Verifier's stance does not matter" is
+therefore supported for accuracy and **not** supported for the negative-gold
+false-positive rate; sections 4.2 and 5.2 need revising rather than deleting.
+Characterisation only, no adoption rule, production stays trio (D45).
+
+**Caveats.** 46 of 1,144 pairs have no attempt-1 researcher row
+(catalogue-computed or seeded) and count as abstentions in `researcher_only`,
+the same convention the dev-battery table uses. 33 pairs decided by the D30
+catalogue recompute are excluded from the stance contrast, where the Verifier
+makes no LLM call and stance cannot reach the outcome; both arms commit on all
+33 and agree on 32, so keeping them would have been guaranteed ties that make
+equivalence easier to declare than the evidence warrants. Second touch of the
+D47 frozen set, authorised by Benjy on 2026-07-29 with no supervisor sign-off on
+record, and owed in the dissertation limitations. Deny-list clean, 0 violations
+across the run. Reproduce with `evaluation/exp42_ladder.py`; result JSON
+`evaluation/results/exp42_ladder.json`.
+
+---
+
 ## EXP-40: adversarial vs cooperative verification architecture
 
 **Design.** Four-arm architecture ablation on the dev battery (MT 60 + NL 52 +
