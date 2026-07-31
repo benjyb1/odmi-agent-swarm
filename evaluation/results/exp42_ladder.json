@@ -1,0 +1,140 @@
+{
+  "battery": {
+    "pairs": 1144,
+    "binary_golds": 909,
+    "negative_golds": 370,
+    "pairs_without_attempt1": 46
+  },
+  "arms": {
+    "researcher_only": {
+      "coverage": 0.26573426573426573,
+      "coverage_ci": [
+        0.24095189318841495,
+        0.29208472092280047
+      ],
+      "committed": 304,
+      "commit_acc": 0.7666666666666667,
+      "commit_acc_ci": [
+        0.7092118006500873,
+        0.8157191381232805
+      ],
+      "commit_acc_n": 240,
+      "neg_fpr": 0.12432432432432433,
+      "neg_fpr_ci": [
+        0.09451535625255765,
+        0.16185418635586257
+      ],
+      "neg_fp": 46,
+      "neg_total": 370,
+      "balanced_acc": 0.17322870180013036,
+      "youden_j": -0.6535425963997392
+    },
+    "no_adjudicator": {
+      "coverage": 0.4597902097902098,
+      "coverage_ci": [
+        0.4310923765740689,
+        0.48875719151964725
+      ],
+      "committed": 526,
+      "commit_acc": 0.7396313364055299,
+      "commit_acc_ci": [
+        0.6963696220534576,
+        0.7786880243647903
+      ],
+      "commit_acc_n": 434,
+      "neg_fpr": 0.23243243243243245,
+      "neg_fpr_ci": [
+        0.1922765036141949,
+        0.278087415222018
+      ],
+      "neg_fp": 86,
+      "neg_total": 370,
+      "balanced_acc": 0.31472195757910043,
+      "youden_j": -0.37055608484179914
+    },
+    "trio": {
+      "coverage": 0.5559440559440559,
+      "coverage_ci": [
+        0.5270120617295248,
+        0.5845015826618268
+      ],
+      "committed": 636,
+      "commit_acc": 0.7347328244274809,
+      "commit_acc_ci": [
+        0.6953230884435344,
+        0.7707258171372308
+      ],
+      "commit_acc_n": 524,
+      "neg_fpr": 0.24594594594594596,
+      "neg_fpr_ci": [
+        0.20482368233602932,
+        0.2922895335286578
+      ],
+      "neg_fp": 91,
+      "neg_total": 370,
+      "balanced_acc": 0.395276538133681,
+      "youden_j": -0.20944692373263796
+    },
+    "cooperative": {
+      "coverage": 0.4763986013986014,
+      "coverage_ci": [
+        0.44758394434688953,
+        0.5053712369255092
+      ],
+      "committed": 545,
+      "commit_acc": 0.7272727272727273,
+      "commit_acc_ci": [
+        0.6843784568993446,
+        0.7663278988957278
+      ],
+      "commit_acc_n": 451,
+      "neg_fpr": 0.2702702702702703,
+      "neg_fpr_ci": [
+        0.2275504773031154,
+        0.317711473212825
+      ],
+      "neg_fp": 100,
+      "neg_total": 370,
+      "balanced_acc": 0.3157072657072657,
+      "youden_j": -0.3685854685854686
+    }
+  },
+  "tests": {
+    "researcher_only_vs_no_adjudicator": {
+      "only_first": 13,
+      "only_second": 150,
+      "p": 1.0537448930003102e-30
+    },
+    "no_adjudicator_vs_trio": {
+      "only_first": 0,
+      "only_second": 64,
+      "p": 1.0842021724855044e-19
+    },
+    "no_adjudicator_vs_cooperative": {
+      "only_first": 50,
+      "only_second": 57,
+      "p": 0.5620926850537895
+    },
+    "fpr_researcher_only_vs_no_adjudicator": {
+      "only_first": 8,
+      "only_second": 48,
+      "p": 4.688184102041859e-08
+    },
+    "fpr_no_adjudicator_vs_trio": {
+      "only_first": 0,
+      "only_second": 5,
+      "p": 0.0625
+    },
+    "fpr_no_adjudicator_vs_cooperative": {
+      "only_first": 18,
+      "only_second": 32,
+      "p": 0.06490864707227217
+    }
+  },
+  "provenance": {
+    "trio_run": "exp36_frozen_headline",
+    "cooperative_run": "exp42_stance_heldout",
+    "floor": 0.65,
+    "note": "rungs 1-3 are zero-cost replays off the trio run"
+  }
+}
