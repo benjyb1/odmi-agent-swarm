@@ -13,6 +13,32 @@ a match or a difference.
 
 Public dashboard: <https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/>
 
+## Where the results are
+
+Four places, in the order most people want them.
+
+| You want | Go to |
+|---|---|
+| Every reported number, with its numerator, denominator, population and source database | `docs/RESULTS.md` |
+| Where the dissertation and a recomputation disagree | `docs/RESULTS_DISCREPANCIES.md` |
+| The script behind any figure | `docs/figures/README.md` |
+| The raw result JSON for every experiment, indexed by what each file is | `evaluation/results/README.md` |
+
+Nothing needs re-running to check a number. Both headline replays read the
+database, make no model calls and need no network or API keys:
+
+```bash
+uv run python evaluation/exp42_ladder.py --json /tmp/exp42.json
+```
+
+That reprints the architecture ladder below from stored rows, with Wilson
+intervals and paired McNemar tests. `evaluation/exp36_analysis.py --out
+/tmp/exp36.json` does the same for the pre-registered EXP-36 endpoints. Write to
+a scratch path so the committed copies in `evaluation/results/` stay as they are.
+
+The section below explains what the pipeline is. Skip to "What was measured" for
+the numbers themselves.
+
 ## The three agents
 
 A single model asked "does Croatia publish its open data licence in
