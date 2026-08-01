@@ -13,36 +13,53 @@ Severity: **A** the stated number is wrong; **B** the number is right but names
 the wrong quantity, or two places in the document disagree; **C** rounding or a
 naming slip with no effect on a claim.
 
-## Status, 2026-08-01 12:33
+## Status, 2026-08-01 13:14
 
-Applied to the master in red, on Benjy's stated conventions (wrong-yes 91/368
-for the negative-gold rate, `answer_shape='binary'` for 907/368). Archive:
-`Dissertation/archive/Dissertation_20260801_1233_pre_numbers_reconciliation.docx`.
+Applied to the master on Benjy's stated conventions: wrong-yes 91/368 for the
+negative-gold rate, `answer_shape='binary'` for 907/368. Archive:
+`Dissertation/archive/Dissertation_20260801_1314_pre_number_fixes.docx`.
 
-- **31 number swaps applied in red**: A1, A2, A4, A5a, A5b, A6, A7, A9, A13,
-  A14, A16, B1a to B1e, B2a to B2g, B3a to B3c, B4, B5, B8, B11, C5.
-- **5 CC notes added**: A11 (the 0.88 sweep point), A12 (Bulgaria not Bosnia at
-  the top of the cost range), B16 (11 overstatements against 4), B13 (EXP-28 is
-  Sonnet 5), and a new one on Appendix F below.
-- **Resolved by another window before this pass**: B6 and B7. The 1 August
-  consolidation deleted the second baselines rendering, which carried the
-  909 / 59.3% / 4,146 / 81.8% figures, and kept the 907 / 59.4% / 4,144 / 81.9%
-  ones. That is the convention this register recommends.
+A first attempt at 12:33 was lost. Another window had taken its copy before that
+write and saved over it at 12:49, so all 36 edits went. This pass re-applied
+them onto the current file after waiting for the document to go quiet for eight
+minutes. Nothing of the other window's work was touched.
+
+**Number corrections go in black**, per Benjy on 1 August, because a corrected
+value is body text rather than a review mark. Each replacement inherits the
+formatting of the run it sits in, so it matches its surroundings. Five cells in
+Table 4.7.1 were already red before the edit and their replacements are
+therefore red as well. Only the CC notes are new red runs.
+
+- **31 number swaps applied**: A2, A4, A5a, A5b, A6, A7, A9, A13, A14, A16,
+  B1a to B1e, B2a to B2g, B3a to B3c, B5, B8, B11, C5. A3 and A15 were folded
+  into the A2 and A13 swaps.
+- **5 CC notes added, in red**: A11 (the 0.88 sweep point), A12 (Bulgaria not
+  Bosnia at the top of the cost range), B16 (11 overstatements against 4), B13
+  (EXP-28 is Sonnet 5), and one on Appendix F below.
+- **Already fixed by another window**: A1 (55.4 to 55.6), B4 (370/262 to
+  368/261), B6 and B7. The 1 August consolidation deleted the second baselines
+  rendering, which carried 909 / 59.3% / 4,146 / 81.8%, and kept the
+  907 / 59.4% / 4,144 / 81.9% one, which is the convention this register
+  recommends.
 - **New defect found during the pass**: Appendix F carries the heading
   "F. Baselines", an intro line and the caption "Table F.1", and **no table**.
   Confirmed by direct XML inspection: zero `<w:tbl>` elements after the
-  heading. §2.3 now points at Table F.1. The consolidation deleted both
-  renderings rather than one. A CC note carries the recomputed rows so the
+  heading, while §2.3 points at Table F.1. The consolidation deleted both
+  renderings rather than one. The CC note carries the recomputed rows so the
   table can be rebuilt.
-- **Not applied, still open**: A3 (folded into the A2 swap), A10 and A15
-  (see below), and everything in section B that describes a convention rather
-  than a cell.
+
+**Still open, needing a wording change rather than a number**, so left for
+Benjy: A10 (the 73% in §4.2 is negative golds in that band, not every committed
+answer in it), B9 (§4.1 puts 43.0% and 42.9% in consecutive sentences for two
+different quantities), B10 (§4.10 compares a commit accuracy with a balanced
+accuracy; the comparable closed-book figure is 55.3%), and B12 (§4.5's "accuracy
+of 50%" for the catalogue questions is 51.5%, or 75.8% counting `near_match`).
 
 Verification on the written master: zip integrity, XML parses, root element and
 `mc:Ignorable` byte-identical, paragraph and table counts unchanged, no new
-`rId`, no duplicate `wp:docPr`, red runs 404 to 433, and the 88 legacy `C00000`
-notes untouched. Every superseded value confirmed absent and every replacement
-confirmed present.
+`rId`, no duplicate `wp:docPr`, exactly 5 new red runs and all of them CC notes,
+and the 88 legacy `C00000` notes untouched. All 31 superseded values confirmed
+absent and all 31 replacements confirmed present.
 
 ---
 

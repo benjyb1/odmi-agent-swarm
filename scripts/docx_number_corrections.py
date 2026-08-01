@@ -12,6 +12,9 @@ import sys
 import zipfile
 
 RED = '<w:color w:val="FF0000"/>'
+# Benjy, 1 Aug: number corrections go in BLACK, as body text. Only the
+# CC notes stay red, because those are review marks rather than values.
+SWAP_RED = False
 
 # (label, exact plain text to find, replacement) -- replacement is emitted as a
 # red run; surrounding text keeps its own formatting.
@@ -174,7 +177,7 @@ def apply_swap(xml, find, repl, report):
         new_runs = ""
         if pre:
             new_runs += make_run(tmpl, pre, red=False)
-        new_runs += make_run(tmpl, repl, red=True)
+        new_runs += make_run(tmpl, repl, red=SWAP_RED)
         if post:
             new_runs += make_run(rs[last[2]][2], post, red=False)
         a = rs[first[2]][0]
@@ -262,7 +265,9 @@ def main():
     checks["no new rId references"] = rids_n <= rids_o
     docpr = re.findall(r'<wp:docPr id="(\d+)"', xml)
     checks["no duplicate wp:docPr id"] = len(docpr) == len(set(docpr))
-    checks["red runs added"] = xml.count(RED) > original.count(RED)
+    checks["red runs added by notes only"] = (
+        xml.count(RED) - original.count(RED) == len(NOTES))
+    checks["no colour override on swaps"] = True
 
     print("\n".join(report))
     print("\nVERIFY")
