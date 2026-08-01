@@ -238,7 +238,7 @@ def main():
         done += ok
         missed += not ok
 
-    # The nine verifications, before writing
+    # ---- the nine verifications, before writing ----
     checks = {}
     ro = re.match(r"^.*?<w:body>", original, re.S).group(0)
     rn = re.match(r"^.*?<w:body>", xml, re.S).group(0)
@@ -278,7 +278,7 @@ def main():
         print("\nABORTED: a verification failed, nothing written")
         return 1
 
-    # Rewrite the zip, every other entry byte for byte
+    # ---- rewrite the zip, every other entry byte for byte ----
     with zipfile.ZipFile(src) as zin, zipfile.ZipFile(
             dst, "w", zipfile.ZIP_DEFLATED) as zout:
         for item in zin.infolist():

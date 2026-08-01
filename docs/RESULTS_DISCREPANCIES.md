@@ -13,7 +13,7 @@ Severity: **A** the stated number is wrong; **B** the number is right but names
 the wrong quantity, or two places in the document disagree; **C** rounding or a
 naming slip with no effect on a claim.
 
-## Status, 2026-08-01 13:14
+## Status, 2026-08-01 18:21
 
 Applied to the master on Benjy's stated conventions: wrong-yes 91/368 for the
 negative-gold rate, `answer_shape='binary'` for 907/368. Archive:
@@ -55,11 +55,19 @@ different quantities), B10 (§4.10 compares a commit accuracy with a balanced
 accuracy; the comparable closed-book figure is 55.3%), and B12 (§4.5's "accuracy
 of 50%" for the catalogue questions is 51.5%, or 75.8% counting `near_match`).
 
+Two corrections were partly undone after the 13:14 write. A window rebuilt
+Table 5.1 at 13:19, which restored `0.222 (58 of 261)` in the Subgroup row, and
+the Appendix C EXP-36 row still carried `negative-gold FPR 0.255`, which the
+original sweep had missed. Both were re-applied at 18:21 after the document had
+been quiet for nearly five hours. The rebuilt Table 5.1 kept the count-band
+correction as a rewording, "the count-band questions return 1 exact match across
+16 pairs", so that one needed nothing.
+
 Verification on the written master: zip integrity, XML parses, root element and
 `mc:Ignorable` byte-identical, paragraph and table counts unchanged, no new
-`rId`, no duplicate `wp:docPr`, exactly 5 new red runs and all of them CC notes,
-and the 88 legacy `C00000` notes untouched. All 31 superseded values confirmed
-absent and all 31 replacements confirmed present.
+`rId`, no duplicate `wp:docPr`, exactly 5 red runs added and all of them CC
+notes, and the 88 legacy `C00000` notes untouched. A full sweep confirms no
+any-wrong-convention figure survives anywhere in the document.
 
 ---
 
