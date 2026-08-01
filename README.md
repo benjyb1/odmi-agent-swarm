@@ -245,7 +245,6 @@ ablation does not re-pay for the same web calls.
 | `evaluation/specs/` | Experiment pre-registrations, written before each run. |
 | `scripts/` | The Coordinator, the dispatcher, database setup and loaders, schema migrations and the experiment orchestrator. |
 | `tests/` | 97 test files, about 16,500 lines. Live tests are marked and excluded by default. |
-| `who_speech/` | A separate side project that reuses the swarm against the WHO Europe document set. Not part of the dissertation. |
 | `conftest.py` | The two-layer guard that keeps pytest away from the canonical database. |
 | `Makefile` | The search-pipeline test gates and the fixture regeneration targets. |
 
