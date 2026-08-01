@@ -36,9 +36,16 @@ from collections import defaultdict
 LEDGER_SOURCES = [
     "evaluation/results/exp36_headline.json",
     "evaluation/results/confidence_gates_summary.json",
-    "evaluation/results/exp36_fp_audit.json",
-    "evaluation/results/exp41_stability.json",
+    "evaluation/results/heldout_fp_audit_merged94.jsonl",
+    "evaluation/results/exp41_analysis.json",
 ]
+
+# Verdict vocabularies, copied from evaluation/heldout_fp_audit.py. Seeded in
+# full so a verdict nobody reached still reaches the ledger as a zero. The
+# 0/91 gold_wrong headline is exactly that case: count it from the data alone
+# and the figure the document leans hardest on is the one figure absent.
+CHARITABLE_VERDICTS = ("genuine_error", "definitional_gap", "defensible_or_stale_gold")
+ADVERSARIAL_VERDICTS = ("swarm_over_read", "ambiguous", "gold_wrong")
 
 
 def flatten(obj, prefix=""):
@@ -54,20 +61,100 @@ def flatten(obj, prefix=""):
     return out
 
 
+def load_pack(path):
+    """One JSON object, or a JSONL file read as a list of records."""
+    with open(path) as f:
+        if path.endswith(".jsonl"):
+            return [json.loads(line) for line in f if line.strip()]
+        return json.load(f)
+
+
+def _tally(records, key, vocabulary=()):
+    counts = {v: 0 for v in vocabulary}
+    for r in records:
+        k = key(r)
+        counts[k] = counts.get(k, 0) + 1
+    return counts
+
+
+def _with_shares(counts, n):
+    out = dict(counts)
+    if n:
+        out.update({f"{k}_share": v / n for k, v in counts.items()})
+    return out
+
+
+def summarise_fp_audit(records):
+    """Tallies over an FP-audit pack, in the shape the document quotes it.
+
+    The pack holds one record per audited pair and the document cites no pair
+    individually. Flattening the records as they stand would load the ledger
+    with database ids and per-pair confidences while leaving every quoted
+    figure out of it, so the tallies are what gets loaded instead.
+    """
+    judged = [r for r in records if r.get("charitable") or r.get("adversarial")]
+    n, nj = len(records), len(judged)
+    supports = sum(1 for r in judged
+                   if (r.get("charitable") or {}).get("swarm_evidence_supports_yes") is True)
+    self_report = sum(1 for r in judged
+                      if (r.get("charitable") or {}).get("gold_is_self_report") is True)
+    return {
+        "n_records": n,
+        "n_adjudicated": nj,
+        "n_unadjudicated": n - nj,
+        # Both "not_applicable" and "not applicable" occur in the pack.
+        "by_final_answer": _tally(
+            records, lambda r: str(r.get("final_answer", "")).strip().replace(" ", "_")),
+        "by_gold_answer": _tally(records, lambda r: str(r.get("gold_answer", ""))),
+        "by_country": _tally(records, lambda r: r.get("country")),
+        "by_dimension": _tally(records, lambda r: r.get("dimension")),
+        "by_decision": _tally(records, lambda r: r.get("decision")),
+        "adjudicated": {
+            "n": nj,
+            "charitable": _with_shares(
+                _tally([r for r in judged if r.get("charitable")],
+                       lambda r: r["charitable"].get("verdict"), CHARITABLE_VERDICTS), nj),
+            "adversarial": _with_shares(
+                _tally([r for r in judged if r.get("adversarial")],
+                       lambda r: r["adversarial"].get("holds"), ADVERSARIAL_VERDICTS), nj),
+            "evidence_supports_yes": supports,
+            "evidence_too_weak": nj - supports,
+            "gold_is_self_report": self_report,
+            "gold_not_self_report": nj - self_report,
+            "evidence_supports_yes_share": supports / nj if nj else 0.0,
+            "gold_is_self_report_share": self_report / nj if nj else 0.0,
+        },
+    }
+
+
+DERIVERS = {"heldout_fp_audit_merged94.jsonl": summarise_fp_audit}
+
+
 def build_ledger(root="."):
-    ledger = defaultdict(list)
+    """Returns the ledger and the list of sources that could not be loaded.
+
+    A source that goes missing used to be skipped without a word, which is how
+    the FP-audit and stability packs sat absent: every number in those chapters
+    then passed the check by never being looked up. Absence is now reported,
+    and main() exits non-zero on it.
+    """
+    ledger, missing = defaultdict(list), []
     for rel in LEDGER_SOURCES:
         path = os.path.join(root, rel)
         if not os.path.exists(path):
+            missing.append(f"{rel} (not found)")
             continue
         try:
-            with open(path) as f:
-                data = json.load(f)
-        except (json.JSONDecodeError, OSError):
+            data = load_pack(path)
+        except (json.JSONDecodeError, OSError) as exc:
+            missing.append(f"{rel} ({type(exc).__name__}: {exc})")
             continue
+        derive = DERIVERS.get(os.path.basename(rel))
+        if derive:
+            data = derive(data)
         for k, v in flatten(data).items():
             ledger[round(v, 10)].append(f"{os.path.basename(rel)}::{k}")
-    return ledger
+    return ledger, missing
 
 
 # 1. arithmetic
@@ -197,7 +284,13 @@ def main():
     mismatches = [a for a in arith if a["verdict"] == "ARITHMETIC_MISMATCH"]
     ok = [a for a in arith if a["verdict"] == "ARITHMETIC_OK"]
 
-    ledger = build_ledger(args.root)
+    ledger, missing = build_ledger(args.root)
+    if missing:
+        print("\n!! LEDGER SOURCES MISSING, every number they would source is "
+              "unchecked below:")
+        for m in missing:
+            print(f"   {m}")
+
     ledger_results, counts = [], defaultdict(int)
     for c in claims:
         try:
@@ -212,7 +305,8 @@ def main():
             "ledger": path, "sentence": c["sentence"],
         })
 
-    print(f"ledger values loaded: {sum(len(v) for v in ledger.values())}")
+    print(f"ledger values loaded: {sum(len(v) for v in ledger.values())} "
+          f"from {len(LEDGER_SOURCES) - len(missing)}/{len(LEDGER_SOURCES)} sources")
     print(f"\n1. ARITHMETIC  self-checking sentences: {len(arith)}")
     print(f"   agree: {len(ok)}   MISMATCH: {len(mismatches)}")
     print(f"\n2. LEDGER  {dict(counts)}")
@@ -228,8 +322,13 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "numbers_verified.json"), "w") as f:
-        json.dump({"arithmetic": arith, "ledger": ledger_results}, f, indent=1)
+        json.dump({"arithmetic": arith, "ledger": ledger_results,
+                   "ledger_sources_missing": missing}, f, indent=1)
     print(f"\nwritten to {args.out}/numbers_verified.json")
+
+    # Results are written either way, but a partial ledger is a failed gate.
+    if missing:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
