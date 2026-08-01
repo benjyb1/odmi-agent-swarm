@@ -13,6 +13,39 @@ Severity: **A** the stated number is wrong; **B** the number is right but names
 the wrong quantity, or two places in the document disagree; **C** rounding or a
 naming slip with no effect on a claim.
 
+## Status, 2026-08-01 12:33
+
+Applied to the master in red, on Benjy's stated conventions (wrong-yes 91/368
+for the negative-gold rate, `answer_shape='binary'` for 907/368). Archive:
+`Dissertation/archive/Dissertation_20260801_1233_pre_numbers_reconciliation.docx`.
+
+- **31 number swaps applied in red**: A1, A2, A4, A5a, A5b, A6, A7, A9, A13,
+  A14, A16, B1a to B1e, B2a to B2g, B3a to B3c, B4, B5, B8, B11, C5.
+- **5 CC notes added**: A11 (the 0.88 sweep point), A12 (Bulgaria not Bosnia at
+  the top of the cost range), B16 (11 overstatements against 4), B13 (EXP-28 is
+  Sonnet 5), and a new one on Appendix F below.
+- **Resolved by another window before this pass**: B6 and B7. The 1 August
+  consolidation deleted the second baselines rendering, which carried the
+  909 / 59.3% / 4,146 / 81.8% figures, and kept the 907 / 59.4% / 4,144 / 81.9%
+  ones. That is the convention this register recommends.
+- **New defect found during the pass**: Appendix F carries the heading
+  "F. Baselines", an intro line and the caption "Table F.1", and **no table**.
+  Confirmed by direct XML inspection: zero `<w:tbl>` elements after the
+  heading. §2.3 now points at Table F.1. The consolidation deleted both
+  renderings rather than one. A CC note carries the recomputed rows so the
+  table can be rebuilt.
+- **Not applied, still open**: A3 (folded into the A2 swap), A10 and A15
+  (see below), and everything in section B that describes a convention rather
+  than a cell.
+
+Verification on the written master: zip integrity, XML parses, root element and
+`mc:Ignorable` byte-identical, paragraph and table counts unchanged, no new
+`rId`, no duplicate `wp:docPr`, red runs 404 to 433, and the 88 legacy `C00000`
+notes untouched. Every superseded value confirmed absent and every replacement
+confirmed present.
+
+---
+
 Counts: **15 wrong numbers in the docx** (A1 to A17, less A8 which was withdrawn
 on re-check and A17 which is a repo markdown file rather than the
 dissertation), **16** right-number-wrong-quantity or internal-disagreement
