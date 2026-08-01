@@ -13,6 +13,11 @@ Severity: **A** the stated number is wrong; **B** the number is right but names
 the wrong quantity, or two places in the document disagree; **C** rounding or a
 naming slip with no effect on a claim.
 
+Counts: **15 wrong numbers in the docx** (A1 to A17, less A8 which was withdrawn
+on re-check and A17 which is a repo markdown file rather than the
+dissertation), **16** right-number-wrong-quantity or internal-disagreement
+cases, **5** rounding and naming notes.
+
 ---
 
 ## A. Wrong numbers
@@ -26,7 +31,7 @@ naming slip with no effect on a claim.
 | A5 | §4.5 and §5.3 | Quality without the catalogue questions commits at "81.5%" / "0.815" | **80.3%** (53/66) | Document wrong. 81.5% would need a denominator of 65. |
 | A6 | §4.1 | "Across the thirty-two measurable cells the recompute agrees with the published key on eighteen, 56% agreement" | 18 agreements is right; the population is **36** cells (4 countries × 9 questions), so **50.0%** | Denominator wrong. |
 | A7 | §4.1 and §4.9 | "The self-report and an independent count disagree on 44% of the measurable cells" | **50.0%** (18 of 36 disagree) | Follows from A6. |
-| A8 | §4.1 | "Montenegro's stated licence coverage exceeding 90% where the recompute reads 71%, an overstatement" | Recompute reads **98.4%** and **agrees** with the published `>90%` | Not supported by any database checked. The Croatia Q22 example in the same sentence is correct (key `10-30%`, recompute 97.8% and 97.6% on two routes). |
+| ~~A8~~ | ~~§4.1, Montenegro~~ | **Withdrawn.** An earlier pass of this list called the Montenegro licence claim unsupported. That was a checking error: it read Q21 and Q22, which are URL-presence metrics, not licence metrics. On the licence questions the claim holds — Q25 open licence recomputes to **70.0%** (629/898) and Q12 licence presence to **75.6%** (679/898), both against a `>90%` key. See C5 for the one small precision point that remains. | | |
 | A9 | §4.2 | "Of the 161 that are scoreable, 73 carry a yes gold and 88 carry a no gold … against 73 of the 88 no answers" | The sub-floor population (code G) is **73 yes and 89 no**; the withheld answers are correct on **18 of 73** yes and **79 of 89** no | Document wrong on the no-gold counts. "Around a fifth of the yes answers are correct" understates: 18/73 is 24.7%. |
 | A10 | §4.2 | "the 0.65 to 0.70 group is correct 73% of the time" | **73.4%** on negative golds only (69/94). Over every committed answer in that band it is **65.5%** (131/200) | Right number, unstated population. Say "negative golds in that band". |
 | A11 | §4.2 | yes-gold accuracy "reaching 100% near 0.88, on nine answers" | At 0.88 the class holds **82** committed answers at **98.8%**; 100% is first reached at **0.95** on **42** answers | Not reproducible from any database. |
@@ -57,6 +62,7 @@ naming slip with no effect on a claim.
 | B12 | §4.5 | catalogue questions' "accuracy of 50%" | **51.5%** strict match (17/33), or 75.8% counting `near_match` (25/33) | Round to 52%, or say "about half". |
 | B13 | Appendix C, EXP-28 row | Reports commit rates 0.237 / 0.391 / 0.468 and commit accuracies 0.649 / 0.689 / 0.726 for the three-arm ladder | Every EXP-28 researcher row is **`claude-sonnet-5`**, a model the project does not use, and the canonical dedup leaves only the researcher-only arm, so the row cannot be recomputed per arm. The 1,144-pair ladder in Table 4.7.1 supersedes it. Drop the row or mark it Sonnet 5 and historical. |
 | B14 | §4.3 against Appendix C | The audit judge is "Opus 4.6" in §4.3 and "Opus 4.8" in the Appendix C note | The merged audit JSONL carries **no model field**, so neither can be confirmed from the artefact. Already flagged in a red note. |
+| B16 | §4.1 | "The disagreements do not all run in the same direction, so this is not a case of countries systematically inflating their score" | Literally true, but the split is **11 overstatements against 4 understatements** (3 not band-comparable). The lean is real even if it is not unanimous | Soften to something like "the disagreements run mostly but not only one way", or state the 11-against-4 split. As written it reads as balance where there is a 3:1 tilt. |
 | B15 | Appendix E, closed-book row | "42.9%, against a 47.3% floor, 1,139 held-out pairs" | Confirmed exactly: 489/1,139 = 0.4293 against 539/1,139 = 0.4732. The 1,139 excludes 5 `flag_review` pairs | Correct, but it is a third distinct quantity that reads as the same 42.9% used twice elsewhere. Say which. |
 
 ---
@@ -69,6 +75,7 @@ naming slip with no effect on a claim.
 | C2 | §5.4 red note | "§1.2 records average maturity climbing from 46% to 83%" | §1.2 body text says **86%** | The note and the body disagree. Neither is a project figure; it comes from the 2025 ODMI report. |
 | C3 | Appendix C, `exp36_model_opus` | "£22.12, £0.65 per correct answer" | £22.12 confirmed; 22.12/34 = **£0.65** confirmed | Correct. |
 | C4 | §4.8 | "£375", "45 hours", "roughly 200 hours and £1,700" | £375.75, 44.6 h, 200.7 h and £1,691 | All confirmed within rounding. |
+| C5 | §4.1 | Montenegro's licence coverage "recompute reads 71%" | Q25 open licence **70.0%**, Q12 licence presence **75.6%**; both land in the `71-90%` band | The claim is right. "71%" looks like the band floor rather than either raw value. Say 70% and name Q25, or say "the 71-90% band". |
 
 ---
 

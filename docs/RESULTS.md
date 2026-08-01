@@ -182,11 +182,13 @@ Montenegro metrics.
 | Distinct recomputed cells | 36 | 4 countries × 9 questions | D3 |
 | Cells where the recomputed band equals the published band | **18/36 = 0.500** | FI 7/9, HR 2/9, ME 5/9, SE 4/9 | D3 |
 | Divergence | **0.500** | 18/36 | D3 |
+| Direction of the 18 disagreements | **11 the country overstated, 4 understated, 3 not band-comparable** | overstated FI Q25 Q27, HR Q12 Q16 Q21 Q25 Q27, ME Q12 Q25 Q27, SE Q21; understated HR Q22, SE Q12 Q18 Q25 | D3 |
 | Catalogue-decided pairs inside the EXP-36 run | 33 | FI 9, HR 9, ME 9, SE 6 | D1 |
 | Of those, swarm answer matches the key | 0.5152 | 17/33 | D1 |
 | …counting `near_match` | 0.7576 | 25/33 | D1 |
 | Croatia Q22 | key `10-30%`, recompute 97.8% and 97.6% on two routes | | D3 |
-| Montenegro Q21 / Q22 | key `>90%`, recompute 98.4% — **agrees** | | D3 |
+| Montenegro Q25 open licence | key `>90%`, recompute **70.0%** (629/898) | | D3 |
+| Montenegro Q12 licence presence | key `>90%`, recompute **75.6%** (679/898) | | D3 |
 | France Q12 licence presence | key `>90%`, recompute 37.8% (1,890/5,000) | | D3 |
 | Romania Q17 / Q18 | key `10-30%` / `<10%`, recompute 100.0% / 99.7%, reproduced on two harvest routes | | D3 |
 
@@ -636,8 +638,6 @@ Source **D1**, tables `ground_truth` and `questions`.
 - **§4.1's "thirty-two measurable cells".** The recompute covers 36 distinct
   cells across four countries. The count of agreements, 18, reproduces; the
   denominator does not, and 18/36 is 50.0% agreement, not 56%.
-- **Montenegro's licence coverage.** The recompute reads 98.4% and agrees with
-  the published `>90%`. No stored figure of 71% exists in any database checked.
 - **§4.2's "100% near 0.88, on nine answers".** At 0.88 the yes class holds 82
   committed answers at 98.8%; the class first reaches 100% at 0.95 on 42
   answers. No sweep in any database produces a nine-answer point at 0.88.
