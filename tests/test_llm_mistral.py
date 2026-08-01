@@ -6,7 +6,6 @@ contract without any network: the Anthropic client is never constructed for a
 Mistral model, the Mistral HTTP call is stubbed, and usage logging is captured
 so nothing touches the real DB.
 """
-import pytest
 from pydantic import BaseModel
 
 import agents.tools.llm as llm

@@ -101,9 +101,7 @@ FIG_DPI = 200
 SMALL_CELL = 20  # cells below this n cannot carry a claim
 
 
-# ---------------------------------------------------------------------------
 # Small pure helpers
-# ---------------------------------------------------------------------------
 
 def _rate(successes: int, n: int) -> dict:
     """Proportion with its Wilson 95% interval. n = 0 yields a null rate."""
@@ -260,9 +258,7 @@ def exact_permutation_4v4(country_values: dict[str, float],
     }
 
 
-# ---------------------------------------------------------------------------
 # 1. Reconstructed yes-share
-# ---------------------------------------------------------------------------
 
 def yes_share_reconstruction(rows: list) -> dict:
     """Per-country gold vs reconstructed yes-share on binary golds, under three
@@ -346,9 +342,7 @@ def yes_share_reconstruction(rows: list) -> dict:
     return out
 
 
-# ---------------------------------------------------------------------------
 # 2. Decision mix
-# ---------------------------------------------------------------------------
 
 def decision_mix(rows: list) -> dict:
     """confirm / complement / change counts, shares and within-decision commit
@@ -396,9 +390,7 @@ def decision_mix(rows: list) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # 3. TPR / TNR on committed binary pairs
-# ---------------------------------------------------------------------------
 
 def class_recall_committed(rows: list) -> dict:
     """TPR, TNR, balanced accuracy and Youden's J on COMMITTED binary-gold
@@ -449,9 +441,7 @@ def class_recall_committed(rows: list) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # 4. Negative-gold false-positive rate
-# ---------------------------------------------------------------------------
 
 def negative_fp(rows: list) -> dict:
     """FP rate on negative golds, under both shape denominators and both
@@ -483,9 +473,7 @@ def negative_fp(rows: list) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # 5. Stratum x gold class x outcome
-# ---------------------------------------------------------------------------
 
 def crosstab_gold_class(rows: list) -> dict:
     """Stratum x gold class x outcome, and the conditioned test.
@@ -551,9 +539,7 @@ def crosstab_gold_class(rows: list) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # 6. Abstention codes
-# ---------------------------------------------------------------------------
 
 def abstention_codes(rows: list, coded: dict[str, dict]) -> dict:
     """Abstention code x stratum x gold class, and the conditioned test for G.
@@ -679,9 +665,7 @@ def abstention_codes(rows: list, coded: dict[str, dict]) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # 7. Permutation tests
-# ---------------------------------------------------------------------------
 
 def permutation_tests(rows: list) -> dict:
     """Exact 4-against-4 country-level permutation tests, plus the pair-level
@@ -738,9 +722,7 @@ def permutation_tests(rows: list) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # 8. Belgium isolate
-# ---------------------------------------------------------------------------
 
 def belgium_isolate(rows: list) -> dict:
     """BE against the rest of stratum B (FI, SE, HR), and the catalogue
@@ -822,9 +804,7 @@ def belgium_isolate(rows: list) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # Small-cell register
-# ---------------------------------------------------------------------------
 
 def collect_small_cells(report: dict) -> list[dict]:
     """Walk the report and register every rate cell whose n is below the
@@ -852,9 +832,7 @@ def collect_small_cells(report: dict) -> list[dict]:
     return sorted(found, key=lambda c: (c["n"], c["path"]))
 
 
-# ---------------------------------------------------------------------------
 # Figures
-# ---------------------------------------------------------------------------
 
 def _style(ax) -> None:
     for side in ("top", "right"):
@@ -1003,9 +981,7 @@ def figure_abstention_codes(codes: dict, out_path: Path) -> None:
     plt.close(fig)
 
 
-# ---------------------------------------------------------------------------
 # Orchestration
-# ---------------------------------------------------------------------------
 
 def build_report(db_path: Path) -> dict:
     conn = sqlite3.connect(str(db_path))
@@ -1021,7 +997,7 @@ def build_report(db_path: Path) -> dict:
     finally:
         conn.close()
 
-    # --- abort gate --------------------------------------------------------
+    # abort gate
     per_country = Counter(r.country_code for r in canonical)
     problems = []
     if len(canonical) != EXPECTED_CANONICAL_PAIRS:
@@ -1146,9 +1122,7 @@ def build_report(db_path: Path) -> dict:
     return report, canonical
 
 
-# ---------------------------------------------------------------------------
 # Markdown rendering
-# ---------------------------------------------------------------------------
 
 def f3(x, dash: str = "-") -> str:
     if x is None:
@@ -1210,7 +1184,6 @@ def render_markdown(rep: dict) -> str:
     w(f"| all pairs | {den['all_pairs']} |")
     w("")
 
-    # --- 1 ----------------------------------------------------------------
     recon = rep["s1_yes_share_reconstruction"]
     w("## 1. Reconstructed yes-share against gold")
     w("")
@@ -1247,7 +1220,6 @@ def render_markdown(rep: dict) -> str:
           f"{f3(p['c_coerced_gold']['signed_error'])} |")
     w("")
 
-    # --- 2 ----------------------------------------------------------------
     dm = rep["s2_decision_mix"]
     w("## 2. Decision mix and within-decision commit accuracy")
     w("")
@@ -1307,7 +1279,6 @@ def render_markdown(rep: dict) -> str:
         w(f"| {c} | {cells} |")
     w("")
 
-    # --- 3 ----------------------------------------------------------------
     s3 = rep["s3_class_recall_committed"]
     w("## 3. TPR, TNR, balanced accuracy and Youden's J on committed binary "
       "pairs")
@@ -1351,7 +1322,6 @@ def render_markdown(rep: dict) -> str:
         recall_row(c, s3["by_country"][c])
     w("")
 
-    # --- 4 ----------------------------------------------------------------
     s4 = rep["s4_negative_gold_fp"]
     w("## 4. Negative-gold false-positive rate")
     w("")
@@ -1385,7 +1355,6 @@ def render_markdown(rep: dict) -> str:
               f"{ci(b['fp_over_committed_no_golds'])} |")
         w("")
 
-    # --- 5 ----------------------------------------------------------------
     s5 = rep["s5_crosstab_gold_class"]
     w("## 5. Stratum x gold class x outcome")
     w("")
@@ -1445,7 +1414,6 @@ def render_markdown(rep: dict) -> str:
       f"association, but it does relocate it.")
     w("")
 
-    # --- 6 ----------------------------------------------------------------
     s6 = rep["s6_abstention_codes"]
     gc_ = s6["G_composition"]
     w("## 6. Abstention codes by stratum and gold class")
@@ -1507,7 +1475,6 @@ def render_markdown(rep: dict) -> str:
       f"{f3(ca['p_value'])} | {f3(ca['mh_odds_ratio'])} |")
     w("")
 
-    # --- 7 ----------------------------------------------------------------
     s7 = rep["s7_permutation_tests"]
     w("## 7. Country-level permutation tests (4 against 4)")
     w("")
@@ -1563,7 +1530,6 @@ def render_markdown(rep: dict) -> str:
       f"established.")
     w("")
 
-    # --- 8 ----------------------------------------------------------------
     s8 = rep["s8_belgium_isolate"]
     w("## 8. Belgium isolate")
     w("")
@@ -1621,7 +1587,7 @@ def render_markdown(rep: dict) -> str:
       f"{f3(ec['p_value_exact'])} |")
     w("")
 
-    # --- limits -----------------------------------------------------------
+    # limits
     w("## 9. What could not be computed, and where n is too small")
     w("")
     w("### 9.1 Not computable from the data")

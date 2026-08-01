@@ -10,9 +10,6 @@ See AGENT_DESIGN.md section 5.11.
 
 from __future__ import annotations
 
-import json
-from typing import List
-
 from agents.models import (
     AdjudicatorInput,
     ResearcherOutput,
@@ -134,13 +131,11 @@ agents actually gathered.
 """.replace("__FORBIDDEN_SOURCES_PLACEHOLDER__", FORBIDDEN_SOURCES_BULLETS)
 
 
-# ============================================================
 # EXP-16 free-selection arm. SEPARATE prompt version: it adds the
 # `attempt_correct` verdict, so the system prompt differs from the
 # standard one. The standard `phase2_adjudicator` v4 above is untouched,
 # so default-mode `prompt_versions` rows are unchanged. The free arm
 # registers its own row under FREE_NAME / FREE_VERSION.
-# ============================================================
 
 FREE_NAME = "phase2_adjudicator_free"
 FREE_VERSION = 3

@@ -38,9 +38,7 @@ def _o(qid="Q1", cc="MT", arm="baseline", status="accepted_by_verifier",
     )
 
 
-# ---------------------------------------------------------------------------
 # Classifiers
-# ---------------------------------------------------------------------------
 
 def test_is_abstention():
     assert is_abstention("inconclusive") is True
@@ -86,9 +84,7 @@ def test_gold_class():
     assert gold_class(None) == "other"
 
 
-# ---------------------------------------------------------------------------
 # arm_summary
-# ---------------------------------------------------------------------------
 
 def test_arm_summary_balance_aware():
     outcomes = [
@@ -135,9 +131,7 @@ def test_arm_summary_empty():
     assert s["calls_per_resolved_pair"] is None
 
 
-# ---------------------------------------------------------------------------
 # paired_comparison
-# ---------------------------------------------------------------------------
 
 def _paired_fixture():
     baseline = [
@@ -215,9 +209,7 @@ def test_joint_verdict_fails_when_false_positive_rises():
     assert jc["passes"] is False
 
 
-# ---------------------------------------------------------------------------
 # analyse() top level
-# ---------------------------------------------------------------------------
 
 def test_analyse_one_arm_empty_emits_note():
     report = analyse({"baseline": [_o()], "chained": []})
@@ -232,9 +224,7 @@ def test_analyse_both_arms_runs_paired():
     assert report["arms"]["chained"]["n"] == 3
 
 
-# ---------------------------------------------------------------------------
 # DB layer: load_outcomes against a minimal SQLite database
-# ---------------------------------------------------------------------------
 
 def _build_minimal_db(path: Path) -> None:
     conn = sqlite3.connect(path)

@@ -1,11 +1,10 @@
-"""Questions — browsable table; tick rows and send to Run Console."""
+"""Questions: browsable table; tick rows and send to Run Console."""
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -34,9 +33,7 @@ runs_per_qid = (
     if len(finals) > 0 and "question_id" in finals.columns else {}
 )
 
-# ============================================================
 # Filters
-# ============================================================
 
 col1, col2, col3 = st.columns([2, 1, 1])
 with col1:
@@ -64,9 +61,7 @@ filtered["runs"] = filtered["question_id"].map(
     lambda q: runs_per_qid.get(q, 0)
 )
 
-# ============================================================
 # Selection widget + table
-# ============================================================
 
 # The matching rows are shown read-only. Selection happens through a
 # proper multiselect below the table so it works reliably across

@@ -52,7 +52,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
-from dashboard.lib.currency import format_gbp, to_gbp  # noqa: E402
+from dashboard.lib.currency import format_gbp  # noqa: E402
 
 DB_PATH = REPO_ROOT / "data" / "odmi.db"
 GBP_PER_USD = 0.79   # mirror of USD_TO_GBP in dashboard.lib.currency
@@ -68,9 +68,7 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
-# ============================================================
 # Status / inspection
-# ============================================================
 
 def cmd_status(args: argparse.Namespace) -> int:
     conn = _connect()
@@ -184,9 +182,7 @@ def cmd_recent(args: argparse.Namespace) -> int:
         conn.close()
 
 
-# ============================================================
 # Data-leakage audit / purge
-# ============================================================
 
 def _run_audit_script(*extra: str) -> int:
     cmd = ["uv", "run", "python", str(REPO_ROOT / "scripts" / "check_data_leakage.py"), *extra]
@@ -213,9 +209,7 @@ def cmd_purge_leakage(args: argparse.Namespace) -> int:
     return _run_audit_script("--purge")
 
 
-# ============================================================
 # Run
-# ============================================================
 
 def _avg_pair_cost_usd(conn: sqlite3.Connection) -> float:
     """Average cost per finalised pair, in USD.
@@ -335,9 +329,7 @@ def cmd_run_pair(args: argparse.Namespace) -> int:
     return subprocess.call(cmd, cwd=REPO_ROOT)
 
 
-# ============================================================
 # Argparse wiring
-# ============================================================
 
 def main() -> int:
     parser = argparse.ArgumentParser(

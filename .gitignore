@@ -18,6 +18,18 @@ node_modules/
 # Claude Code local
 .claude/settings.local.json
 .claude/worktrees/
+.context/
+
+# Author's working material in the shared checkout. Drafts, reading and
+# supervision decks that are not part of the submitted codebase. None of
+# this has ever been tracked; the entries stop it being swept in by an
+# absent-minded `git add -A`.
+Dissertation/
+MSC CLAUDE NOTES/
+Presentations/
+Research/
+ODMI_Technical_Walkthrough.docx
+*.zip
 
 # SQLite write-ahead and shared-memory files (the .db itself is committed)
 *.db-wal

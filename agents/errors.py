@@ -20,7 +20,6 @@ source of truth.
 
 from __future__ import annotations
 
-
 EXIT_CODE_RATE_LIMITED = 42
 EXIT_CODE_BLOCKER = 43
 
@@ -45,7 +44,7 @@ class AuthUnavailableShutdown(RateLimitedShutdown):
     `EXIT_CODE_RATE_LIMITED`, same dispatcher global-stop-and-resume
     behaviour. It exists as a distinct subclass only so the Coordinator can
     record an honest `final_failure_reason` (`auth_unavailable`, not
-    `anthropic_rate_limit`) — the DB row should say what actually happened.
+    `anthropic_rate_limit`): the DB row should say what actually happened.
 
     Before this was added, the 503 propagated as an uncaught
     `anthropic.InternalServerError`, crashing the coordinator subprocess

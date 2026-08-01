@@ -56,9 +56,7 @@ def _mistral_body(payload: dict, *, prompt_tokens: int = 120, out_tokens: int = 
     }
 
 
-# --------------------------------------------------------------------------
 # Mistral response parser
-# --------------------------------------------------------------------------
 
 
 def test_parse_mistral_adjudication_maps_fields():
@@ -104,9 +102,7 @@ def test_parse_mistral_adjudication_raises_on_bad_schema():
         parse_mistral_adjudication(_mistral_body(bad))
 
 
-# --------------------------------------------------------------------------
 # _post_chat_completion: throttle + retry-on-429 with backoff
-# --------------------------------------------------------------------------
 
 
 class _FakeResp:
@@ -192,9 +188,7 @@ def test_post_gives_up_after_max_retries_on_persistent_429():
     assert "retries" in str(exc.value)
 
 
-# --------------------------------------------------------------------------
 # Auth probe: missing key short-circuits cleanly (no network)
-# --------------------------------------------------------------------------
 
 
 def test_probe_auth_mistral_returns_false_when_key_unset():
@@ -209,9 +203,7 @@ def test_probe_auth_mistral_returns_false_when_key_unset():
     assert out["key_prefix"] is None
 
 
-# --------------------------------------------------------------------------
 # adjudicate_mistral end-to-end (network mocked)
-# --------------------------------------------------------------------------
 
 
 def test_adjudicate_mistral_returns_parsed_verdict_and_usage():

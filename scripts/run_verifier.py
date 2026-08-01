@@ -47,9 +47,7 @@ VALID_STRATEGIES: list[VerifierStrategy] = [
 ]
 
 
-# ============================================================
 # DB helpers
-# ============================================================
 
 def _load_researcher_row(
     question_id: str,
@@ -135,7 +133,7 @@ def _load_question_text(question_id: str, db_path: Path | None = None) -> str:
     return str(row[0])
 
 
-# Country metadata — mirrors run_researcher.py.
+# Country metadata: mirrors run_researcher.py.
 COUNTRIES = {
     "FR": {
         "country_name": "France",
@@ -143,9 +141,7 @@ COUNTRIES = {
 }
 
 
-# ============================================================
 # Walkthrough printing
-# ============================================================
 
 def make_walkthrough_callback(*, enabled: bool):
     def _on_step(event: str, payload: dict) -> None:
@@ -234,9 +230,7 @@ def make_walkthrough_callback(*, enabled: bool):
     return _on_step
 
 
-# ============================================================
 # DB row writer
-# ============================================================
 
 def save_run(
     *,
@@ -311,9 +305,7 @@ def save_run(
         return int(cur.lastrowid)
 
 
-# ============================================================
 # Main
-# ============================================================
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -393,14 +385,11 @@ def main() -> None:
         on_step=on_step,
     )
 
-    # ----- Print summary -----
     print()
-    print("=" * 64)
     print(
         f"VERIFIER FINISHED  question={inp.question_id} "
         f"country={inp.country_code}  strategy={inp.strategy}"
     )
-    print("=" * 64)
     print(f"  Researcher said:   {researcher_output.answer!r} "
           f"(conf={researcher_output.answer_confidence:.2f})")
 
@@ -427,7 +416,7 @@ def main() -> None:
             print(f"  Notes:             {result.notes}")
 
     print()
-    print(f"  Cost receipts (cumulative):")
+    print("  Cost receipts (cumulative):")
     print(f"    input_tokens:   {result.cumulative_input_tokens}")
     print(f"    output_tokens:  {result.cumulative_output_tokens}")
     print(f"    wall_clock_ms:  {result.cumulative_wall_clock_ms}")

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
-import httpx
 
 from agents.tools.fetch import (
     fetch_html,
@@ -228,12 +227,10 @@ def test_fetch_rendered_html_returns_raw_body():
     assert result.content == _HTML
 
 
-# ------------------------------------------------------------------
 # D43 total-budget discipline (2026-06-11): launch, goto, and the
 # challenge-settle waits all draw from one `timeout_s` budget, so a
 # WAF-challenged URL can never spend more than the render timeout and
 # trip the DIY stage ceiling on its own.
-# ------------------------------------------------------------------
 
 def test_settle_waits_are_bounded_by_remaining_budget():
     """With 6s of budget left, the settle wait is half the remainder and the

@@ -36,9 +36,7 @@ class MetricResult:
     breakdown: str              # the evidence quote
 
 
-# ------------------------------------------------------------------
 # Band assignment
-# ------------------------------------------------------------------
 
 
 def _percent_upper_bound(label: str) -> float:
@@ -117,11 +115,8 @@ def _pct(num: int, denom: int) -> float:
     return (100.0 * num / denom) if denom else 0.0
 
 
-# ------------------------------------------------------------------
 # Field-absence detection
-# ------------------------------------------------------------------
-#
-# A field that the route cannot see and a field that is genuinely empty are
+# A field that the route cannot see and a field that is actually empty are
 # different measurements. If a whole harvest carries no value at all for a
 # field (the SPARQL/DCAT route never emits the predicate, e.g. Croatia has no
 # dct:license and no dcat:downloadURL anywhere), a 0% reading is not "0% of
@@ -182,9 +177,7 @@ def _percentage_band(
     return pct, band_for_percentage(pct, allowed)
 
 
-# ------------------------------------------------------------------
 # Presence / count metrics
-# ------------------------------------------------------------------
 
 
 def metric_q12_licence_presence(
@@ -317,12 +310,10 @@ def metric_q27_open_format(
     return MetricResult("Q27", "metric_q27_open_format", pct, num, denom, band, breakdown)
 
 
-# ------------------------------------------------------------------
 # DCAT-AP conformance metrics (Q16/Q17/Q18). These need a per-dataset
 # RDF graph (the dcat_rdf route, or graphs synthesised from JSON for
 # NL/EE). Datasets without a graph cannot be assessed; if none have one,
 # the function raises so the caller treats conformance as unavailable.
-# ------------------------------------------------------------------
 
 DEFAULT_SHACL_SAMPLE = 1000
 

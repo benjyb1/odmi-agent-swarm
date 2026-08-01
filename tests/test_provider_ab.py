@@ -19,7 +19,7 @@ from evaluation.provider_ab import (
 )
 
 
-# --- normalise_provider / search_provider_name -----------------------------
+# normalise_provider / search_provider_name
 
 def test_normalise_provider_lowercases_and_aliases_serper():
     assert normalise_provider("Serper") == "serper"
@@ -36,7 +36,7 @@ def test_search_provider_name_maps_serper_to_serper_raw():
     assert search_provider_name("brave") == "brave"
 
 
-# --- orientation_to_x: blind A/B verdict -> the x-provider frame -----------
+# orientation_to_x: blind A/B verdict -> the x-provider frame
 
 def test_orientation_winner_a_when_x_is_a():
     assert orientation_to_x("A", x_is="A") == "x"
@@ -52,7 +52,7 @@ def test_orientation_tie_and_both_fail_passthrough():
     assert orientation_to_x("both_fail", x_is="B") == "both_fail"
 
 
-# --- combine_pair_orientations: two swapped runs -> one verdict ------------
+# combine_pair_orientations: two swapped runs -> one verdict
 
 def test_combine_agreement_x_wins_both_orientations():
     out = combine_pair_orientations("x", "x")
@@ -86,7 +86,7 @@ def test_combine_one_both_fail_one_decided_takes_the_decided_side():
     assert out["consistent"] is False
 
 
-# --- copeland_ranking: clear, transitive case ------------------------------
+# copeland_ranking: clear, transitive case
 
 def test_copeland_clear_total_order():
     """diy beats both, tavily beats brave, so diy > tavily > brave.
@@ -155,7 +155,7 @@ def test_copeland_tie_in_score_broken_by_decided_wins():
     assert order.index("a") < order.index("b")
 
 
-# --- copeland_ranking: intransitive triple ---------------------------------
+# copeland_ranking: intransitive triple
 
 def test_copeland_reports_intransitive_triple():
     """A rock-paper-scissors cycle: x>y, y>z, z>x. Copeland is 0 for all three;
@@ -188,7 +188,7 @@ def test_copeland_ignores_ties_and_both_fail_in_winloss():
     assert scores["c"] == -1  # one loss to b
 
 
-# --- head_to_head_stats: win share + Wilson CI -----------------------------
+# head_to_head_stats: win share + Wilson CI
 
 def test_head_to_head_stats_win_share_and_wilson():
     from evaluation.stats import wilson_interval
@@ -212,7 +212,7 @@ def test_head_to_head_stats_zero_decided_is_safe():
     assert out["wilson_high"] == 1.0
 
 
-# --- filter_live_providers: keep only arms that returned results -----------
+# filter_live_providers: keep only arms that returned results
 
 def test_filter_live_providers_keeps_only_live():
     probes = {

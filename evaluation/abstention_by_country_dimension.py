@@ -111,13 +111,13 @@ def build_svg(countries: list[str], n_ans: dict, n_abs: dict) -> str:
 
     # Title and subtitle.
     out.append(
-        f'<text x="24" y="34" font-size="20" font-weight="700" fill="#1a1a1a">'
-        f'Swarm abstention rate by country and ODMI dimension</text>'
+        '<text x="24" y="34" font-size="20" font-weight="700" fill="#1a1a1a">'
+        'Swarm abstention rate by country and ODMI dimension</text>'
     )
     out.append(
-        f'<text x="24" y="56" font-size="12.5" fill="#555">'
-        f'Abstention = swarm returns &#8220;inconclusive&#8221;. '
-        f'Cells show rate and n (answerable pairs). Main runs only.</text>'
+        '<text x="24" y="56" font-size="12.5" fill="#555">'
+        'Abstention = swarm returns &#8220;inconclusive&#8221;. '
+        'Cells show rate and n (answerable pairs). Main runs only.</text>'
     )
 
     # Column headers.

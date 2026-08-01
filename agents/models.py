@@ -116,9 +116,7 @@ TerminalStatus = Literal[
 UrlStr = Annotated[AnyHttpUrl, Field(...)]
 
 
-# ============================================================
 # LLM call usage record (D12). Every Claude call emits one.
-# ============================================================
 
 
 class LLMUsage(BaseModel):
@@ -140,9 +138,7 @@ class LLMUsage(BaseModel):
     raw_response: Optional[str] = None
 
 
-# ============================================================
 # Researcher (AGENT_DESIGN section 3)
-# ============================================================
 
 
 class EvidenceItem(BaseModel):
@@ -233,9 +229,7 @@ class ResearcherOutput(BaseModel):
     notes: Optional[str] = None
 
 
-# ============================================================
 # Adversarial Verifier (AGENT_DESIGN section 4)
-# ============================================================
 
 
 class VerifierInput(BaseModel):
@@ -298,9 +292,7 @@ class VerifierOutput(BaseModel):
         return self
 
 
-# ============================================================
 # EXP-11 tristate verifier (P1/P2). Additive: evaluation-only.
-# ============================================================
 
 
 class ProbeFinding(BaseModel):
@@ -371,9 +363,7 @@ class VerifierOutputTristate(BaseModel):
         return self
 
 
-# ============================================================
 # Adjudicator (AGENT_DESIGN section 5.11)
-# ============================================================
 
 
 class AdjudicatorInput(BaseModel):
@@ -439,9 +429,7 @@ class AdjudicatorOutput(BaseModel):
         return self
 
 
-# ============================================================
 # Hand-marks (D8/D9 audit-trail). CSV-row equivalent.
-# ============================================================
 
 
 class HandMark(BaseModel):

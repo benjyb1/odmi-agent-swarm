@@ -19,12 +19,10 @@ import json
 import os
 import re
 import shutil
-import subprocess
-import sys
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
-from collections import Counter, defaultdict
+from collections import defaultdict
 
 W = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 
@@ -89,9 +87,7 @@ NOTE_PATTERNS = [
 ]
 
 
-# --------------------------------------------------------------------------
 # extraction
-# --------------------------------------------------------------------------
 
 def _text_of(node) -> str:
     """Visible text of a node. w:delText is excluded, so struck-through
@@ -206,9 +202,7 @@ def chapter_of(chapters, i):
     return "(front matter)"
 
 
-# --------------------------------------------------------------------------
 # checks
-# --------------------------------------------------------------------------
 
 def _sentences(text):
     parts = re.split(r"(?<=[.!?])\s+(?=[A-ZÀ-Þ‘“])", text)
@@ -741,9 +735,7 @@ def check_red_runs(paragraphs, chapters):
     return out
 
 
-# --------------------------------------------------------------------------
 # driver
-# --------------------------------------------------------------------------
 
 def run(docx_path: str, outdir: str) -> dict:
     doc = extract(docx_path)

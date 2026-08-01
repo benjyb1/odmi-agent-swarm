@@ -13,7 +13,7 @@ from evaluation.diy_vs_tavily import (
 )
 
 
-# --- orientation_to_diy: blind A/B verdict -> DIY frame ---------------------
+# orientation_to_diy: blind A/B verdict -> DIY frame
 
 def test_orientation_winner_a_when_diy_is_a():
     assert orientation_to_diy("A", diy_is="A") == "diy"
@@ -28,7 +28,7 @@ def test_orientation_tie_and_both_fail_passthrough():
     assert orientation_to_diy("both_fail", diy_is="B") == "both_fail"
 
 
-# --- combine_orientations: two swapped runs -> one verdict ------------------
+# combine_orientations: two swapped runs -> one verdict
 
 def test_combine_agreement_diy_wins_both_orientations():
     out = combine_orientations("diy", "diy")
@@ -55,7 +55,7 @@ def test_combine_both_fail_when_both_orientations_fail():
     assert out["consistent"] is True
 
 
-# --- aggregate: verdicts -> rates ------------------------------------------
+# aggregate: verdicts -> rates
 
 def test_aggregate_counts_and_rates():
     verdicts = [
@@ -96,7 +96,7 @@ def test_aggregate_decisive_excludes_both_fail():
     assert agg["decisive"] == 2
 
 
-# --- decided_stats: real win share + Wilson CI + sign test -----------------
+# decided_stats: real win share + Wilson CI + sign test
 
 def test_decided_stats_known_inputs():
     """12 DIY wins, 4 Tavily wins, ties excluded from the strict denominator.
@@ -128,7 +128,7 @@ def test_decided_stats_zero_decided_is_safe():
     assert out["wilson_high"] == 1.0
 
 
-# --- select_subsample: deterministic seeded 30% draw -----------------------
+# select_subsample: deterministic seeded 30% draw
 
 def test_select_subsample_deterministic_for_fixed_seed():
     records = [{"question_id": f"P{i}", "country_code": "FR"} for i in range(20)]
@@ -155,7 +155,7 @@ def test_select_subsample_at_least_one_when_nonempty():
     assert len(out) == 1
 
 
-# --- filter_pairs: country + exclude-dimensions ----------------------------
+# filter_pairs: country + exclude-dimensions
 
 def test_filter_pairs_excludes_quality_dimension():
     pairs = [
@@ -194,7 +194,7 @@ def test_filter_pairs_none_country_keeps_all_countries():
     assert len(out) == 2
 
 
-# --- dimension_of / stratify_pairs -----------------------------------------
+# dimension_of / stratify_pairs
 
 def test_dimension_of_handles_all_prefixes():
     assert dimension_of("I1") == "I"

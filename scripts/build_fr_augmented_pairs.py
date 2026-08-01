@@ -60,6 +60,10 @@ def _evidence_blocked(row: dict) -> bool:
     Excludes leaked legacy rows from the injection pool."""
     from agents.tools.blocked_domains import is_blocked
     urls = [row.get("source_url") or ""]
+    # Both columns hold free-form JSON written by several generations of the
+    # dispatcher, so early rows carry shapes the current parse rejects. An
+    # unparseable column contributes no URLs and the row is judged on the ones
+    # that did parse. source_url sits outside the try and is always checked.
     try:
         urls += [u for u in json.loads(row.get("fetched_urls") or "[]")]
     except Exception:

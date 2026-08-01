@@ -32,7 +32,6 @@ Writes evaluation/results/exp13a_wiring_replay.jsonl.
 from __future__ import annotations
 
 import json
-from collections import defaultdict
 from pathlib import Path
 
 from evaluation import stats
@@ -131,7 +130,7 @@ def main():
           f"({sum(1 for p in pairs.values() if p['country']=='MT')} MT, "
           f"{sum(1 for p in pairs.values() if p['country']=='NO')} NO)")
 
-    # ---- fidelity gate: simulated W-gate vs actual finals ----
+    # fidelity gate: simulated W-gate vs actual finals
     agree, mismatches = 0, []
     for pid, p in pairs.items():
         sim_out, sim_committed, sim_ans = simulate(p, "W-gate")
@@ -155,7 +154,7 @@ def main():
         print("\nFIDELITY GATE FAILED: variant numbers below are NOT to be "
               "trusted; audit the mismatches first (pre-registered rule).")
 
-    # ---- the wirings ----
+    # the wirings
     results = {w: {} for w in WIRINGS}
     for pid, p in pairs.items():
         for w in WIRINGS:
@@ -182,7 +181,7 @@ def main():
         print(f"{w:12} {outs.count('match'):>6} {outs.count('abstain'):>8} "
               f"{outs.count('wrong'):>6} {commits:>16}{note}")
 
-    # ---- paired tests vs production ----
+    # paired tests vs production
     print("\nPaired vs W-gate (exact McNemar):")
     base = results["W-gate"]
     for w in WIRINGS[1:]:
@@ -194,7 +193,7 @@ def main():
             p_ = stats.mcnemar_exact(b, c)
             print(f"  {w:12} {label:13} b={b:<3} c={c:<3} p={p_:.4f}")
 
-    # ---- lexicographic decision (pre-registered) ----
+    # lexicographic decision (pre-registered)
     print("\nDecision rule: committed-wrong <= production, then max match, "
           "then min abstention (W-none excluded):")
     gw = [results["W-gate"][pid][0] for pid in pairs].count("wrong")

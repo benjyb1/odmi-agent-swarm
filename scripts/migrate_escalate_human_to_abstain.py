@@ -12,8 +12,8 @@ does two things:
    legacy value so the rebuild never rejects a pre-rename row.
 2. Updates every existing row from 'escalate_human' to 'abstain'.
 
-The row copy is by explicit column name, not SELECT *, so it is robust
-to the experiment_id/created_at column-order difference between a
+The row copy names every column explicitly, so it survives the
+experiment_id/created_at column-order difference between a
 freshly setup database and one that an earlier migration rebuilt.
 
 The migration is idempotent: if 'abstain' is already allowed and no

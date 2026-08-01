@@ -33,7 +33,7 @@ ARMS = [
     ("exp29_sonnet5_model", "trio_s46"),
 ]
 COMPARISONS = [
-    # (label, arm_a, arm_b) — pre-registered ladder + model contrast.
+    # (label, arm_a, arm_b), pre-registered ladder + model contrast.
     ("adjudicator (trio vs no_adjudicator)", "trio_s5", "no_adjudicator_s5"),
     ("verifier loop (no_adjudicator vs researcher_only)",
      "no_adjudicator_s5", "researcher_only_s5"),

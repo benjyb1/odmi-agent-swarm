@@ -32,7 +32,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# --- env: force the proxy, never the real API -------------------------------
+# env: force the proxy, never the real API
 MAIN_ENV = Path("/Users/benjyb/Desktop/MscProject/.env")
 load_dotenv(MAIN_ENV, override=True)
 _base = os.environ.get("ANTHROPIC_BASE_URL", "")
@@ -123,6 +123,9 @@ def load_sample(con, limit):
         rr = res.get(f["pair_run_id"])
         if not rr or not rr["search_snippets"]:
             continue
+        # search_snippets is free-form JSON spanning several dispatcher
+        # generations. A pair whose column will not parse is dropped from the
+        # smoke sample instead of failing the run; the sample is descriptive.
         try:
             snips = [d.get("snippet", "") if isinstance(d, dict) else str(d)
                      for d in json.loads(rr["search_snippets"])]
@@ -214,7 +217,7 @@ def main():
         corr = [r for r in ok if r["outcome"] in ("correct_yes", "correct_no")]
         fp = [r for r in ok if r["outcome"] == "false_positive"]
         if corr and fp:
-            print(f"\n  CORRECT vs FALSE-POSITIVE separation:")
+            print("\n  CORRECT vs FALSE-POSITIVE separation:")
             print(f"    entailment_for : correct {mean(corr,'entailment_for'):.2f}  vs  FP {mean(fp,'entailment_for'):.2f}")
             print(f"    margin         : correct {mean(corr,'margin'):+.2f}  vs  FP {mean(fp,'margin'):+.2f}")
             print(f"    answer_conf    : correct {mean(corr,'answer_confidence'):.2f}  vs  FP {mean(fp,'answer_confidence'):.2f}  (the floor's blind spot)")

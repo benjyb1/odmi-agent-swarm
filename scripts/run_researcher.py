@@ -15,11 +15,9 @@ from __future__ import annotations
 
 import argparse
 import json
-import sqlite3
 import sys
 import uuid
 from pathlib import Path
-from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
@@ -40,9 +38,7 @@ COUNTRIES = {
 }
 
 
-# ============================================================
 # CLI helpers
-# ============================================================
 
 
 def _load_question(question_id: str) -> dict:
@@ -87,9 +83,7 @@ def _build_input(question_id: str, country_code: str) -> ResearcherInput:
     )
 
 
-# ============================================================
 # Walkthrough printing
-# ============================================================
 
 
 def make_walkthrough_callback(*, enabled: bool):
@@ -175,9 +169,7 @@ def make_walkthrough_callback(*, enabled: bool):
     return _on_step
 
 
-# ============================================================
 # DB row writer
-# ============================================================
 
 
 def save_run(
@@ -237,9 +229,7 @@ def save_run(
         return int(cur.lastrowid)
 
 
-# ============================================================
 # Main
-# ============================================================
 
 
 def main() -> None:
@@ -277,11 +267,8 @@ def main() -> None:
         on_step=on_step,
     )
 
-    # ----- Print summary -----
     print()
-    print("=" * 64)
     print(f"RESEARCHER FINISHED  question={input.question_id} country={input.country_code}")
-    print("=" * 64)
     if result.output is None:
         print(f"  Outcome: FAILED  failure_mode={result.failure_mode}")
         print(f"  Notes: {result.notes}")
@@ -297,7 +284,7 @@ def main() -> None:
         if result.notes:
             print(f"  Notes:         {result.notes}")
     print()
-    print(f"  Cost receipts (cumulative across all LLM calls):")
+    print("  Cost receipts (cumulative across all LLM calls):")
     print(f"    input_tokens:   {result.cumulative_input_tokens}")
     print(f"    output_tokens:  {result.cumulative_output_tokens}")
     print(f"    wall_clock_ms:  {result.cumulative_wall_clock_ms}")

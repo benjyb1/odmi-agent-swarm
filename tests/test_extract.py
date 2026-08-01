@@ -1,14 +1,10 @@
-"""Tests for agents/tools/extract.py — trafilatura boilerplate-stripping wrapper."""
+"""Tests for agents/tools/extract.py: trafilatura boilerplate-stripping wrapper."""
 from __future__ import annotations
-
-import pytest
 
 from agents.tools.extract import extract_text
 
 
-# ---------------------------------------------------------------------------
 # Fixtures
-# ---------------------------------------------------------------------------
 
 REALISTIC_HTML = """
 <!DOCTYPE html>
@@ -64,9 +60,7 @@ TABLE_HTML = """
 """
 
 
-# ---------------------------------------------------------------------------
 # Tests
-# ---------------------------------------------------------------------------
 
 
 def test_extract_strips_boilerplate():

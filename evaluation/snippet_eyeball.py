@@ -1,7 +1,7 @@
 """Side-by-side eyeball harness for the four providers.
 
 Reads evaluation/eyeball_queries.json, runs each query through every
-available provider, and generates evaluation/snippets_eyeball.html — a
+available provider, and generates evaluation/snippets_eyeball.html, a
 human-scannable side-by-side table.
 
 Tolerates provider failures gracefully (Tavily/Brave will fail with

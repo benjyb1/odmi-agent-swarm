@@ -164,9 +164,7 @@ def gbp(usd: float | None) -> float:
     return (usd or 0.0) * USD_TO_GBP
 
 
-# ============================================================
 # Data pulls
-# ============================================================
 
 def fetch_experiment_arms(conn: sqlite3.Connection) -> list[dict]:
     """One row per (experiment_id, condition_label) completed arm.
@@ -356,9 +354,7 @@ def fetch_overall_totals(conn: sqlite3.Connection) -> dict:
     }
 
 
-# ============================================================
 # SVG rendering (dependency-free, style follows evaluation/risk_coverage.py)
-# ============================================================
 
 def _svg_header(w: int, h: int, title: str) -> str:
     return (
@@ -586,9 +582,7 @@ def render_cost_by_dimension(dims: list[dict], path: Path) -> None:
     path.write_text(svg)
 
 
-# ============================================================
 # Markdown summary
-# ============================================================
 
 def _fmt_pct(v: float | None) -> str:
     return f"{v:.1%}" if v is not None else "-"
@@ -711,9 +705,7 @@ def write_summary(
     out_path.write_text("\n".join(lines) + "\n")
 
 
-# ============================================================
 # Main
-# ============================================================
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Rebuild the cost surface over live data")

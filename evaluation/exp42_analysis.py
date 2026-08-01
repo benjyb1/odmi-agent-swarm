@@ -150,7 +150,7 @@ def main() -> int:
     cb = {k: committed(B[k], COMMIT_B) for k in pairs}
     ca = {k: committed(A_all[k], COMMIT_A) for k in pairs}
 
-    # ---------- 1. coverage ----------
+    # 1. coverage
     print("\n" + "-" * 72)
     print("1. COVERAGE (commit rate)")
     print("-" * 72)
@@ -160,7 +160,7 @@ def main() -> int:
         print(f"  {lbl:<22} {k:>4}/{len(pairs)} = {k/len(pairs):.3f}  "
               f"[{lo:.3f}, {hi:.3f}]")
 
-    # ---------- 2. commit accuracy, binary golds ----------
+    # 2. commit accuracy, binary golds
     print("\n" + "-" * 72)
     print("2. COMMIT ACCURACY on binary golds (of pairs the arm committed)")
     print("-" * 72)
@@ -180,7 +180,7 @@ def main() -> int:
         lo, hi = wilson(k, n)
         print(f"  {lbl:<22} {k:>4}/{n} = {k/max(n,1):.3f}  [{lo:.3f}, {hi:.3f}]")
 
-    # ---------- 3. negative-gold FPR over ALL negative golds ----------
+    # 3. negative-gold FPR over ALL negative golds
     print("\n" + "-" * 72)
     print("3. NEGATIVE-GOLD FALSE-POSITIVE RATE (denominator = all negative golds)")
     print("-" * 72)
@@ -193,7 +193,7 @@ def main() -> int:
         print(f"  {lbl:<22} {fp:>4}/{len(negs)} = {fp/max(len(negs),1):.3f}  "
               f"[{lo:.3f}, {hi:.3f}]")
 
-    # ---------- 4. paired McNemar on committed-correctness ----------
+    # 4. paired McNemar on committed-correctness
     print("\n" + "-" * 72)
     print("4. PAIRED McNEMAR, committed-correctness on binary golds")
     print("-" * 72)
@@ -213,7 +213,7 @@ def main() -> int:
           f"neither {neither}")
     print(f"  exact two-sided p = {p:.4f}   (discordant n = {only_a + only_b})")
 
-    # ---------- 5. TOST ----------
+    # 5. TOST
     print("\n" + "-" * 72)
     print(f"5. TOST equivalence, margin +/-{TOST_MARGIN}")
     print("-" * 72)
@@ -240,7 +240,7 @@ def main() -> int:
         print(f"  TOST p = {p_tost:.4f}  "
               f"({'EQUIVALENT within margin' if p_tost < 0.05 else 'NOT equivalent: cannot rule out a difference beyond the margin'})")
 
-    # ---------- per country ----------
+    # per country
     print("\n" + "-" * 72)
     print("PER COUNTRY (commit rate, arm B)")
     print("-" * 72)

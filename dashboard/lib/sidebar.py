@@ -9,8 +9,6 @@ in USD because Anthropic pricing arrives in USD, and rendered in £.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import streamlit as st
 
 from dashboard.lib import db, mode

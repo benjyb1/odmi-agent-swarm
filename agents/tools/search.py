@@ -10,7 +10,7 @@ and exposes a session-state record so the dashboard can show which
 provider served which query.
 
 Optional include-domains routing piggybacks on the per-country trusted
-domains JSONs in `data/trusted_domains/<cc>.json` — see
+domains JSONs in `data/trusted_domains/<cc>.json`, see
 `agents/tools/trusted_domains.py`.
 """
 
@@ -21,17 +21,17 @@ import time
 from typing import Callable, List, Literal, Optional
 
 # Explicit provider selection for search() and search_many().
-# "auto"   — Tavily → DIY → Brave fallback chain (default).
-# "tavily" — Tavily only; errors propagate, no fallback.
-# "diy"    — DIY pipeline only (Serper SERP + trafilatura).
-# "brave"  — Brave only; Tavily is never called.
+# "auto":  Tavily → DIY → Brave fallback chain (default).
+# "tavily": Tavily only; errors propagate, no fallback.
+# "diy":   DIY pipeline only (Serper SERP + trafilatura).
+# "brave": Brave only; Tavily is never called.
 Provider = Literal["auto", "tavily", "brave", "diy", "serper_raw"]
 
 import httpx
 from dotenv import load_dotenv
 from pathlib import Path
 from pydantic import BaseModel
-from tavily import TavilyClient, UsageLimitExceededError
+from tavily import TavilyClient
 
 from agents.tools.blocked_domains import BLOCKED_DOMAINS, is_blocked
 
@@ -52,9 +52,7 @@ class SearchResult(BaseModel):
     provider: str = "tavily"
 
 
-# ============================================================
 # Tavily
-# ============================================================
 
 def _tavily_client() -> TavilyClient:
     return TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
@@ -88,9 +86,7 @@ def _tavily_search(
     return out
 
 
-# ============================================================
 # Brave Search (fallback)
-# ============================================================
 
 _BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search"
 
@@ -146,9 +142,7 @@ def _brave_search(
     return out
 
 
-# ============================================================
 # Public interface
-# ============================================================
 
 def _scrub_blocked(results: List[SearchResult]) -> List[SearchResult]:
     """Last-line defence: drop any result whose URL hits the deny-list.
@@ -189,14 +183,14 @@ def search(
 
     `provider` controls which search backend is used:
 
-    - ``"auto"`` (default) — DIY only (D43). On the 20x plan DIY is the
+    - ``"auto"`` (default): DIY only (D43). On the 20x plan DIY is the
       sole production provider; ``"auto"`` is an alias for ``"diy"`` so no
       call site can silently fall back to Tavily or Brave. Errors
       propagate; there is no second provider to substitute.
-    - ``"diy"`` — DIY pipeline only. Identical behaviour to ``"auto"``.
-    - ``"tavily"`` — Tavily only. Retained for reproducing the EXP-1
+    - ``"diy"``: DIY pipeline only. Identical behaviour to ``"auto"``.
+    - ``"tavily"``: Tavily only. Retained for reproducing the EXP-1
       provider comparison; never used in production (D43).
-    - ``"brave"`` — Brave only. Retained for the same reason (D43).
+    - ``"brave"``: Brave only. Retained for the same reason (D43).
 
     `topic` is Tavily-specific; the other providers ignore it.
     `include_domains` works on all three (Brave gets it via `site:`
@@ -225,9 +219,7 @@ def search(
             "error": error,
         })
 
-    # ------------------------------------------------------------------
     # Explicit single-provider paths (no fallback in either direction)
-    # ------------------------------------------------------------------
 
     if provider == "tavily":
         t0 = time.perf_counter()
@@ -289,12 +281,10 @@ def search(
             _emit("serper_raw", t0, [], ok=False, error=str(exc)[:200])
             raise
 
-    # ------------------------------------------------------------------
-    # provider == "auto" — DIY only (D43). Tavily and Brave are retired
+    # provider == "auto": DIY only (D43). Tavily and Brave are retired
     # from production; "auto" is an alias for "diy" so no call site can
     # silently fall back to a paid provider. Errors propagate untouched
     # (a BlockerShutdown from the 30s fetch ceiling rides straight out).
-    # ------------------------------------------------------------------
     from agents.tools.search_diy import diy_search  # local import
     t0 = time.perf_counter()
     try:

@@ -58,9 +58,7 @@ def _neutralise(monkeypatch, captured):
     monkeypatch.setattr(ds, "warm_catalogue_snapshots", lambda *a, **k: [])
 
 
-# ---------------------------------------------------------------------------
 # Pre-flight size guard
-# ---------------------------------------------------------------------------
 
 def test_oversize_dispatch_refused(monkeypatch):
     captured: list = []
@@ -109,9 +107,7 @@ def test_at_threshold_is_allowed(monkeypatch):
     assert result.aborted_oversize is False
 
 
-# ---------------------------------------------------------------------------
 # Mid-flight call breaker
-# ---------------------------------------------------------------------------
 
 def test_max_calls_off_by_default(monkeypatch):
     captured: list = []
@@ -151,9 +147,7 @@ def test_max_calls_high_does_not_trip(monkeypatch):
     assert len(captured) == 2
 
 
-# ---------------------------------------------------------------------------
 # CLI defaults
-# ---------------------------------------------------------------------------
 
 def test_dispatch_guard_params_default_safe():
     import inspect

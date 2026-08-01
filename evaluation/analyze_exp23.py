@@ -26,7 +26,7 @@ import argparse
 import json
 import math
 import sqlite3
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
 
@@ -42,9 +42,7 @@ ABSTAIN_SHAPES = {"inconclusive", "other", "not_applicable", "not applicable",
 USD_TO_GBP = 0.79
 
 
-# ----------------------------------------------------------------------
 # stats
-# ----------------------------------------------------------------------
 
 def wilson_ci(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     """Wilson score interval for a binomial proportion."""
@@ -72,9 +70,7 @@ def fmt_ci(k: int, n: int) -> str:
     return f"{100*k/n:5.1f}% [{100*lo:4.1f}, {100*hi:4.1f}]"
 
 
-# ----------------------------------------------------------------------
 # data loading
-# ----------------------------------------------------------------------
 
 def load_trusted_domains() -> dict[str, set[str]]:
     """Each country's trusted_domains JSON list, ready for endswith checks."""
@@ -165,9 +161,7 @@ def load_search_telemetry(conn: sqlite3.Connection,
     return out
 
 
-# ----------------------------------------------------------------------
 # endpoints
-# ----------------------------------------------------------------------
 
 def per_arm_endpoints(pairs: list[dict], trusted: dict[str, set[str]]) -> dict:
     """Compute every endpoint for one filtered slice (one arm, one country,
@@ -208,9 +202,7 @@ def per_arm_endpoints(pairs: list[dict], trusted: dict[str, set[str]]) -> dict:
     }
 
 
-# ----------------------------------------------------------------------
 # rendering
-# ----------------------------------------------------------------------
 
 def render_arm_table(label: str, slices: dict[str, dict]) -> list[str]:
     """slices: {arm_label: endpoints_dict}. Returns markdown lines."""
@@ -322,9 +314,7 @@ def render_inference(slices_by_cc: dict[str, dict[str, dict]]) -> list[str]:
     return lines
 
 
-# ----------------------------------------------------------------------
 # main
-# ----------------------------------------------------------------------
 
 def main() -> int:
     ap = argparse.ArgumentParser()

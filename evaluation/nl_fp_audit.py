@@ -38,7 +38,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# --- env: force the proxy, never the real API -------------------------------
+# env: force the proxy, never the real API
 MAIN_ENV = Path("/Users/benjyb/Desktop/MscProject/.env")
 load_dotenv(MAIN_ENV, override=True)
 _base = os.environ.get("ANTHROPIC_BASE_URL", "")

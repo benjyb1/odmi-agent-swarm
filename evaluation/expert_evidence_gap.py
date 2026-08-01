@@ -103,7 +103,7 @@ def main() -> int:
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
 
-    # --- ground_truth.explanation coverage ---
+    # ground_truth.explanation coverage
     rule("ground_truth coverage")
     gt = cur.execute(
         "SELECT COUNT(*) total, "
@@ -114,7 +114,7 @@ def main() -> int:
     print(f"explanation populated: {gt['populated']} "
           f"({100.0 * gt['populated'] / gt['total']:.1f}%)")
 
-    # --- non-committed population (row level) ---
+    # non-committed population (row level)
     rule("non-committed population (phase2_final rows)")
     pop = cur.execute(
         "SELECT COUNT(*) total, "
@@ -130,7 +130,7 @@ def main() -> int:
     print(f"both (overlap):        {pop['overlap']}")
     print(f"non-committed (union): {noncommit_rows}")
 
-    # --- distinct abstained pairs by country ---
+    # distinct abstained pairs by country
     rule("distinct abstained pairs by country")
     abstained = cur.execute(
         "SELECT DISTINCT question_id, country_code FROM phase2_final "
@@ -141,7 +141,7 @@ def main() -> int:
         print(f"  {cc}: {n}")
     print(f"  total distinct abstained pairs: {len(abstained)}")
 
-    # --- non-commit by ODMI dimension (row level) ---
+    # non-commit by ODMI dimension (row level)
     rule("non-commit by ODMI dimension (rows)")
     dims = cur.execute(
         "SELECT g.dimension, COUNT(*) rows_, "
@@ -159,7 +159,7 @@ def main() -> int:
         print(f"{d['dimension']:20} {d['rows_']:>5} {d['abstain']:>5} "
               f"{d['fail']:>5} {d['noncommit']:>5} {pct:>5.1f}%")
 
-    # --- assessor answer for the distinct abstained pairs ---
+    # assessor answer for the distinct abstained pairs
     rule("assessor answer for abstained pairs (distinct)")
     abstain_keys = {(r["question_id"], r["country_code"]) for r in abstained}
     gt_rows = cur.execute(
@@ -190,7 +190,7 @@ def main() -> int:
     print(f"  (of the 'no' pairs, {no_no_justification} carry no substantive "
           f"justification)")
 
-    # --- source-type classification of the yes-tier explanations ---
+    # source-type classification of the yes-tier explanations
     rule("source-type of assessor yes-tier explanations (heuristic)")
     src_counts = Counter()
     domain_counter = Counter()
@@ -221,7 +221,7 @@ def main() -> int:
     for dom, n in domain_counter.most_common(15):
         print(f"  {dom}: {n}")
 
-    # --- findable vs structural ---
+    # findable vs structural
     rule("findable vs structural (yes-tier abstained pairs)")
     cites_url = sum(1 for (_k, e) in yes_pairs if e and URL_RE.search(e))
     prose_only = sum(1 for (_k, e) in yes_pairs if not e or not URL_RE.search(e))

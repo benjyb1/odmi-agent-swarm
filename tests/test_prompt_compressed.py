@@ -56,9 +56,7 @@ def _researcher_input() -> ResearcherInput:
     )
 
 
-# ---------------------------------------------------------------------------
 # 1-3. The variant selector
-# ---------------------------------------------------------------------------
 
 class TestVariantSelector:
     def test_full_is_the_baseline(self):
@@ -90,9 +88,7 @@ class TestVariantSelector:
             rp.variant("terser-please")
 
 
-# ---------------------------------------------------------------------------
 # 4. run_researcher honours the variant
-# ---------------------------------------------------------------------------
 
 def _wire_researcher(monkeypatch, captured):
     def fake_ensure(name, version, system, desc):
@@ -136,9 +132,7 @@ def test_run_researcher_default_keeps_baseline_prompt(monkeypatch):
     assert captured["sent_system"] == rp.SYSTEM
 
 
-# ---------------------------------------------------------------------------
 # 5. dispatch forwards the prompt-variant flag
-# ---------------------------------------------------------------------------
 
 def _neutralise_dispatch(ds, monkeypatch, captured):
     class _FakeProc:

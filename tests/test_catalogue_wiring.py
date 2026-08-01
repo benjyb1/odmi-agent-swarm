@@ -7,8 +7,6 @@ test would error, which is itself the assertion.
 
 from __future__ import annotations
 
-import pytest
-
 from agents.models import ResearcherInput, ResearcherOutput, VerifierInput
 from agents.researcher import run_researcher
 from agents.tools.catalogue import compute as catalogue_compute

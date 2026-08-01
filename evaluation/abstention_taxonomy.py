@@ -14,7 +14,6 @@ Run:  uv run python evaluation/abstention_taxonomy.py
 from __future__ import annotations
 
 import json
-import re
 import sqlite3
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -103,7 +102,7 @@ def main():
     con.row_factory = sqlite3.Row
     cur = con.cursor()
 
-    # --- population: every non-committed pair -------------------------------
+    # population: every non-committed pair
     finals = cur.execute(
         """
         SELECT * FROM phase2_final
@@ -114,7 +113,7 @@ def main():
     pair_ids = [f["pair_run_id"] for f in finals]
     print(f"Non-committed pairs: {len(finals)}")
 
-    # --- pull all trail rows for those pairs in bulk ------------------------
+    # pull all trail rows for those pairs in bulk
     def rows_for(table):
         out = defaultdict(list)
         for r in cur.execute(f"SELECT * FROM {table}").fetchall():
@@ -195,7 +194,7 @@ def main():
         is_failure = f["terminal_status"] == "agent_failure"
         null_answer = (f["final_answer"] is None) or (f["final_answer"] == "")
 
-        # --- classification (priority ordered) ------------------------------
+        # classification (priority ordered)
         cat = None
         reason = ""
 
@@ -242,7 +241,7 @@ def main():
         elif any(m in (explan_all + notes_all) for m in SELFREPORT_MARKERS):
             cat, reason = "H_selfreport_or_undocumented", "agent text cites no formal/public documentation"
 
-        # 9. researcher never committed at all (genuinely could not answer)
+        # 9. researcher never committed at all (could not answer)
         elif not ever_committed:
             cat, reason = "I_researcher_never_committed", "all attempts inconclusive/other"
 

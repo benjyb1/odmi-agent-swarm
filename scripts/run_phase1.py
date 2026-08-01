@@ -84,7 +84,7 @@ def classify_question(
 
     raw = response.content[0].text
 
-    # Parse the JSON from the response — handle cases where the model
+    # Parse the JSON from the response: handle cases where the model
     # wraps JSON in markdown code fences
     json_text = raw.strip()
     if json_text.startswith("```"):
@@ -140,7 +140,7 @@ def save_to_db(result: ClassificationResult) -> None:
             row["determinism_justification"],
             row["complexity_justification"],
             row["language_used"],
-            None,  # prompt_version_id — will link once we insert the prompt
+            None,  # prompt_version_id, will link once we insert the prompt
             row["model_version"],
             row["raw_llm_response"],
             row["created_at"],

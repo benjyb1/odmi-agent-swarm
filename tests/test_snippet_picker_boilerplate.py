@@ -7,7 +7,7 @@ These tests call real Claude via CLIProxyAPI (localhost:8317). They are marked
 
 Each fixture contains keyword matches for "France open data portal" ONLY inside
 obvious boilerplate text (cookie banners, nav menus, footers, breadcrumbs, or
-repeated legal notices). No genuinely answering passages appear in the body.
+repeated legal notices). No answering passages appear in the body.
 
 A passing result is either:
 - ``chunks`` is empty (picker correctly returned nothing relevant), OR

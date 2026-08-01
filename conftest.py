@@ -60,9 +60,7 @@ class CanonicalDatabaseAccess(RuntimeError):
     """Raised when a test tries to open the git-tracked data/odmi.db."""
 
 
-# ============================================================
 # Layer 2: the sqlite3 guard
-# ============================================================
 
 _real_connect = sqlite3.connect
 
@@ -111,9 +109,7 @@ sqlite3.connect = _guarded_connect  # type: ignore[assignment]
 sqlite3.dbapi2.connect = _guarded_connect  # type: ignore[assignment]
 
 
-# ============================================================
 # Layer 1: the scratch copy and the redirect
-# ============================================================
 
 
 def _clone(src: Path, dst: Path) -> None:

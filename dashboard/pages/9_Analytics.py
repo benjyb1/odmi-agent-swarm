@@ -1,4 +1,4 @@
-"""Analytics — slice the main-results dataset on any axis.
+"""Analytics: slice the main-results dataset on any axis.
 
 A read-only "slice and dice" view for the dissertation's main runs.
 Filter by country / dimension / model / strategy / search provider,
@@ -39,9 +39,7 @@ page_header(
 render_session_widget()
 
 
-# ============================================================
 # Pull the fat frame once per render
-# ============================================================
 
 df_all = db.analytics_frame()
 if len(df_all) == 0:
@@ -59,9 +57,7 @@ for _c in _NULLABLE_COLS:
     df_all[_c] = df_all[_c].fillna("(unknown)")
 
 
-# ============================================================
 # Filter sidebar
-# ============================================================
 
 st.sidebar.markdown("### Filters")
 
@@ -102,9 +98,7 @@ st.sidebar.caption(
 )
 
 
-# ============================================================
 # Group-by selector
-# ============================================================
 
 GROUP_OPTIONS = {
     "ODMI dimension":     "dimension",
@@ -140,9 +134,7 @@ if len(df) == 0:
     st.stop()
 
 
-# ============================================================
 # Per-group metrics
-# ============================================================
 
 def _metrics(g: pd.DataFrame) -> pd.Series:
     n = len(g)
@@ -200,9 +192,7 @@ st.dataframe(
 )
 
 
-# ============================================================
 # Charts
-# ============================================================
 
 if len(grouped) >= 2:
     chart_col1, chart_col2 = st.columns(2)
@@ -225,9 +215,7 @@ if len(grouped) >= 2:
     st.bar_chart(status_pct, height=360, use_container_width=True)
 
 
-# ============================================================
 # Drill: pairs in the current filter
-# ============================================================
 
 with st.expander(f"Show the {len(df)} pairs behind these numbers", expanded=False):
     drill_cols = [
@@ -245,9 +233,7 @@ with st.expander(f"Show the {len(df)} pairs behind these numbers", expanded=Fals
     st.dataframe(drill, use_container_width=True, height=400)
 
 
-# ============================================================
 # Self-report (ODMI decision) stratification
-# ============================================================
 # Production-wide and independent of the filters above: the headline figures
 # split by ODMI's confirm / complement / change validation field (D22;
 # docs/CONFIDENCE_FRAMEWORK_DEEPDIVE.md section 1A). ODMI is a country

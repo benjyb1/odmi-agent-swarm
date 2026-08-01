@@ -98,9 +98,7 @@ class Candidate:
     row: dict = field(default=None, repr=False)
 
 
-# ============================================================
 # Candidate construction (dev ladder: MT + NO natural)
-# ============================================================
 
 def build_candidates(limit: Optional[int] = None) -> list[Candidate]:
     from evaluation._replay_common import is_absence_class
@@ -184,9 +182,7 @@ def _snips_with_urls(search_results) -> list[dict]:
             for r in search_results]
 
 
-# ============================================================
 # Freeze evidence once per candidate
-# ============================================================
 
 def freeze_evidence(cand: Candidate, ro: ResearcherOutput) -> dict:
     """One query-gen + search for the adversarial set, one for the probe
@@ -241,9 +237,7 @@ def freeze_evidence(cand: Candidate, ro: ResearcherOutput) -> dict:
     )
 
 
-# ============================================================
 # Run one arm
-# ============================================================
 
 def _adv_snip_texts(freeze) -> list[str]:
     return [f"{s.get('title','')} — {s['snippet'][:200]}" for s in freeze["adversarial_snippets"]]
@@ -315,9 +309,7 @@ def run_arm(cand: Candidate, ro: ResearcherOutput, freeze: dict, arm,
     )
 
 
-# ============================================================
 # Run loop (resumable)
-# ============================================================
 
 def _disable_render():
     """Monkeypatch the DIY pipeline's Playwright fallback to a fast-fail.
@@ -443,9 +435,7 @@ def run(limit: Optional[int], with_blind: bool, out_name: Optional[str],
     return out_path
 
 
-# ============================================================
 # Analysis (offline; recomputes gated columns)
-# ============================================================
 
 def _verifies(quote: Optional[str], snippet_objs: list[dict]) -> Optional[int]:
     """Return the index of the snippet that carries the quote per the v2

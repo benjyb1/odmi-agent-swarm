@@ -34,9 +34,7 @@ from agents.prompts import adjudicator as adjudicator_prompt
 from scripts.run_coordinator import _finalise_after_adjudication, coordinate
 
 
-# ---------------------------------------------------------------------------
 # Builders
-# ---------------------------------------------------------------------------
 
 def _researcher_output(answer: str, conf: float = 0.8) -> ResearcherOutput:
     return ResearcherOutput(
@@ -74,9 +72,7 @@ def _adj_input(researcher_outputs) -> AdjudicatorInput:
     )
 
 
-# ---------------------------------------------------------------------------
 # Property 1: 'standard' is byte-identical.
-# ---------------------------------------------------------------------------
 
 def test_standard_user_message_byte_identical():
     inp = _adj_input([_researcher_output("yes"), _researcher_output("no")])
@@ -109,9 +105,7 @@ def test_free_prompt_is_a_separate_registration():
     assert "attempt_correct" in adjudicator_prompt.SYSTEM_FREE
 
 
-# ---------------------------------------------------------------------------
 # Property 2: 'free' renders the selection instruction.
-# ---------------------------------------------------------------------------
 
 def test_free_user_message_includes_selection_block():
     inp = _adj_input([
@@ -127,14 +121,12 @@ def test_free_user_message_includes_selection_block():
     assert "never 'no'" in msg
 
 
-# ---------------------------------------------------------------------------
 # Property 3: free mode commits a NON-final attempt's answer.
 #
 # Three attempts: attempt 1 = no, attempt 2 = yes (correct), final = no
 # (wrong). With verdict=attempt_correct and chosen_attempt=2, the committed
 # answer is attempt 2's 'yes' even though the standard 'researcher_correct'
 # verdict could only ever have committed the final 'no'.
-# ---------------------------------------------------------------------------
 
 def test_free_commits_non_final_attempt_answer():
     researcher_outputs = [
@@ -208,9 +200,7 @@ def test_free_attempt_correct_still_honours_confidence_floor():
     )
 
 
-# ---------------------------------------------------------------------------
 # Model-level guard: attempt_correct requires chosen_attempt.
-# ---------------------------------------------------------------------------
 
 def test_attempt_correct_requires_chosen_attempt():
     import pytest
@@ -225,9 +215,7 @@ def test_attempt_correct_requires_chosen_attempt():
         )
 
 
-# ---------------------------------------------------------------------------
 # Property 4: the flag defaults to 'standard' everywhere.
-# ---------------------------------------------------------------------------
 
 def test_coordinate_defaults_to_standard_selection():
     sig = inspect.signature(coordinate)

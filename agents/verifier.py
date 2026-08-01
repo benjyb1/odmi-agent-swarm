@@ -22,7 +22,6 @@ See `docs/AGENT_DESIGN.md` Section 4 for the full atomic specification.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from typing import Callable, List, Literal, Optional
 
@@ -42,13 +41,10 @@ from agents.tools import substring
 from agents.tools.blocked_domains import is_blocked
 from agents.tools.fetch import FetchResult, fetch_rendered_text, fetch_text
 from agents.tools.llm import StructuredOutputError, call_for_structured
-from agents.tools.search import SearchResult, format_for_prompt, search_many
+from agents.tools.search import SearchResult, search_many
 
 
-# ============================================================
 # EXP-14: Verifier web counter-search policy.
-# ============================================================
-#
 # The Verifier's own live web counter-search (the adversarial query-gen
 # plus search_many call) poisons its evidence: production discrimination
 # was Youden's J=0.10 with the search on against J=0.42 with it off. This
@@ -56,14 +52,14 @@ from agents.tools.search import SearchResult, format_for_prompt, search_many
 # the verdict, substring gate, or the counter-evidence-from-Researcher-
 # snippets logic.
 #
-#   "always"   — DEFAULT, current production behaviour, byte-identical.
+#   "always":  DEFAULT, current production behaviour, byte-identical.
 #                Generate adversarial queries, run them live, feed the
 #                snippets to the verdict call.
-#   "never"    — skip the independent query-gen and search entirely. The
+#   "never":   skip the independent query-gen and search entirely. The
 #                Verifier reasons only over the evidence the Researcher
 #                already gathered (its snippets remain in the substring
 #                gate and are surfaced to the verdict call).
-#   "elective" — let the Verifier decide whether to counter-search after
+#   "elective": let the Verifier decide whether to counter-search after
 #                reading the Researcher's evidence. NOT IMPLEMENTED yet;
 #                wired to the flag but raises NotImplementedError.
 #
@@ -75,9 +71,7 @@ from agents.tools.search import SearchResult, format_for_prompt, search_many
 VerifierSearchPolicy = Literal["always", "never", "elective"]
 
 
-# ============================================================
 # Adversarial query generation prompt.
-# ============================================================
 
 class _Queries(BaseModel):
     queries: List[str] = Field(..., min_length=1, max_length=3)
@@ -170,7 +164,6 @@ def generate_adversarial_queries(
     return parsed.queries, usage
 
 
-# ============================================================
 # Corroborative query generation (EXP-42).
 #
 # The mirror of the adversarial generator above: same shape-awareness,
@@ -184,7 +177,6 @@ def generate_adversarial_queries(
 # EXP-38's search-free replay isolates the verdict rule on its own, so
 # the decomposition sits across the two experiments rather than inside
 # this one. See docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md.
-# ============================================================
 
 _CORROBORATIVE_QUERY_GEN_NAME = "phase2_verifier_corroborative_query_gen"
 _CORROBORATIVE_QUERY_GEN_VERSION = 1
@@ -251,13 +243,11 @@ def generate_corroborative_queries(
     return parsed.queries, usage
 
 
-# ============================================================
 # Confirmation-probe query generation (EXP-11 P2, query-gen v3).
 # For an absence claim, generate queries that hunt for the POSITIVE
 # thing the answer says is missing, so the verifier can try to refute
 # the absence before corroborating it. Additive: used by the EXP-11
 # harness, not by production run_verifier.
-# ============================================================
 
 _PROBE_GEN_NAME = "phase2_verifier_probe_gen"
 _PROBE_GEN_VERSION = 1
@@ -311,9 +301,7 @@ def generate_confirmation_probes(
     return parsed.queries, usage
 
 
-# ============================================================
 # Substring check (Python-only, no LLM)
-# ============================================================
 
 def _run_substring_check(
     source_url: str,
@@ -337,7 +325,7 @@ def _run_substring_check(
     "pass", "fail", "not_attempted". fetch_result is None for the
     snippet path.
     """
-    # --- Snippet path (preferred when snippets are available) ---
+    # Snippet path (preferred when snippets are available)
     # P4 (EXP-11, shipped 2026-06-10): match per snippet with the
     # ellipsis-aware v2 matcher rather than against a joined corpus. v1
     # let a quote stitched across the junction of two snippets pass
@@ -362,11 +350,11 @@ def _run_substring_check(
             None,
         )
 
-    # --- Live-fetch path (back-compat: empty/None snippets) ---
+    # Live-fetch path (back-compat: empty/None snippets)
     fetch = fetch_text(source_url, max_chars=8000)
 
     if fetch.failure_mode is not None:
-        # httpx failed — try Playwright.
+        # httpx failed: try Playwright.
         fetch = fetch_rendered_text(source_url, max_chars=8000)
 
     if fetch.failure_mode is not None:
@@ -396,9 +384,7 @@ def _run_substring_check(
     )
 
 
-# ============================================================
 # Verifier run result
-# ============================================================
 
 @dataclass
 class VerifierRunResult:
@@ -455,9 +441,7 @@ class VerifierRunResult:
         return sum(parts) if parts else None
 
 
-# ============================================================
 # Verifier entry point
-# ============================================================
 
 StepCallback = Callable[[str, dict], None]
 
@@ -658,14 +642,14 @@ def run_verifier(
         "researcher_answer": inp.researcher_output.answer,
     })
 
-    # ----- D30: deterministic recompute for catalogue-computed answers -----
+    # D30: deterministic recompute for catalogue-computed answers
     # The Researcher's answer is a counted statistic, so adversarial web
     # search does not apply. Recompute from the cached snapshot and pass
     # iff the band matches.
     if _is_catalogue_computed(inp.researcher_output):
         return _verify_catalogue(inp, on_step)
 
-    # ----- Stage 1: substring check (Python, no LLM) -----
+    # Stage 1: substring check (Python, no LLM)
     on_step("substring_check_start", {"url": str(inp.researcher_output.source_url)})
 
     sub_result, sub_notes, fetch = _run_substring_check(
@@ -680,7 +664,7 @@ def run_verifier(
         "fetch_status": fetch.status_code if fetch else None,
     })
 
-    # ----- EXP-14: web counter-search policy gate -----
+    # EXP-14: web counter-search policy gate
     # "elective" is not built; fail loud rather than silently behaving like
     # "always". "never" skips the independent query-gen and search below.
     if verifier_search == "elective":
@@ -705,7 +689,7 @@ def run_verifier(
         search_results = []
         independent_snippets = []
     else:
-        # ----- Stage 2: query generation, in the direction of the stance -----
+        # Stage 2: query generation, in the direction of the stance
         # EXP-42: the corroborative stance searches for support. Before this
         # the cooperative arm shared the adversarial generator, so it looked
         # for counter-evidence while its verdict step asked for corroboration.
@@ -743,7 +727,7 @@ def run_verifier(
             "cost_usd": query_usage.estimated_cost_usd,
         })
 
-        # ----- Stage 3: independent search -----
+        # Stage 3: independent search
         on_step("search_start", {"queries": queries})
         search_results = search_many(
             queries, max_results_per_query=max_results_per_query, provider=provider,
@@ -758,7 +742,7 @@ def run_verifier(
             f"{r.title} — {r.snippet[:200]}" for r in search_results
         ]
 
-    # ----- Stage 4: register prompt and call the LLM -----
+    # Stage 4: register prompt and call the LLM
     prompt_id = db_helpers.ensure_prompt_version(
         spec.name,
         spec.version,
@@ -826,7 +810,7 @@ def run_verifier(
         "cost_usd": main_usage.estimated_cost_usd,
     })
 
-    # ----- D28: validate verifier_answer against the question's shape -----
+    # D28: validate verifier_answer against the question's shape
     notes_parts: List[str] = []
     shape = answer_shapes.QuestionShape(
         question_id=inp.question_id,
@@ -845,7 +829,7 @@ def run_verifier(
             f"verifier_answer {output.verifier_answer!r} not in allowed set"
         )
 
-    # ----- Hard grounding gate: a failed substring check is fabrication -----
+    # Hard grounding gate: a failed substring check is fabrication
     # The substring check is deterministic, so its consequence must be too.
     # A quote absent from the snippets the Researcher actually read is
     # fabrication or misquotation; we reject it structurally rather than
@@ -876,12 +860,12 @@ def run_verifier(
             ),
         })
 
-    # ----- Strategy D post-processing: compare answers -----
+    # Strategy D post-processing: compare answers
     # For blind strategy, the model returned its own answer without
     # seeing the Researcher's. If they differ, override verdict to fail.
     if strategy == "verifier-blind":
         if output.verifier_answer != inp.researcher_output.answer:
-            # Answers diverge — flag as fail if the model didn't already.
+            # Answers diverge: flag as fail if the model didn't already.
             if output.verdict == "pass":
                 notes_parts.append(
                     f"blind: verifier answered {output.verifier_answer!r} "
@@ -912,7 +896,7 @@ def run_verifier(
             "answers_match": output.verifier_answer == inp.researcher_output.answer,
         })
 
-    # ----- D24 deny-list gate on the Verifier's own counter-source -----
+    # D24 deny-list gate on the Verifier's own counter-source
     scrubbed = _scrub_forbidden_counter_source(output)
     if scrubbed is not None:
         on_step("blocked_counter_source", {

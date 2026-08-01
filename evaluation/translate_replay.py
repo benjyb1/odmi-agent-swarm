@@ -57,7 +57,7 @@ def _detect_native(text, native_code):
     raise RuntimeError("unused")
 
 
-# --- minimal inline heuristic detector (no DB side effects) -----------------
+# minimal inline heuristic detector (no DB side effects)
 import re
 from collections import defaultdict
 _STOP = {

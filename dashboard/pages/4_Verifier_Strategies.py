@@ -1,4 +1,4 @@
-"""Verifier Strategies — compare the four adversarial prompt strategies
+"""Verifier Strategies: compare the four adversarial prompt strategies
 on the same Researcher row (D15, Q12)."""
 
 from __future__ import annotations
@@ -8,7 +8,6 @@ import sys
 import uuid
 from pathlib import Path
 
-import pandas as pd
 import streamlit as st
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

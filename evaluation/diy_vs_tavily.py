@@ -77,9 +77,7 @@ SUBSAMPLE_FRAC = 0.30
 DEFAULT_EXCLUDE_DIMENSIONS = ["Quality"]
 
 
-# ===========================================================================
 # Pure logic (unit-tested in tests/test_diy_vs_tavily_eval.py)
-# ===========================================================================
 
 def dimension_of(question_id: str) -> str:
     """Leading alpha prefix of a question id: I / P / PT / Q."""
@@ -258,9 +256,7 @@ def select_subsample(
     return [records[i] for i in chosen_idx]
 
 
-# ===========================================================================
 # Live harness (network + DB + LLM)
-# ===========================================================================
 
 # Join researcher runs to finals on pair_run_id, the per-(question,country)
 # attempt key. NB: run_id is a BATCH id shared across many questions, so
@@ -653,7 +649,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         d = bydim[dim]
         print(f"    {dim:<8} {d['diy']}/{d['tie']}/{d['tavily']}/{d['both_fail']}")
 
-    # ----- Seeded 30% subsample: robustness checks (section 4) -------------
+    # Seeded 30% subsample: robustness checks (section 4)
     subsample = select_subsample(records, seed=args.subsample_seed,
                                  frac=args.subsample_frac)
     subsample_ids = [_pair_id(r) for r in subsample]

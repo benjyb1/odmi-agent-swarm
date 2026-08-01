@@ -31,7 +31,7 @@ import argparse
 import json
 import sqlite3
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -50,9 +50,7 @@ FALSE_POSITIVE_MARGIN = 0.05
 _COMMITTED_STATUSES = {"accepted_by_verifier", "accepted_by_adjudicator"}
 
 
-# ---------------------------------------------------------------------------
 # Pure layer
-# ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class PairOutcome:
@@ -285,9 +283,7 @@ def analyse(arms: dict[str, list[PairOutcome]]) -> dict:
     return report
 
 
-# ---------------------------------------------------------------------------
 # DB layer (thin; the pure layer above carries the logic)
-# ---------------------------------------------------------------------------
 
 def load_outcomes(conn: sqlite3.Connection,
                   experiment_id: str) -> dict[str, list[PairOutcome]]:
@@ -362,9 +358,7 @@ def load_outcomes(conn: sqlite3.Connection,
     return arms
 
 
-# ---------------------------------------------------------------------------
 # CLI
-# ---------------------------------------------------------------------------
 
 def main() -> int:
     parser = argparse.ArgumentParser(

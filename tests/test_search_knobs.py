@@ -7,7 +7,7 @@ num_queries. Network and LLM calls are mocked.
 """
 from __future__ import annotations
 
-from agents import researcher, verifier
+from agents import researcher
 from agents.models import LLMUsage, ResearcherInput
 
 

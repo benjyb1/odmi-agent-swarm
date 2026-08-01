@@ -24,8 +24,6 @@ See docs/EXPERIMENTS_EXP42_STANCE_HELDOUT.md.
 
 from __future__ import annotations
 
-import pytest
-
 from agents import verifier
 from agents.models import LLMUsage, ResearcherOutput, VerifierInput, VerifierOutput
 from agents.prompts import verifier as vp
@@ -33,9 +31,7 @@ from agents.tools.search import SearchResult
 from scripts.run_experiments import preflight
 
 
-# ============================================================
 # Fixtures
-# ============================================================
 
 def _usage(label: str) -> LLMUsage:
     return LLMUsage(
@@ -110,9 +106,7 @@ def _install_query_gen_spies(monkeypatch):
     return calls
 
 
-# ============================================================
 # 1. Search direction follows the stance
-# ============================================================
 
 def test_corroborative_generator_exists_and_seeks_support():
     """The generator must ask for evidence FOR the answer. A corroborative
@@ -161,9 +155,7 @@ def test_never_policy_skips_both_generators(monkeypatch):
     assert calls["search"] == 0
 
 
-# ============================================================
 # 2. Corroborate V3 restores the rigour gate
-# ============================================================
 
 def test_corroborate_is_v3():
     assert vp.STRATEGIES["verifier-corroborate"].version == 3
@@ -196,9 +188,7 @@ def test_corroborate_v3_keeps_steps_1_to_3_shared_with_disprove():
     assert corr[corr.index(start):corr.index(end)] == disp[disp.index(start):disp.index(end)]
 
 
-# ============================================================
 # 3. The D47 second-touch door is auditable
-# ============================================================
 
 def _heldout_spec():
     return {

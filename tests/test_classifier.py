@@ -1,7 +1,7 @@
 """Tests for the Phase 1 classifier data models and logic.
 
-These test the rubric scoring, tier mapping, and data formatting —
-not the LLM calls themselves.
+These cover the rubric scoring, the tier mapping and the data formatting.
+The LLM calls themselves are out of scope.
 """
 
 import pytest

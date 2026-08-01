@@ -4,15 +4,15 @@ Writes `data/questions/answerability.json`, a committed, reproducible tag per
 question used to report accuracy separately by answerability class rather than
 to exclude any question. Three classes:
 
-- `catalogue`  — computable from the national portal's structured metadata by
+- `catalogue`: computable from the national portal's structured metadata by
   the deterministic catalogue tool (D30). The authoritative set is the one the
   tool actually handles, imported from `agents.tools.catalogue.compute`.
-- `self_report` — an internal practice the country self-declares in the
+- `self_report`: an internal practice the country self-declares in the
   questionnaire (monitoring, feedback sessions, knowledge exchange, body-level
   plans). No external public source exists, so the open web cannot confirm it.
   Matched by a transparent keyword rule below; this is a first pass meant for
   review, not a final taxonomy.
-- `web`        — everything else: answerable from public web evidence.
+- `web`:       everything else, answerable from public web evidence.
 
 Rationale: the swarm's headline accuracy mixes questions no external system
 could answer (self_report) with ones it can. Tagging lets the dissertation

@@ -22,7 +22,7 @@ from scripts.run_coordinator import _is_abstention, _should_accept_verifier_pass
 
 
 class TestIsAbstention:
-    # --- True cases: inconclusive in all case/whitespace variants ---
+    # True cases: inconclusive in all case/whitespace variants
 
     def test_lowercase(self):
         assert _is_abstention("inconclusive") is True
@@ -33,7 +33,7 @@ class TestIsAbstention:
     def test_all_caps(self):
         assert _is_abstention("INCONCLUSIVE") is True
 
-    # --- False cases: real answers ---
+    # False cases: real answers
 
     def test_yes(self):
         assert _is_abstention("yes") is False
@@ -45,7 +45,7 @@ class TestIsAbstention:
         # `not_applicable` is a valid determination, not an abstention.
         assert _is_abstention("not_applicable") is False
 
-    # --- False cases: empty / None ---
+    # False cases: empty / None
 
     def test_empty_string(self):
         assert _is_abstention("") is False
@@ -55,7 +55,7 @@ class TestIsAbstention:
 
 
 class TestShouldAcceptVerifierPass:
-    # --- Accepted: pass + real answer + confidence at or above the floor ---
+    # Accepted: pass + real answer + confidence at or above the floor
 
     def test_pass_yes_above_floor(self):
         assert _should_accept_verifier_pass("pass", "yes", 0.7) is True
@@ -69,7 +69,7 @@ class TestShouldAcceptVerifierPass:
         # confidence clears the floor.
         assert _should_accept_verifier_pass("pass", "not_applicable", 0.8) is True
 
-    # --- Rejected: pass + real answer + confidence below the floor ---
+    # Rejected: pass + real answer + confidence below the floor
 
     def test_pass_yes_just_below_floor(self):
         assert _should_accept_verifier_pass("pass", "yes", 0.64) is False
@@ -81,7 +81,7 @@ class TestShouldAcceptVerifierPass:
         # Missing confidence is treated as 0.0, so it must be rejected.
         assert _should_accept_verifier_pass("pass", "yes", None) is False
 
-    # --- Rejected: pass + inconclusive abstention, regardless of confidence ---
+    # Rejected: pass + inconclusive abstention, regardless of confidence
 
     def test_pass_inconclusive_high_confidence(self):
         assert _should_accept_verifier_pass("pass", "inconclusive", 0.9) is False
@@ -92,7 +92,7 @@ class TestShouldAcceptVerifierPass:
     def test_pass_inconclusive_with_whitespace(self):
         assert _should_accept_verifier_pass("pass", "  inconclusive ", 0.9) is False
 
-    # --- Rejected: fail verdict, regardless of answer or confidence ---
+    # Rejected: fail verdict, regardless of answer or confidence
 
     def test_fail_yes_above_floor(self):
         assert _should_accept_verifier_pass("fail", "yes", 0.9) is False

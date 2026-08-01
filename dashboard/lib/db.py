@@ -16,7 +16,6 @@ import os
 import signal
 import sqlite3
 import subprocess
-import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -41,9 +40,7 @@ def read_sql(query: str, params: tuple = ()) -> pd.DataFrame:
         return pd.read_sql_query(query, conn, params=params)
 
 
-# ============================================================
 # Subtrio status
-# ============================================================
 
 def active_subtrios() -> pd.DataFrame:
     """Rows currently in an active stage."""
@@ -72,9 +69,7 @@ def subtrios_by_batch(batch_id: str) -> pd.DataFrame:
     )
 
 
-# ============================================================
 # Phase 2 results
-# ============================================================
 
 def researcher_runs(limit: int = 200) -> pd.DataFrame:
     return read_sql(
@@ -818,9 +813,7 @@ def already_finalised(
     )
 
 
-# ============================================================
 # Claude usage / cost
-# ============================================================
 
 def rolling_window_summary(window_hours: float = 5.0) -> dict:
     """Aggregate Claude usage for the last `window_hours`."""
@@ -863,9 +856,7 @@ def cost_by_day(days: int = 30) -> pd.DataFrame:
     )
 
 
-# ============================================================
 # Questions
-# ============================================================
 
 def all_questions() -> pd.DataFrame:
     """Read from the questions table; fallback to JSON if empty."""
@@ -880,17 +871,13 @@ def all_questions() -> pd.DataFrame:
     return pd.DataFrame()
 
 
-# ============================================================
 # Hand-marks
-# ============================================================
 
 def hand_marks() -> pd.DataFrame:
     return read_sql("SELECT * FROM hand_marks ORDER BY country_code, question_id")
 
 
-# ============================================================
 # Model defaults + analytics
-# ============================================================
 
 def model_defaults() -> pd.DataFrame:
     return read_sql("SELECT * FROM model_defaults")
@@ -937,9 +924,7 @@ def model_analytics_verifier() -> pd.DataFrame:
     )
 
 
-# ============================================================
 # Prompts
-# ============================================================
 
 def prompt_versions() -> pd.DataFrame:
     return read_sql(

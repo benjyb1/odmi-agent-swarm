@@ -5,7 +5,7 @@ db=sqlite3.connect("data/odmi.db"); db.row_factory=sqlite3.Row
 # (primary, contributing, runner_up, confidence, evidence_note)
 # Keyed by pair_run_id. addressed_by derived from primary mode below.
 C = {
- # --- N2 adjudication_propagation_loss (adjudicator computed ODMI-correct answer, final recorded inconclusive) ---
+ # N2 adjudication_propagation_loss (adjudicator computed ODMI-correct answer, final recorded inconclusive)
  "2ddae530-d7e5-49d9-bd64-13dbb9f2b448":("adjudication_propagation_loss","verifier_substring_gate_collapse","evidence_absent_or_self_report","high",
    "Adjudicator verdict=verifier_correct, adjudicator_answer='yes' (matches ODMI), but final_answer='inconclusive'. Researcher rt1 also answered 'yes'. run_coordinator.py:979-990 synthesises final from verifier output, discarding adjudicator_answer. All 4 verifier rounds substring_check=fail; EE gov PDFs 403."),
  "809531c0-019e-41cb-9f27-3dc1c1a05c70":("adjudication_propagation_loss","verifier_substring_gate_collapse","evidence_absent_or_self_report","high",
@@ -15,7 +15,7 @@ C = {
  "bdbcdb72-5511-4249-ae78-08f28168dc9f":("adjudication_propagation_loss","verifier_substring_gate_collapse","inconclusive_collapse","high",
    "PT14: adjudicator verdict=researcher_correct, adjudicator_answer='yes'; final='inconclusive'. Researcher rt0-2='yes' then rt3='inconclusive'; coordinator took researcher_outputs[-1] (the inconclusive), not the adjudged 'yes'. ODMI: requests tracked on forum.data.gouv.fr (public)."),
 
- # --- N1 verifier_substring_gate_collapse (researcher found ODMI-correct answer, verbatim substring gate rejected it -> reverted to inconclusive/no) ---
+ # N1 verifier_substring_gate_collapse (researcher found ODMI-correct answer, verbatim substring gate rejected it -> reverted to inconclusive/no)
  "3d4ce613-d4f4-42fb-b587-0dffba39302c":("verifier_substring_gate_collapse","selection_or_interpretation_miss","ground_truth_contested","high",
    "I11: researcher rt0='yes' then rt1='no' after verifier substring_check=fail. ODMI: 4300+ reuse cases classified by public taxonomy at data.gouv.fr/fr/reuses/ (verifier's own counter-evidence cited that exact page). Correct evidence reachable; killed on verbatim match."),
  "347150a5-0014-457f-88a5-34cf00d6bfe5":("verifier_substring_gate_collapse","evidence_absent_or_self_report","inconclusive_collapse","medium",
@@ -37,15 +37,15 @@ C = {
  "c8f570b3-58a0-484f-839b-b61909c626c5":("verifier_substring_gate_collapse","fetch_blocked_403","evidence_absent_or_self_report","high",
    "Q23 FR: researcher rt0='yes' (metadata quality score) then inconclusive; 1/2 substring fail, 403. ODMI cites public post on data.gouv.fr metadata quality score."),
 
- # --- M6 inconclusive_collapse (found then abandoned, NOT driven by substring gate) ---
+ # M6 inconclusive_collapse (found then abandoned, NOT driven by substring gate)
  "26e68b85-2c48-45df-853a-7df2e4167fff":("inconclusive_collapse","evidence_absent_or_self_report","verifier_substring_gate_collapse","medium",
    "PT44: researcher rt0='yes' then rt1='inconclusive' with no substring failure recorded; caved on its own. ODMI self-report (monitors data characteristics over time)."),
 
- # --- N2 zero_weight as PRIMARY (descriptive, non-scored, nothing else going on) ---
+ # N2 zero_weight as PRIMARY (descriptive, non-scored, nothing else going on)
  "a317928b-68da-42cd-911d-a0a210f5cf8b":("zero_weight_descriptive","evidence_absent_or_self_report","","high",
    "I8-d: question_text literally 'Other', scoring yes=0/no=0, ODMI max_score=0. Disagreement carries no score. rt0 inconclusive, no retry."),
 
- # --- M4 selection_or_interpretation_miss (public artefact existed, often URL'd in ODMI explanation, swarm gave up - mostly rt0) ---
+ # M4 selection_or_interpretation_miss (public artefact existed, often URL'd in ODMI explanation, swarm gave up - mostly rt0)
  "a0a699a0-84e1-48d1-bbab-deee81ccc442":("selection_or_interpretation_miss","","evidence_absent_or_self_report","medium",
    "P17: inconclusive at rt0 (no retry). ODMI explanation itself gives public URLs: data.gouv.fr/fr/pages/team/ and a legifrance decree defining team responsibilities. Governance doc is public; swarm did not surface it."),
  "4050a3c2-8ea7-4786-aaeb-470e7d6418f0":("selection_or_interpretation_miss","","evidence_absent_or_self_report","medium",
@@ -59,15 +59,15 @@ C = {
  "f45ee214-e2cd-41ee-af20-a924fce09af2":("selection_or_interpretation_miss","","evidence_absent_or_self_report","medium",
    "Q4 FR: inconclusive rt0. ODMI: file-type options on data.gouv.fr publish flow (documentation/API/code repo) - a public portal feature. Not surfaced."),
 
- # --- M2 ground_truth_contested (candidate swarm win) ---
+ # M2 ground_truth_contested (candidate swarm win)
  "84aea4d0-a8b3-47b7-b8ee-4f20fd9b4ccf":("ground_truth_contested","","selection_or_interpretation_miss","high",
    "PT4: swarm 'no' (conf 0.92), quoting data.gouv.fr's own guide that it has NO SPARQL endpoint and redirects to data.europa.eu. Live check 2026-06-02 confirmed verbatim. ODMI 'yes' cites a generic REST API reference, not SPARQL. Swarm is likely correct."),
 
- # --- M7 format_failure (out of allowed set) ---
+ # M7 format_failure (out of allowed set)
  "ba86ec3c-7e63-4da9-a480-4af21cce4537":("format_failure","selection_or_interpretation_miss","","high",
    "PT37: ordinal_magnitude question; swarm emitted 'yes' (not in allowed set). Substantively the evidence found (nightly harvesting of all local portals) supports ODMI's 'all datasets'. Pure shape error."),
 
- # --- M1 evidence_absent_or_self_report (gold answer is a country self-report / internal practice / catalogue computation, not on open web) ---
+ # M1 evidence_absent_or_self_report (gold answer is a country self-report / internal practice / catalogue computation, not on open web)
  "562ea82d-9d89-4082-8efb-fd09b21ab6f9":("evidence_absent_or_self_report","verifier_substring_gate_collapse","","high",
    "I18 EE: inconclusive, 4/4 substring fail, never found. ODMI self-report (Equality Center reuse example). No retrievable public artefact."),
  "6f6fa151-b7cb-4773-b566-0957f16a8bc3":("evidence_absent_or_self_report","fetch_blocked_403","verifier_substring_gate_collapse","high",

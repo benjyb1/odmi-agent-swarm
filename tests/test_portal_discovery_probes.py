@@ -54,9 +54,7 @@ _TTL_ONE_DATASET = b"""
 """
 
 
-# ------------------------------------------------------------------
 # CKAN
-# ------------------------------------------------------------------
 
 
 def test_probe_ckan_detects_standard_prefix():
@@ -101,9 +99,7 @@ def test_probe_ckan_returns_none_on_404():
     assert probes.probe_ckan("https://portal.example", fetch_json=_json_stub({})) is None
 
 
-# ------------------------------------------------------------------
 # uData
-# ------------------------------------------------------------------
 
 
 def test_probe_udata_detects_api():
@@ -128,9 +124,7 @@ def test_probe_udata_rejects_other_json():
     assert probes.probe_udata("https://portal.example", fetch_json=fetch) is None
 
 
-# ------------------------------------------------------------------
 # DCAT-AP RDF feed
-# ------------------------------------------------------------------
 
 
 def test_probe_dcat_feed_detects_paged_turtle():
@@ -170,9 +164,7 @@ def test_probe_dcat_feed_rejects_rdf_without_datasets():
     assert probes.probe_dcat_feed("https://portal.example", fetch_bytes=fetch) is None
 
 
-# ------------------------------------------------------------------
 # Stacks with no adapter yet
-# ------------------------------------------------------------------
 
 
 def test_probe_opendatasoft_reports_no_route():
@@ -291,9 +283,7 @@ def test_probe_sparql_uses_hint_endpoint_on_other_host():
     assert "admin.portal.example" in ev.endpoint
 
 
-# ------------------------------------------------------------------
 # FDK (hint-driven, two-step)
-# ------------------------------------------------------------------
 
 
 def test_probe_fdk_uses_seed_hints():
@@ -319,9 +309,7 @@ def test_probe_fdk_without_hints_is_none():
     assert probes.probe_fdk("https://data.example", hints=None) is None
 
 
-# ------------------------------------------------------------------
 # probe_all: leakage and aggregation
-# ------------------------------------------------------------------
 
 
 def test_probe_all_refuses_denylisted_base():

@@ -21,9 +21,7 @@ import pytest
 import conftest as root_conftest
 from conftest import CANONICAL_DB, CanonicalDatabaseAccess
 
-# ============================================================
 # The guard
-# ============================================================
 
 def test_canonical_path_is_the_tracked_database():
     """The guard defends data/odmi.db in this checkout, not some other copy."""
@@ -70,9 +68,7 @@ def test_other_paths_still_open(tmp_path):
     conn.close()
 
 
-# ============================================================
 # The redirect
-# ============================================================
 
 def test_module_constants_point_at_the_scratch_copy(odmi_test_db):
     from agents.tools import db, llm, search_cache

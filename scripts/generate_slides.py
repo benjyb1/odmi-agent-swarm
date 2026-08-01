@@ -33,9 +33,7 @@ DB_PATH = REPO_ROOT / "data" / "odmi.db"
 OUT_DIR = REPO_ROOT / "docs"
 
 
-# ============================================================
 # Palette and type system (mirrors MSc Progress Slides 3.pptx)
-# ============================================================
 
 DARK = RGBColor(0x1A, 0x20, 0x2C)
 HEAD = RGBColor(0x1A, 0x20, 0x2C)
@@ -56,9 +54,7 @@ NAVY = RGBColor(0x1E, 0x3A, 0x5F)
 FONT = "Calibri"
 
 
-# ============================================================
 # Data
-# ============================================================
 
 def fetch_stats() -> dict:
     with sqlite3.connect(DB_PATH) as conn:
@@ -152,9 +148,7 @@ def fetch_stats() -> dict:
     }
 
 
-# ============================================================
 # Low-level builders
-# ============================================================
 
 def set_text(
     tf, text: str, *,
@@ -207,9 +201,7 @@ def add_outlined_rect(
     return shape
 
 
-# ============================================================
 # Slide template
-# ============================================================
 
 HEADER_HEIGHT = Inches(1.05)
 
@@ -252,9 +244,7 @@ def page_footer(slide, prs: Presentation, page_num: int, total: int) -> None:
     )
 
 
-# ============================================================
 # Card builders
-# ============================================================
 
 def add_card(
     slide, x, y, w, h, *,
@@ -358,9 +348,7 @@ def add_numbered_step(
         )
 
 
-# ============================================================
 # Slides
-# ============================================================
 
 def slide_title(prs: Presentation) -> None:
     blank = prs.slide_layouts[6]
@@ -713,7 +701,7 @@ def slide_data_leakage(prs: Presentation) -> None:
         )
         set_text(body.text_frame, body_text, size=9.5, colour=BODY)
 
-    # Bottom callout — why five layers.
+    # Bottom callout: why five layers.
     callout_y = row_y + row_h + Inches(0.2)
     add_outlined_rect(
         slide, Inches(0.5), callout_y,
@@ -958,10 +946,7 @@ def slide_next_steps(prs: Presentation) -> None:
     page_footer(slide, prs, 8, 8)
 
 
-# ============================================================
 # PhD-seminar talk (5 slides, opinion-seeking)
-# ============================================================
-#
 # A separate, tight deck for the Monday PhD-student seminar. The
 # supervisor introduces the problem, so this opens on the system and
 # spends its weight on method and on the open questions we want the
@@ -1292,9 +1277,7 @@ def build_phd_deck(stats: dict) -> Presentation:
     return prs
 
 
-# ============================================================
 # Main
-# ============================================================
 
 def build_deck(stats: dict) -> Presentation:
     prs = Presentation()

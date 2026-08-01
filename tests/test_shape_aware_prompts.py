@@ -14,7 +14,6 @@ from agents.models import (
     AdjudicatorInput,
     ResearcherInput,
     ResearcherOutput,
-    VerifierInput,
     VerifierOutput,
 )
 from agents.prompts import adjudicator as adj_prompt
@@ -69,7 +68,7 @@ def _search_result() -> SearchResult:
     )
 
 
-# ---------------------- Researcher ----------------------
+# Researcher
 
 
 @pytest.mark.parametrize("shape,allowed", [
@@ -103,7 +102,7 @@ def test_researcher_system_prompt_references_inconclusive():
     assert "do not collapse to `other` for uncertainty" in collapsed
 
 
-# ---------------------- Verifier ----------------------
+# Verifier
 
 
 @pytest.mark.parametrize("strategy", [
@@ -166,7 +165,7 @@ def test_verifier_categorical_has_no_inherent_order_note():
     assert "no inherent order" in msg
 
 
-# ---------------------- Adjudicator ----------------------
+# Adjudicator
 
 
 def test_adjudicator_prompt_carries_allowed_answers():

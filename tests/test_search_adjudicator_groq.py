@@ -54,9 +54,7 @@ def _groq_body(payload: dict, *, prompt_tokens: int = 120, out_tokens: int = 40)
     }
 
 
-# --------------------------------------------------------------------------
 # Groq response parser
-# --------------------------------------------------------------------------
 
 
 def test_parse_groq_adjudication_maps_fields():
@@ -102,9 +100,7 @@ def test_parse_groq_adjudication_raises_on_bad_schema():
         parse_groq_adjudication(_groq_body(bad))
 
 
-# --------------------------------------------------------------------------
 # Auth probe: missing key short-circuits cleanly (no network)
-# --------------------------------------------------------------------------
 
 
 def test_probe_auth_groq_returns_false_when_key_unset():
@@ -119,9 +115,7 @@ def test_probe_auth_groq_returns_false_when_key_unset():
     assert out["key_prefix"] is None
 
 
-# --------------------------------------------------------------------------
 # adjudicate_groq end-to-end (network mocked)
-# --------------------------------------------------------------------------
 
 
 def test_adjudicate_groq_returns_parsed_verdict_and_usage():

@@ -30,10 +30,10 @@ def _count_rows(table: str) -> int:
 def test_release_from_run_console() -> bool:
     """Open Run Console, set countries+questions, click Release.
 
-    We don't wait for the run to complete — that takes a minute and the
-    end-to-end behaviour of coordinator + agents is covered by the
-    direct smoke test in run_coordinator.py. Here we only check that
-    the dashboard's release path launches the dispatcher cleanly.
+    We don't wait for the run to complete. That takes a minute, and the
+    end-to-end behaviour of coordinator + agents is covered by the direct
+    smoke test in run_coordinator.py. This case checks only that the
+    dashboard's release path launches the dispatcher cleanly.
     """
     print("\n[release_smoke] opening Run Console...")
 
@@ -41,7 +41,7 @@ def test_release_from_run_console() -> bool:
     at.run()
 
     if at.exception:
-        print(f"  ✗ Run Console raised: {at.exception}")
+        print(f"  FAIL Run Console raised: {at.exception}")
         return False
 
     # The launcher has multiselects for countries and questions, plus
@@ -54,26 +54,26 @@ def test_release_from_run_console() -> bool:
     # Find the Release button (label contains "Release N").
     releases = [b for b in at.button if "Release" in b.label and "subtrio" in b.label]
     if not releases:
-        print(f"  ✗ no Release button found (buttons: {[b.label for b in at.button]})")
+        print(f"  FAIL no Release button found (buttons: {[b.label for b in at.button]})")
         return False
 
     print(f"  release button label: {releases[0].label}")
     releases[0].click().run()
 
     if at.exception:
-        print(f"  ✗ Release click raised: {at.exception}")
+        print(f"  FAIL Release click raised: {at.exception}")
         return False
 
     # Inspect the session_state after release.
     if "last_batch_id" not in at.session_state:
-        print("  ✗ last_batch_id not set in session_state after release")
+        print("  FAIL last_batch_id not set in session_state after release")
         return False
     new_batch_id = at.session_state["last_batch_id"]
-    print(f"  ✓ batch_id stored: {new_batch_id[:8]}")
+    print(f"  ok   batch_id stored: {new_batch_id[:8]}")
     pid_val = at.session_state["last_batch_pid"] if "last_batch_pid" in at.session_state else None
     log_val = at.session_state["last_batch_log"] if "last_batch_log" in at.session_state else None
-    print(f"  ✓ subprocess PID: {pid_val}")
-    print(f"  ✓ log path: {log_val}")
+    print(f"  ok   subprocess PID: {pid_val}")
+    print(f"  ok   log path: {log_val}")
 
     # Wait briefly for the dispatcher subprocess to write the initial
     # 'queued' subtrio_status row, then verify.
@@ -85,10 +85,10 @@ def test_release_from_run_console() -> bool:
             break
         time.sleep(0.5)
     if new_count > before_status_count:
-        print(f"  ✓ subtrio_status grew {before_status_count} → {new_count}")
+        print(f"  ok   subtrio_status grew {before_status_count} -> {new_count}")
     else:
-        print(f"  ⚠ subtrio_status did not grow within 12s (still {new_count})")
-        # Not a hard fail — the dispatcher might still be doing pre-flight.
+        print(f"  WARN subtrio_status did not grow within 12s (still {new_count})")
+        # Not a hard fail: the dispatcher might still be doing pre-flight.
         # The PID is alive though; check it.
 
     # Clean up: kill the subprocess so it doesn't keep running.

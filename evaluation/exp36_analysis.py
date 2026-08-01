@@ -70,10 +70,8 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from evaluation.stats import two_proportion_test, wilson_interval  # noqa: E402
 
-# ---------------------------------------------------------------------------
 # Pre-registered constants. Nothing else in this file is hardcoded: every
 # other number is recomputed from the DB on each run.
-# ---------------------------------------------------------------------------
 
 # D47 resource strata of the held-out eight. Stratum A is the low/mid-resource,
 # negative-rich half; stratum B is the higher-resource half (the no-confound
@@ -105,9 +103,7 @@ PREREGISTERED_RQ3_READ = (
 )
 
 
-# ---------------------------------------------------------------------------
 # Pure layer
-# ---------------------------------------------------------------------------
 
 @dataclass(frozen=True)
 class PairRow:
@@ -596,9 +592,7 @@ def analyse(rows: list[PairRow], n_raw: int) -> dict:
     }
 
 
-# ---------------------------------------------------------------------------
 # DB layer (thin; the pure layer above carries the logic)
-# ---------------------------------------------------------------------------
 
 def load_rows(conn: sqlite3.Connection, experiment_id: str) -> list[PairRow]:
     """Every `phase2_final` row for the experiment, classified with the
@@ -678,9 +672,7 @@ def questions_in_bank(conn: sqlite3.Connection) -> int:
     return conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
 
 
-# ---------------------------------------------------------------------------
 # CLI
-# ---------------------------------------------------------------------------
 
 def _fmt_rate(block: dict) -> str:
     if block["rate"] is None:

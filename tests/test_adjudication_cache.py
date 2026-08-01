@@ -22,7 +22,7 @@ from agents.tools.search_adjudicator import AdjudicationResult
 from evaluation import adjudication_cache as ac
 
 
-# --- helpers ---------------------------------------------------------------
+# helpers
 
 def _result(winner: str = "A", reasoning: str = "A is on point") -> AdjudicationResult:
     return AdjudicationResult(
@@ -65,7 +65,7 @@ def cache_path(tmp_path, monkeypatch):
     return path
 
 
-# --- miss then hit ---------------------------------------------------------
+# miss then hit
 
 def test_miss_calls_judge_once_and_stores(cache_path):
     judge = _CountingJudge()
@@ -117,7 +117,7 @@ def test_hit_survives_a_fresh_in_memory_cache_reload(cache_path, monkeypatch):
     assert second == first
 
 
-# --- distinct keys => miss -------------------------------------------------
+# distinct keys => miss
 
 def test_answer_blind_is_a_distinct_key(cache_path):
     judge = _CountingJudge()
@@ -182,7 +182,7 @@ def test_different_model_is_a_distinct_key(cache_path):
     assert len(judge.calls) == 2                       # different model -> miss
 
 
-# --- key construction ------------------------------------------------------
+# key construction
 
 def test_key_ignores_non_url_snippet_evidence_fields(cache_path):
     """The verdict depends only on (url, snippet) per arm (plus the rendered

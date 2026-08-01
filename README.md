@@ -1,87 +1,258 @@
 # ODMI Agent Swarm
 
-MSc Advanced Computing dissertation (King's College London, 2026).
+MSc Advanced Computing dissertation, King's College London, 2026. Author: Benjamin Bream.
 
-A three-agent LLM swarm — Researcher, adversarial Verifier, Adjudicator — that answers EU Open Data Maturity Index (ODMI) questions across 36 European countries by searching the live web, then checks its own answers against the 5,148 ground-truth responses ODMI has already published, with every match/differ classification surfaced on a public dashboard.
+An LLM agent swarm answers the EU Open Data Maturity Index (ODMI) questionnaire
+from the open web, and its answers are scored against the assessments ODMI
+published for the 2025 cycle.
+
+The questionnaire has 143 questions and is answered by 36 countries, giving
+5,148 published answers. Those answers are the ground truth. The swarm never
+reads them while working; they are joined in afterwards to classify each pair as
+a match or a difference.
 
 Public dashboard: <https://odmi-agent-swarm-f5b4cbeukwunzkuvp2tswn.streamlit.app/>
 
-## Why a swarm instead of one model call
+## The three agents
 
-A single LLM asked "does Portugal publish its open data licence in machine-readable form?" will answer confidently whether or not it actually knows. This project treats that as the central risk to design against, not a footnote. The pipeline separates *finding* evidence from *attacking* it:
+A single model asked "does Croatia publish its open data licence in
+machine-readable form?" will answer with the same confidence whether or not it
+knows. The pipeline is built around that risk. Finding evidence and attacking
+evidence are separate jobs held by separate agents.
 
-1. **Researcher** — generates 2–3 search queries, retrieves pages via a Tavily → DIY (Serper + trafilatura + Claude snippet-picker) → Brave fallback chain, and returns a structured answer with a verbatim evidence quote, a source URL, and two separate confidence scores (retrieval confidence, answer confidence).
-2. **Verifier** — runs a deterministic substring check that the Researcher's quoted evidence actually appears in the fetched page, then goes looking for disconfirming evidence with its own adversarial search, under one of four prompt strategies (disprove / negate / steelman / blind). It only agrees with the Researcher if the counter-search comes back empty-handed.
-3. **Adjudicator** — fires only when Researcher and Verifier fail to converge after three retries. No web search of its own; it reasons over the evidence already gathered and auto-demotes any verdict below 0.6 confidence to "abstain" rather than guessing.
+**Researcher** (`agents/researcher.py`) writes 2 to 3 search queries, retrieves
+pages, and returns a structured answer carrying a verbatim quote, the URL it
+came from, and two confidence scores. Retrieval confidence and answer confidence
+are recorded separately, because a well-sourced page and a well-supported claim
+fail in different ways.
 
-A pair is only committed automatically when the Researcher's answer confidence clears 0.65 *and* the Verifier's verdict is "pass" (0.98 for questions derivable straight from ODMI's own published catalogue). Everything short of that goes to adjudication or abstains — the system is built to say "not sure" rather than fabricate a match.
+**Verifier** (`agents/verifier.py`) first runs a deterministic substring check
+that the quoted evidence appears on the page that was fetched. No LLM is
+involved in that step. It then runs its own search looking for evidence against
+the Researcher's answer, under one of four adversarial framings (disprove,
+negate, steelman, blind). It agrees only when the counter-search finds nothing.
 
-## What's actually engineered here
+**Adjudicator** (`agents/adjudicator.py`) runs when the two fail to converge
+after three retries. It performs no search of its own and reasons over the
+evidence already gathered. Any verdict it reaches below 0.6 confidence is
+demoted to an abstention.
 
-- **Reproducible by construction.** Every LLM call — prompt, version number, full raw response, timestamp — is written to `prompt_versions`. You can reconstruct any historical answer from the database alone, no re-running required.
-- **Cost control that isn't an afterthought.** A circuit breaker caps any single dispatch at 500 (question, country) pairs after an earlier accidental cross-product run burned through hours of budget. Per-model pricing (Haiku/Sonnet/Opus) is hard-coded for transparent cost estimates, and a three-layer SQLite cache (search results / fetched pages / picked snippets, 30-day TTL) means retries and ablations don't re-pay for the same web calls.
-- **Adversarial verification, not self-agreement.** The Verifier is deliberately built to try to break the Researcher's answer rather than rubber-stamp it — four different adversarial framings were pre-registered and compared, not picked after the fact.
-- **81 test files, ~13,500 lines of tests**, including a live-vs-mocked split so the core suite runs with zero API calls and a separate `make verify-diy-live` gate exercises the real search pipeline before any change to it ships.
-- **Honest failure-mode register.** The methodology doc tracks specific, named ways this can go wrong in production — evidence with no date signal, negation context that falls outside the snippet boundary, third-party republication of ODMI's own answer key bypassing the deny-list — rather than presenting the pipeline as solved.
+The Coordinator (`scripts/run_coordinator.py`) is a plain Python state machine.
+The original spec called for a graph-orchestration framework; the retry loop
+turned out to be linear and a graph runtime added debugging cost with no change
+in behaviour. That deviation is recorded as D3 in `docs/SPEC.md`.
 
-## Status
+A pair commits automatically when the Researcher's answer confidence reaches
+0.65 (`COMMIT_CONFIDENCE_FLOOR`, D37) and the Verifier passes. Questions
+answered by a deterministic recompute over the country's own data catalogue
+commit at 0.98 (D30). Anything else goes to adjudication or abstains. The system
+is built to return "not sure".
 
-Phase A: running end to end on the first four countries (FR, DE, NL, RO). 11 finalised pairs, all matching ODMI's 2025 ground truth on the current Policy-dimension sample. Phase B (harder dimensions, more countries, head-to-head Verifier strategy comparison) is the next push — see `docs/SPEC.md` for the live status block.
+Search runs through one pipeline: Serper for the result list, trafilatura for
+extraction, and a Claude call to pick the relevant snippet from the extracted
+text. Tavily and Brave were retired in D43 and their code paths remain only so
+historical rows stay readable. The production model is `claude-sonnet-4-6`,
+routed through a local CLIProxyAPI instance.
 
-## What to read
+## What was measured
 
-- `CLAUDE.md` — quality standards and the evaluation contract this project holds itself to.
-- `docs/SPEC.md` — living spec: numbered decisions, current status, open questions, change log.
-- `docs/METHODOLOGY.md` — locked methodology: ODMI ground truth, stratification by dimension, optimisation experiments.
-- `docs/REPORT_PRELIM.md` — preliminary dissertation report draft.
+The headline evaluation is EXP-36, 1,144 pairs across eight countries held out
+from all development: Bosnia and Herzegovina, North Macedonia, Montenegro,
+Bulgaria, Finland, Croatia, Sweden and Belgium. Of those pairs, 909 have a
+binary gold answer and 370 have a negative gold.
 
-## Quickstart
+EXP-42 replays that run as a four-rung architecture ladder. Each rung adds one
+component, so the contribution of each is visible:
+
+| Arm | Coverage | Commit accuracy | Negative-gold FPR |
+|---|---|---|---|
+| Researcher alone | 0.266 | 0.767 | 0.124 (46/370) |
+| Researcher + Verifier | 0.460 | 0.740 | 0.232 (86/370) |
+| Full trio (production) | 0.556 | 0.735 | 0.246 (91/370) |
+| Cooperative verifier | 0.476 | 0.727 | 0.270 (100/370) |
+
+The adversarial Verifier roughly doubles coverage and roughly doubles the
+false-positive rate on negative golds. It is not acting as a precision filter,
+which is the opposite of what the design predicted. That result is reported as
+it stands. `docs/RESULTS.md` carries the full read with confidence intervals and
+paired significance tests.
+
+## Requirements
+
+- Python 3.11 or newer. The lockfile resolves cleanly on 3.14, which is what
+  this repository was last verified against.
+- [uv](https://docs.astral.sh/uv/) for dependency management. Every command
+  below is a `uv run`, so no manual virtualenv activation is needed.
+- A copy of `data/odmi.db`. It is tracked through Git LFS and is about 375 MB.
+  Reading results, replaying evaluations and running the dashboard need nothing
+  else.
+
+API keys are needed only to dispatch a new swarm run. Copy `.env.example` to
+`.env` and fill in:
+
+| Variable | Needed for |
+|---|---|
+| `ANTHROPIC_BASE_URL` | LLM calls. Points at the local CLIProxyAPI, `http://localhost:8317`. |
+| `ANTHROPIC_API_KEY` | LLM calls. A placeholder when routed through the proxy. |
+| `SERPER_API_KEY` | Web search. The only search key the current pipeline uses. |
+| `DEEPL_API_KEY` | Translation fallback for low-resource languages. |
+| `TAVILY_API_KEY`, `BRAVE_SEARCH_API_KEY` | Retired search providers (D43). Unset unless replaying a pre-D43 run. |
+| `GEMINI_API_KEY`, `GROQ_API_KEY`, `MISTRAL_API_KEY` | Cross-family search adjudicator variants used in one experiment arm. |
+| `ODMI_READ_ONLY` | Set to `1` to disable every write button in the dashboard. Set on the public deployment. |
+| `ODMI_SKIP_AUTO_PUBLISH` | Set to `1` to stop a dispatch auto-publishing its results. |
+
+`.env` is in `.gitignore` and must stay there.
+
+## Install
 
 ```bash
-# Install deps
 uv sync
+```
 
-# Set up the SQLite database (idempotent)
+That installs the runtime dependencies and the `dev` group, which carries
+pytest, ruff and matplotlib. Nothing further is needed to run the figure
+scripts.
+
+## Build the database
+
+Skip this if you already have `data/odmi.db`. The four commands build a fresh
+database holding the schema, the question catalogue and ODMI's published
+answers. They do not run the swarm, so the result contains no swarm rows.
+
+```bash
 uv run python scripts/setup_sqlite.py
+```
 
-# Parse the official ODMI questionnaire into structured JSON
+```bash
 uv run python scripts/parse_questions.py
+```
 
-# Load the question catalogue into the SQLite questions table
+```bash
 uv run python scripts/load_questions.py
+```
 
-# Load ODMI's 5,148 ground-truth answers (36 countries × 143 questions)
+```bash
 uv run python scripts/load_ground_truth.py
+```
 
-# Launch the dashboard
+`setup_sqlite.py` refuses to overwrite an existing database unless passed
+`--force`, so running it against a populated file is safe. The last two print
+their row counts: 143 questions and 5,148 ground-truth rows.
+
+## Launch the dashboard
+
+```bash
 uv run streamlit run dashboard/Home.py
+```
 
-# Dispatch a swarm batch
-uv run python scripts/dispatch_subtrios.py --questions P1 --countries FR DE NL
+It serves on <http://localhost:8501> and reads `data/odmi.db` directly. The home
+page carries the headline accuracy against ODMI, per-country coverage and live
+dispatch state. The pages under `dashboard/pages/` hold per-pair results with
+full evidence trails, the question catalogue, the Verifier strategy comparison,
+a raw table browser, model defaults, the cost surface, prompt versions and the
+analytics views.
 
-# Regenerate the supervisor slide deck against current DB state
-uv run python scripts/generate_slides.py
+## Replay an evaluation
 
-# Run unit tests
+Every published number is arithmetic over rows already in the database. No LLM
+calls are made and no network access is needed.
+
+```bash
+uv run python evaluation/exp42_ladder.py --json /tmp/exp42.json
+```
+
+This reprints the ladder table above from the stored EXP-36 rows, with Wilson
+intervals and paired McNemar tests, and writes the machine-readable result to
+the path given. Passing `--json` keeps the committed copy in
+`evaluation/results/` untouched.
+
+```bash
+uv run python evaluation/exp36_analysis.py --out /tmp/exp36.json
+```
+
+This recomputes the pre-registered EXP-36 endpoints: per-class recall with
+Wilson intervals, balanced accuracy and Youden's J against a majority-class
+baseline. Both scripts accept `--db` if the database sits elsewhere.
+
+`evaluation/results/` holds the committed result JSON for every experiment.
+Those files are the audit trail. Write replays to a scratch path and leave the
+committed copies alone.
+
+## Tracing a figure or a number
+
+`docs/figures/README.md` maps every figure in the write-up to the script that
+produced it, and records which figures are written directly and which are copied
+from `evaluation/figures/`. The CSV receipts beside each graphic in
+`evaluation/figures/` state what that graphic was drawn from.
+
+For numbers in the text, `docs/RESULTS.md` names the reproducing script and the
+result JSON at the end of each experiment section. `docs/SPEC.md` carries the
+numbered decisions (D1, D22, D37 and so on) that comments throughout the code
+cite.
+
+## Run the tests
+
+```bash
 uv run pytest
 ```
 
-## Development
-
-DIY-Tavily test gate (run before any DIY-Tavily commit):
+917 pass and 13 skip. The skips need live network access or a database state
+that a fresh checkout does not have. The suite makes no API calls: live tests
+are marked and excluded by default.
 
 ```bash
-make verify-diy         # 93 non-live tests across the eight DIY-Tavily modules
-make verify-diy-live    # live tests against real Serper + Claude (costs ~30 API calls)
-make help               # list all targets
+make verify-diy
 ```
 
-The full pipeline lives in `agents/tools/search_diy.py`. The methodologically central Layer-2 quality test reads `tests/fixtures/snippet_quality.jsonl` (regenerated on demand from the DB with `make snippet-fixtures`) and asserts the new Claude snippet-picker overlaps with passages the swarm's Verifier historically accepted. See `docs/superpowers/plans/2026-05-26-diy-tavily.md` for the full plan and Layer 1–9 test strategy.
+103 tests over the eight modules of the search pipeline. This is the gate to run
+before changing anything under `agents/tools/search*`.
 
-## Tech stack
+```bash
+make verify-diy-live
+```
 
-Python 3.11+ (`uv`), Anthropic API (Claude Max via CLIProxyAPI), Tavily + Serper + Brave search, trafilatura + Playwright for extraction, Pydantic for structured LLM output, SQLite for the audit trail, Streamlit + Altair + Plotly for the dashboard, `python-pptx` for the supervisor deck, pytest for the test suite.
+The live counterpart, which calls real Serper and Claude endpoints and costs
+roughly 30 API calls. `make help` lists the remaining targets.
 
-## Author
+`conftest.py` at the repository root stops the suite touching `data/odmi.db`. It
+redirects every module constant that names the canonical file to a scratch copy,
+and wraps `sqlite3.connect` so that anything the redirect misses raises instead
+of writing. The database is git-tracked and holds frozen experiment rows, so a
+test that dirties it would be committed by accident.
 
-Benjamin Bream.
+## Dispatch a swarm run
+
+This costs money and makes live API calls.
+
+```bash
+uv run python scripts/dispatch_subtrios.py --questions P1 --countries FR DE
+```
+
+A circuit breaker caps any single dispatch at 500 pairs. Search results, fetched
+pages and picked snippets are cached in SQLite for 30 days, so a retry or an
+ablation does not re-pay for the same web calls.
+
+## Directory map
+
+| Path | Contents |
+|---|---|
+| `agents/` | The three agents, their prompt modules, and the shared tools for search, extraction, caching, the LLM wrapper and the deterministic catalogue route. |
+| `dashboard/` | Streamlit app. `Home.py` plus nine pages and the helpers in `lib/`. |
+| `data/` | `odmi.db`, the ODMI question bank, per-country trusted-domain lists, and the inert hand-mark CSVs kept as audit history. |
+| `docs/` | The living spec, the locked methodology, the failure-mode register, experiment pre-registrations and results, and the figure provenance index. |
+| `evaluation/` | Analysis and replay scripts. One script per experiment or per figure, all read-only over the database. |
+| `evaluation/results/` | Committed result JSON. The audit trail behind every published number. |
+| `evaluation/specs/` | Experiment pre-registrations, written before each run. |
+| `scripts/` | The Coordinator, the dispatcher, database setup and loaders, schema migrations and the experiment orchestrator. |
+| `tests/` | 97 test files, about 16,500 lines. Live tests are marked and excluded by default. |
+| `who_speech/` | A separate side project that reuses the swarm against the WHO Europe document set. Not part of the dissertation. |
+| `conftest.py` | The two-layer guard that keeps pytest away from the canonical database. |
+| `Makefile` | The search-pipeline test gates and the fixture regeneration targets. |
+
+## Reading order
+
+1. `docs/SPEC.md` for project state and the numbered decisions.
+2. `docs/METHODOLOGY.md` for how the evaluation is set up and why.
+3. `docs/RESULTS.md` for the experiments and what they found.
+4. `docs/FAILURE_MODES.md` for the 34 registered ways this can produce a wrong
+   answer, and which of them are mitigated.

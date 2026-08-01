@@ -52,7 +52,12 @@ STUCK_LIMIT = 2
 
 
 def _blocked(row: sqlite3.Row) -> bool:
+    """True if the row cited, fetched or read a deny-listed URL (D24)."""
     urls = [row["source_url"] or ""]
+    # Both columns hold free-form JSON written by several generations of the
+    # dispatcher, so early rows carry shapes the current parse rejects. An
+    # unparseable column contributes no URLs and the row is judged on the ones
+    # that did parse. source_url sits outside the try and is always checked.
     try:
         urls += [u for u in json.loads(row["fetched_urls"] or "[]")]
     except Exception:

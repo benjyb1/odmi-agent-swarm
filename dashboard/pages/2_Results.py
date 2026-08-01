@@ -1,4 +1,4 @@
-"""Results — scan finalised pairs as cards, drill into raw rows by tab."""
+"""Results: scan finalised pairs as cards, drill into raw rows by tab."""
 
 from __future__ import annotations
 
@@ -26,9 +26,7 @@ page_header(
 render_session_widget()
 
 
-# ============================================================
 # Cards view
-# ============================================================
 
 def _status_chip(status: str) -> str:
     """Coloured Streamlit-friendly chip text for a terminal status."""
@@ -128,7 +126,7 @@ def _render_card(row: pd.Series) -> None:
             st.markdown("**Why**")
             st.write(row["final_answer_explanation"])
 
-        # Evidence block — the proof.
+        # Evidence block: the proof.
         if pd.notna(row.get("final_evidence_quote")):
             st.markdown("**Evidence**")
             st.markdown(f"> _{row['final_evidence_quote']}_")
@@ -136,7 +134,7 @@ def _render_card(row: pd.Series) -> None:
             url = row["final_source_url"]
             st.markdown(f"**Source:** [{url}]({url})")
 
-        # ODMI ground truth (D22) — the independent comparison point.
+        # ODMI ground truth (D22): the independent comparison point.
         gt_response = row.get("ground_truth_response")
         if pd.notna(gt_response) and str(gt_response).strip():
             st.markdown(
@@ -323,7 +321,7 @@ def render_cards_tab() -> None:
         f"automatically swarm errors. ({n_no_gt} unmatched joins.)"
     )
 
-    # Filters — keep them light so the page stays scannable.
+    # Filters: keep them light so the page stays scannable.
     fcol1, fcol2, fcol3, fcol4 = st.columns([1, 1, 1, 1])
     with fcol1:
         countries = sorted(cards["country_code"].dropna().unique().tolist())
@@ -381,9 +379,7 @@ def render_cards_tab() -> None:
         _render_card(row)
 
 
-# ============================================================
-# Raw tables (unchanged — kept for the audit trail)
-# ============================================================
+# Raw tables (unchanged: kept for the audit trail)
 
 def render_raw_researcher_tab() -> None:
     rdf = db.researcher_runs(limit=500)
@@ -495,9 +491,7 @@ def render_raw_finals_tab() -> None:
     st.dataframe(filtered, use_container_width=True, hide_index=True)
 
 
-# ============================================================
 # Layout
-# ============================================================
 
 tab_cards, tab_r, tab_v, tab_f = st.tabs(
     ["Cards", "Researcher runs", "Verifier runs", "Finals"]

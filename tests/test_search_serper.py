@@ -11,8 +11,6 @@ Covers:
 
 from __future__ import annotations
 
-import json
-from typing import Any
 from unittest.mock import MagicMock, patch
 
 import httpx
@@ -21,9 +19,7 @@ import pytest
 from agents.tools.search_serper import serper_search
 
 
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def _make_organic(*positions: int) -> list[dict]:
     """Build a minimal organic results list with the given positions."""
@@ -56,9 +52,7 @@ def _make_client_mock(payload: dict) -> MagicMock:
     return client
 
 
-# ---------------------------------------------------------------------------
 # Happy path
-# ---------------------------------------------------------------------------
 
 def test_happy_path_returns_search_results(monkeypatch):
     """Mocked Serper response produces a list of SearchResult with provider='serper'."""
@@ -76,9 +70,7 @@ def test_happy_path_returns_search_results(monkeypatch):
     assert all(r.snippet for r in results)
 
 
-# ---------------------------------------------------------------------------
 # Score arithmetic
-# ---------------------------------------------------------------------------
 
 def test_score_rank_1_is_1_0(monkeypatch):
     """Rank 1 result must have score 1.0."""
@@ -116,9 +108,7 @@ def test_score_rank_3_is_0_333(monkeypatch):
     assert results[2].score == pytest.approx(0.333, abs=0.001)
 
 
-# ---------------------------------------------------------------------------
 # include_domains capped at 8
-# ---------------------------------------------------------------------------
 
 def test_include_domains_capped_at_8(monkeypatch):
     """Passing 12 domains must result in only 8 site: clauses in the query body."""
@@ -146,9 +136,7 @@ def test_include_domains_capped_at_8(monkeypatch):
         assert f"site:{d}" not in q
 
 
-# ---------------------------------------------------------------------------
 # include_domains absent
-# ---------------------------------------------------------------------------
 
 def test_no_include_domains_query_verbatim(monkeypatch):
     """When include_domains is not passed, the query body contains the query verbatim."""
@@ -169,9 +157,7 @@ def test_no_include_domains_query_verbatim(monkeypatch):
     assert "site:" not in q
 
 
-# ---------------------------------------------------------------------------
 # Missing SERPER_API_KEY
-# ---------------------------------------------------------------------------
 
 def test_missing_api_key_raises_runtime_error(monkeypatch):
     """If SERPER_API_KEY is not set, serper_search must raise RuntimeError."""
@@ -181,9 +167,7 @@ def test_missing_api_key_raises_runtime_error(monkeypatch):
         serper_search("some query")
 
 
-# ---------------------------------------------------------------------------
 # Empty organic array
-# ---------------------------------------------------------------------------
 
 def test_empty_organic_returns_empty_list(monkeypatch):
     """An empty organic array must return an empty list, not raise."""
@@ -197,9 +181,7 @@ def test_empty_organic_returns_empty_list(monkeypatch):
     assert results == []
 
 
-# ---------------------------------------------------------------------------
 # max_results is respected
-# ---------------------------------------------------------------------------
 
 def test_max_results_respected(monkeypatch):
     """serper_search must return at most max_results items."""
@@ -214,9 +196,7 @@ def test_max_results_respected(monkeypatch):
     assert len(results) == 3
 
 
-# ---------------------------------------------------------------------------
 # num in body is capped at 20
-# ---------------------------------------------------------------------------
 
 def test_num_body_capped_at_20(monkeypatch):
     """The `num` field in the POST body must never exceed 20."""
@@ -232,9 +212,7 @@ def test_num_body_capped_at_20(monkeypatch):
     assert body["num"] <= 20
 
 
-# ---------------------------------------------------------------------------
 # HTTP error propagation
-# ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("status", [429, 500, 502])
 def test_non_2xx_raises_httpstatuserror(monkeypatch, status):

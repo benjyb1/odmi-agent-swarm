@@ -1,4 +1,4 @@
-"""Prompts — versioned prompt browser."""
+"""Prompts: versioned prompt browser."""
 
 from __future__ import annotations
 

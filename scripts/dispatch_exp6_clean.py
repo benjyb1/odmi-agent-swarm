@@ -8,8 +8,8 @@ data/odmi.db.bak-pre-exp6-purge); Malta is dropped entirely.
 
 Arms (shared question selection data/questions/exp6_question_set.json, 71 binary
 non-self-report questions, 19 each Policy/Portal/Impact + 14 Quality):
-  - NL natural   : the 71 questions on the Netherlands (Dutch, high-resource).
-  - FR injected  : the 71 questions on France; correct binary answers are flipped
+  - NL natural:   the 71 questions on the Netherlands (Dutch, high-resource).
+  - FR injected:  the 71 questions on France; correct binary answers are flipped
                    by the harness at candidate-build time (INJ_TARGET=71).
 
 Total: 142 pairs (71 NL + 71 FR).

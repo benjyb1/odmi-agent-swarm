@@ -33,7 +33,6 @@ covers the replay path directly, on all three arms.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import signal
 import sqlite3

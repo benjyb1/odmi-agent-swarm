@@ -50,7 +50,7 @@ def _verifier_input() -> VerifierInput:
     )
 
 
-# ---------- Researcher path ----------
+# Researcher path
 
 def test_run_researcher_threads_picker_model(monkeypatch):
     captured = {}
@@ -83,7 +83,7 @@ def test_run_researcher_default_picker_model_is_none(monkeypatch):
     assert captured["picker_model"] is None
 
 
-# ---------- Verifier path ----------
+# Verifier path
 
 def test_run_verifier_threads_picker_model(monkeypatch):
     captured = {}
@@ -105,7 +105,7 @@ def test_run_verifier_threads_picker_model(monkeypatch):
     assert captured["picker_model"] == "claude-opus-4-6"
 
 
-# ---------- search_many -> search_diy -> pick_snippet ----------
+# search_many -> search_diy -> pick_snippet
 
 def test_search_many_threads_picker_model_to_diy(monkeypatch):
     from agents.tools import search as search_mod
@@ -128,7 +128,7 @@ def test_search_many_threads_picker_model_to_diy(monkeypatch):
     assert captured["calls"] == ["claude-opus-4-6"]
 
 
-# ---------- pick_snippet -> call_for_structured ----------
+# pick_snippet -> call_for_structured
 
 def test_pick_snippet_passes_model_to_call_for_structured(monkeypatch):
     from agents.tools import snippet_picker

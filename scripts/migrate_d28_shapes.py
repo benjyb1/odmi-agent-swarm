@@ -32,7 +32,6 @@ import re
 import sqlite3
 import sys
 from pathlib import Path
-from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = REPO_ROOT / "data" / "odmi.db"
@@ -192,9 +191,7 @@ def _rubric_keys_in_insertion_order(rubric: dict) -> list[str]:
     return out
 
 
-# ============================================================
 # Migration
-# ============================================================
 
 
 SCHEMA_MIGRATION = """
@@ -332,7 +329,7 @@ def main(argv: list[str] | None = None) -> int:
     print("  Classification distribution:")
     for shape in SHAPES:
         print(f"    {shape:18s} {counts.get(shape, 0):3d}")
-    print(f"  Relabel `other` -> `inconclusive`:")
+    print("  Relabel `other` -> `inconclusive`:")
     for table, n in relabel.items():
         print(f"    {table:28s} {n:3d}")
     return 0

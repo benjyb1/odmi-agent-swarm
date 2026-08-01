@@ -45,7 +45,7 @@ def _purge(db: Path, *args: str) -> subprocess.CompletedProcess:
     )
 
 
-# --- the purge -------------------------------------------------------------
+# the purge
 
 def test_dry_run_deletes_nothing(tmp_path):
     db = _db_with_cache(tmp_path / "a.db")
@@ -121,7 +121,7 @@ def test_missing_cache_tables_are_not_an_error(tmp_path):
     assert "VERIFIED EMPTY" in res.stdout
 
 
-# --- the frozen-config claim ----------------------------------------------
+# the frozen-config claim
 
 def _spec(eid: str) -> dict:
     return json.loads((SPECS / f"{eid}.json").read_text())["experiments"][0]

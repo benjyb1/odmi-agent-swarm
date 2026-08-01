@@ -24,16 +24,12 @@ No network, Serper, Playwright, or Claude calls are made.
 """
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
 import agents.tools.search_cache as sc
 
 
-# ---------------------------------------------------------------------------
 # Helpers / fixtures (mirror tests/test_search_diy.py style)
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def mock_layers(monkeypatch, tmp_path):
@@ -98,9 +94,7 @@ def mock_layers(monkeypatch, tmp_path):
     }
 
 
-# ---------------------------------------------------------------------------
 # 1. Cache read-disable toggle on the cache object
-# ---------------------------------------------------------------------------
 
 class TestCacheReadDisable:
     @pytest.fixture(autouse=True)
@@ -171,9 +165,7 @@ class TestCacheReadDisable:
         assert sc.serp_get("q", 5, None) is not None
 
 
-# ---------------------------------------------------------------------------
 # 2. End-to-end through the DIY search path
-# ---------------------------------------------------------------------------
 
 class TestDiySearchPathCold:
     def test_diy_serp_cache_hit_skips_serper_when_reads_enabled(self, mock_layers):
@@ -211,9 +203,7 @@ class TestDiySearchPathCold:
         assert len(mock_layers["picker_calls"]) == 2
 
 
-# ---------------------------------------------------------------------------
 # 3. CLI / dispatch wiring
-# ---------------------------------------------------------------------------
 
 class TestDispatchWiring:
     def test_dispatch_accepts_no_cache_and_forwards_to_subprocess(
@@ -294,9 +284,7 @@ class TestDispatchWiring:
         assert "--no-cache" not in captured_cmds[0]
 
 
-# ---------------------------------------------------------------------------
 # 4. run_coordinator honours --no-cache by disabling cache reads
-# ---------------------------------------------------------------------------
 
 class TestCoordinatorWiring:
     def test_coordinate_sets_read_disabled_when_no_cache(self, monkeypatch):

@@ -8,7 +8,7 @@ import evaluation.malta_failure_audit as mfa
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
-# ---- classify_match ----
+# classify_match
 
 def test_classify_match_exact_and_prefix_and_no():
     assert mfa.classify_match("yes", "yes") == "match"
@@ -40,7 +40,7 @@ def test_answer_matches_gold():
     assert not mfa.answer_matches_gold("inconclusive", "no")
 
 
-# ---- code_cause (priority order) ----
+# code_cause (priority order)
 
 def _abstain(**kw):
     base = dict(match_status="abstain", notes="", has_source=True, has_snippets=True,
@@ -80,7 +80,7 @@ def test_cause_near_band_and_wrong_and_structural():
     assert mfa.code_cause(dict(match_status="differ", is_structural_gold=True)) == "selfreport_denylist_ceiling"
 
 
-# ---- floor_sweep ----
+# floor_sweep
 
 def _pair(conf, correct, neg, definite=True):
     return dict(candidate_is_definite=definite, candidate_confidence=conf,
@@ -129,7 +129,7 @@ def test_decide_floor_adopts_when_clean():
     assert dec["verdicts"][0.55]["passes"] is True
 
 
-# ---- the baseline floor must stay in sync with the coordinator ----
+# the baseline floor must stay in sync with the coordinator
 
 def test_baseline_floor_in_sync_with_coordinator():
     src = (REPO_ROOT / "scripts" / "run_coordinator.py").read_text()
@@ -138,7 +138,7 @@ def test_baseline_floor_in_sync_with_coordinator():
     assert float(m.group(1)) == mfa.BASELINE_FLOOR
 
 
-# ---- load_pairs canonical dedup (regression: duplicate phase2_final rows) ----
+# load_pairs canonical dedup (regression: duplicate phase2_final rows)
 
 def _mini_db():
     """Minimal in-memory DB carrying only what load_pairs reads."""

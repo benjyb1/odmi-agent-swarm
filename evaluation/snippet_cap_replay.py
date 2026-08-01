@@ -20,9 +20,7 @@ import argparse
 import json
 import sqlite3
 import sys
-import time
 from pathlib import Path
-from typing import Any
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))

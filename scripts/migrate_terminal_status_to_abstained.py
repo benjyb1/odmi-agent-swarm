@@ -17,8 +17,8 @@ migration does three things:
 3. Updates the free-text subtrio_status.final_verdict mirror the same way
    (no CHECK there, so a plain UPDATE).
 
-The row copy is by explicit column name, not SELECT *, so it is robust to
-the experiment_id/created_at column-order difference between a freshly
+The row copy names every column explicitly, so it survives the
+experiment_id/created_at column-order difference between a freshly
 setup database and one an earlier migration rebuilt.
 
 The migration is idempotent: if the CHECK already admits `abstained_*`

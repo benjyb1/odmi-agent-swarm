@@ -13,7 +13,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT))
@@ -50,10 +49,8 @@ def _make_adj_output(
     )
 
 
-# ---------------------------------------------------------------------------
-# Import the helper under test (does NOT exist yet — test should fail until
+# Import the helper under test (does NOT exist yet, test should fail until
 # the implementation is added to scripts/run_coordinator.py).
-# ---------------------------------------------------------------------------
 
 def _import_helper():
     # Lazy import so a missing symbol surfaces as a test failure, not an
@@ -62,10 +59,8 @@ def _import_helper():
     return _finalise_after_adjudication
 
 
-# ---------------------------------------------------------------------------
-# Case 1: researcher_correct — must use adjudicator_answer, not the stale
+# Case 1: researcher_correct, must use adjudicator_answer, not the stale
 # last researcher output.
-# ---------------------------------------------------------------------------
 
 def test_researcher_correct_uses_adjudicator_answer():
     helper = _import_helper()
@@ -81,9 +76,7 @@ def test_researcher_correct_uses_adjudicator_answer():
     )
 
 
-# ---------------------------------------------------------------------------
-# Case 2: verifier_correct — must also use adjudicator_answer.
-# ---------------------------------------------------------------------------
+# Case 2: verifier_correct, must also use adjudicator_answer.
 
 def test_verifier_correct_uses_adjudicator_answer():
     helper = _import_helper()
@@ -96,9 +89,7 @@ def test_verifier_correct_uses_adjudicator_answer():
     assert chosen.answer == "no"
 
 
-# ---------------------------------------------------------------------------
-# Case 3: neither — must use adjudicator_answer.
-# ---------------------------------------------------------------------------
+# Case 3: neither, must use adjudicator_answer.
 
 def test_neither_uses_adjudicator_answer():
     helper = _import_helper()
@@ -111,9 +102,7 @@ def test_neither_uses_adjudicator_answer():
     assert chosen.answer == "not_applicable"
 
 
-# ---------------------------------------------------------------------------
-# Case 4: abstain — answer downgrades to inconclusive (D37 abstain floor).
-# ---------------------------------------------------------------------------
+# Case 4: abstain, answer downgrades to inconclusive (D37 abstain floor).
 
 def test_abstain_writes_inconclusive():
     """The Adjudicator could not pick a winner. Don't finalise the last
@@ -137,9 +126,7 @@ def test_abstain_writes_inconclusive():
     assert str(chosen.source_url) == str(last_r.source_url)
 
 
-# ---------------------------------------------------------------------------
-# Case 5: adj_output is None — same abstain behaviour, the agent failed.
-# ---------------------------------------------------------------------------
+# Case 5: adj_output is None, same abstain behaviour, the agent failed.
 
 def test_none_output_writes_inconclusive():
     helper = _import_helper()
@@ -151,9 +138,7 @@ def test_none_output_writes_inconclusive():
     assert chosen.answer == "inconclusive"
 
 
-# ---------------------------------------------------------------------------
 # Case 6: evidence_quote and source_url come from the adjudicator.
-# ---------------------------------------------------------------------------
 
 def test_resolved_verdict_copies_adjudicator_urls():
     helper = _import_helper()
@@ -171,11 +156,9 @@ def test_resolved_verdict_copies_adjudicator_urls():
     assert chosen.evidence_quote == "adjudicator selected this passage"
 
 
-# ---------------------------------------------------------------------------
 # Case 7: a sub-floor Adjudicator commit is downgraded to an abstention.
 # Under the D37 commit-confidence floor we abstain rather than commit a
 # low-confidence label (usually a defensive `no` on sparse evidence).
-# ---------------------------------------------------------------------------
 
 def test_subfloor_commit_downgraded_to_inconclusive():
     helper = _import_helper()
@@ -202,13 +185,11 @@ def test_above_floor_commit_is_kept():
     assert chosen.answer == "no", "an above-floor commit is unchanged"
 
 
-# ---------------------------------------------------------------------------
 # Case 9: a too-short evidence quote must not crash the pair. Evidence is a
 # URL plus a quoted passage; a bare token like "yes" is below the
 # ResearcherOutput min_length (10) and would otherwise raise a
 # ValidationError after the adjudication has already been paid for. It is
 # treated as no quote.
-# ---------------------------------------------------------------------------
 
 def test_short_evidence_quote_falls_back_not_crash():
     helper = _import_helper()
