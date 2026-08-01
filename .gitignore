@@ -9,7 +9,7 @@ __pycache__/
 .pytest_cache/
 dist/
 *.egg-info/
-.venv/
+.venv*
 node_modules/
 
 # OS junk
@@ -30,6 +30,13 @@ Presentations/
 Research/
 ODMI_Technical_Walkthrough.docx
 *.zip
+
+# WHO Europe speech-writer. A separate side project that reuses the swarm
+# against the IRIS EURO document set. Nothing in this repository imports it,
+# and it is not part of the dissertation, so it is kept out of what an
+# examiner clones. The directory stays on disk and its history stays in the
+# commits up to and including 2abe462.
+who_speech/
 
 # SQLite write-ahead and shared-memory files (the .db itself is committed)
 *.db-wal
