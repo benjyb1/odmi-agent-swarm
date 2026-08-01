@@ -14,8 +14,13 @@ is. Counts are on the axis labels so nothing is hidden.
 Ordered by false-positive share ascending, so the dimensions the system can be
 trusted with sit at the top.
 
-Greyscale-safe per the house convention: every band reads from fill lightness
-and hatch, never hue.
+House Okabe-Ito palette, split into two families that carry the argument: blue
+for the outcomes the design intends, either a correct answer or a deliberate
+decline, and the vermillion family for error. The width of the red block is
+therefore the figure's message, and it is readable at a glance without the
+legend. Okabe-Ito is colour-vision-safe by construction; the false-positive
+band also carries a hatch so the load-bearing distinction survives greyscale
+printing.
 
     uv run python evaluation/figures/dimension_outcome_split.py
 """
@@ -36,17 +41,23 @@ OUT = "evaluation/figures/fig_dimension_outcome_split"
 INK = "#1A1A1A"
 MUTED = "#6E6E6E"
 
-# Fill and hatch carry the category. The false-positive band is the only dense
-# hatch, so the eye lands on it first, which is the point of the figure.
-# Correct and Declined are the two largest bands and sit at opposite ends of
-# the stack, so they need separating by fill alone: a near-white declined band
-# against a white correct band reads as one continuous bar.
+# House Okabe-Ito: #0072B2 blue, #56B4E9 sky, #E69F00 orange, #009E73 green,
+# #D55E00 vermillion, #9E9E9E grey.
+BLUE = "#0072B2"
+SKY = "#56B4E9"
+VERMILLION = "#D55E00"
+VERMILLION_LIGHT = "#EC9A6D"   # a tint of the same hue, not a second colour
+GREY = "#9E9E9E"
+
+# Two families, and the split is the argument: blue for what the design
+# intends (a correct answer, or a deliberate decline), vermillion for error.
+# (label, fill, hatch, light_text)
 BANDS = [
-    ("Correct",            "#FFFFFF", ""),
-    ("Wrong: false yes",   "#7E7E7E", "///"),
-    ("Wrong: other",       "#ABABAB", ""),
-    ("Unscoreable",        "#CFCFCF", "..."),
-    ("Declined",           "#E6E6E6", ""),
+    ("Correct",           BLUE,             "",    True),
+    ("Wrong: false yes",  VERMILLION,       "///", True),
+    ("Wrong: other",      VERMILLION_LIGHT, "",    False),
+    ("Unscoreable",       GREY,             "...", False),
+    ("Declined",          SKY,              "",    False),
 ]
 
 
@@ -104,16 +115,17 @@ def draw(rows):
     ypos = range(len(rows))
     for yi, row in zip(ypos, rows):
         left = 0.0
-        for (label, fill, hatch), value in zip(BANDS, row["parts"]):
+        for (label, fill, hatch, light_text), value in zip(BANDS, row["parts"]):
             share = value / row["n"] * 100
             ax.barh(yi, share, left=left, height=0.62,
-                    facecolor=fill, edgecolor=INK, linewidth=0.7,
+                    facecolor=fill, edgecolor=INK, linewidth=0.6,
                     hatch=hatch, zorder=2)
             # Only label a band with room for the number, so nothing collides.
             if share >= 7:
                 ax.text(left + share / 2, yi, f"{share:.0f}",
                         ha="center", va="center", fontsize=7.6,
-                        color=INK, zorder=3)
+                        color="#FFFFFF" if light_text else INK,
+                        zorder=3)
             left += share
 
     ax.set_yticks(list(ypos))
@@ -133,8 +145,8 @@ def draw(rows):
 
     # Legend below the axis label. Above the plot it competes with the title
     # for the same band of space and the two collide at this figure width.
-    handles = [Patch(facecolor=f, edgecolor=INK, linewidth=0.7, hatch=h, label=l)
-               for l, f, h in BANDS]
+    handles = [Patch(facecolor=f, edgecolor=INK, linewidth=0.6, hatch=h, label=l)
+               for l, f, h, _ in BANDS]
     ax.legend(handles=handles, ncol=5, fontsize=7.4,
               loc="upper center", bbox_to_anchor=(0.5, -0.28),
               handlelength=1.5, columnspacing=1.1, handletextpad=0.5)
