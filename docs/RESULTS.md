@@ -19,6 +19,13 @@ a source-database key from §2, and a reproduction path. Nothing here is copied
 from prose. Where a quantity has two defensible definitions, both are given and
 the one the dissertation uses is named.
 
+`docs/RESULTS_COLLATION.md` is the working collation assembled 2026-07-17 and
+moved into `docs/` on 2026-08-01. Its figures were checked against this register
+and agree; it predates the definitional reconciliation, so it reports the
+negative-gold rate on the any-wrong convention only and does not carry the
+denominator splits in §3. Treat this file as authoritative and that one as
+design history.
+
 ---
 
 ## 2. Source databases
