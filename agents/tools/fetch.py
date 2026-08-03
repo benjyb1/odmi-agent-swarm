@@ -23,6 +23,7 @@ import httpx
 from pydantic import BaseModel
 
 from agents.tools.blocked_domains import blocked_reason, is_blocked
+from agents.tools.robots import robots_disallows
 
 DEFAULT_USER_AGENT = (
     "ODMI-Swarm-Research/0.1 "
@@ -63,6 +64,20 @@ def _blocked_result(url: str, backend: FetchBackend) -> FetchResult:
     )
 
 
+def _robots_result(url: str, backend: FetchBackend, reason: str) -> FetchResult:
+    """A refusal caused by the host's robots.txt rather than by our own
+    deny-list. Kept as a distinct failure mode so the two never blur in the
+    logs: one is the portal's instruction, the other is our leakage guard."""
+    return FetchResult(
+        url=url,
+        backend=backend,
+        status_code=0,
+        content="",
+        truncated=False,
+        failure_mode=reason,
+    )
+
+
 _TAG_RE = re.compile(r"<[^>]+>")
 _WS_RE = re.compile(r"\s+")
 
@@ -87,6 +102,9 @@ def fetch_text(
     """
     if is_blocked(url):
         return _blocked_result(url, "httpx")
+    disallowed = robots_disallows(url, DEFAULT_USER_AGENT)
+    if disallowed:
+        return _robots_result(url, "httpx", disallowed)
     try:
         with httpx.Client(
             timeout=timeout_s,
@@ -150,6 +168,9 @@ def fetch_html(
     """
     if is_blocked(url):
         return _blocked_result(url, "httpx")
+    disallowed = robots_disallows(url, DEFAULT_USER_AGENT)
+    if disallowed:
+        return _robots_result(url, "httpx", disallowed)
     try:
         with httpx.Client(
             timeout=timeout_s,
@@ -263,6 +284,9 @@ def fetch_rendered_text(
     """
     if is_blocked(url):
         return _blocked_result(url, "playwright")
+    disallowed = robots_disallows(url, DEFAULT_USER_AGENT)
+    if disallowed:
+        return _robots_result(url, "playwright", disallowed)
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
     except ImportError as exc:
@@ -343,6 +367,9 @@ def fetch_rendered_html(
     """
     if is_blocked(url):
         return _blocked_result(url, "playwright")
+    disallowed = robots_disallows(url, DEFAULT_USER_AGENT)
+    if disallowed:
+        return _robots_result(url, "playwright", disallowed)
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
     except ImportError as exc:
@@ -427,6 +454,8 @@ def head_ok(url: str, *, timeout_s: float = 8.0) -> tuple[bool, int]:
     Refuses URLs on the data-leakage deny-list before any network call.
     """
     if is_blocked(url):
+        return False, 0
+    if robots_disallows(url, DEFAULT_USER_AGENT):
         return False, 0
     status = 0
     try:
