@@ -199,3 +199,19 @@ def _redirect_canonical_db(odmi_test_db: Path, monkeypatch: pytest.MonkeyPatch) 
     for module, attr, value in _canonical_constants():
         replacement = str(odmi_test_db) if isinstance(value, str) else odmi_test_db
         monkeypatch.setattr(module, attr, replacement, raising=False)
+
+
+@pytest.fixture(autouse=True)
+def _disable_robots_enforcement(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep robots.txt checking off the network during the suite.
+
+    `agents.tools.fetch` consults robots.txt before every fetch, which in
+    production means one small HTTP request per host. Under pytest that
+    would turn any test touching the fetch layer into a network test. The
+    checks are exercised deliberately in `tests/test_robots.py`, which
+    turns enforcement back on and serves robots.txt from a mock transport.
+    """
+    from agents.tools import robots
+
+    monkeypatch.setattr(robots, "ROBOTS_ENFORCED", False)
+    robots.clear_cache()
