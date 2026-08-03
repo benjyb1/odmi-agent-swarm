@@ -25,8 +25,10 @@ from agents.tools.llm import StructuredOutputError, call_for_structured
 
 # Confidence threshold from AGENT_DESIGN §5.11.5: below this, the
 # verdict is auto-promoted to abstain (D51, formerly escalate_human)
-# regardless of the model's nominal choice.
-LOW_CONFIDENCE_THRESHOLD = 0.6
+# regardless of the model's nominal choice. Held at the same 0.65 as
+# the Coordinator's COMMIT_CONFIDENCE_FLOOR so one floor governs every
+# agent, rather than each carrying its own.
+LOW_CONFIDENCE_THRESHOLD = 0.65
 
 
 @dataclass
@@ -192,7 +194,7 @@ def run_adjudicator(
     })
 
     base_note = (
-        "auto-promoted: confidence below 0.6 threshold"
+        "auto-promoted: confidence below 0.65 threshold"
         if promoted else None
     )
     if note_parts:

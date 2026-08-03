@@ -506,7 +506,9 @@ dissertation analysis can read your full chain of reasoning.
 # Strategy D: blind
 
 _BLIND_NAME = "phase2_verifier_blind"
-_BLIND_VERSION = 3
+# V4 raises the pass floor from 0.6 to 0.65 so this strategy works to the
+# same floor as the Coordinator and the Adjudicator. Nothing else changed.
+_BLIND_VERSION = 4
 
 _BLIND_SYSTEM = """You are the Adversarial Verifier in the ODMI Agent Swarm.
 
@@ -549,7 +551,7 @@ front of you.
 
 Verdict.
 - Set verdict="pass" if the evidence supports a clear answer with
-  reasonable confidence (>= 0.6).
+  reasonable confidence (>= 0.65).
 - Set verdict="fail" if the evidence is ambiguous, missing, or the
   substring check failed (suggesting the quote may be unreliable).
   In that case explain in rejection_reason what was missing.

@@ -554,9 +554,11 @@ def run_researcher(
     # Confidence-quality check from Section 3.5 success criteria.
     # `inconclusive` is the per-D28 honest "couldn't tell" label; a low
     # answer_confidence on any other label is suspicious and the
-    # Verifier should know.
+    # Verifier should know. Set to the same 0.65 floor the prompt now
+    # instructs on, so the note fires on anything the Coordinator would
+    # refuse to commit.
     if (
-        output.answer_confidence < 0.5
+        output.answer_confidence < 0.65
         and output.answer != "inconclusive"
     ):
         notes_parts.append(

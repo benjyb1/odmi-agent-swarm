@@ -20,9 +20,15 @@ from agents.prompts._shared import FORBIDDEN_SOURCES_BULLETS
 from agents.tools.search import SearchResult, format_for_prompt
 
 NAME = "phase2_researcher"
-VERSION = 4
+VERSION = 5
 DESCRIPTION = (
-    "Researcher V4: V3 shape-aware answer space (D28) plus two "
+    "Researcher V5: raises the in-prompt abstention floor from 0.5 to "
+    "0.65, so the Researcher returns `inconclusive` on exactly the "
+    "confidence the Coordinator would refuse to commit anyway. Every "
+    "agent now works to one 0.65 floor instead of each carrying its "
+    "own. The calibration anchors, the answer space and every other "
+    "rule are byte-identical to V4; only the number changed. "
+    "V4 was: V3 shape-aware answer space (D28) plus two "
     "wording fixes. Rule 4 (verbatim quote) now states explicitly "
     "that the quote must come from the snippets in the user message "
     "rather than memory or training data, closing a hole the "
@@ -71,7 +77,7 @@ Hard rules.
    - the evidence is insufficient, ambiguous, or contradictory
    - the only supporting source is on the forbidden-sources list
    - you cannot find a verbatim quote that grounds the claim
-   - your answer_confidence would otherwise be below 0.5
+   - your answer_confidence would otherwise be below 0.65
    `inconclusive` is distinct from any literal label in the allowed
    list. It means "we could not determine the answer". Do not collapse
    to `other` for uncertainty; `other` is only valid when it appears
@@ -271,7 +277,7 @@ Rules.
    datasets" maps to the band `71-90%`, not "around 80%").
 2. `inconclusive` when evidence is insufficient, ambiguous, contradictory,
    only on a forbidden source, lacks a verbatim quote, or would score
-   answer_confidence below 0.5. Do not collapse uncertainty to `other`.
+   answer_confidence below 0.65. Do not collapse uncertainty to `other`.
 3. `not_applicable` only when the question does not apply to this country.
 4. Quote literally: evidence_quote must appear verbatim on the cited page.
 5. Cite exactly one source URL, and only one that appears in the snippets.
@@ -392,7 +398,7 @@ NEG_LICENCE_SYSTEM = SYSTEM.replace(
    - the evidence is insufficient, ambiguous, or contradictory
    - the only supporting source is on the forbidden-sources list
    - you cannot find a verbatim quote that grounds the claim
-   - your answer_confidence would otherwise be below 0.5
+   - your answer_confidence would otherwise be below 0.65
    `inconclusive` is distinct from any literal label in the allowed
    list. It means "we could not determine the answer". Do not collapse
    to `other` for uncertainty; `other` is only valid when it appears
@@ -401,7 +407,7 @@ NEG_LICENCE_SYSTEM = SYSTEM.replace(
    - the evidence is insufficient, ambiguous, or contradictory
    - the only supporting source is on the forbidden-sources list
    - you cannot find a verbatim quote that grounds the claim
-   - your answer_confidence would otherwise be below 0.5
+   - your answer_confidence would otherwise be below 0.65
    `inconclusive` is distinct from any literal label in the allowed
    list. It means "we could not determine the answer". Do not collapse
    to `other` for uncertainty; `other` is only valid when it appears

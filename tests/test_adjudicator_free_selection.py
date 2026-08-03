@@ -89,11 +89,12 @@ def test_standard_user_message_byte_identical():
 def test_standard_prompt_metadata_unchanged():
     # The standard prompt's identifiers stay separate from the EXP-16 free
     # arm: same NAME (so the free arm registers a different row), a version
-    # that is bumped only by deliberate edits (currently 6 after the D51
-    # escalate_human -> abstain rename, see prompt_versions description), and
-    # the SYSTEM text does not mention the EXP-16 verdict.
+    # that is bumped only by deliberate edits (currently 7, after raising the
+    # auto-promotion floor from 0.6 to 0.65 so every agent works to the
+    # Coordinator's floor, see prompt_versions description), and the SYSTEM
+    # text does not mention the EXP-16 verdict.
     assert adjudicator_prompt.NAME == "phase2_adjudicator"
-    assert adjudicator_prompt.VERSION == 6
+    assert adjudicator_prompt.VERSION == 7
     assert "attempt_correct" not in adjudicator_prompt.SYSTEM
 
 

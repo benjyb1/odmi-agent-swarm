@@ -19,14 +19,14 @@ from agents.prompts._shared import FORBIDDEN_SOURCES_BULLETS
 
 
 NAME = "phase2_adjudicator"
-VERSION = 6
+VERSION = 7
 DESCRIPTION = (
-    "Adjudicator V6: renames the fourth verdict from `escalate_human` "
-    "to `abstain` (D51). No human is ever in the loop in this automated "
-    "swarm, so the verdict is an abstention, not an escalation. The "
-    "verdict's meaning, the 0.6 auto-promotion floor, the answer space, "
-    "the forbidden-source list and the absence-of-evidence rule are "
-    "all byte-identical to V5; only the label changed."
+    "Adjudicator V7: raises the auto-promotion floor from 0.6 to 0.65 so "
+    "the Adjudicator abstains on the same confidence the Coordinator "
+    "requires to commit. Every agent now works to one 0.65 floor instead "
+    "of each carrying its own. The verdict's meaning, the answer space, "
+    "the forbidden-source list and the absence-of-evidence rule are all "
+    "byte-identical to V6; only the number changed."
 )
 
 
@@ -62,7 +62,7 @@ The four verdicts:
     question. Abstaining records an honest "we could not decide"; it
     finalises as 'inconclusive'.
 
-Confidence threshold: if your confidence in your verdict is below 0.6,
+Confidence threshold: if your confidence in your verdict is below 0.65,
 your verdict will be auto-promoted to abstain. Do not pretend to be
 more confident than you are.
 
