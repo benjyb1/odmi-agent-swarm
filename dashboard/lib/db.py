@@ -303,12 +303,37 @@ def analytics_frame() -> pd.DataFrame:
     )
 
 
-def result_cards() -> pd.DataFrame:
+def experiment_ids() -> list[str]:
+    """Experiment ids present in `phase2_final`, most recently written first.
+
+    The Cards view needs this so a run other than the main one can be
+    inspected. The dissertation's own headline run carries an
+    `experiment_id`, so under MAIN_RUNS_FILTER alone it is invisible in
+    the dashboard.
+    """
+    df = read_sql(
+        """
+        SELECT experiment_id, MAX(created_at) AS last_seen
+        FROM phase2_final
+        WHERE experiment_id IS NOT NULL AND experiment_id != ''
+        GROUP BY experiment_id
+        ORDER BY last_seen DESC
+        """
+    )
+    return [] if len(df) == 0 else df["experiment_id"].tolist()
+
+
+def result_cards(experiment_id: str | None = None) -> pd.DataFrame:
     """One row per finalised pair, joined with questions, latest Verifier,
     and ODMI ground truth. Adds match_status, ground_truth_response, and
     ground_truth_explanation columns so the Cards view can render the
     swarm answer next to ODMI's recorded answer with a match badge.
+
+    Defaults to main runs (D27). Pass `experiment_id` to scope to one
+    experiment instead; the headline aggregates elsewhere are untouched.
     """
+    scope = MAIN_RUNS_FILTER if experiment_id is None else "f.experiment_id = ?"
+    params: tuple = () if experiment_id is None else (experiment_id,)
     return read_sql(
         f"""
         WITH latest_verifier AS (
@@ -351,9 +376,10 @@ def result_cards() -> pd.DataFrame:
         LEFT JOIN ground_truth gt
               ON gt.question_id = f.question_id
              AND gt.country_code = f.country_code
-        WHERE {MAIN_RUNS_FILTER}
+        WHERE {scope}
         ORDER BY f.created_at DESC, f.id DESC
-        """
+        """,
+        params,
     )
 
 

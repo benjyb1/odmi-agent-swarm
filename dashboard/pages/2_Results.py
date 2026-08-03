@@ -264,12 +264,32 @@ def _render_card(row: pd.Series) -> None:
                 st.rerun()
 
 
+_MAIN_RUN_LABEL = "Main runs (no experiment)"
+_CARD_RENDER_CAP = 50
+
+
 def render_cards_tab() -> None:
-    cards = db.result_cards()
+    # The headline evaluation is stored under an experiment_id, so without
+    # this picker the run the dissertation reports on cannot be inspected
+    # here at all. Main runs stay the default, so D27 behaviour is unchanged.
+    runs = [_MAIN_RUN_LABEL] + db.experiment_ids()
+    chosen = st.selectbox(
+        "Run",
+        runs,
+        index=0,
+        key="cards_run",
+        help=(
+            "Main runs are pairs dispatched outside an experiment. Pick an "
+            "experiment id to inspect that run's pairs instead."
+        ),
+    )
+    experiment_id = None if chosen == _MAIN_RUN_LABEL else chosen
+
+    cards = db.result_cards(experiment_id)
     if len(cards) == 0:
         st.info(
-            "No finalised pairs yet. Release a subtrio from the Run "
-            "Console to see results here."
+            "No finalised pairs for this run. Release a subtrio from the "
+            "Run Console, or pick another run above."
         )
         return
 
@@ -370,12 +390,18 @@ def render_cards_tab() -> None:
                 .fillna("").str.lower().str.contains(needle, na=False)
         ]
 
-    st.caption(
-        f"{len(filtered)} of {len(cards)} finalised pairs. "
-        "Newest first."
-    )
+    # Rendering every card is fine for a few hundred rows and unusable for a
+    # full 1,144-pair run, so cap it and say so rather than hanging the page.
+    shown = filtered.head(_CARD_RENDER_CAP)
+    caption = f"{len(filtered)} of {len(cards)} finalised pairs. Newest first."
+    if len(filtered) > _CARD_RENDER_CAP:
+        caption += (
+            f" Showing the first {_CARD_RENDER_CAP}; narrow the filters "
+            "above to reach the rest."
+        )
+    st.caption(caption)
 
-    for _, row in filtered.iterrows():
+    for _, row in shown.iterrows():
         _render_card(row)
 
 
