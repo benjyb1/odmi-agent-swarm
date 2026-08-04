@@ -38,6 +38,14 @@
 \usepackage[utf8]{inputenc}
 \usepackage{graphbox}
 
+% Not in the template, but the submission PDF is built with pdfLaTeX and
+% the document carries accented author names (Törnberg, Küttler,
+% Rocktäschel) and a plus-minus sign. T1 gives those real glyphs and
+% lets TeX hyphenate the accented words; lmodern keeps the fonts vector
+% under T1 instead of falling back to bitmaps.
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
 % Added for this document. The template's nomencl, glossaries, makeindex
 % and theorem environments are left out because nothing here uses them.
 \usepackage[british]{babel}
@@ -103,10 +111,14 @@
 \newpage
 
 %%%%%% Acknowledgements, Abstract, Nomenclature
+% Roman numbering starts here rather than after the front matter. The
+% template leaves \pagenumbering{gobble} in force over these three
+% chapters, so they reach the contents list with an empty page number,
+% and the rubric requires a page number against every entry.
+\pagenumbering{roman}
 \include{chapters/00-front-matter}
 
 %%%%%% Table of contents
-\pagenumbering{roman}
 \setcounter{tocdepth}{4}
 \tableofcontents
 \newpage

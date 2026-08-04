@@ -110,14 +110,27 @@
 
 \vspace{0.5cm}
 
-\begin{minipage}{0.3\textwidth}
+% ODMI patch 2: one tabular instead of two parallel minipages. The
+% shipped version stacks six labels in one centred minipage against six
+% values in another, so a project title long enough to wrap pushes the
+% value column out of step with the labels for the rest of the block
+% (the cover then reads "Supervisor: <second line of the title>"). A
+% two-column tabular keeps each value beside its own label and lets the
+% title wrap inside its cell.
+\begin{minipage}{\textwidth}
 	\begin{flushleft}
-	\textbf{Name:\\Student Number:\\Degree Programme:\\Project Title:\\ Supervisor:\\ Word Count:\\}
-	\end{flushleft}
-\end{minipage}%
-\begin{minipage}{0.7\textwidth}
-	\begin{flushleft}
-	\@author \\ \@studentnumber \\ \@programme \\ \@title \\ \@supervisor \\ \@wordcount
+	% the block sits inside \doublespacing, which would compound with the
+	% row stretch and push the signature onto a second page
+	\setstretch{1}%
+	\renewcommand{\arraystretch}{1.6}%
+	\begin{tabular}{@{}p{0.3\textwidth}p{0.66\textwidth}@{}}
+	\textbf{Name:}             & \@author        \\
+	\textbf{Student Number:}   & \@studentnumber \\
+	\textbf{Degree Programme:} & \@programme     \\
+	\textbf{Project Title:}    & \@title         \\
+	\textbf{Supervisor:}       & \@supervisor    \\
+	\textbf{Word Count:}       & \@wordcount     \\
+	\end{tabular}
 	\end{flushleft}
 \end{minipage}
 }
