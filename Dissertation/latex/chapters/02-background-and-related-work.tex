@@ -33,55 +33,37 @@ The QF4SA proposes five dimensions against which a statistical organisation shou
 
 \textcite{williamson2012} set out the evidence an automated scorer must produce before it may be used operationally. Two of the criteria below come from their framework, Generalisability and Subgroup Equity, and a third shapes how accuracy is treated. Their framework was drafted for deterministic automated scoring of written answers. It also assumes a human marks alongside the machine, and states that a machine marking alone would need stricter criteria than it currently supplies.
 
-Convergent Validity asks whether the system reaches the right answer. The QF4SA defines accuracy as closeness to a true value, and Section~\ref{sec:ground-truth} discusses the limits of self-reported answers as a stand-in for that value. \textcite{williamson2012} add that agreement with an independent measure carries more weight than agreement with a human key alone. Nine questions in the ODMI\textquotesingle s Quality dimension are deterministic, asking for a proportion of datasets meeting a metadata standard, and Section~\ref{sec:catalogue-tool} sets out how these are computed directly.
+Convergent Validity asks whether the system reaches the right answer. The QF4SA defines accuracy as closeness to a true value, and Section~\ref{sec:ground-truth} discusses the limits of self-reported answers as a stand-in for that value. \textcite{williamson2012} add that agreement with an independent measure carries more weight than agreement with a human key alone. Nine questions in the ODMI's Quality dimension are deterministic, asking for a proportion of datasets meeting a metadata standard, and Section~\ref{sec:catalogue-tool} sets out how these are computed directly.
 
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1565}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1568}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2586}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2295}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1985}}@{}}
+  L{0.1565}
+  L{0.1568}
+  L{0.2586}
+  L{0.2295}
+  L{0.1985}@{}}
 \caption{Criteria for a generative system automating an assessment.}\label{tab:criteria}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\centering
-\textbf{Criterion}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{What it asks}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Why it matters here}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{What the system must show}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Source, and what was adapted}
-\end{minipage} \\
+\textbf{Criterion} & \textbf{What it asks} & \textbf{Why it matters here} & \textbf{What the system must show} & \textbf{Source, and what was adapted} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\centering
-\textbf{Criterion}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{What it asks}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Why it matters here}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{What the system must show}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Source, and what was adapted}
-\end{minipage} \\
+\textbf{Criterion} & \textbf{What it asks} & \textbf{Why it matters here} & \textbf{What the system must show} & \textbf{Source, and what was adapted} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
 Convergent Validity & Does the system reach the right answer? & The ODMI key is self-reported and can be a cycle old, so no single true value exists to score against (Section~\ref{sec:ground-truth}). & Agreement with the ODMI key, and agreement with a measure computed independently of it. Nine Quality questions computed straight from catalogue metadata supply that second measure (Section~\ref{sec:catalogue-tool}). & QF4SA accuracy \parencite{yung2022}. \textcite{williamson2012} add that an independent measure carries more weight than a human key alone. \\
-Generalisability & Does performance hold across every kind of question the assessment requires? & An aggregate figure can be carried by the easy questions and hide failure on the rest. Running end to end over the open web, \textcite{fumega2026} report mismatch against the human answers of 19\% on an indicator anchored in a single document against 69\% on one whose evidence is scattered, averaging 42\% over four indicators. & Results decomposed by answer type and by ODMI dimension, not one headline figure. & \textcite{williamson2012}. \\
+General\-isability & Does performance hold across every kind of question the assessment requires? & An aggregate figure can be carried by the easy questions and hide failure on the rest. Running end to end over the open web, \textcite{fumega2026} report mismatch against the human answers of 19\% on an indicator anchored in a single document against 69\% on one whose evidence is scattered, averaging 42\% over four indicators. & Results decomposed by answer type and by ODMI dimension, not one headline figure. & \textcite{williamson2012}. \\
 Subgroup Equity & Are the countries being compared held to the same standard? & A country's score should follow from its open-data maturity, not from how searchable its web presence is or how well the model reads its language. & Adequate performance within each subgroup, not only overall, with results split by native language and maturity. & \textcite{williamson2012}. \textcite{schenk2024} extend QF4SA with algorithmic fairness, amending accuracy to require performance across subgroups. \\
-Attributability & Does every committed answer trace to a passage a reader would agree supports it? & A generative model can produce a fluent answer with no basis (Section~\ref{sec:verification-methods}), and a country can only contest a score it is shown the evidence for. & Two conditions. The quoted passage exists in the cited source, and a reasonable reader agrees it supports the claim. & The QF4SA explainability \parencite{yung2022}, sharpened by the reader test in \textcite{rashkin2023}. \\
+Attribut\-ability & Does every committed answer trace to a passage a reader would agree supports it? & A generative model can produce a fluent answer with no basis (Section~\ref{sec:verification-methods}), and a country can only contest a score it is shown the evidence for. & Two conditions. The quoted passage exists in the cited source, and a reasonable reader agrees it supports the claim. & The QF4SA explainability \parencite{yung2022}, sharpened by the reader test in \textcite{rashkin2023}. \\
 Selectivity & Can the system decline to answer, and was it right to decline? & Models are optimised to guess when uncertain \parencite{kalai2025}. The QF4SA assumes the data is already available, but that is not the case for the ODMI, where the evidence has to be found and may not exist in public. & A commitment only where the evidence supports it, an abstention otherwise, and a stated confidence that tracks observed accuracy. & New here. Neither framework supplies it, as both assume a system that always answers. \\
-Reproducibility & Does a second run of the assessment return the same answers? & A deterministic algorithm satisfies this by construction, and a generative assessor cannot. Two runs may search differently while the truth has not changed, so the outcome is what has to hold, not the route. & Traceability, a property of the record: prompts, evidence, model version and settings, enough to re-derive any reported figure without re-running the system. Stability, a property of the system, measured as variance between runs. & QF4SA reproducibility \parencite{yung2022}, the one dimension carried through unchanged. \\
+Reproduc\-ibility & Does a second run of the assessment return the same answers? & A deterministic algorithm satisfies this by construction, and a generative assessor cannot. Two runs may search differently while the truth has not changed, so the outcome is what has to hold, not the route. & Traceability, a property of the record: prompts, evidence, model version and settings, enough to re-derive any reported figure without re-running the system. Stability, a property of the system, measured as variance between runs. & QF4SA reproducibility \parencite{yung2022}, the one dimension carried through unchanged. \\
 \end{longtable}
+}
 
-Together these six criteria, set out in Table~\ref{tab:criteria}, make up the conditions under which an automated ODMI score remains contestable in Davis et al.\textquotesingle s sense. A country disputing its score should be able to check the evidence held against it (Attributability), and know the answers weren't guessed (Selectivity). It should also be able to establish whether the same standard was applied to its neighbours (Subgroup Equity), whether the result agrees with what a human assessor would have reached (Convergent Validity), whether the score rests on the parts of the questionnaire the system handles best (Generalisability), and whether a second run would return the same figure (Reproducibility).
+Together these six criteria, set out in Table~\ref{tab:criteria}, make up the conditions under which an automated ODMI score remains contestable in Davis et al.'s sense. A country disputing its score should be able to check the evidence held against it (Attributability), and know the answers weren't guessed (Selectivity). It should also be able to establish whether the same standard was applied to its neighbours (Subgroup Equity), whether the result agrees with what a human assessor would have reached (Convergent Validity), whether the score rests on the parts of the questionnaire the system handles best (Generalisability), and whether a second run would return the same figure (Reproducibility).
 
 \section{Limitations of LLMs in Truth-Seeking}\label{sec:llm-limitations}
 
@@ -107,9 +89,9 @@ A model built this way will therefore state things that are false, and will stat
 \label{fig:prior-steered}
 \end{figure}
 
-The constraint is not airtight\textbf{, as the loop traced in Figure~\ref{fig:prior-steered} shows, since} parametric knowledge cannot be switched off and models tend to resolve conflicts between retrieved context and prior belief in favour of the prior \parencite{longpre2021}. The no-retrieval baseline is reported in Table~\ref{tab:baselines}, to isolate the effect of prior steering. The failure mode that dominates in this setting, however, comes from the ODMI's sparse evidence. Much of what the questionnaire asks about exists only in obscure national portals, in inconsistent formats, and in some cases nowhere public at all, which is the long-tail regime in which a model\textquotesingle s recall is least reliable \parencite{mallen2023}. A search over that space often returns a document on the same subject as the question, but that does not directly settle it. The agent then has to decide whether such a document supports its claim, and it decides under the incentive set out above, where committing scores and abstaining does not. The dominant failure is therefore over-reading, where the system treats related evidence as proof of the claim. Every citation it offers is real, so requiring the agent to cite its sources does not catch it.
+The constraint is not airtight\textbf{, as the loop traced in Figure~\ref{fig:prior-steered} shows, since} parametric knowledge cannot be switched off and models tend to resolve conflicts between retrieved context and prior belief in favour of the prior \parencite{longpre2021}. The no-retrieval baseline is reported in Table~\ref{tab:baselines}, to isolate the effect of prior steering. The failure mode that dominates in this setting, however, comes from the ODMI's sparse evidence. Much of what the questionnaire asks about exists only in obscure national portals, in inconsistent formats, and in some cases nowhere public at all, which is the long-tail regime in which a model's recall is least reliable \parencite{mallen2023}. A search over that space often returns a document on the same subject as the question, but that does not directly settle it. The agent then has to decide whether such a document supports its claim, and it decides under the incentive set out above, where committing scores and abstaining does not. The dominant failure is therefore over-reading, where the system treats related evidence as proof of the claim. Every citation it offers is real, so requiring the agent to cite its sources does not catch it.
 
-A ``yes'' is an existential claim, and one document that establishes the practice discharges it, so retrieval is the right instrument for reaching it. A ``no'' on a question asking whether a portal feature exists is settled by inspection, because the search space is bounded and the agent can look at the portal and see. A ``no'' about a team\textquotesingle s internal practice is not, because the practice leaves no public trace, and finding nothing cannot separate a practice that is absent from evidence the agent did not reach.\\
+A ``yes'' is an existential claim, and one document that establishes the practice discharges it, so retrieval is the right instrument for reaching it. A ``no'' on a question asking whether a portal feature exists is settled by inspection, because the search space is bounded and the agent can look at the portal and see. A ``no'' about a team's internal practice is not, because the practice leaves no public trace, and finding nothing cannot separate a practice that is absent from evidence the agent did not reach.\\
 \strut \\
 Section~\ref{sec:open-world} set this out as the move from the closed world a country reports under to the open world the agent searches \parencite{reiter1978}. The consequence for an agent under the guessing incentive runs one way. Weak evidence can be misinterpreted as a ``yes'', while little can be misinterpreted as a ``no'', so the system commits on weak support in one direction and withholds a correct answer in the other. This highlights the need for abstention, allowing the system to decline answering when the retrieved evidence is insufficient to support the claim.
 
@@ -128,7 +110,7 @@ Figure~\ref{fig:lineage} traces the lineage between the past works, where no sin
 \label{fig:lineage}
 \end{figure}
 
-SelfCheckGPT \parencite{manakul2023} samples the same response several times and measures how far the responses agree, on the finding that hallucinated content diverges under resampling while well-attested content does not. \textcite{dhuliawala2024} take an adjacent route, drafting an answer, breaking it into atomic verification questions, and answering each without the draft in view so the original claim cannot steer the check. They note that retrieval-based systems beat their architecture on very rare facts, which ties back to the long-tail argument in Section~\ref{sec:llm-limitations}. Both works improve accuracy over answering directly, and both share one error. They detect inconsistency within prior knowledge and say nothing about whether that prior knowledge is correct. Neither consults an external source, so both fail on Attributability with no evidence trail beyond the model\textquotesingle s own parameters.
+SelfCheckGPT \parencite{manakul2023} samples the same response several times and measures how far the responses agree, on the finding that hallucinated content diverges under resampling while well-attested content does not. \textcite{dhuliawala2024} take an adjacent route, drafting an answer, breaking it into atomic verification questions, and answering each without the draft in view so the original claim cannot steer the check. They note that retrieval-based systems beat their architecture on very rare facts, which ties back to the long-tail argument in Section~\ref{sec:llm-limitations}. Both works improve accuracy over answering directly, and both share one error. They detect inconsistency within prior knowledge and say nothing about whether that prior knowledge is correct. Neither consults an external source, so both fail on Attributability with no evidence trail beyond the model's own parameters.
 
 Intrinsic self-correction fails to improve reasoning, and sometimes degrades it \parencite{huang2024}. This is because the bottleneck is not error \emph{correction}, but error \emph{detection} \parencite{tyen2024}. If a model cannot detect its own error, then asking the same model to check for it will miss the same blind spot. Furthermore, intrinsic self-correction may bolster the model's self-confidence \parencite{simhi2025} in its answers regardless of whether the claim is true, degrading Selectivity. This points towards needing an external knowledge base to fact-check claims before submission.
 
@@ -140,7 +122,7 @@ This motivates the question this work puts to the test, whether opposition is wh
 
 \section{Multi-Agent Debate for Verification}\label{sec:debate}
 
-Multi-agent adversarial verification sits within the multi-agent debate family and is a relatively new line of research. \textcite{du2023} proposed a collaborative multi-agent architecture and found that cooperatively proposing and critiquing arguments meant the agents' collective intelligence could self-correct hallucinations. \textcite{liang2023} are among the first to shift away from collaborative debate, towards using adversarial tension to expose weak reasoning. Section~\ref{sec:verification-methods} showed that a model cannot reliably check itself, since it carries the same blind spots that produced the error \parencite{huang2024,tyen2024}. A second agent set to agree inherits the problem and adds little in a data-scarce setting. \textcite{cohen2023} found that opposition surfaces errors a corroborative check misses, though their verifier interrogated the claim alone and admitted no external evidence. The hypothesis here is that adversarial pressure decorrelates the two models\textquotesingle{} errors, and that pairing that pressure with retrieval closes the gap Cohen left open.
+Multi-agent adversarial verification sits within the multi-agent debate family and is a relatively new line of research. \textcite{du2023} proposed a collaborative multi-agent architecture and found that cooperatively proposing and critiquing arguments meant the agents' collective intelligence could self-correct hallucinations. \textcite{liang2023} are among the first to shift away from collaborative debate, towards using adversarial tension to expose weak reasoning. Section~\ref{sec:verification-methods} showed that a model cannot reliably check itself, since it carries the same blind spots that produced the error \parencite{huang2024,tyen2024}. A second agent set to agree inherits the problem and adds little in a data-scarce setting. \textcite{cohen2023} found that opposition surfaces errors a corroborative check misses, though their verifier interrogated the claim alone and admitted no external evidence. The hypothesis here is that adversarial pressure decorrelates the two models' errors, and that pairing that pressure with retrieval closes the gap Cohen left open.
 
 If model A (the Researcher) is tasked with proving a claim, it is optimised to assert over abstaining \parencite{kalai2025} and may retrieve some tangential evidence that proves an adjacent claim because no direct evidence exists on the web. Model B (the Verifier) is tasked with finding a flaw in model A's argument, and this weak reasoning should be surfaced. Note this decorrelation is only partial since A and B may share weights and priors, relevant here as this work uses the same Claude model for all agents. A and B argue their case over sequential rounds, gathering new evidence for each round, and if no agreement is reached this transcript is given to model C (the Adjudicator), which is comparatively reliable at correcting logical inconsistencies once their location is supplied \parencite{tyen2024}, as the agents have pointed out each other's weak reasoning.
 
@@ -162,7 +144,7 @@ Abstention has a hidden cost, as while the system declining is what stops it gue
 
 The ODMI covers thirty-six states and more than twenty languages, and any variance in how well the system assesses them lands directly on Subgroup Equity. When a state scores poorly, three explanations sit behind that score, since the model may have misunderstood the evidence, the evidence may never have been published, or the country may simply be less open than its peers. Only the first is a property of the assessor rather than the country, which makes comprehension the one artefact that can and should be isolated.
 
-Language capability is not uniform, because an LLM acquires each language as a by-product of next-token prediction and therefore in proportion to how often that language appeared in its corpus. \textcite{thellmann2024} evaluated forty LLMs on translated benchmarks across twenty-one European languages, and for LLaMA-3.1-70B-Instruct average accuracy falls from 0.79 in English to 0.66 or below for Estonian, Latvian and Lithuanian, declining with each language\textquotesingle s share of CommonCrawl's web archives. Anthropic\textquotesingle s own card shows the same trend inside the Claude family, with Sonnet scoring 69.0\% on the translated MMLU against 79.0\% on the English original \parencite{anthropic2024}.
+Language capability is not uniform, because an LLM acquires each language as a by-product of next-token prediction and therefore in proportion to how often that language appeared in its corpus. \textcite{thellmann2024} evaluated forty LLMs on translated benchmarks across twenty-one European languages, and for LLaMA-3.1-70B-Instruct average accuracy falls from 0.79 in English to 0.66 or below for Estonian, Latvian and Lithuanian, declining with each language's share of CommonCrawl's web archives. Anthropic's own card shows the same trend inside the Claude family, with Sonnet scoring 69.0\% on the translated MMLU against 79.0\% on the English original \parencite{anthropic2024}.
 
 Isolating comprehension does not clear Subgroup Equity on its own. Countries differ in what they publish, how they publish it, and how easy their national estates are to browse, so lower maturity may itself confound the ability of the system to assess their score. Separating them is what Section~\ref{sec:subgroup-equity} attempts to do.
 
@@ -178,67 +160,41 @@ Their work highlights the necessity of both conditions of Attributability, as th
 
 Appendix~\ref{app:prior-work-scored} details how these works score against the full criteria.
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1639}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1382}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1394}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1393}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1415}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1395}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1382}}@{}}
-\caption{Prior work scored against the six criteria of Section~\ref{sec:criteria}. A tick means the work addresses and reports the criterion, not that it succeeds. Partial means it addresses one of the criterion\textquotesingle s two conditions, or reports it without measuring it. The full justification for every cell, with the passage each verdict is read from, is in Appendix E.}\label{tab:prior-work}\\
+  L{0.1639}
+  L{0.1382}
+  L{0.1394}
+  L{0.1393}
+  L{0.1415}
+  L{0.1395}
+  L{0.1382}@{}}
+\caption{Prior work scored against the six criteria of Section~\ref{sec:criteria}. A tick means the work addresses and reports the criterion, not that it succeeds. Partial means it addresses one of the criterion's two conditions, or reports it without measuring it. The full justification for every cell, with the passage each verdict is read from, is in Appendix E.}\label{tab:prior-work}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Work}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Conv. Validity}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Generalis.}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Subgroup Equity}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Attributability}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Selectivity}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Reprod.}
-\end{minipage} \\
+\textbf{Work} & \textbf{Conv. Validity} & \textbf{Generalis.} & \textbf{Subgroup Equity} & \textbf{Attribut\-ability} & \textbf{Selectivity} & \textbf{Reprod.} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Work}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Conv. Validity}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Generalis.}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Subgroup Equity}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Attributability}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Selectivity}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Reprod.}
-\end{minipage} \\
+\textbf{Work} & \textbf{Conv. Validity} & \textbf{Generalis.} & \textbf{Subgroup Equity} & \textbf{Attribut\-ability} & \textbf{Selectivity} & \textbf{Reprod.} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-ReAct \parencite{yao2023} & Partial & Partial & ✗ & Partial & ✗ & Partial \\
-SelfCheckGPT \parencite{manakul2023} & Partial & ✗ & ✗ & ✗ & Partial & Partial \\
-Chain-of-Verification \parencite{dhuliawala2024} & Partial & Partial & ✗ & ✗ & ✗ & Partial \\
-LM vs LM \parencite{cohen2023} & Partial & Partial & ✗ & ✗ & ✗ & Partial \\
-\textcite{du2023} & Partial & Partial & ✗ & ✗ & ✗ & Partial \\
-\textcite{liang2023} & Partial & ✗ & ✗ & ✗ & ✗ & Partial \\
-\textcite{smit2024} & Partial & Partial & ✗ & ✗ & ✗ & Partial \\
-\textcite{zhu2026} & Partial & Partial & ✗ & ✗ & Partial & Partial \\
-SAFE \parencite{wei2024} & ✓ & Partial & ✗ & ✓ & Partial & Partial \\
-\textcite{feng2024} & Partial & Partial & ✓ & Partial & ✓ & Partial \\
-\textcite{chowdhury2026} & ✓ & ✓ & ✗ & ✓ & ✓ & ✓ \\
-\textcite{fumega2026} & ✓ & ✓ & ✗ & Partial & ✗ & Partial \\
-This work & ✓ & ✓ & ✓ & ✓ & ✓ & ✓ \\
+ReAct \parencite{yao2023} & Partial & Partial & $\times$ & Partial & $\times$ & Partial \\
+SelfCheck\-GPT \parencite{manakul2023} & Partial & $\times$ & $\times$ & $\times$ & Partial & Partial \\
+Chain-of-Verification \parencite{dhuliawala2024} & Partial & Partial & $\times$ & $\times$ & $\times$ & Partial \\
+LM vs LM \parencite{cohen2023} & Partial & Partial & $\times$ & $\times$ & $\times$ & Partial \\
+\textcite{du2023} & Partial & Partial & $\times$ & $\times$ & $\times$ & Partial \\
+\textcite{liang2023} & Partial & $\times$ & $\times$ & $\times$ & $\times$ & Partial \\
+\textcite{smit2024} & Partial & Partial & $\times$ & $\times$ & $\times$ & Partial \\
+\textcite{zhu2026} & Partial & Partial & $\times$ & $\times$ & Partial & Partial \\
+SAFE \parencite{wei2024} & $\checkmark$ & Partial & $\times$ & $\checkmark$ & Partial & Partial \\
+\textcite{feng2024} & Partial & Partial & $\checkmark$ & Partial & $\checkmark$ & Partial \\
+\textcite{chowdhury2026} & $\checkmark$ & $\checkmark$ & $\times$ & $\checkmark$ & $\checkmark$ & $\checkmark$ \\
+\textcite{fumega2026} & $\checkmark$ & $\checkmark$ & $\times$ & Partial & $\times$ & Partial \\
+This work & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ \\
 \end{longtable}
+}
 
 
 Table~\ref{tab:prior-work} shows the shape of the gap. Attributability and Selectivity are met together only by \textcite{chowdhury2026}. The only system operating in a real assessment setting, \textcite{fumega2026}, satisfies neither of the criteria fully. Although commercial research agents leave a per-claim trail, they lack a method to verify that the cited source supports the claim, and they have no abstention channel. The verification machinery and the open-world setting have never been brought together.

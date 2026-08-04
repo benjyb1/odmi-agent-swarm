@@ -5,55 +5,32 @@ This appendix carries the material the body points at but has no room for, and a
 
 \chapter{Full Failure-Mode Register (FM-01 to FM-34)}\label{app:failure-register}
 
-The register lists every way the project has identified for a wrong answer to reach the committed state. It was built by walking the pipeline stage by stage and asking what could pass each gate, not by collecting observed errors, so a mode can appear here without having fired in any run. Class is the useful column: \textquotesingle Caught\textquotesingle{} modes are stopped by a deterministic gate before commit, \textquotesingle LLM-only\textquotesingle{} modes are left as a prompt-tunable risk, and the twenty-two \textquotesingle Structural\textquotesingle{} modes cannot be closed by prompting alone. Those twenty-two are the count Section~\ref{sec:threats} cites and the attack list for further work.
+The register lists every way the project has identified for a wrong answer to reach the committed state. It was built by walking the pipeline stage by stage and asking what could pass each gate, not by collecting observed errors, so a mode can appear here without having fired in any run. Class is the useful column: 'Caught' modes are stopped by a deterministic gate before commit, 'LLM-only' modes are left as a prompt-tunable risk, and the twenty-two 'Structural' modes cannot be closed by prompting alone. Those twenty-two are the count Section~\ref{sec:threats} cites and the attack list for further work.
 
 Severity is the product of likelihood and how silently a mode commits. `Caught' modes are stopped by a deterministic gate before commit; `LLM-only' modes are accepted as a prompt-tunable risk; `Structural' modes cannot be fixed by prompting alone and form the attack list for future work.
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0685}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.4302}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1372}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1274}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0899}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1469}}@{}}
+  L{0.0685}
+  L{0.4302}
+  L{0.1372}
+  L{0.1274}
+  L{0.0899}
+  L{0.1469}@{}}
 \caption{The thirty-four failure modes by which the swarm can commit a wrong answer.}\label{tab:failure-register}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{ID}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Failure mode}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Stage}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Class}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Severity}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Status}
-\end{minipage} \\
+\textbf{ID} & \textbf{Failure mode} & \textbf{Stage} & \textbf{Class} & \textbf{Severity} & \textbf{Status} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{ID}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Failure mode}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Stage}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Class}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Severity}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Status}
-\end{minipage} \\
+\textbf{ID} & \textbf{Failure mode} & \textbf{Stage} & \textbf{Class} & \textbf{Severity} & \textbf{Status} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
 FM-01 & Quote present but does not entail the answer (relevance gap) & Verifier & LLM-only & Med & Accepted \\
 FM-02 & Negating context sits outside the snippet & Evidence & Structural & High & Open \\
-FM-03 & Quote proves a related but different proposition (planned≠enacted) & Verifier & LLM-only & Med & Accepted \\
+FM-03 & Quote proves a related but different proposition (planned$\neq$enacted) & Verifier & LLM-only & Med & Accepted \\
 FM-04 & Quote about wrong scope/entity (regional vs national) & Verifier & LLM-only & Med & Accepted \\
 FM-05 & Stale evidence; no date or cycle signal supplied & Evidence & Structural & High & Open \\
 FM-06 & Quantitative/band misread (82\% read as \textgreater90\%) & Verifier & LLM-only & Med & Accepted \\
@@ -68,29 +45,30 @@ FM-14 & Third-party republication of the answer key on an allowed domain & Deny-
 FM-15 & Non-authoritative source stated as fact & Verifier & LLM-only & Med & Accepted \\
 FM-16 & Answer label typo / case & Deterministic & Caught & -- & Mitigated \\
 FM-17 & Out-of-set answer flagged but not hard-rejected & Deterministic & Structural & Low & Open \\
-FM-18 & not\_applicable chosen when the question does apply & Verifier & LLM-only & Low & Accepted \\
-FM-19 & Web-unanswerable: counter-search finds nothing → pass & Verifier & Structural & High & Open \\
+FM-18 & not\_\allowbreak applicable chosen when the question does apply & Verifier & LLM-only & Low & Accepted \\
+FM-19 & Web-unanswerable: counter-search finds nothing $\rightarrow$ pass & Verifier & Structural & High & Open \\
 FM-20 & Default disprove strategy rubber-stamps (agreement bias) & Verifier & Structural & Med & Open \\
 FM-21 & Correlated error: blind Verifier reaches the same wrong answer & Verifier & Structural & High & Open \\
 FM-22 & Verifier confidently wrong; confidence uncalibrated & Verifier & Structural & Med & Open \\
-FM-23 & Both agents agree → Adjudicator never invoked & Coordinator & Structural & High & Open \\
+FM-23 & Both agents agree $\rightarrow$ Adjudicator never invoked & Coordinator & Structural & High & Open \\
 FM-24 & Adjudicator ratifies a plausible wrong answer & Adjudicator & LLM-only & Med & Accepted \\
 FM-25 & Adjudicator overrides a valid Verifier rejection & Adjudicator & LLM-only & Med & Accepted \\
-FM-26 & Commit-floor gaming: confident-wrong answer ≥0.65 & Coordinator & Structural & High & Open \\
+FM-26 & Commit-floor gaming: confident-wrong answer $\geq$0.65 & Coordinator & Structural & High & Open \\
 FM-27 & Retry-until-commit within the retry budget & Coordinator & Structural & Low & Open \\
 FM-28 & Stale catalogue snapshot, no age check & Catalogue & Structural & Med & Open \\
 FM-29 & Partial harvest computed on an atypical sample & Catalogue & Structural & Med & Open \\
-FM-30 & Zero denominator → \textless10\% band & Catalogue & Structural & Med & Open \\
+FM-30 & Zero denominator $\rightarrow$ \textless10\% band & Catalogue & Structural & Med & Open \\
 FM-31 & Synthesised-conformance inflation (HU/NL/EE Q16) & Catalogue & Structural & Med & Open \\
 FM-32 & Verifier recompute is the same code on the same snapshot & Catalogue & Structural & High & Open \\
 FM-33 & Correlated low-resource-language error across agents & Language & Structural & Med & Open \\
 FM-34 & Translation flips meaning before the model reads it & Language & Structural & Med & Open \\
 \end{longtable}
+}
 
 
 \chapter{Pipeline Detail: Abstention Reasons, Evidence Gates and the False-Positive Audit}\label{app:pipeline-detail}
 
-Three parts of the pipeline are set out in full here, each of which the body states a result for without showing the workings. The first is the abstention taxonomy, which records why the swarm declined to answer on 508 of the 1,144 evaluation pairs. The second is the quote citation gate, the deterministic check that a committed answer\textquotesingle s quote really appears in the text the Researcher read, and the three ways that check is lenient. The third is the false-positive audit, the post-hoc review of every committed answer that landed against a published ``no''.
+Three parts of the pipeline are set out in full here, each of which the body states a result for without showing the workings. The first is the abstention taxonomy, which records why the swarm declined to answer on 508 of the 1,144 evaluation pairs. The second is the quote citation gate, the deterministic check that a committed answer's quote really appears in the text the Researcher read, and the three ways that check is lenient. The third is the false-positive audit, the post-hoc review of every committed answer that landed against a published ``no''.
 
 \textbf{Why the swarm abstained}
 
@@ -100,39 +78,20 @@ Nine tenths of the abstentions are the system declining evidence the Researcher 
 
 Codes E, G, I and D are evidence-based abstentions and account for 461 of the 508. B records an operational failure at 16, and C at 12 records the leakage guard stopping the pair before it could commit. Codes A, F1 and F3 record zero in this run.
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.0706}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.5941}}
-  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.0882}}
-  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.0882}}
-  >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1588}}@{}}
+  C{0.0706}
+  L{0.5941}
+  C{0.0882}
+  C{0.0882}
+  C{0.1588}@{}}
 \caption{Why the swarm did not commit, over the 508 evaluation abstentions.}\label{tab:abstention-codes}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\centering
-\textbf{Code}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Reason}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{n}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{\%}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Gold existed}
-\end{minipage} \\
+\textbf{Code} & \textbf{Reason} & \textbf{n} & \textbf{\%} & \textbf{Gold existed} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\centering
-\textbf{Code}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Reason}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{n}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{\%}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Gold existed}
-\end{minipage} \\
+\textbf{Code} & \textbf{Reason} & \textbf{n} & \textbf{\%} & \textbf{Gold existed} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -149,6 +108,7 @@ F1 & Schema-invalid hard failure & 0 & 0\% & n/a \\
 Z & Instrumentation mismatch: the classifier reads peak confidence, the commit gate reads the last attempt (Section~\ref{sec:selectivity}) & 19 & 4\% & 16 of 19 \\
 & \textbf{Total (all no-commits)} & \textbf{508} & \textbf{100\%} & 479 of 508 \\
 \end{longtable}
+}
 
 
 
@@ -166,40 +126,25 @@ The gate is deliberately lenient, however, in three recorded ways. The compariso
 
 \textbf{The false-positive audit}
 
-Every committed answer that disagrees with a published ``no'' is a false positive, and the evaluation run produced 94 of them. The audit exists because a disagreement is not automatically a swarm error: the published answer is a country\textquotesingle s own self-report and can be a cycle out of date, so the question is whether the swarm over-read its evidence or found something the assessors missed. Each case was put to a separate reviewer, claude-opus-4-6, with the swarm\textquotesingle s own cited passage and the ODMI\textquotesingle s published explanation in front of it. 91 of the 94 are committed yes answers and were adjudicated; the remaining three, MK I4, Q5 and Q6, answer not applicable against a no gold, which the yes-defending rubric cannot score, so they are flagged for manual review rather than judged.
+Every committed answer that disagrees with a published ``no'' is a false positive, and the evaluation run produced 94 of them. The audit exists because a disagreement is not automatically a swarm error: the published answer is a country's own self-report and can be a cycle out of date, so the question is whether the swarm over-read its evidence or found something the assessors missed. Each case was put to a separate reviewer, claude-opus-4-6, with the swarm's own cited passage and the ODMI's published explanation in front of it. 91 of the 94 are committed yes answers and were adjudicated; the remaining three, MK I4, Q5 and Q6, answer not applicable against a no gold, which the yes-defending rubric cannot score, so they are flagged for manual review rather than judged.
 
 The first framing is neutral. The reviewer is shown the ODMI gold answer and its published explanation and asked to account for the disagreement, with the prompt stating it must be ``strict and concrete''. Is this a genuine error, where the swarm misread evidence a reader would have rejected? A definitional gap, where the swarm answered a slightly different question than the one the ODMI scored? Or a defensible answer against a gold that may itself be stale or self-reported? The pass sorts the false positives by why they went wrong.
 
-The second framing is pro-swarm. The reviewer is instructed to act as an advocate for swarm, being asked to build the ``strongest possible evidence-grounded case'' that the swarm\textquotesingle s ``yes'' was right and the ODMI\textquotesingle s ``no'' was mistaken, and to return one of three verdicts: that the swarm over-read its evidence even on the most generous reading, that the case is ambiguous, or that the gold is wrong and the swarm is vindicated. This is the stringent test. A false positive counts as the swarm being right only if a reviewer actively trying to prove that, from the evidence the swarm itself cited, can succeed.
+The second framing is pro-swarm. The reviewer is instructed to act as an advocate for swarm, being asked to build the ``strongest possible evidence-grounded case'' that the swarm's ``yes'' was right and the ODMI's ``no'' was mistaken, and to return one of three verdicts: that the swarm over-read its evidence even on the most generous reading, that the case is ambiguous, or that the gold is wrong and the swarm is vindicated. This is the stringent test. A false positive counts as the swarm being right only if a reviewer actively trying to prove that, from the evidence the swarm itself cited, can succeed.
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1671}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.5504}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.0688}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.0885}}@{}}
+  L{0.1671}
+  L{0.5504}
+  L{0.0688}
+  L{0.0885}@{}}
 \caption{The false-positive audit, over the 91 adjudicated cases of the 94. Shares are of 91.}\label{tab:fp-audit}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pass}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Verdict}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{n}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Share}
-\end{minipage} \\
+\textbf{Pass} & \textbf{Verdict} & \textbf{n} & \textbf{Share} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pass}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Verdict}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{n}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Share}
-\end{minipage} \\
+\textbf{Pass} & \textbf{Verdict} & \textbf{n} & \textbf{Share} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -211,6 +156,7 @@ Pass 2, advocate & Swarm over-read its evidence even on the most generous readin
 & Ambiguous & 23 & 25\% \\
 & Gold wrong, swarm vindicated & 0 & 0\% \\
 \end{longtable}
+}
 
 
 The two passes agree on the direction. Nothing in the audit supports the swarm against the published key: the advocate pass returns ``no'' case at all where the gold is wrong and the swarm right. That is what licenses treating match against ODMI as a fair measure rather than one inflated by stale ground truth, and it is the basis for the staleness band Section~\ref{sec:ground-truth} discusses being treated as negligible.
@@ -223,43 +169,24 @@ Every experiment was registered before dispatch, in a design note fixing the que
 
 \textbf{Model choice}
 
-Another lever on this cost is the choice of model, which sets both the reasoning model and the model that picks the snippets. Comparing models from the same family on the same 156 development-set pairs, Haiku 4.5 delivered 28.8\% accuracy, Sonnet 4.6 delivered 34.0\% at 1.4 times Haiku\textquotesingle s cost per correct answer, and Opus 4.8 delivered 21.8\% at 4.6 times. Opus is dominated on both axes, being the least accurate and the most expensive of the three. Coverage explains the ordering. Haiku committed to 43\% of the battery, Sonnet to 46.8\% and Opus to 29.5\%, and total accuracy counts an abstention as a failure. On committed answers alone the three converge, at 67.2\% for Haiku, 72.6\% for Sonnet and 73.9\% for Opus. With this lens Opus is not worse at answering these questions, it is more reluctant to answer them, and marginally the most accurate when it does. Like the Verifier stance in Section~\ref{sec:ablation}, changing the model moves how much the system is willing to say rather than how often it is right. Sonnet is retained because it commits most, at a middling price, with commit-accuracy indistinguishable from a model costing over three times as much.
+Another lever on this cost is the choice of model, which sets both the reasoning model and the model that picks the snippets. Comparing models from the same family on the same 156 development-set pairs, Haiku 4.5 delivered 28.8\% accuracy, Sonnet 4.6 delivered 34.0\% at 1.4 times Haiku's cost per correct answer, and Opus 4.8 delivered 21.8\% at 4.6 times. Opus is dominated on both axes, being the least accurate and the most expensive of the three. Coverage explains the ordering. Haiku committed to 43\% of the battery, Sonnet to 46.8\% and Opus to 29.5\%, and total accuracy counts an abstention as a failure. On committed answers alone the three converge, at 67.2\% for Haiku, 72.6\% for Sonnet and 73.9\% for Opus. With this lens Opus is not worse at answering these questions, it is more reluctant to answer them, and marginally the most accurate when it does. Like the Verifier stance in Section~\ref{sec:ablation}, changing the model moves how much the system is willing to say rather than how often it is right. Sonnet is retained because it commits most, at a middling price, with commit-accuracy indistinguishable from a model costing over three times as much.
 
 Completed experiments:
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1106}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2295}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2428}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2362}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1808}}@{}}
+  L{0.1106}
+  L{0.2295}
+  L{0.2428}
+  L{0.2362}
+  L{0.1808}@{}}
 \caption{The completed experiments, with the sample, result and adoption rule for each.}\label{tab:experiments}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Exp}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Experiment}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Scope (n)}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Result}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Outcome}
-\end{minipage} \\
+\textbf{Exp} & \textbf{Experiment} & \textbf{Scope (n)} & \textbf{Result} & \textbf{Outcome} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Exp}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Experiment}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Scope (n)}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Result}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Outcome}
-\end{minipage} \\
+\textbf{Exp} & \textbf{Experiment} & \textbf{Scope (n)} & \textbf{Result} & \textbf{Outcome} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -273,9 +200,9 @@ EXP-11 & Verifier redesign (tristate / gated) & Dev ladder, 150 frozen candidate
 EXP-12 & Verifier evidence ladder & Dev + Malta / Norway & Counter-search helps no-claims, hurts yes-claims & Informs D45 \\
 EXP-38 & Corroborative vs adversarial verifier framing & 150 frozen candidates, search-free replay & Disprove J = 0.41 against corroborate J = 0.16 via a sensitivity collapse 0.72 to 0.32; adversarialism costs twice the false-rejection rate & Adversarial framing retained; the trade reported \\
 EXP-13a & Value of the verify-and-adjudicate layer & Malta 60 + Norway 143 & Removing it costs 27 correct and adds 43 abstentions & Keep the layer \\
-EXP-14 & Verifier counter-search (never vs always) & Netherlands, n=51 & No significant difference (McNemar p = 0.50); \textquotesingle never\textquotesingle{} raises false positives & Keep \textquotesingle always\textquotesingle{} \\
-EXP-19 & Verifier counter-search, multi-country & NL+MT+AL, \textasciitilde78 negative golds & Pooled marginal favours \textquotesingle never\textquotesingle{} but is composition-confounded; paired McNemar null (p = 1.00) & Keep \textquotesingle always\textquotesingle{} \\
-EXP-16 & Adjudicator free vs standard selection & Netherlands, n=51 & No difference (p = 1.00) & Keep \textquotesingle standard\textquotesingle{} \\
+EXP-14 & Verifier counter-search (never vs always) & Netherlands, n=51 & No significant difference (McNemar p = 0.50); 'never' raises false positives & Keep 'always' \\
+EXP-19 & Verifier counter-search, multi-country & NL+MT+AL, \textasciitilde78 negative golds & Pooled marginal favours 'never' but is composition-confounded; paired McNemar null (p = 1.00) & Keep 'always' \\
+EXP-16 & Adjudicator free vs standard selection & Netherlands, n=51 & No difference (p = 1.00) & Keep 'standard' \\
 EXP-7 & Retry chaining (carry evidence across retries) & Malta, 40 per arm & Small, underpowered gain; joint non-inferiority passes & Adopt as optimisation baseline \\
 EXP-20 & Retry chaining on committing countries & NL+AL & Balanced accuracy rises but false-positive rate rose 0.346 to 0.387; McNemar p = 0.500 & Keep baseline; not promoted \\
 EXP-10 & Confidence-floor sweep & Pooled, 7 countries, n=360, 67 negative golds & 0.65 holds; at 0.50 precision is 0.76, under the pre-registered 0.80 bar & Floor 0.65 \\
@@ -287,10 +214,11 @@ EXP-41 & Run-to-run stability & 3 replicates, 148-pair intersection & Label agre
 EXP-36 & Frozen headline whole-system run & Evaluation 8, 1,144 pairs & Coverage 0.556, commit-accuracy 0.701 {[}0.664, 0.736{]}, negative-gold FPR 0.247, ECE 0.063 & The reported headline \\
 EXP-28 & Architecture ablation ladder (researcher only / no adjudicator / trio). Sonnet 5, superseded by Table~\ref{tab:ablation} & 156-pair dev battery, 78 negative golds & Commit rate 0.237, 0.391, 0.468 and commit-accuracy 0.649, 0.689, 0.726 across the three arms; negative-gold false-positive rate rises 0.13 to 0.22 (ten wrong to seventeen of 78) & Each layer adds coverage and accuracy; the Verifier does not filter for precision \\
 EXP-40 & Corroborative vs adversarial verifier, end to end & 156-pair dev battery & Balanced accuracy 0.261 against 0.262; sixteen discordant pairs split eight-eight; McNemar p = 1.00 & Null end to end, against the EXP-38 frozen-ladder result \\
-exp36\_model\_opus & All-Opus whole-stack cost point & 156-pair dev battery & Delivered accuracy 21.8\% at £22.12, £0.65 per correct answer; worse than Sonnet 4.6 (p \textless{} 0.001) and Haiku 4.5 (p = 0.035) & Upper anchor of the cost-quality frontier; dominated on both axes, not adopted \\
-cb\_heldout\_20260725 & Closed-book parametric probe (retrieval disabled) & Evaluation 8, 1,144 pairs & 42.9\% of the answer key reproduced against the 47.3\% always-yes floor & Below the floor; no answer-key memorisation demonstrated \\
-heldout\_fp\_audit\_merged94 & False-positive audit of the evaluation negative-gold errors & 94 EXP-36 false positives, 91 adjudicable & Charitable pass: 16/91 genuine swarm error, 69/91 definitional gap, 6/91 defensible or stale gold. Adversarial pass: 0/91 gold wrong & No case of the swarm right and ODMI wrong; the 3 not\_applicable pairs flagged for manual review \\
+exp36\_\allowbreak model\_\allowbreak opus & All-Opus whole-stack cost point & 156-pair dev battery & Delivered accuracy 21.8\% at £22.12, £0.65 per correct answer; worse than Sonnet 4.6 (p \textless{} 0.001) and Haiku 4.5 (p = 0.035) & Upper anchor of the cost-quality frontier; dominated on both axes, not adopted \\
+cb\_\allowbreak heldout\_\allowbreak 20260725 & Closed-book parametric probe (retrieval disabled) & Evaluation 8, 1,144 pairs & 42.9\% of the answer key reproduced against the 47.3\% always-yes floor & Below the floor; no answer-key memorisation demonstrated \\
+heldout\_\allowbreak fp\_\allowbreak audit\_\allowbreak merged94 & False-positive audit of the evaluation negative-gold errors & 94 EXP-36 false positives, 91 adjudicable & Charitable pass: 16/91 genuine swarm error, 69/91 definitional gap, 6/91 defensible or stale gold. Adversarial pass: 0/91 gold wrong & No case of the swarm right and ODMI wrong; the 3 not\_\allowbreak applicable pairs flagged for manual review \\
 \end{longtable}
+}
 
 
 \textbf{What the orchestrator refuses}
@@ -301,24 +229,17 @@ The orchestrator refuses to dispatch a run where the experiment identifier has n
 
 The 29 questions judged systematically out of reach of a web agent. The rule is that the answer is a fact about internal operational behaviour for which there is no standard public artefact. Questions answerable from a policy document, observable as a portal feature, computable from harvested metadata, or which themselves ask whether something is published, are excluded. The classification was made from the question text alone, before any run data was consulted.
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.1386}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.8614}}@{}}
+  L{0.1386}
+  L{0.8614}@{}}
 \caption{The 29 questions judged out of reach of a web agent.}\label{tab:out-of-reach}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Question}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Text}
-\end{minipage} \\
+\textbf{Question} & \textbf{Text} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Question}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Text}
-\end{minipage} \\
+\textbf{Question} & \textbf{Text} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -327,7 +248,7 @@ P18 & Is there a regular exchange of knowledge or experiences between the nation
 P20 & Is there a regular exchange of knowledge or experiences between the national open data team and the wider network of open data officers in your country? \\
 P25 & Are there any processes in place to assess if public sector bodies are charging for data above marginal cost? (please see directive (EU) 2019/1024 on open data and the reuse of public sector information). \\
 PT15 & Does the team monitor the extent to which requests (either via the portal or otherwise) result in the publication of the requested data? \\
-PT23 & Do you monitor the portal\textquotesingle s traffic (e.g. in terms of number of unique visitors, visitor profiles, percentage of machine traffic, number of downloads according to the number of datasets etc.)? \\
+PT23 & Do you monitor the portal's traffic (e.g. in terms of number of unique visitors, visitor profiles, percentage of machine traffic, number of downloads according to the number of datasets etc.)? \\
 PT24 & Do you run analytics on API usage? \\
 PT25 & Besides monitoring portal traffic, do you perform any further activities to better understand the behaviour and needs of users of your portal (e.g. web analytics, surveys, or analysis of social media feeds)? \\
 PT26 & Do you use the insights about portal usage and about the behaviour and needs of portal users to improve the portal accordingly? \\
@@ -347,68 +268,42 @@ I8-a & Automated feedback mechanisms tracking users´ access to datasets \\
 I8-b & Surveys \\
 I8-c & Interviews/workshops with reusers \\
 I8-d & Other \\
-I9 & Have any public bodies in your country launched or performed any activities in the past year to better understand reusers\textquotesingle{} needs in order to further stimulate the reuse of open data? \\
+I9 & Have any public bodies in your country launched or performed any activities in the past year to better understand reusers' needs in order to further stimulate the reuse of open data? \\
 I9-a & Regular feedback sessions with portal users \\
 I9-b & Social media sentiment analysis \\
 I9-c & Other \\
 I11 & Are there any public bodies in your country that have developed a systematic ways of classifying the gathered reuse cases? \\
 \end{longtable}
+}
 
 
 \chapter{Prior Work Scored Against the Six Criteria, with Justifications}\label{app:prior-work-scored}
 
 The abridged version of this table, Table~\ref{tab:prior-work-full}, appears as Table~\ref{tab:prior-work} in Section~\ref{sec:research-gap}. Verdicts are read from the papers themselves, and quoted passages are taken verbatim from the primary text. A tick means the work addresses and reports the criterion, not that it succeeds. Partial means it addresses one of the criterion's two conditions, or reports it without measuring it.
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1427}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1428}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1427}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1428}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1430}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+  L{0.1427}
+  L{0.1428}
+  L{0.1429}
+  L{0.1427}
+  L{0.1428}
+  L{0.1430}
+  L{0.1429}@{}}
 \caption{Prior work scored against the six criteria of Section~\ref{sec:criteria}, with the evidence for each verdict.}\label{tab:prior-work-full}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Work
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Convergent Validity
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Generalisability
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Subgroup Equity
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Attributability
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Selectivity
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Reproducibility
-\end{minipage} \\
+Work & Convergent Validity & General\-isability & Subgroup Equity & Attribut\-ability & Selectivity & Reproduc\-ibility \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-Work
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Convergent Validity
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Generalisability
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Subgroup Equity
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Attributability
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Selectivity
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Reproducibility
-\end{minipage} \\
+Work & Convergent Validity & General\-isability & Subgroup Equity & Attribut\-ability & Selectivity & Reproduc\-ibility \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
 ReAct \parencite{yao2023} & Reports accuracy on HotpotQA and Fever and success-rate gains of 34\% and 10\% on ALFWorld and WebShop, against task gold rather than a human assessor key. & Four benchmarks over two families, question answering and interactive decision making. & Not addressed. & Retrieves through "a simple Wikipedia API" and leaves trajectories "more interpretable than baselines without reasoning traces". No check that a quoted passage exists in the source. & No abstention and no confidence output. & "All methods use greedy decoding" and prompts are published. No repeated runs and no variance. \\
-SelfCheckGPT \parencite{manakul2023} & AUC-PR against manual factuality annotation. No agreement percentage reported. & WikiBio only, with synthetically generated hallucinations. & Not addressed. & Zero-resource by design. External knowledge appears only as an ablation showing what could be done instead. & Produces a per-sentence hallucination score that could drive a gate, but never declines and reports no calibration. & Main response at "temperature to 0.0 and standard beam search decoding". Sampling is internal to the method and is not a stability measure. \\
-Chain-of-Verification \parencite{dhuliawala2024} & Reports hallucination reduction across tasks with no single headline agreement figure. & Three task types, Wikidata list questions, closed-book MultiSpanQA and long-form generation. & Not addressed. & Tool-free by design. Retrieval appears only as related work. & No abstention and no confidence. Confidence scoring is attributed to Varshney et al., not to CoVe. & "Use greedy decoding for all models". No repeated runs. \\
+SelfCheck\-GPT \parencite{manakul2023} & AUC-PR against manual factuality annotation. No agreement percentage reported. & WikiBio only, with synthetically generated hallucinations. & Not addressed. & Zero-resource by design. External knowledge appears only as an ablation showing what could be done instead. & Produces a per-sentence hallucination score that could drive a gate, but never declines and reports no calibration. & Main response at "temperature to 0.0 and standard beam search decoding". Sampling is internal to the method and is not a stability measure. \\
+Chain-of-Verification \parencite{dhuliawala2024} & Reports hallucination reduction across tasks with no single headline agreement figure. & Three task types, Wikidata list questions, closed-book Multi\-SpanQA and long-form generation. & Not addressed. & Tool-free by design. Retrieval appears only as related work. & No abstention and no confidence. Confidence scoring is attributed to Varshney et al., not to CoVe. & "Use greedy decoding for all models". No repeated runs. \\
 LM vs LM \parencite{cohen2023} & "Detects over 70\% of the incorrect claims while maintaining a high precision". & Four benchmarks. & Not addressed. & "We are not assuming any reference text or an external knowledge base." The examiner asks whether external evidence exists without ever retrieving any. & Frames its setting as related to calibration and abstention, but outputs a decision and never declines. & Applies the method "three times (with the same EXAMINER and EXAMINEE), using sampling" for the majority variant. \\
 \textcite{du2023} & Accuracy across six benchmarks against task gold. & Six benchmarks including mathematics, MMLU and chess move validity. & Not addressed. & Retrieval is described as orthogonal to the method and is not used. & Observes that uncertain facts diverge across agents, but provides no abstention channel. & Reports standard deviations throughout, for example "Single Agent 67.0 ± 4.7" and "Multi-Agent (Majority) 69.0 ± 4.6", with identical prompt and model across arms. \\
 \textcite{liang2023} & Reports gains on two datasets against task gold. & Two datasets, commonsense machine translation and counter-intuitive arithmetic reasoning. & Not addressed. & No retrieval. & No abstention and no confidence. & "Experiments are performed in zero-shot instructions (setting temperature to 0)". Deterministic and traceable, with no stability measure. \\
@@ -420,6 +315,7 @@ SAFE \parencite{wei2024} & "SAFE agrees with crowdsourced human annotators 72\% 
 \textcite{fumega2026} & An ``average mismatch rate of 42\% between the AI's answers and those of human researchers'' across four indicators in their end-to-end phase. & By indicator, mismatch of 19\% on Data Protection (2 of 12 questions) against 69\% on Land Tenure (17 of 25), chosen respectively for single-document and fragmented evidence. Their stated percentages do not reconcile with their own counts. & Not addressed. The sample is drawn from Africa and Latin America, but results are not broken down by region. & The agents are prompted for ``justifications (with a link to the evidence)'' per sub-question, so a trail exists, but nothing checks that the link supports the claim. Both reported failures are of that kind, an ``API Access'' button cited as evidence of bulk access, and ``corporate body'' read as covering group privacy. & No abstention. "Partially" is an answer option and not a decline, and uncertainty calibration appears only in the future-work list. Incompleteness is handled by "a human-in-the-loop approach for curation and validation". & Table 2 documents tools and configuration by phase, but no run is repeated and no variance is reported. \\
 This work & Tested against the human key and against an independent deterministic recompute. & Decomposed by ODMI dimension and by question form. & Decomposed by language-resource stratum. & Offline quote-in-source gate on every committed answer, plus Verifier entailment judgement. & Three-way outcome with a confidence floor driving abstention, calibration assessed post-hoc. & Full transcript logging, with stability measured across repeated runs. \\
 \end{longtable}
+}
 
 
 \chapter{Baselines}\label{app:baselines}
@@ -427,34 +323,19 @@ This work & Tested against the human key and against an independent deterministi
 The baselines the evaluation results are read against.
 
 
+{\small
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2157}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3039}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2059}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2745}}@{}}
+  L{0.2157}
+  L{0.3039}
+  L{0.2059}
+  L{0.2745}@{}}
 \caption{The baselines any result has to clear.}\label{tab:baselines}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Baseline}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{What it isolates}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Value}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Denominator}
-\end{minipage} \\
+\textbf{Baseline} & \textbf{What it isolates} & \textbf{Value} & \textbf{Denominator} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Baseline}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{What it isolates}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Value}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Denominator}
-\end{minipage} \\
+\textbf{Baseline} & \textbf{What it isolates} & \textbf{Value} & \textbf{Denominator} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -465,35 +346,29 @@ Majority class, development battery & the same, on the class-balanced tuning set
 Closed-book, retrieval disabled & how much of the answer key the model already carries & 42.9\%, against a 47.3\% floor & 1,139 evaluation pairs \\
 Researcher alone, no verification & what one agent reaches before any checking & 23.7\% coverage, 64.9\% commit-accuracy & 156-pair development battery, Sonnet 4.6 \\
 \end{longtable}
+}
 
 \chapter{The Full Question Bank}\label{app:question-bank}
 
 The complete ODMI questionnaire as the swarm sees it, all 143 questions in the order they appear in the instrument. This is the population every figure in Chapter~\ref{ch:results} is drawn from, so it is here in full rather than sampled. By dimension: Policy 31, Portal 45, Quality 29 and Impact 38. By answer shape: 124 binary, 12 percentage bands, 3 ordinal magnitudes, 2 count bands and 2 categorical. The 124 binary questions are the ones the headline accuracy figures are computed over, because they are the only shape where a ``yes'' or ``no'' can be scored against the published key without a banding judgement.
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.1386}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.8614}}@{}}
+  L{0.1386}
+  L{0.8614}@{}}
 \caption{All 143 questions of the 2025 ODMI questionnaire.}\label{tab:question-bank}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Question}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Text}
-\end{minipage} \\
+\textbf{Question} & \textbf{Text} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Question}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Text}
-\end{minipage} \\
+\textbf{Question} & \textbf{Text} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
 P1 & Is there a national open data policy in your country and, if your country is an EU Member State, does this include a national legislation for the transposition of the Open Data Directive? For Explanation: * If yes, please provide (1) the URL and (2) title of the policy document and (3) briefly describe. * If `other', please provide (1) a brief explanation to support your answer choice and (2) provide the URL and indicate the policy section which explicitly references open data. \\
-P2 & Is there a national open data strategy in your country? For Explanation: * If yes, please provide (1) the URL to the strategy and (2) describe the main highlights. * If \textquotesingle not applicable\textquotesingle, please provide (1) a brief explanation to support your answer choice and provide (2) the URL and indicate the policy section which explicitly references objectives, actions/measures, delivery timelines etc. \\
+P2 & Is there a national open data strategy in your country? For Explanation: * If yes, please provide (1) the URL to the strategy and (2) describe the main highlights. * If 'not applicable', please provide (1) a brief explanation to support your answer choice and provide (2) the URL and indicate the policy section which explicitly references objectives, actions/measures, delivery timelines etc. \\
 P3 & Is there an open data policy/strategy at regional or local level? For Explanation: * If yes, please (1) provide the URL and (2) title of the document(s) and (3) briefly describe. \\
 P4 & Does the national strategy/policy include an action plan with measures to be implemented in the open data field? For Explanation: If yes, please briefly describe the main measures described by the action plan. \\
 P5 & Does the national strategy/policy outline measures to incentivise the publication of and access to real-time or dynamic data? For Explanation: * If yes, please briefly describe the measures. \\
@@ -503,8 +378,8 @@ P8 & Does the national strategy/policy outline measures to support the reuse of 
 P9 & Does the national strategy/policy outline measures to support the reuse of open data by the private sector? For Explanation: * If yes, please briefly describe the measures. \\
 P10-a & Does the national strategy/policy mandate carrying out and maintaining a data inventory by public bodies, whether at national or local level? For Explanation: * If yes, please briefly specify. \\
 P10-b & Do these data inventories include the data collected by public bodies that cannot be published as open data (e.g. in relation to the EU Data Governance Act (EU) 2022/868)? For Explanation: * If yes, please briefly specify. \\
-P11 & Is your country applying the implementing regulation (EU) 2023/138 on high-value datasets? For Explanation: * If yes, how is it progressing? * If you are an EFTA or a candidate country to the EU, please select \textquotesingle not applicable\textquotesingle. ** In the table below, please indicate your progress with respect to a) organisation, b) legal aspects, c) technical aspects on a scale from 1 to 5. 1 = no progress; 2 = few progress; 3 = some progress; 4 = considerable progress; 5 = works are finalised. \\
-P12 & Have the public bodies in your country denoted relevant datasets as high-value datasets in their metadata following the publication of the implementing regulation (EU) 2023/138 on high-value datasets? For Explanation: * If yes, please specify how and highlight challenges, if any. * If you are an EFTA or a candidate country to the EU, please select \textquotesingle not applicable\textquotesingle. \\
+P11 & Is your country applying the implementing regulation (EU) 2023/138 on high-value datasets? For Explanation: * If yes, how is it progressing? * If you are an EFTA or a candidate country to the EU, please select 'not applicable'. ** In the table below, please indicate your progress with respect to a) organisation, b) legal aspects, c) technical aspects on a scale from 1 to 5. 1 = no progress; 2 = few progress; 3 = some progress; 4 = considerable progress; 5 = works are finalised. \\
+P12 & Have the public bodies in your country denoted relevant datasets as high-value datasets in their metadata following the publication of the implementing regulation (EU) 2023/138 on high-value datasets? For Explanation: * If yes, please specify how and highlight challenges, if any. * If you are an EFTA or a candidate country to the EU, please select 'not applicable'. \\
 P13 & Is there a governance structure in place that enables the participation and/or inclusion of various open data stakeholders? For Explanation: * If yes, please briefly describe the governance structure and its operating model \\
 P14 & How would you classify the model used for governing open data in your country? For Explanation: * Please briefly explain why this model was chosen/works best for your country \\
 P15 & Does the governance structure ensure that the local and regional open data initiatives are facilitated and supported at national level? For Explanation: * If yes, please give an example of what kind of support. * If not applicable, please explain why. \\
@@ -530,8 +405,8 @@ PT4 & Does the national portal offer to its users a way to programmatically quer
 PT5 & Does the national portal offer/link to documentation on the use of APIs? For Explanation: * If yes, please provide the direct-URL to this feature. \\
 PT6 & Does the national portal offer/link to documentation on the use of SPARQL? For Explanation: * If yes, please provide the direct-URL to this feature. \\
 PT7 & Does the national portal provide functionality for users to contribute datasets they have produced or enriched? For explanation: * If yes, please (1) explain how the portal facilitate the linking of documentation and supporting materials to these user-contributed datasets and (2) provide the direct-URL to this feature. \\
-PT8 & Does the national portal offer a mechanism for users to provide general feedback, such a \textquotesingle Contact us\textquotesingle{} or \textquotesingle Feedback\textquotesingle{} button that is placed in a visible spot and would allows users to send a general comment concerning the portal? For Explanation: * If yes, please provide the direct-URL to this feature or describe how this functionality is provided. \\
-PT9 & Does the national portal offer a mechanism for users to provide feedback on specific datasets, such as a \textquotesingle feedback button\textquotesingle{} or a comment/discussion section under the dataset? For Explanation: * If yes, please provide the direct-URL to this feature or describe how this functionality is provided. \\
+PT8 & Does the national portal offer a mechanism for users to provide general feedback, such a 'Contact us' or 'Feedback' button that is placed in a visible spot and would allows users to send a general comment concerning the portal? For Explanation: * If yes, please provide the direct-URL to this feature or describe how this functionality is provided. \\
+PT9 & Does the national portal offer a mechanism for users to provide feedback on specific datasets, such as a 'feedback button' or a comment/discussion section under the dataset? For Explanation: * If yes, please provide the direct-URL to this feature or describe how this functionality is provided. \\
 PT10 & Does the national portal provide a mechanism for users to rate datasets? For Explanation: * If yes, please provide the direct-URL to this feature or describe how this functionality is provided. \\
 PT11 & Does the national portal enable users to find information and news on relevant open data topics in the country? For Explanation: * If yes, please provide the direct-URL to this feature. \\
 PT12 & Does the national portal offer the possibility for users to receive notifications when new datasets are available on the national portal (RSS, ATOM feeds, email notifications etc.)? For Explanation: * If yes, please provide the direct-URL to this feature. \\
@@ -544,8 +419,8 @@ PT18 & Does the national portal reference the datasets that the showcased reuse 
 PT19 & Does the national portal provide the possibility for users to submit their own reuse cases? For Explanation: * If yes, please provide the direct-URL to this feature. \\
 PT20 & Does the national portal offer a preview function for tabular data? For Explanation: * If yes, please provide the URL to an example documenting this feature. \\
 PT21 & Does the national portal offer a preview function for geospatial data? For Explanation: * If yes, please provide the URL to an example documenting this feature. \\
-PT22 & Do you promote high-value datasets on your national portal (e.g. use filtering features for reusers to easily find such datasets, use editorial features to promote the datasets, etc.))? For Explanation: * If yes, please specify how and highlight challenges if any. * If you are an EFTA or a candidate country to the EU, please select \textquotesingle not applicable\textquotesingle. \\
-PT23 & Do you monitor the portal\textquotesingle s traffic (e.g. in terms of number of unique visitors, visitor profiles, percentage of machine traffic, number of downloads according to the number of datasets etc.)? For Explanation: * If yes, which tool(s) do you use? \\
+PT22 & Do you promote high-value datasets on your national portal (e.g. use filtering features for reusers to easily find such datasets, use editorial features to promote the datasets, etc.))? For Explanation: * If yes, please specify how and highlight challenges if any. * If you are an EFTA or a candidate country to the EU, please select 'not applicable'. \\
+PT23 & Do you monitor the portal's traffic (e.g. in terms of number of unique visitors, visitor profiles, percentage of machine traffic, number of downloads according to the number of datasets etc.)? For Explanation: * If yes, which tool(s) do you use? \\
 PT24 & Do you run analytics on API usage? For Explanation: * If yes, please briefly (1) describe your process and (2) how you use the insights to improve the portal \\
 PT25 & Besides monitoring portal traffic, do you perform any further activities to better understand the behaviour and needs of users of your portal (e.g. web analytics, surveys, or analysis of social media feeds)? For Explanation: * If yes, please (1) specify the activities and explain (2) how they help you understand user needs \\
 PT26 & Do you use the insights about portal usage and about the behaviour and needs of portal users to improve the portal accordingly? For Explanation: * If yes, please explain your process for improving the portal based on user insights and feedback * If relevant, kindly highlight some improvements made in the past year \\
@@ -572,8 +447,8 @@ Q1 & Is there a pre-defined approach to ensure that metadata is kept up-to-date?
 Q2 & What percentage of the metadata on the national portal is obtained from the source automatically, rather than edited manually? For Explanation: * Please describe (1) the workflows you have to automate the harvesting of metadata and (2) for which types of data these apply to \\
 Q3 & What is the average delay from the moment the metadata describing a dataset is updated at the source, and the moment the change is visible on the portal? For Explanation: * Please explain the approach for updating metadata in a timely manner \\
 Q4 & Do you undertake efforts to ensure that published data covers the full period from when it was first published until today, for example, the complete time series? For Explanation: * If yes, please explain the measures in place to ensure complete series of datasets \\
-Q5 & Have you implemented the DCAT-AP High Value Datasets tag to denote the High-Value Datasets in your (national) open data portal(s)? For Explanation: * If yes, please specify how and highlight challenges if any. * If you are an EFTA or a candidate country to the EU, please select \textquotesingle not applicable\textquotesingle. \\
-Q6 & Besides the DCAT-AP tag mentioned above, have you implemented any other measures to ensure that high-value datasets ((EU) 2023/138) are interoperable with datasets of other country? For Explanation: * If yes, please specify how and highlight challenges if any. * If you are an EFTA or a candidate country to the EU, please select \textquotesingle not applicable\textquotesingle. \\
+Q5 & Have you implemented the DCAT-AP High Value Datasets tag to denote the High-Value Datasets in your (national) open data portal(s)? For Explanation: * If yes, please specify how and highlight challenges if any. * If you are an EFTA or a candidate country to the EU, please select 'not applicable'. \\
+Q6 & Besides the DCAT-AP tag mentioned above, have you implemented any other measures to ensure that high-value datasets ((EU) 2023/138) are interoperable with datasets of other country? For Explanation: * If yes, please specify how and highlight challenges if any. * If you are an EFTA or a candidate country to the EU, please select 'not applicable'. \\
 Q7 & Do you monitor the quality of the metadata available on your portal? For Explanation: * If yes, please briefly explain how this monitoring takes place. * If applicable, please provide the URL to this monitoring mechanism. \\
 Q8 & Do you publish information on the quality of the metadata available on the portal? For Explanation: * If yes, please provide the URL to this section. \\
 Q9 & Do you publish guidelines (e.g. written materials) and have tools in place, to assist publishers in publishing high-quality metadata? For Explanation: * If yes, please (1) briefly describe this material and (2) provide the URLs to these materials and/or tools. \\
@@ -598,10 +473,10 @@ Q27 & What percentage of datasets are provided in an open and machine-readable f
 Q28 & What percentage of datasets consistently use Uniform Resource Identifiers? \\
 Q29 & What percentage of datasets link to other renowned sources to provide additional context for the users, e.g. in a linked data fashion? \\
 I1 & Do you have a definition of open data reuse in your country? For Explanation: * If yes, please specify it. \\
-I2 & Are there any processes in place to monitor the level of reuse of your country\textquotesingle s open data? For Explanation: * If yes, please (1) briefly describe these processes and (2) provide the URLs to support the answer. \\
+I2 & Are there any processes in place to monitor the level of reuse of your country's open data? For Explanation: * If yes, please (1) briefly describe these processes and (2) provide the URLs to support the answer. \\
 I3 & Are there any activities in place to encourage public bodies to monitor the reuse of their own published data (e.g. incentives or obligations in place for public bodies or civil servants of national government)? For Explanation: * If yes, please (1) briefly describe these activities/incentives and (2) provide the URLs to support the answer. \\
-I4 & Does your country have processes in place to monitor and measure the level of reuse of high-value datasets ((EU) 2023/138)? For Explanation: * If yes, please specify how and highlight challenges if any. * If you are an EFTA or a candidate country to the EU, please select \textquotesingle not applicable\textquotesingle. \\
-I5 & Has your government specified what \textquotesingle impact of open data\textquotesingle{} means (e.g. in a strategy document)? For Explanation: * If yes, how do you define the impact of open data in your country? * If possible, please provide a URL to a public document describing it. \\
+I4 & Does your country have processes in place to monitor and measure the level of reuse of high-value datasets ((EU) 2023/138)? For Explanation: * If yes, please specify how and highlight challenges if any. * If you are an EFTA or a candidate country to the EU, please select 'not applicable'. \\
+I5 & Has your government specified what 'impact of open data' means (e.g. in a strategy document)? For Explanation: * If yes, how do you define the impact of open data in your country? * If possible, please provide a URL to a public document describing it. \\
 I6 & Do you have a methodology in place to measure the impact of open data in your country? For Explanation: * If yes, please briefly describe the key points of this methodology. \\
 I7 & Is there collaboration between government and civil society or academia to create open data impact in your country? For Explanation: * If yes, please provide an example * If possible, URLs to such projects and collaborations. \\
 I8 & Have any public bodies in your country launched or performed any activities in the past year to understand which and how (open) datasets are reused? For Explanation: * If yes, which of the following activities? * Multiple answers are possible. \\
@@ -609,7 +484,7 @@ I8-a & Automated feedback mechanisms tracking users´ access to datasets \\
 I8-b & Surveys \\
 I8-c & Interviews/workshops with reusers \\
 I8-d & Other \\
-I9 & Have any public bodies in your country launched or performed any activities in the past year to better understand reusers\textquotesingle{} needs in order to further stimulate the reuse of open data? For Explanation: * If yes, which of the following activities have been performed? Please describe how the activity has helped you better stimulate reuse. * Multiple answers are possible. \\
+I9 & Have any public bodies in your country launched or performed any activities in the past year to better understand reusers' needs in order to further stimulate the reuse of open data? For Explanation: * If yes, which of the following activities have been performed? Please describe how the activity has helped you better stimulate reuse. * Multiple answers are possible. \\
 I9-a & Regular feedback sessions with portal users \\
 I9-b & Social media sentiment analysis \\
 I9-c & Other \\
@@ -636,99 +511,63 @@ I29 & Is the use of open data in your country having an impact on the level of i
 I30 & Is the use of open data in your country having an impact on the level of entrepreneurship (especially of women and minorities) and business creation (especially with Small- and Medium-sized Enterprises)? For Explanation: * If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain. \\
 I31 & Is the use of open data in your country having an impact on the level of productivity? For Explanation: * If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain. \\
 \end{longtable}
+}
 
 
 \chapter{The Catalogue Recompute in Full}\label{app:catalogue-recompute}
 
-The nine Quality questions the deterministic catalogue tool can answer without an agent, computed directly from a harvest of each national portal. Section~\ref{sec:catalogue-tool} reports the agreement rate; the underlying numbers are here. Two things to read carefully. The harvest is a snapshot, so a country\textquotesingle s figure is only as current as the fetch date in the first table, and France\textquotesingle s harvest is marked partial, meaning the portal was paged rather than exhausted. Estonia returned nothing at all and is kept in the table as a record of the attempt. Where the computed band and the published answer disagree the disagreement is real and unresolved, not an error corrected here.
+The nine Quality questions the deterministic catalogue tool can answer without an agent, computed directly from a harvest of each national portal. Section~\ref{sec:catalogue-tool} reports the agreement rate; the underlying numbers are here. Two things to read carefully. The harvest is a snapshot, so a country's figure is only as current as the fetch date in the first table, and France's harvest is marked partial, meaning the portal was paged rather than exhausted. Estonia returned nothing at all and is kept in the table as a record of the attempt. Where the computed band and the published answer disagree the disagreement is real and unresolved, not an error corrected here.
 
 \textbf{What was harvested}
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1181}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1869}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1476}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1574}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1574}}@{}}
+  L{0.1181}
+  L{0.1869}
+  L{0.1476}
+  L{0.1574}
+  L{0.1574}@{}}
 \caption{The portal harvest behind every catalogue figure.}\label{tab:harvest-register}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Country}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Route}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Datasets}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Fetched}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Harvest}
-\end{minipage} \\
+\textbf{Country} & \textbf{Route} & \textbf{Datasets} & \textbf{Fetched} & \textbf{Harvest} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Country}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Route}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Datasets}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Fetched}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Harvest}
-\end{minipage} \\
+\textbf{Country} & \textbf{Route} & \textbf{Datasets} & \textbf{Fetched} & \textbf{Harvest} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-AL & al\_dcat\_api & 130 & 2026-06-25 & complete \\
-DE & dcat\_rdf & 3,000 & 2026-06-02 & complete \\
-EE & estonia\_json & 0 & 2026-06-02 & partial \\
-FI & ckan\_json & 2,525 & 2026-06-24 & complete \\
-FR & dcat\_rdf & 3,400 & 2026-07-17 & partial \\
-HR & sparql\_rdf & 3,867 & 2026-07-17 & complete \\
-HU & ckan\_json & 2,282 & 2026-06-02 & complete \\
-NL & ckan\_json & 20,772 & 2026-06-02 & complete \\
-RO & ckan\_json & 5,143 & 2026-06-02 & complete \\
-SE & sparql\_rdf & 23,305 & 2026-07-17 & complete \\
+AL & al\_\allowbreak dcat\_\allowbreak api & 130 & 2026-06-25 & complete \\
+DE & dcat\_\allowbreak rdf & 3,000 & 2026-06-02 & complete \\
+EE & estonia\_\allowbreak json & 0 & 2026-06-02 & partial \\
+FI & ckan\_\allowbreak json & 2,525 & 2026-06-24 & complete \\
+FR & dcat\_\allowbreak rdf & 3,400 & 2026-07-17 & partial \\
+HR & sparql\_\allowbreak rdf & 3,867 & 2026-07-17 & complete \\
+HU & ckan\_\allowbreak json & 2,282 & 2026-06-02 & complete \\
+NL & ckan\_\allowbreak json & 20,772 & 2026-06-02 & complete \\
+RO & ckan\_\allowbreak json & 5,143 & 2026-06-02 & complete \\
+SE & sparql\_\allowbreak rdf & 23,305 & 2026-07-17 & complete \\
 \end{longtable}
+}
 
 
 \textbf{What the harvest computes, against the published answer}
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1274}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1177}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.3333}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1470}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2745}}@{}}
+  L{0.1274}
+  L{0.1177}
+  L{0.3333}
+  L{0.1470}
+  L{0.2745}@{}}
 \caption{Every catalogue metric computed from the harvests of Table~\ref{tab:harvest-register}, 75 in total, beside the answer the country published.}\label{tab:catalogue-metrics}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Question}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Country}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Computed}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Band}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Published}
-\end{minipage} \\
+\textbf{Question} & \textbf{Country} & \textbf{Computed} & \textbf{Band} & \textbf{Published} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Question}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Country}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Computed}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Band}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Published}
-\end{minipage} \\
+\textbf{Question} & \textbf{Country} & \textbf{Computed} & \textbf{Band} & \textbf{Published} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -809,49 +648,31 @@ Q27 & NL & 50.6\% (10,510/20,772) & 51-70\% & \textgreater90\% \\
 Q27 & RO & 62.3\% (3,203/5,143) & 51-70\% & 31-50\% \\
 Q27 & SE & 63.9\% (14,896/23,305) & 51-70\% & \textgreater90\% \\
 \end{longtable}
+}
 
 
-One snapshot per country, the most recent, read from catalogue\_snapshots and catalogue\_metrics in data/odmi.db. Earlier snapshots for the same country are superseded and left out. Croatia\textquotesingle s harvest predates the RDF serialiser fix, and its Q12, Q13, Q21 and Q25 all read zero on fields the portal does populate, which is the malformed-IRI truncation that fix addressed. Those four cells are an artefact of the harvest and not a measurement of the portal.
+One snapshot per country, the most recent, read from catalogue\_snapshots and catalogue\_metrics in data/odmi.db. Earlier snapshots for the same country are superseded and left out. Croatia's harvest predates the RDF serialiser fix, and its Q12, Q13, Q21 and Q25 all read zero on fields the portal does populate, which is the malformed-IRI truncation that fix addressed. Those four cells are an artefact of the harvest and not a measurement of the portal.
 
 \chapter{Development-Set Results}\label{app:dev-results}
 
-Every threshold, prompt and retrieval setting in the final configuration was chosen on a development set the evaluation countries never touched. The body says that happened but never shows what the swarm scored there, so the tuning battery is reported here. It is 156 pairs over Malta, the Netherlands and Albania, built by taking all of each country\textquotesingle s negative golds and an equal number of randomly drawn positive ones, which makes it roughly class-balanced and therefore much harder than the questionnaire\textquotesingle s natural base rate. The run below is the frozen production configuration on Sonnet 4.6, the same stack as the evaluation headline.
+Every threshold, prompt and retrieval setting in the final configuration was chosen on a development set the evaluation countries never touched. The body says that happened but never shows what the swarm scored there, so the tuning battery is reported here. It is 156 pairs over Malta, the Netherlands and Albania, built by taking all of each country's negative golds and an equal number of randomly drawn positive ones, which makes it roughly class-balanced and therefore much harder than the questionnaire's natural base rate. The run below is the frozen production configuration on Sonnet 4.6, the same stack as the evaluation headline.
 
 \textbf{By country}
 
+{\small
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1476}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1082}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1476}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2952}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2952}}@{}}
+  L{0.1476}
+  L{0.1082}
+  L{0.1476}
+  L{0.2952}
+  L{0.2952}@{}}
 \caption{The 156-pair development battery by country.}\label{tab:dev-by-country}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Country}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Coverage}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Negative-gold FP rate}
-\end{minipage} \\
+\textbf{Country} & \textbf{Pairs} & \textbf{Coverage} & \textbf{Commit accuracy} & \textbf{Negative-gold FP rate} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Country}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Coverage}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Negative-gold FP rate}
-\end{minipage} \\
+\textbf{Country} & \textbf{Pairs} & \textbf{Coverage} & \textbf{Commit accuracy} & \textbf{Negative-gold FP rate} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -861,38 +682,24 @@ MT & 60 & 16.7\% & 80.0\% (8/10) & 3.3\% (1/30) \\
 NL & 52 & 86.5\% & 66.7\% (30/45) & 53.8\% (14/26) \\
 All three & 156 & 46.8\% & 72.6\% (53/73) & 21.8\% (17/78) \\
 \end{longtable}
+}
 
 
 \textbf{By dimension}
 
+{\small
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1966}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1376}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1868}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3932}}@{}}
+  L{0.1966}
+  L{0.1376}
+  L{0.1868}
+  L{0.3932}@{}}
 \caption{The same battery by ODMI dimension.}\label{tab:dev-by-dimension}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Dimension}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Coverage}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit accuracy}
-\end{minipage} \\
+\textbf{Dimension} & \textbf{Pairs} & \textbf{Coverage} & \textbf{Commit accuracy} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Dimension}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Coverage}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit accuracy}
-\end{minipage} \\
+\textbf{Dimension} & \textbf{Pairs} & \textbf{Coverage} & \textbf{Commit accuracy} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -902,6 +709,7 @@ Policy & 34 & 55.9\% & 73.7\% (14/19) \\
 Portal & 53 & 43.4\% & 78.3\% (18/23) \\
 Quality & 25 & 40.0\% & 80.0\% (8/10) \\
 \end{longtable}
+}
 
 
 The spread between the three countries is the useful part. The Netherlands commits on 86.5\% of its pairs and the swarm is wrong on more than half its negative golds there; Malta commits on 16.7\% and is wrong on one. That is the coverage-precision trade the body describes, visible within a single run rather than across configurations. It also shows why a development figure cannot be read as a headline: these three countries were picked for their negative-gold share, not to be representative.
@@ -1025,7 +833,7 @@ Everything below was produced during the project and is not used anywhere in the
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_exp36_score_bands.pdf}
-\caption{The band each country\textquotesingle s reconstructed score could occupy, from treating every abstention as no to treating every one as yes, against the published score. Coverage is on the right.}
+\caption{The band each country's reconstructed score could occupy, from treating every abstention as no to treating every one as yes, against the published score. Coverage is on the right.}
 \label{fig:j-score-bands}
 \end{figure}
 

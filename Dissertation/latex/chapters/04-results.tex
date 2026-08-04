@@ -15,86 +15,31 @@ One finding runs through the chapter. The swarm can evidence a ``yes'' by findin
 \label{fig:outcome-makeup}
 \end{figure}
 
+{\small
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2549}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1471}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1471}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1471}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1471}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1569}}@{}}
+  L{0.2549}
+  L{0.1471}
+  L{0.1471}
+  L{0.1471}
+  L{0.1471}
+  L{0.1569}@{}}
 \caption{The evaluation run read four ways. Coverage is over all 1,144 pairs. The accuracy columns are over the 907 whose published answer is a plain yes or no. Every rate carries its own denominator, and the forced and closed-book rows score an abstention as a miss.}\label{tab:four-ways}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Reading}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Coverage}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Yes golds}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{No golds}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Balanced}
-\end{minipage} \\
+\textbf{Reading} & \textbf{Coverage} & \textbf{Accuracy} & \textbf{Yes golds} & \textbf{No golds} & \textbf{Balanced} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Reading}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Coverage}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Yes golds}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{No golds}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Balanced}
-\end{minipage} \\
+\textbf{Reading} & \textbf{Coverage} & \textbf{Accuracy} & \textbf{Yes golds} & \textbf{No golds} & \textbf{Balanced} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Aggregate Accuracy & 100\% & \begin{minipage}[t]{\linewidth}\raggedright
-42.4\%\\
-385/907\strut
-\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
-54.7\%\\
-295/539\strut
-\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
-24.5\%\\
-90/368\strut
-\end{minipage} & 39.6\% \\
-Commit Accuracy & \begin{minipage}[t]{\linewidth}\raggedright
-55.6\%\\
-636/1,144\strut
-\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
-70.1\%\\
-437/623\strut
-\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
-87.0\%\\
-295/339\strut
-\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
-48.9\%\\
-90/184\strut
-\end{minipage} & 68.0\% \\
-Closed book, retrieval off & 75.6\%865/1,144 & \begin{minipage}[t]{\linewidth}\raggedright
-43.0\%\\
-390/907\strut
-\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
-43.6\%\\
-235/539\strut
-\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
-42.1\%\\
-155/368\strut
-\end{minipage} & 42.9\% \\
-Always-yes baseline & 100\% & \begin{minipage}[t]{\linewidth}\raggedright
-59.4\%\\
-539/907\strut
-\end{minipage} & 100\% & 0\% & 50.0\% \\
+Aggregate Accuracy & 100\% & 42.4\%\newline 385/907 & 54.7\%\newline 295/539 & 24.5\%\newline 90/368 & 39.6\% \\
+Commit Accuracy & 55.6\%\newline 636/1,144 & 70.1\%\newline 437/623 & 87.0\%\newline 295/339 & 48.9\%\newline 90/184 & 68.0\% \\
+Closed book, retrieval off & 75.6\%\newline 865/1,144 & 43.0\%\newline 390/907 & 43.6\%\newline 235/539 & 42.1\%\newline 155/368 & 42.9\% \\
+Always-yes baseline & 100\% & 59.4\%\newline 539/907 & 100\% & 0\% & 50.0\% \\
 \end{longtable}
+}
 
 The swarm was dispatched over all 1,144 question-country pairs of the eight countries. It committed to an answer on 636 and declined the remaining 508, split by country in Figure~\ref{fig:outcome-makeup}, a coverage of 55.6\%. Over just the committed answers it scored an accuracy of 70.1\%. Table~\ref{tab:four-ways} presents the results, distinguishing aggregate accuracy (including abstentions), commit accuracy (excluding abstentions), the accuracy of always answering ``yes'', and the accuracy of using only the model's priors. The table compares the 907 pairs that take a binary answer and carry a plain yes or no in the key. The remaining 237 either ask for a band or a count, where an always-yes baseline has no meaning, or are questions the assessors did not answer ``yes'' or ``no''.
 
@@ -129,37 +74,26 @@ On the first condition of Convergent Validity the system reaches 70.1\% commit a
 
 Only four of the eight countries (Finland, Croatia, Sweden and Montenegro) had harvestable portals.
 
-Across the thirty-six measurable cells the recompute agrees with the published key on eighteen, 50\% agreement, broken down by country in Figure~\ref{fig:recompute-band}. The disagreements do not all run in the same direction, so this is not a case of countries systematically inflating their score. The figure shows the numbers diverging, with Montenegro\textquotesingle s stated licence coverage exceeding 90\% where the recompute reads 70\%, an overstatement, while Croatia\textquotesingle s published figure for Q22 sits at 10-30\% against a recompute above 90\%, an understatement of what the portal actually carries. This recompute is not infallible, as the Verifier recomputes the scores over the cached data that the Researcher retrieved, and there is no separate route or evidence pool to check against.
+Across the thirty-six measurable cells the recompute agrees with the published key on eighteen, 50\% agreement, broken down by country in Figure~\ref{fig:recompute-band}. The disagreements do not all run in the same direction, so this is not a case of countries systematically inflating their score. The figure shows the numbers diverging, with Montenegro's stated licence coverage exceeding 90\% where the recompute reads 70\%, an overstatement, while Croatia's published figure for Q22 sits at 10-30\% against a recompute above 90\%, an understatement of what the portal actually carries. This recompute is not infallible, as the Verifier recomputes the scores over the cached data that the Researcher retrieved, and there is no separate route or evidence pool to check against.
 
-Convergent Validity is therefore only half met. The system reproduces the existing process on 70.1\% of the answers it commits to. The recompute tested the harder question, whether the figures a country reports about its own portal survive a check against the portal itself. On these nine they do not. The self-report and an independent count disagree on 50\% of the measurable cells, which is evidence that the reported figures on the objective quality questions are often inaccurate. It falls short of proof, because the recompute has no route independent of the Researcher\textquotesingle s harvest, so no single figure is settled. Capgemini already amends 10\% of the answers countries submit, which is the assessment\textquotesingle s own admission that self-reports are sometimes wrong, and on the small set of questions where an outside check is possible, the recompute points the same ways.
+Convergent Validity is therefore only half met. The system reproduces the existing process on 70.1\% of the answers it commits to. The recompute tested the harder question, whether the figures a country reports about its own portal survive a check against the portal itself. On these nine they do not. The self-report and an independent count disagree on 50\% of the measurable cells, which is evidence that the reported figures on the objective quality questions are often inaccurate. It falls short of proof, because the recompute has no route independent of the Researcher's harvest, so no single figure is settled. Capgemini already amends 10\% of the answers countries submit, which is the assessment's own admission that self-reports are sometimes wrong, and on the small set of questions where an outside check is possible, the recompute points the same ways.
 
 \section{Selectivity}\label{sec:selectivity}
 
 Abstention exists so the swarm does not commit answers with shaky underlying evidence. Table~\ref{tab:abstention-reasons} breaks the 508 abstentions down by reason, and Appendix~\ref{app:pipeline-detail} carries the full trail. Every one passed through the Adjudicator, which returned an abstain verdict on 413; a commit gate withheld a further 82 at the 0.65 floor, and in 13 more the Adjudicator's own answer was inconclusive. No abstention in this run came from an empty search, and a gold answer existed for 94.3\% of these questions.
 
+{\small
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.4531}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.2031}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3437}}@{}}
+  L{0.4531}
+  L{0.2031}
+  L{0.3437}@{}}
 \caption{Why the swarm abstained.}\label{tab:abstention-reasons}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Reason for abstaining}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Share of abstentions}
-\end{minipage} \\
+\textbf{Reason for abstaining} & \textbf{Pairs} & \textbf{Share of abstentions} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Reason for abstaining}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Share of abstentions}
-\end{minipage} \\
+\textbf{Reason for abstaining} & \textbf{Pairs} & \textbf{Share of abstentions} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -173,6 +107,7 @@ Fetch error & 16 & 3.1\% \\
 Blocked by the deny-list & 12 & 2.4\% \\
 All abstentions & 508 & 100.0\% \\
 \end{longtable}
+}
 
 
 Section~\ref{sec:open-world} highlighted how moving the evidence pool from self-reporting to the open web means absence of evidence of a practice no longer equates to absence of the practice itself. Question PT28 asks, ``Do you monitor search key words?''. It is easier to find evidence when the national data team do follow a practice, since they may have posted on their portal that they do. For the swarm to mark it ``no'' with confidence, it must find concrete evidence that they do not, and a national data team is unlikely to publish that it is not following a practice. Accordingly, 19 of the 143 questions were abstained on by at least 7 countries, and 12 of these covered internal practices. Any evidence the swarm finds may be related to the practice without directly addressing it, so it will be less confident in these answers. This is reflected in the results: across all answer shapes the swarm abstains on 50.0\% of no golds against 37.1\% of yes golds.
@@ -207,38 +142,23 @@ Selectivity as implemented meets the first of Section~\ref{sec:criteria}'s two r
 
 Attributability was defined in Section~\ref{sec:criteria} by two conditions. The quoted passage must exist in the source, and a reasonable reader must agree it supports the claim. The first is a string comparison the system enforces on every answer before it commits; the second needs a reader, and Section~\ref{sec:agent-loop} puts the Verifier in charge of this role. Attributability's value is that an assessed country knows its score rests on well-evidenced grounds, and can contest the evidence held against it.
 
-The first condition is enforced mechanically. The offline gate described in Section~\ref{sec:agent-loop} compares the Researcher\textquotesingle s quoted passage against the snippets it read and fails the answer where the passage does not appear. It sits upstream of the commit decision, so all 636 committed answers passed it, and 24 of the run\textquotesingle s 508 abstentions record an ungrounded passage as the reason. Fabrication, one of the central risks of a generative assessor identified in Section~\ref{sec:llm-limitations}, is caught by a string comparison and is not what limits the system.
+The first condition is enforced mechanically. The offline gate described in Section~\ref{sec:agent-loop} compares the Researcher's quoted passage against the snippets it read and fails the answer where the passage does not appear. It sits upstream of the commit decision, so all 636 committed answers passed it, and 24 of the run's 508 abstentions record an ungrounded passage as the reason. Fabrication, one of the central risks of a generative assessor identified in Section~\ref{sec:llm-limitations}, is caught by a string comparison and is not what limits the system.
 
-Testing for misinterpretation requires a `reasonable reader'. The Verifier\textquotesingle s role is to apply the scrutiny a human reader would bring to the submitted evidence. Table~\ref{tab:attributability} displays the 208 relevance rejections, which are pairs where the quote survived the string comparison and the Verifier ruled the evidence off-target anyway, so off-target evidence outnumbers absent evidence by more than eight to one.
+Testing for misinterpretation requires a `reasonable reader'. The Verifier's role is to apply the scrutiny a human reader would bring to the submitted evidence. Table~\ref{tab:attributability} displays the 208 relevance rejections, which are pairs where the quote survived the string comparison and the Verifier ruled the evidence off-target anyway, so off-target evidence outnumbers absent evidence by more than eight to one.
 
+{\small
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3750}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3409}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1136}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1705}}@{}}
+  L{0.3750}
+  L{0.3409}
+  L{0.1136}
+  L{0.1705}@{}}
 \caption{What each attributability condition caught, over the 1,144 evaluation pairs.}\label{tab:attributability}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Attributability condition}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{What fails it}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Share of 1,144}
-\end{minipage} \\
+\textbf{Attribut\-ability condition} & \textbf{What fails it} & \textbf{Pairs} & \textbf{Share of 1,144} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Attributability condition}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{What fails it}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Share of 1,144}
-\end{minipage} \\
+\textbf{Attribut\-ability condition} & \textbf{What fails it} & \textbf{Pairs} & \textbf{Share of 1,144} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -248,56 +168,34 @@ A reader agrees it supports the claim & Verifier ruled the evidence off-target &
 Both conditions cleared & answer committed & 636 & 55.6\% \\
 Neither condition reached & abstained for another reason & 276 & 24.1\% \\
 \end{longtable}
+}
 
 
-Scrutiny of the Researcher's claims from the Verifier raises the commit rate from 26.6\% to 46\% and the correct answers from 220 to 372 (Section~\ref{sec:ablation}). It converts 165 of the Researcher\textquotesingle s wrong or withheld answers into correct ones and loses 13 in the other direction, moving 178 answers in all. The Adjudicator improves upon this by committing an extra 110 answers and getting 65 right, and it overturns none of the Verifier\textquotesingle s existing decisions. This is the extent to which the architecture can ensure a `reasonable' reader is judging that claims are valid without an external model or human verification layer, and the Adjudicator correcting zero of the Verifier's claims hints that each reasoning stage converges closer to the true accuracy ceiling.
+Scrutiny of the Researcher's claims from the Verifier raises the commit rate from 26.6\% to 46\% and the correct answers from 220 to 372 (Section~\ref{sec:ablation}). It converts 165 of the Researcher's wrong or withheld answers into correct ones and loses 13 in the other direction, moving 178 answers in all. The Adjudicator improves upon this by committing an extra 110 answers and getting 65 right, and it overturns none of the Verifier's existing decisions. This is the extent to which the architecture can ensure a `reasonable' reader is judging that claims are valid without an external model or human verification layer, and the Adjudicator correcting zero of the Verifier's claims hints that each reasoning stage converges closer to the true accuracy ceiling.
 
-Opus 4.6 reviewed the 91 cases where the swarm committed a ``yes'' against a negative gold, with both the swarm\textquotesingle s evidence and the ODMI\textquotesingle s explanation in front of it, to test whether the swarm had misattributed its evidence or the published answer was wrong or out of date. On 84 of the 91 it judged the cited passage simply too weak to carry the claim. On the other seven it found the evidence sufficient and the published ``no'' defensible or out of date, and four of those seven carry no published explanation at all. Opus shares a training lineage with the Sonnet agents, so a stronger test is another model family or a human reader. What this small experiment confirmed is that misattribution is a failure mode of the swarm, rather than the answer key being consistently incorrect.
+Opus 4.6 reviewed the 91 cases where the swarm committed a ``yes'' against a negative gold, with both the swarm's evidence and the ODMI's explanation in front of it, to test whether the swarm had misattributed its evidence or the published answer was wrong or out of date. On 84 of the 91 it judged the cited passage simply too weak to carry the claim. On the other seven it found the evidence sufficient and the published ``no'' defensible or out of date, and four of those seven carry no published explanation at all. Opus shares a training lineage with the Sonnet agents, so a stronger test is another model family or a human reader. What this small experiment confirmed is that misattribution is a failure mode of the swarm, rather than the answer key being consistently incorrect.
 
-636 committed answers cleared the string comparison and 24 abstentions record a quote that did not, which settles the first condition. The Verifier performs the role of the reasonable reader well, halting 208 of the Researcher\textquotesingle s overreaching claims, but still lets through 91, showing the issue is not solved. In production, where there is no answer key to check against, the many overreads that slip through the system will remain undetected, and this is where an external model or human reviewer would be valuable.
+636 committed answers cleared the string comparison and 24 abstentions record a quote that did not, which settles the first condition. The Verifier performs the role of the reasonable reader well, halting 208 of the Researcher's overreaching claims, but still lets through 91, showing the issue is not solved. In production, where there is no answer key to check against, the many overreads that slip through the system will remain undetected, and this is where an external model or human reviewer would be valuable.
 
 \section{Subgroup Equity}\label{sec:subgroup-equity}
 
 Subgroup Equity asks whether the same standard of assessment applied to every country. This section analyses which properties are incidental to maturity and which are inseparable from it, because only the first kind can be removed. The evaluation set was stratified to test the clearest incidental candidate, language comprehension. Section~\ref{sec:multilingual} set out three explanations for a poor score: the model misreads evidence written in the national language, the evidence is not published at all, or the country is truly less open. The two strata separate the first of these from the other two, with stratum A holding the four lower-resource languages (Bosnia and Herzegovina, North Macedonia, Montenegro and Bulgaria) and stratum B the four higher-resource ones (Finland, Croatia, Sweden and Belgium).
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2059}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0882}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1275}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1863}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1863}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2059}}@{}}
+  L{0.2059}
+  L{0.0882}
+  L{0.1275}
+  L{0.1863}
+  L{0.1863}
+  L{0.2059}@{}}
 \caption{Outcomes by resource stratum.}\label{tab:strata}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Stratum}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Abstention}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Neg-gold FP (all)}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Neg-gold FP (committed)}
-\end{minipage} \\
+\textbf{Stratum} & \textbf{Pairs} & \textbf{Abstention} & \textbf{Commit accuracy} & \textbf{Neg-gold FP (all)} & \textbf{Neg-gold FP (committed)} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Stratum}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Abstention}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Neg-gold FP (all)}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Neg-gold FP (committed)}
-\end{minipage} \\
+\textbf{Stratum} & \textbf{Pairs} & \textbf{Abstention} & \textbf{Commit accuracy} & \textbf{Neg-gold FP (all)} & \textbf{Neg-gold FP (committed)} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -305,13 +203,14 @@ Subgroup Equity asks whether the same standard of assessment applied to every co
 Stratum A (lower resource) & 572 & 52.3\% & 61.1\% (162/265) & 21.1\% (55/261) & 42.6\% (55/129) \\
 Stratum B (higher) & 572 & 36.5\% & 76.8\% (275/358) & 33.6\% (36/107) & 65.5\% (36/55) \\
 \end{longtable}
+}
 
 
-Stratum A has over double the negative-golds of B, and would be expected to perform worse as Section~\ref{sec:convergent-validity} found the swarm handles ``yesses'' far better than ``noes''. However, stratum A\textquotesingle s negative gold false positive rate is far lower than B\textquotesingle s in both aggregate and commit-only, at 0.211 against 0.336 in aggregate and 0.426 against 0.655 on committed negatives. The obvious objection is that stratum A simply declines more of the hard negatives. That does not hold, since the swarm abstains on 50.6\% of negative golds in stratum A against 48.6\% in stratum B. Weaker language comprehension did not produce confident error.
+Stratum A has over double the negative-golds of B, and would be expected to perform worse as Section~\ref{sec:convergent-validity} found the swarm handles ``yesses'' far better than ``noes''. However, stratum A's negative gold false positive rate is far lower than B's in both aggregate and commit-only, at 0.211 against 0.336 in aggregate and 0.426 against 0.655 on committed negatives. The obvious objection is that stratum A simply declines more of the hard negatives. That does not hold, since the swarm abstains on 50.6\% of negative golds in stratum A against 48.6\% in stratum B. Weaker language comprehension did not produce confident error.
 
-Table~\ref{tab:strata} shows that what rises in stratum A is abstention, at 52.3\% against stratum B\textquotesingle s 36.5\%, and commit accuracy is lower, at 61.1\% against 76.8\%. That appears to contradict the false-positive result, since a stratum with lower accuracy might be expected to make more of every kind of error. The two measures cover different populations. Commit accuracy covers every committed answer of either class, while the false-positive rate covers only negative golds, of which stratum A had many more. So the aggregate figure reflects the class imbalance between the strata, with stratum B performing better overall, despite being much worse on the few negative answers it held.
+Table~\ref{tab:strata} shows that what rises in stratum A is abstention, at 52.3\% against stratum B's 36.5\%, and commit accuracy is lower, at 61.1\% against 76.8\%. That appears to contradict the false-positive result, since a stratum with lower accuracy might be expected to make more of every kind of error. The two measures cover different populations. Commit accuracy covers every committed answer of either class, while the false-positive rate covers only negative golds, of which stratum A had many more. So the aggregate figure reflects the class imbalance between the strata, with stratum B performing better overall, despite being much worse on the few negative answers it held.
 
-The 15.7\% abstention gap can be traced back to what triggered it in the pipeline. Stratum A abstains on 299 of its 572 pairs against stratum B\textquotesingle s 209, and around 96\% of that gap sits at the Researcher\textquotesingle s confidence landing below the threshold. This happened on 143 pairs in stratum A against 56 in stratum B. The Verifier\textquotesingle s own relevance rejections are marginally more common in the higher-resource group at 107 against 101. Fetch failures run at sixteen in stratum A against none in stratum B, fourteen of them in Bulgaria alone, which is small and one-sided. The stratum difference therefore moves how confident the Researcher is in what it read, and leaves untouched how the Verifier judges whether that evidence is on target. The Researcher is struggling to find any good evidence in the first place, and states so immediately. What stays unseparated is whether a low confidence score in stratum A reflects the model reading the national language less well or the estate publishing less to read, and Section~\ref{sec:reformulation} records that. The stratum is not the dominant axis in any case, since the false-positive rate varies more within each group than between them, spanning 0.128 to 0.301 inside stratum A and 0.222 to 0.483 inside stratum B against a gap of 0.125 between the two.
+The 15.7\% abstention gap can be traced back to what triggered it in the pipeline. Stratum A abstains on 299 of its 572 pairs against stratum B's 209, and around 96\% of that gap sits at the Researcher's confidence landing below the threshold. This happened on 143 pairs in stratum A against 56 in stratum B. The Verifier's own relevance rejections are marginally more common in the higher-resource group at 107 against 101. Fetch failures run at sixteen in stratum A against none in stratum B, fourteen of them in Bulgaria alone, which is small and one-sided. The stratum difference therefore moves how confident the Researcher is in what it read, and leaves untouched how the Verifier judges whether that evidence is on target. The Researcher is struggling to find any good evidence in the first place, and states so immediately. What stays unseparated is whether a low confidence score in stratum A reflects the model reading the national language less well or the estate publishing less to read, and Section~\ref{sec:reformulation} records that. The stratum is not the dominant axis in any case, since the false-positive rate varies more within each group than between them, spanning 0.128 to 0.301 inside stratum A and 0.222 to 0.483 inside stratum B against a gap of 0.125 between the two.
 
 
 
@@ -328,7 +227,7 @@ Finland records the highest false-positive rate of the eight countries, at 48.3\
 
 In mature countries, a negative gold rarely signifies a simple absence. Because such countries implement most practices, a recorded ``no'' is often accompanied by adjacent evidence, partial implementation, a related practice, or a published intention yet to be realised. This near-miss evidence is plentiful and can be interpreted as support for a positive answer. By contrast, in less mature countries a negative gold more commonly indicates a practice that is absent, and the open web yields little that could be confused with it, as they have a sparser web-presence. Section~\ref{sec:llm-limitations} outlines the mechanism by which adjacent evidence leads to over-reading. The denser the evidence base, the more material there is to over-read.
 
-Section~\ref{sec:criteria} set out the requirement that a country\textquotesingle s result depends "solely on its capability in the specific quality that is being assessed". A distinction has to be made. Subgroup Equity requires that a country\textquotesingle s score tracks its maturity alone, whereas here, the swarm\textquotesingle s performance tracks maturity too. Subgroup Equity therefore is not met, and the reason sits in the current form of the assessment. The system recovers 87.0\% of the yes golds it commits to against 48.9\% of the no golds. A country\textquotesingle s maturity is calculated directly from how many answers are negative, so the class the system handles worst makes up a larger part of a low-maturity country\textquotesingle s assessment. A score is built from counts of awarded marks. Stratum A accrues 55 wrongly credited answers against stratum B\textquotesingle s 36, even though its rate per negative gold is the lower of the two. Coverage falls as maturity falls, which is the top panel of Figure~\ref{fig:against-maturity}. Among the answers that do commit, wrong yesses outnumber wrong noes by roughly two to one, so what survives leans towards crediting practices that are not there. Both effects track the country\textquotesingle s position on the scale the index exists to measure, which makes the error a function of the quantity the system intends to measure.
+Section~\ref{sec:criteria} set out the requirement that a country's result depends "solely on its capability in the specific quality that is being assessed". A distinction has to be made. Subgroup Equity requires that a country's score tracks its maturity alone, whereas here, the swarm's performance tracks maturity too. Subgroup Equity therefore is not met, and the reason sits in the current form of the assessment. The system recovers 87.0\% of the yes golds it commits to against 48.9\% of the no golds. A country's maturity is calculated directly from how many answers are negative, so the class the system handles worst makes up a larger part of a low-maturity country's assessment. A score is built from counts of awarded marks. Stratum A accrues 55 wrongly credited answers against stratum B's 36, even though its rate per negative gold is the lower of the two. Coverage falls as maturity falls, which is the top panel of Figure~\ref{fig:against-maturity}. Among the answers that do commit, wrong yesses outnumber wrong noes by roughly two to one, so what survives leans towards crediting practices that are not there. Both effects track the country's position on the scale the index exists to measure, which makes the error a function of the quantity the system intends to measure.
 
 \section{Generalisability}\label{sec:generalisability}
 
@@ -343,7 +242,7 @@ Generalisability asks whether the system performs evenly across the question typ
 
 Across the four dimensions the headline holds unevenly, as Figure~\ref{fig:by-dimension} sets out. Commit-accuracy runs from 78.4\% on Portal to 62.2\% on Impact, and coverage varies more, from 74.2\% on Policy to 42.7\% on Quality. Counting abstentions as failures the dimensions sit between 30.2\% for Quality and 48.4\% for Policy. The gap is largest on negative golds, with the false-positive rate at 13.2\% on Portal and 50.0\% on Policy.
 
-Dimension and answer shape are not independent. The graded questions sit almost entirely in Quality, and the nine catalogue questions are most of why the dimension looks unreachable. The 50\% accuracy of the nine questions pull down the rest of the dimension, and once they are set aside the swarm answers Quality at 80.3\% when it commits, so the 70.7\% in Figure~\ref{fig:by-dimension} is the catalogue questions pulling the score down. Quality\textquotesingle s low coverage is the system declining what it cannot ground, which is also why its negative-gold false-positive rate is the second lowest of the four. Portal sits at the other extreme, strongest on both accuracy and false positives, because a portal\textquotesingle s features can be read straight off the portal, the one place where absence of proof does equate to absence of existence. Policy is the revealing case, it answers the most and gets half of its negative golds wrong.
+Dimension and answer shape are not independent. The graded questions sit almost entirely in Quality, and the nine catalogue questions are most of why the dimension looks unreachable. The 50\% accuracy of the nine questions pull down the rest of the dimension, and once they are set aside the swarm answers Quality at 80.3\% when it commits, so the 70.7\% in Figure~\ref{fig:by-dimension} is the catalogue questions pulling the score down. Quality's low coverage is the system declining what it cannot ground, which is also why its negative-gold false-positive rate is the second lowest of the four. Portal sits at the other extreme, strongest on both accuracy and false positives, because a portal's features can be read straight off the portal, the one place where absence of proof does equate to absence of existence. Policy is the revealing case, it answers the most and gets half of its negative golds wrong.
 
 
 
@@ -362,46 +261,23 @@ Coverage and accuracy must be considered together, because a dimension that abst
 
 Reproducibility asks whether the same assessment, run again, returns the same answers. Section~\ref{sec:criteria} set two conditions: a record complete enough for the run to be repeated, covering the prompts issued, the evidence retrieved, the model version and the settings it ran under, and evidence that a repeat returns the same answers. The second matters most for a generative assessor, whose output varies across runs of the same prompt, where the score a country receives should depend only on its data openness.
 
-The first condition holds with one gap. Every Researcher, Verifier and Adjudicator call writes a row carrying the prompt version, the snippets the Researcher read, the model version and the settings. The snippet picker, the model call that selects which passages from each fetched page reach the Researcher, writes no equivalent row for this run, so its prompt and model version sit outside the record. Its output is kept, since the picked snippets are stored against the Researcher call that used them, and the run therefore replays from the Researcher\textquotesingle s inputs onward rather than from every model call. The second condition must be measured between runs, to assess the stability of the answers.
+The first condition holds with one gap. Every Researcher, Verifier and Adjudicator call writes a row carrying the prompt version, the snippets the Researcher read, the model version and the settings. The snippet picker, the model call that selects which passages from each fetched page reach the Researcher, writes no equivalent row for this run, so its prompt and model version sit outside the record. Its output is kept, since the picked snippets are stored against the Researcher call that used them, and the run therefore replays from the Researcher's inputs onward rather than from every model call. The second condition must be measured between runs, to assess the stability of the answers.
 
+{\footnotesize
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1280}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1379}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1477}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1379}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1879}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2094}}@{}}
+  L{0.1280}
+  L{0.1379}
+  L{0.1477}
+  L{0.1379}
+  L{0.1879}
+  L{0.2094}@{}}
 \caption{The three replicate runs.}\label{tab:replicates}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\centering
-\textbf{Replicate}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Finalised}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Commit rate}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Committed}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Commit Accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Aggregate Accuracy}
-\end{minipage} \\
+\textbf{Replicate} & \textbf{Finalised} & \textbf{Commit rate} & \textbf{Committed} & \textbf{Commit Accuracy} & \textbf{Aggregate Accuracy} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\centering
-\textbf{Replicate}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Finalised}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Commit rate}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Committed}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Commit Accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-\textbf{Aggregate Accuracy}
-\end{minipage} \\
+\textbf{Replicate} & \textbf{Finalised} & \textbf{Commit rate} & \textbf{Committed} & \textbf{Commit Accuracy} & \textbf{Aggregate Accuracy} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -410,6 +286,7 @@ Run 1 & 155 / 156 & 46.6\% & 69 & 69.1\% & 31.8\% \\
 Run 2 & 154 / 156 & 44.6\% & 66 & 67.7\% & 29.7\% \\
 Run 3 & 151 / 156 & 50.0\% & 74 & 68.5\% & 33.8\% \\
 \end{longtable}
+}
 
 
 Three fresh dispatches of the swarm ran over the 156-pair development battery, with nothing seeded or replayed and the search cache purged before each run, so every replicate found its evidence from scratch. Table~\ref{tab:replicates} gives each run; the eight pairs between the runs that didn't finalise were search stalls, disclosed and excluded, so the analysis rests on the 148 pairs present in all three.
@@ -429,50 +306,27 @@ The asymmetry between the two gold classes sits entirely in the decision to answ
 
 The route to those answers varied far more than the answers did, as the lower bar of Figure~\ref{fig:replicates-fig} shows. Of the 47 pairs where all three replicates committed and agreed, 42 cite two or more distinct source URLs across the runs and 17 cite three. Section~\ref{sec:criteria} anticipated this, that a generative assessor finding its own evidence may issue different queries and read different pages between runs when the underlying truth has not changed, and that what has to hold is the outcome whatever route the model took to it.
 
-Against the two conditions of Section~\ref{sec:criteria}, the record replays and the published score is stable, but the individual question decisions are not. The instability is in whether the system answers a given question at all, and it falls on the thin-evidence negative golds whose confidence sits at the 0.65 floor, where a small shift between runs tips the decision either way. This does not reach the score. A country\textquotesingle s score pools 143 questions, the per-question flips offset each other, and commit accuracy moves only 1.4 points across the three runs. So the number the ODMI would publish is reproducible, but the stability of the evidence for each question varies.
+Against the two conditions of Section~\ref{sec:criteria}, the record replays and the published score is stable, but the individual question decisions are not. The instability is in whether the system answers a given question at all, and it falls on the thin-evidence negative golds whose confidence sits at the 0.65 floor, where a small shift between runs tips the decision either way. This does not reach the score. A country's score pools 143 questions, the per-question flips offset each other, and commit accuracy moves only 1.4 points across the three runs. So the number the ODMI would publish is reproducible, but the stability of the evidence for each question varies.
 
 \section{Ablation}\label{sec:ablation}
 
-Each component of the swarm was removed in turn to test what it contributes. The ablation runs on the eight evaluation countries, and four arms are compared. The Researcher alone commits when its own confidence is sufficient, with no second call. The second arm adds the Adversarial Verifier and its retry loop, committing only where the two agents agree within three retries. The third is the full swarm, with the Adjudicator arbitrating disagreements. The fourth replaces the Adversarial Verifier with a corroborative one, prompted to find evidence supporting the Researcher\textquotesingle s claim rather than against it. This arm has no adjudicator, both because a corroborative check produces at most an absence of support rather than a counterargument to weigh, and because the arm exists to isolate the Verifier\textquotesingle s stance.
+Each component of the swarm was removed in turn to test what it contributes. The ablation runs on the eight evaluation countries, and four arms are compared. The Researcher alone commits when its own confidence is sufficient, with no second call. The second arm adds the Adversarial Verifier and its retry loop, committing only where the two agents agree within three retries. The third is the full swarm, with the Adjudicator arbitrating disagreements. The fourth replaces the Adversarial Verifier with a corroborative one, prompted to find evidence supporting the Researcher's claim rather than against it. This arm has no adjudicator, both because a corroborative check produces at most an absence of support rather than a counterargument to weigh, and because the arm exists to isolate the Verifier's stance.
 
+{\small
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.2183}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1776}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1776}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1929}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1269}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1066}}@{}}
+  L{0.2183}
+  L{0.1776}
+  L{0.1776}
+  L{0.1929}
+  L{0.1269}
+  L{0.1066}@{}}
 \caption{The ablation ladder. Four arms over the 1,144 evaluation pairs, Sonnet 4.6.}\label{tab:ablation}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Configuration}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit rate}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Negative-gold FP rate}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Balanced acc.}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Youden J}
-\end{minipage} \\
+\textbf{Configuration} & \textbf{Commit rate} & \textbf{Commit accuracy} & \textbf{Negative-gold FP rate} & \textbf{Balanced acc.} & \textbf{Youden J} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Configuration}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit rate}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Commit accuracy}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Negative-gold FP rate}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Balanced acc.}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Youden J}
-\end{minipage} \\
+\textbf{Configuration} & \textbf{Commit rate} & \textbf{Commit accuracy} & \textbf{Negative-gold FP rate} & \textbf{Balanced acc.} & \textbf{Youden J} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -483,23 +337,24 @@ Researcher alone & 26.6\% (304/1144) & 74.3\% (220/296) & 12.5\% (46/368) & 0.17
 + Adjudicator (full trio) & 55.6\% (636/1144) & 70.1\% (437/623) & 24.7\% (91/368) & 0.396 & -0.208 \\
 Corroborative Verifier & 47.6\% (545/1144) & 71.2\% (380/534) & 27.2\% (100/368) & 0.316 & -0.368 \\
 \end{longtable}
+}
 
 
-Table~\ref{tab:ablation} shows the results of this ablation ladder, covering commit rate, accuracy and negative-gold false-positive rate. The headline result is the improvement in coverage rather than raw accuracy. The Researcher alone commits on 26.6\% of the pairs, lifting to 46.0\% with the Adversarial Verifier and 55.6\% with the Adjudicator. The number of correct answers rises with it, from 220 to 372 to 437 out of 1,144. The Verifier turns 165 of the Researcher\textquotesingle s wrong or withheld answers into correct ones and loses 13 the other way, and the Adjudicator adds 65 correct answers while reversing none.
+Table~\ref{tab:ablation} shows the results of this ablation ladder, covering commit rate, accuracy and negative-gold false-positive rate. The headline result is the improvement in coverage rather than raw accuracy. The Researcher alone commits on 26.6\% of the pairs, lifting to 46.0\% with the Adversarial Verifier and 55.6\% with the Adjudicator. The number of correct answers rises with it, from 220 to 372 to 437 out of 1,144. The Verifier turns 165 of the Researcher's wrong or withheld answers into correct ones and loses 13 the other way, and the Adjudicator adds 65 correct answers while reversing none.
 
-Accuracy on the answers each arm keeps moves the other way. The Researcher alone reproduces the published key on 74.3\% of what it commits, the Adversarial Verifier arm on 72.5\%, and the full trio on 70.1\%. The closed-book floor commits readily, on 75.6\% of pairs, and reproduces the key on 55.3\% of them, so the evidence the swarm gathers is worth fifteen points of commit accuracy over the model\textquotesingle s own priors.
+Accuracy on the answers each arm keeps moves the other way. The Researcher alone reproduces the published key on 74.3\% of what it commits, the Adversarial Verifier arm on 72.5\%, and the full trio on 70.1\%. The closed-book floor commits readily, on 75.6\% of pairs, and reproduces the key on 55.3\% of them, so the evidence the swarm gathers is worth fifteen points of commit accuracy over the model's own priors.
 
 That gap closes once both are made to answer everything. Scoring every binary question and counting a declined one as wrong, the closed-book model reproduces 43.0\% of the key and the full swarm 42.4\%. Retrieval does not raise the number of questions the system gets right. It raises the share it gets right among the ones it keeps, which is a claim about selection and not about knowledge.
 
-Two results complicate this picture. The first is that the Adversarial Verifier does not filter for precision. If it did, it would commit fewer wrong answers on the negative golds than the Researcher alone. It commits more. Coverage rises from 26.6\% to 46.0\% and the false-positive rate climbs with it, from 12.5\% to 23.4\%. The Adjudicator raises coverage again to 55.6\%, adding five further wrong commitments on the negative golds and recovering none, which leaves the rate almost unmoved at 24.7\%. That it costs so little supports Tyen et al.\textquotesingle s finding that a model rules on a located error far more reliably than it detects one unaided, since the Adjudicator only ever sees a disagreement the Verifier has already drawn. The closed-book floor puts the problem at its sharpest. Answering from its parameters alone, it asserts a wrong yes on 13.9\% of the negative golds against the full trio\textquotesingle s 24.7\%, so a model with no evidence in front of it commits fewer false yeses than the architecture built to prevent them.
+Two results complicate this picture. The first is that the Adversarial Verifier does not filter for precision. If it did, it would commit fewer wrong answers on the negative golds than the Researcher alone. It commits more. Coverage rises from 26.6\% to 46.0\% and the false-positive rate climbs with it, from 12.5\% to 23.4\%. The Adjudicator raises coverage again to 55.6\%, adding five further wrong commitments on the negative golds and recovering none, which leaves the rate almost unmoved at 24.7\%. That it costs so little supports Tyen et al.'s finding that a model rules on a located error far more reliably than it detects one unaided, since the Adjudicator only ever sees a disagreement the Verifier has already drawn. The closed-book floor puts the problem at its sharpest. Answering from its parameters alone, it asserts a wrong yes on 13.9\% of the negative golds against the full trio's 24.7\%, so a model with no evidence in front of it commits fewer false yeses than the architecture built to prevent them.
 
-The obvious objection is that the closed-book model only looks precise because it declines more of the hard questions. It does not. It commits on 56.8\% of the negative golds where the full swarm commits on 50.0\%, so it answers more of them and still recovers 42.1\% of the no answers against the swarm\textquotesingle s 24.5\%. Searching the web nearly halves the system\textquotesingle s ability to establish that a practice is absent. The likely reason is what a search returns. Material adjacent to a practice reads as evidence that the practice exists, and nothing comes back that evidences its absence. This comparison cannot prove that on its own, since the closed-book arm differs from the Researcher in its prompt, its lack of a confidence gate and its lack of a Verifier, so a readier disposition to answer ``no'' is not ruled out.
+The obvious objection is that the closed-book model only looks precise because it declines more of the hard questions. It does not. It commits on 56.8\% of the negative golds where the full swarm commits on 50.0\%, so it answers more of them and still recovers 42.1\% of the no answers against the swarm's 24.5\%. Searching the web nearly halves the system's ability to establish that a practice is absent. The likely reason is what a search returns. Material adjacent to a practice reads as evidence that the practice exists, and nothing comes back that evidences its absence. This comparison cannot prove that on its own, since the closed-book arm differs from the Researcher in its prompt, its lack of a confidence gate and its lack of a Verifier, so a readier disposition to answer ``no'' is not ruled out.
 
 The two are also right about different questions. Across the binary golds they agree on 243 and disagree on 289, with 142 going to the swarm and 147 to the closed-book model, at a McNemar p of 0.8140. A system able to pick the better of the two on each question would reach 58.7\%, well above either alone. Retrieval and parametric recall are close to independent here, which this design was not built to exploit.
 
-The second result is that the Verifier\textquotesingle s stance does not matter. Swapping the Verifier from adversarial to corroborative changes very little. Balanced accuracy moves from 31.5\% to 31.6\%. Of the 110 pairs one arm answered correctly and the other did not, 51 went to the adversarial arm and 59 to the corroborative, at a McNemar p of 0.5047. On total accuracy, which counts an abstention as a miss, the arms sit at 32.5\% and 33.2\%, a difference of 0.7 points against a paired standard error of 0.9, and this is evidence of equivalence. Section~\ref{sec:verification-methods} and Section~\ref{sec:debate} argue that opposition succeeds where corroboration fails in a thin-evidence setting, because corroboration compounds the model\textquotesingle s guessing bias while refutation checks it. On accuracy that argument is not supported.
+The second result is that the Verifier's stance does not matter. Swapping the Verifier from adversarial to corroborative changes very little. Balanced accuracy moves from 31.5\% to 31.6\%. Of the 110 pairs one arm answered correctly and the other did not, 51 went to the adversarial arm and 59 to the corroborative, at a McNemar p of 0.5047. On total accuracy, which counts an abstention as a miss, the arms sit at 32.5\% and 33.2\%, a difference of 0.7 points against a paired standard error of 0.9, and this is evidence of equivalence. Section~\ref{sec:verification-methods} and Section~\ref{sec:debate} argue that opposition succeeds where corroboration fails in a thin-evidence setting, because corroboration compounds the model's guessing bias while refutation checks it. On accuracy that argument is not supported.
 
-It survives on the negative golds, where the adversarial arm commits a wrong answer on 23.4\% against the corroborative arm\textquotesingle s 27.2\%, and of the 50 where exactly one arm went wrong, 32 came from the corroborative arm, at p of 0.0649. Corroboration raises yes-recall from 52.1\% to 55.8\% and lowers no-recall from 10.9\% to 7.3\%, the guessing bias Section~\ref{sec:debate} describes, short of significance.
+It survives on the negative golds, where the adversarial arm commits a wrong answer on 23.4\% against the corroborative arm's 27.2\%, and of the 50 where exactly one arm went wrong, 32 came from the corroborative arm, at p of 0.0649. Corroboration raises yes-recall from 52.1\% to 55.8\% and lowers no-recall from 10.9\% to 7.3\%, the guessing bias Section~\ref{sec:debate} describes, short of significance.
 
 The literature anticipates this. \textcite{chowdhury2026} assign a different model to each of their judges, on the argument that agents drawn from the same weights cannot be relied on to disagree. Their own ablation locates the largest single gain not in the argumentation structure but in progressive evidence retrieval, 7.5 points of their 10.0-point improvement over standard multi-agent debate. \textcite{zhu2026} attribute the benefit of debate to agent diversity rather than to the framework itself. Here the Researcher and Verifier are the same Claude model, so the change in stance is a prompt difference and nothing more, and a prompt difference producing an equivalence result is what this literature would predict.
 
@@ -513,29 +368,18 @@ One caveat governs every figure below. The system runs through a local proxy aga
 
 Answering all 1,144 evaluation pairs cost £375 in notional compute, spread across the denominators of Table~\ref{tab:cost}: £0.33 per attempted pair, £0.59 per answer given, and £0.86 per answer that matched the key, of which there were 437.
 
+{\small
 \begin{longtable}[]{@{}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.5556}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.1944}}
-  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.2500}}@{}}
+  L{0.5556}
+  L{0.1944}
+  L{0.2500}@{}}
 \caption{What the assessment cost.}\label{tab:cost}\\
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Basis}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Cost per pair}
-\end{minipage} \\
+\textbf{Basis} & \textbf{Pairs} & \textbf{Cost per pair} \\
 \midrule\noalign{}
 \endfirsthead
 \toprule\noalign{}
-\begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Basis}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Pairs}
-\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-\textbf{Cost per pair}
-\end{minipage} \\
+\textbf{Basis} & \textbf{Pairs} & \textbf{Cost per pair} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
@@ -547,15 +391,16 @@ A pair it committed to & 636 & £0.28 \\
 A pair it abstained on & 508 & £0.41 \\
 Whole evaluation run & 1,144 & £375 total \\
 \end{longtable}
+}
 
 
 These figures are averages; pair cost varies with the number of calls required. A pair that the system committed to cost £0.26 and required 2.2 attempts, whereas a pair on which it abstained cost £0.41 and used the full three-retry budget, because under the loop described in Section~\ref{sec:agent-loop} a pair reaches abstention only after all retries are exhausted. Section~\ref{sec:selectivity} argued that abstention is the honest outcome when evidence is thin, and this is the cost of that honesty. Selectivity is the most expensive result for a pair.
 
-Per-country cost is nearly flat, from £0.310 in Finland to £0.348 in Bosnia and Herzegovina, up to £0.385 with Bulgaria, and most of that spread is the abstention mix rather than anything about how hard a country\textquotesingle s evidence is to read. Bosnia abstains on 61.5\% of its pairs against Finland\textquotesingle s 25.9\%, and an abstained pair costs 58\% more than a committed one does. Set against Section~\ref{sec:subgroup-equity}, where coverage, commit accuracy and the false-positive rate all track published maturity, cost is the one measure that does not.\textbf{ }
+Per-country cost is nearly flat, from £0.310 in Finland to £0.348 in Bosnia and Herzegovina, up to £0.385 with Bulgaria, and most of that spread is the abstention mix rather than anything about how hard a country's evidence is to read. Bosnia abstains on 61.5\% of its pairs against Finland's 25.9\%, and an abstained pair costs 58\% more than a committed one does. Set against Section~\ref{sec:subgroup-equity}, where coverage, commit accuracy and the false-positive rate all track published maturity, cost is the one measure that does not.\textbf{ }
 
 Model choice is the other lever, and Appendix~\ref{app:experiments} gives the comparison across Haiku 4.5, Sonnet 4.6 and Opus 4.8 on the development battery. It moves how much the system is willing to say, rather than how often it is right. Sonnet is retained because it commits most, at a middling price, with commit-accuracy indistinguishable from Opus, which costs over three times as much.
 
-A pair took a median of 200 seconds from its first logged Researcher call to its finalised row, counting the searches issued and the pages fetched alongside the model\textquotesingle s own work, and 95\% finished inside six minutes. This is an upper bound under load, since up to twenty pairs ran simultaneously on one machine competing for the same connection. Three pairs ran past thirty minutes, the longest at forty-nine, each stalled on an unresponsive server with the Swedish catalogue endpoint worst among them.
+A pair took a median of 200 seconds from its first logged Researcher call to its finalised row, counting the searches issued and the pages fetched alongside the model's own work, and 95\% finished inside six minutes. This is an upper bound under load, since up to twenty pairs ran simultaneously on one machine competing for the same connection. Three pairs ran past thirty minutes, the longest at forty-nine, each stalled on an unresponsive server with the Swedish catalogue endpoint worst among them.
 
 The eight evaluation countries took 45 hours and £375, so all 36 extrapolate to roughly 200 hours and £1,700. The time is an upper bound, since the eight were chosen to oversample negative golds, which skews them below the European average on maturity, and Section~\ref{sec:subgroup-equity} found lower-maturity countries abstain more, sending more pairs through the full retry budget.
 
@@ -565,7 +410,7 @@ This £1,700 does not buy a completed assessment, as the coverage across the eig
 
 The point of this exercise is to see whether a human-labour-intensive process could be replaced by an automated one. This section constructs what the maturity score would be across the eight evaluation countries, and what work would be left for the humans overseeing the automation.
 
-The ODMI computes each country\textquotesingle s score as the unweighted mean of four dimension percentages, each the marks awarded across its questions divided by the marks available. The rubric is not published but is recoverable from the answer key, at 345 distinct answer-to-score mappings across the 143 questions. Applying it to the published answers reproduces the 2025 figures exactly, at 100.0 for France and 62.9 for Bulgaria, which establishes that the recovered rubric reconstructs the ODMI\textquotesingle s arithmetic. Where the swarm returns an answer the rubric does not recognise, that answer scores zero.
+The ODMI computes each country's score as the unweighted mean of four dimension percentages, each the marks awarded across its questions divided by the marks available. The rubric is not published but is recoverable from the answer key, at 345 distinct answer-to-score mappings across the 143 questions. Applying it to the published answers reproduces the 2025 figures exactly, at 100.0 for France and 62.9 for Bulgaria, which establishes that the recovered rubric reconstructs the ODMI's arithmetic. Where the swarm returns an answer the rubric does not recognise, that answer scores zero.
 
 Abstention makes the result a range rather than a figure. The floor scores every abstention as zero, and represents what a country could be awarded on public evidence alone. The ceiling scores only the pairs the swarm committed to, so it assumes the declined pairs would have scored at the same rate. That is optimistic, since Section~\ref{sec:selectivity} showed the swarm abstains on the questions it finds hardest.
 
@@ -578,9 +423,9 @@ Abstention makes the result a range rather than a figure. The floor scores every
 \label{fig:reconstruction-fig}
 \end{figure}
 
-Ranking the eight by their reconstructed ceiling and comparing to the published order gives a Spearman correlation of 0.929, and on the floor 0.976. Section~\ref{sec:subgroup-equity} found coverage tracking published maturity at ρ = 0.81, and the floor is depressed by abstention, so a low-maturity country is pushed down the floor ordering by declining more as well as by scoring less. The ceiling removes that effect, since it divides only by what the swarm attempted. Per-country commit accuracy ranges from 52.8\% to 82.1\% and coverage from 38.5\% to 74.1\%, so there was ample room for the ordering to scramble, and yet it largely survived. The mean band spans 26.4 points and the published score falls inside it for six of the eight countries, as Figure~\ref{fig:reconstruction-fig} shows.
+Ranking the eight by their reconstructed ceiling and comparing to the published order gives a Spearman correlation of 0.929, and on the floor 0.976. Section~\ref{sec:subgroup-equity} found coverage tracking published maturity at $\rho$ = 0.81, and the floor is depressed by abstention, so a low-maturity country is pushed down the floor ordering by declining more as well as by scoring less. The ceiling removes that effect, since it divides only by what the swarm attempted. Per-country commit accuracy ranges from 52.8\% to 82.1\% and coverage from 38.5\% to 74.1\%, so there was ample room for the ordering to scramble, and yet it largely survived. The mean band spans 26.4 points and the published score falls inside it for six of the eight countries, as Figure~\ref{fig:reconstruction-fig} shows.
 
-Two countries fall outside their band, and in the same direction. Croatia\textquotesingle s published 73.5 sits above a ceiling of 68.6, and Montenegro\textquotesingle s 59.9 above a ceiling of 54.2. In both cases the swarm cannot reach the published figure even crediting every declined question as though it had performed like the ones the swarm answered.
+Two countries fall outside their band, and in the same direction. Croatia's published 73.5 sits above a ceiling of 68.6, and Montenegro's 59.9 above a ceiling of 54.2. In both cases the swarm cannot reach the published figure even crediting every declined question as though it had performed like the ones the swarm answered.
 
 The ODMI states four purposes for the assessment: to help a country understand its own maturity, to capture its progress year on year, to identify areas for improvement, and to benchmark its performance against other countries. Benchmarking is recovered, as the swarm orders the eight countries almost exactly as the assessors do, and it does so on public evidence alone.
 
@@ -590,4 +435,4 @@ Identifying areas for improvement depends on which area. Section~\ref{sec:genera
 
 Year-on-year progress is out of reach on two counts. A country typically moves a few points a cycle, well inside a 26-point band, and Section~\ref{sec:reproducibility} found the per-question decision unstable across runs, so a difference between two cycles would carry sampling variation alongside real change.
 
-The nine sections above describe one constraint. The swarm reproduces the published key on 70.1\% of the answers it commits to, against 43\% for the same model with no retrieval at all, and it reaches that figure by declining 44\% of the questions. Forced to answer everything, it falls below a blanket yes. The system declines half the questions whose answer is no against 37.1\% of those whose answer is yes, and each criterion above records a different consequence of that. Confidence measures how easy a claim was to evidence rather than how likely it is to hold. The two mechanisms built to control precision both acted on coverage. The error rises with a country\textquotesingle s published maturity, so it tracks the quantity the index exists to estimate. The searches themselves worked, and no abstention in this run came from an empty search. The system found material and could not turn it into evidence of an absence. Chapter~\ref{ch:discussion} takes up what would have to change, in the architecture and in the questionnaire, for a ``no'' to be evidenced on the same terms as a ``yes''.
+The nine sections above describe one constraint. The swarm reproduces the published key on 70.1\% of the answers it commits to, against 43\% for the same model with no retrieval at all, and it reaches that figure by declining 44\% of the questions. Forced to answer everything, it falls below a blanket yes. The system declines half the questions whose answer is no against 37.1\% of those whose answer is yes, and each criterion above records a different consequence of that. Confidence measures how easy a claim was to evidence rather than how likely it is to hold. The two mechanisms built to control precision both acted on coverage. The error rises with a country's published maturity, so it tracks the quantity the index exists to estimate. The searches themselves worked, and no abstention in this run came from an empty search. The system found material and could not turn it into evidence of an absence. Chapter~\ref{ch:discussion} takes up what would have to change, in the architecture and in the questionnaire, for a ``no'' to be evidenced on the same terms as a ``yes''.

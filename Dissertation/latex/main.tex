@@ -55,12 +55,16 @@
   pdfsubject={MSc Advanced Computing dissertation, King's College London},
 }
 
-\graphicspath{{figures/}{media/media/}}
+\graphicspath{{figures/}}
 
-% Emitted by pandoc for lists and table cells.
-\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\providecommand{\real}[1]{#1}
-\providecommand{\pandocbounded}[1]{#1}
+% A little extra interword stretch on hard lines instead of margin
+% overflow; the source has many long technical tokens.
+\setlength{\emergencystretch}{2em}
+
+% Ragged-right and centred table columns as a fraction of the line
+% width, shared by every longtable.
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{\dimexpr#1\linewidth-2\tabcolsep\relax}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{\dimexpr#1\linewidth-2\tabcolsep\relax}}
 
 \begin{document}
 \pagenumbering{gobble}
