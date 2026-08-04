@@ -1,0 +1,177 @@
+\textbf{Automating the EU Open Data Maturity Index with an LLM Agent Swarm}
+
+MSc Advanced Computing
+
+\textbf{Benjamin Bream}
+
+King's College London
+
+Department of Informatics
+
+\emph{Supervisor: Dr Johanna Walker}
+
+August 2026
+
+\textbf{\claudenote{Abstract}}
+
+\claudenote{The Open Data Maturity Index is a European Commission assessment that scores 36 countries each year across 143 questions on open data policy, portals, data quality and impact. Every answer is self-reported by a national team and then checked by hand, which makes the exercise large, slow and repeated. This dissertation asks how much of this task an agent swarm can answer from the open web instead.
+
+Six criteria for how a generative system stands in for a human assessor were assembled since no framework for this case yet exists A three-agent swarm was built against them: A Researcher retrieves evidence and proposes an answer, an adversarial Verifier searches for grounds to refute it, and an Adjudicator settles what the two leave open and can decline to answer where the evidence is insufficient.
+
+The swarm was evaluated by generating responses to 1,144 question-country pairs from a sample of eight countries, scored against the published 2025 answers. It declined to answer 508 questions due to not finding adequate evidence, and found sufficient confidence to answer 636. 70.1\% of swarm answers successfully matched the 2025 responses. Replacing the Verifier\textquotesingle s adversarial stance with a corroborative stance instead changed neither accuracy nor coverage. What did raise coverage was the number of reasoning stages, from 26.6\% with the Researcher alone to 55.6\% with the full three agent swarm.
+
+The way the questionnaire is currently set up limits what can be achieved by this approach. Accuracy divided noticeably by answer class, scoring 87.0\% on questions whose true answer is yes against 48.9\% on where the answer is no. Around a fifth of the questions ask a team about internal practice that leaves little public trace, so that an agent searching the open web cannot separate a practice a country does not follow from one it simply has not published. The closing chapter proposes a reformulation of the questionnaire, moving beyond asking simply whether practice exists but asks instead for published outputs that can be discovered. This would make the self-assessment exercise more evidence based while also paving the way to become a more automatable task.}
+
+\textbf{\claudenote{Acknowledgements}}
+
+\claudenote{I thank Dr Johanna Walker for her supervision and for the direction she gave this work at several points where it could have gone otherwise. I am grateful to my friends and family for the help along the way. Any errors are my own.}
+
+\textbf{\claudenote{Nomenclature}}
+
+\claudenote{API Application programming interface
+
+CKAN Comprehensive Knowledge Archive Network
+
+DCAT-AP Data Catalogue Vocabulary Application Profile
+
+ECE Expected calibration error
+
+EFTA European Free Trade Association
+
+FM Failure mode
+
+FP False positive
+
+LLM Large language model
+
+MQA Metadata Quality Assessment
+
+ODMI Open Data Maturity Index
+
+QF4SA Quality Framework for Statistical Algorithms
+
+RAG Retrieval-augmented generation
+
+RDF Resource Description Framework
+
+SAFE Search-Augmented Factuality Evaluator
+
+SEMIC Semantic Interoperability Community
+
+SHACL Shapes Constraint Language
+
+SPARQL SPARQL Protocol and RDF Query Language
+
+UNECE United Nations Economic Commission for Europe}
+
+Table of Contents
+
+\hyperref[introduction]{1 Introduction \hyperref[introduction]{4}}
+
+\hyperref[_Toc236652909]{1.1 Domain \hyperref[_Toc236652909]{4}}
+
+\hyperref[motivation]{1.2 Motivation \hyperref[motivation]{4}}
+
+\hyperref[the-open-world-problem]{1.3 The Open-World Problem \hyperref[the-open-world-problem]{4}}
+
+\hyperref[approach]{1.4 Approach \hyperref[approach]{5}}
+
+\hyperref[research-questions]{1.5 Research Questions \hyperref[research-questions]{5}}
+
+\hyperref[contributions]{1.6 Contributions \hyperref[contributions]{6}}
+
+\hyperref[report-structure]{1.7 Report Structure \hyperref[report-structure]{6}}
+
+\hyperref[background-and-related-work]{2 Background and Related Work \hyperref[background-and-related-work]{6}}
+
+\hyperref[the-odmi-as-an-assessment]{2.1 The ODMI as an Assessment \hyperref[the-odmi-as-an-assessment]{6}}
+
+\hyperref[criteria-for-an-automated-system]{2.2 Criteria for an Automated System \hyperref[criteria-for-an-automated-system]{7}}
+
+\hyperref[limitations-of-llms-in-truth-seeking]{2.3 Limitations of LLMs in Truth-Seeking \hyperref[limitations-of-llms-in-truth-seeking]{9}}
+
+\hyperref[methods-towards-verification]{2.4 Methods towards Verification \hyperref[methods-towards-verification]{11}}
+
+\hyperref[multi-agent-debate-for-verification]{2.5 Multi-Agent Debate for Verification \hyperref[multi-agent-debate-for-verification]{12}}
+
+\hyperref[allowing-for-abstention]{2.6 Allowing for Abstention \hyperref[allowing-for-abstention]{13}}
+
+\hyperref[multilingual-evidence-retrieval]{2.7 Multilingual Evidence Retrieval \hyperref[multilingual-evidence-retrieval]{14}}
+
+\hyperref[research-gap]{2.8 Research Gap \hyperref[research-gap]{14}}
+
+\hyperref[approach-and-methodology]{3 Approach and Methodology \hyperref[approach-and-methodology]{16}}
+
+\hyperref[system-architecture]{3.1 System Architecture \hyperref[system-architecture]{16}}
+
+\hyperref[the-agent-loop]{3.2 The Agent Loop \hyperref[the-agent-loop]{16}}
+
+\hyperref[retrieval]{3.3 Retrieval \hyperref[retrieval]{18}}
+
+\hyperref[ground-truth-and-its-limits]{3.4 Ground Truth and Its Limits \hyperref[ground-truth-and-its-limits]{18}}
+
+\hyperref[deterministic-tool-for-catalogue-questions]{3.5 Deterministic Tool for Catalogue Questions \hyperref[deterministic-tool-for-catalogue-questions]{19}}
+
+\hyperref[ccdata-leakage-controlscc]{3.6 Data-Leakage Controls \hyperref[ccdata-leakage-controlscc]{20}}
+
+\hyperref[evaluation-set]{3.7 Evaluation Set \hyperref[evaluation-set]{21}}
+
+\hyperref[experiments]{3.8 Experiments \hyperref[experiments]{22}}
+
+\hyperref[metrics]{3.9 Metrics \hyperref[metrics]{23}}
+
+\hyperref[results]{4 Results \hyperref[results]{23}}
+
+\hyperref[convergent-validity]{4.1 Convergent Validity \hyperref[convergent-validity]{24}}
+
+\hyperref[selectivity]{4.2 Selectivity \hyperref[selectivity]{26}}
+
+\hyperref[attributability]{4.3 Attributability \hyperref[attributability]{28}}
+
+\hyperref[subgroup-equity]{4.4 Subgroup Equity \hyperref[subgroup-equity]{29}}
+
+\hyperref[generalisability]{4.5 Generalisability \hyperref[generalisability]{32}}
+
+\hyperref[reproducibility]{4.6 Reproducibility \hyperref[reproducibility]{33}}
+
+\hyperref[ablation]{4.7 Ablation \hyperref[ablation]{35}}
+
+\hyperref[operational-cost-and-runtime]{4.8 Cost and Timeliness \hyperref[operational-cost-and-runtime]{36}}
+
+\hyperref[reconstructing-the-index]{4.9 Reconstructing the Index \hyperref[reconstructing-the-index]{37}}
+
+\hyperref[discussion]{5 Discussion \hyperref[discussion]{39}}
+
+\hyperref[the-scorecard]{5.1 The Scorecard \hyperref[the-scorecard]{39}}
+
+\hyperref[debate-in-an-odmi-environment]{5.2 Debate in an ODMI Environment \hyperref[debate-in-an-odmi-environment]{42}}
+
+\hyperref[reformulating-the-odmi]{5.3 Reformulating the ODMI \hyperref[reformulating-the-odmi]{43}}
+
+\hyperref[threats-to-validity]{5.4 Threats to Validity \hyperref[threats-to-validity]{46}}
+
+\hyperref[conclusion]{6 Conclusion \hyperref[conclusion]{47}}
+
+\hyperref[references]{7 References \hyperref[references]{48}}
+
+\hyperref[appendix]{8 Appendix \hyperref[appendix]{52}}
+
+\hyperref[a.-full-failure-mode-register-fm-01-to-fm-34]{8.1 A. Full Failure-Mode Register (FM-01 to FM-34) \hyperref[a.-full-failure-mode-register-fm-01-to-fm-34]{52}}
+
+\hyperref[ccb.-pipeline-detail-abstention-reasons-evidence-gates-and-the-false-positive-auditcc]{8.2 B. Pipeline Detail: Abstention Reasons, Evidence Gates and the False-Positive Audit \hyperref[ccb.-pipeline-detail-abstention-reasons-evidence-gates-and-the-false-positive-auditcc]{53}}
+
+\hyperref[ccc.-experimentscc]{8.3 C. Experiments \hyperref[ccc.-experimentscc]{55}}
+
+\hyperref[d.-out-of-reach-questions]{8.4 D. Out-of-Reach Questions \hyperref[d.-out-of-reach-questions]{58}}
+
+\hyperref[cce.-prior-work-scored-against-the-six-criteria-with-justificationscc]{8.5 E. Prior Work Scored Against the Six Criteria, with Justifications \hyperref[cce.-prior-work-scored-against-the-six-criteria-with-justificationscc]{59}}
+
+\hyperref[clf.-baselinescl]{8.6 F. Baselines \hyperref[clf.-baselinescl]{61}}
+
+\hyperref[clg.-the-full-question-bankcl]{8.7 G. The Full Question Bank \hyperref[clg.-the-full-question-bankcl]{62}}
+
+\hyperref[clh.-the-catalogue-recompute-in-fullcl]{8.8 H. The Catalogue Recompute in Full \hyperref[clh.-the-catalogue-recompute-in-fullcl]{68}}
+
+\hyperref[cli.-development-set-resultscl]{8.9 I. Development-Set Results \hyperref[cli.-development-set-resultscl]{70}}
+
+\hyperref[clj.-figures-not-used-in-the-bodycl]{8.10 J. Figures Not Used in the Body \hyperref[clj.-figures-not-used-in-the-bodycl]{71}}
