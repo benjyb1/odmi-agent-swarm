@@ -60,6 +60,20 @@ Pipeline in `scripts/latex_port/`, one commit per phase:
 7. **Build clean-up** (`5ace59f`): overfull >5pt from 518 to 24, zero
    missing glyphs, zero undefined references, 145 pages.
 
+### On the class-assumption note in the migration brief
+
+While this port ran, the brief gained a section saying kclthesis is
+article-based, has no `\chapter`, and the conversion should demote
+every heading one level. That guidance was written for an agent with
+no compiler. This port took the other route: `kclthesis.cls` is
+patched to `\LoadClass{report}` (the change and its reason are in the
+class header), so the document keeps real chapters, "Chapter 4" in
+the prose points at an actual chapter, floats number 4.1, 4.2 without
+extra machinery, and `\appendix` letters the appendix chapters A to J.
+The whole thing compiles under tectonic, and the compiled PDF is what
+the sweep below verified. The cover pages the class produces are
+unchanged by the base-class swap.
+
 ### Deviations from a pure conversion, all deliberate and logged
 
 - **Stale replicate figure replaced.** The docx embed of the §4.6
