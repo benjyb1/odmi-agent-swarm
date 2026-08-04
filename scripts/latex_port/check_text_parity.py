@@ -27,8 +27,17 @@ def docx_words(path: str) -> Counter:
     z = zipfile.ZipFile(path)
     xml = z.read("word/document.xml").decode("utf-8")
     words: Counter = Counter()
+    in_references = False
     for para in re.findall(r"<w:p[ >].*?</w:p>", xml, re.S):
         if TOC_STYLES.search(para):
+            continue
+        # the typed References chapter is replaced by \printbibliography,
+        # so its text is generated rather than carried
+        if '<w:pStyle w:val="Heading1"' in para:
+            heading = "".join(
+                re.findall(r"<w:t(?:\s[^>]*)?>(.*?)</w:t>", para, re.S))
+            in_references = heading.strip() == "References"
+        if in_references:
             continue
         # instrText (field codes) is not w:t, so it is excluded already.
         # The tag match requires whitespace or an immediate close after
@@ -72,6 +81,15 @@ def tex_words(latex_dir: str) -> Counter:
         t = re.sub(r"(?<!\\)%.*", "", t)                      # comments
         t = t.replace("@@CL@@", " ").replace("@@/CL@@", " ")
         t = t.replace("@@CC@@", " ").replace("@@/CC@@", " ")
+        # generated matter: citations render from the .bib, references
+        # from the labels, and the repeated longtable head appears once
+        # in the docx
+        t = re.sub(r"\\(?:textcite|parencite|nocite)\{[^}]*\}", " ", t)
+        t = re.sub(r"(?:Section|Chapter|Appendix|Figure|Table)~\\ref\{[^}]*\}",
+                   " ", t)
+        t = re.sub(r"\\endfirsthead.*?\\endhead", " ", t, flags=re.S)
+        t = re.sub(r"[LC]\{[0-9.]+\}", " ", t)
+        t = t.replace("\\-", "")
         # longtable/minipage begin lines carry column specs (p{...},
         # \real{}, \tabcolsep) whose letters are not document text
         t = re.sub(r"\\begin\{longtable\}.*", " ", t)
