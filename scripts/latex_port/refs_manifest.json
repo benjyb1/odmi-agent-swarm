@@ -1168,5 +1168,29 @@
   "kind": "figure",
   "literal": "Figure 2.1",
   "label": "fig:hallucination"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "appendix",
+  "literal": "Appendix E",
+  "label": "app:prior-work-scored"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "appendix",
+  "literal": "Appendix B",
+  "label": "app:pipeline-detail"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "appendix",
+  "literal": "Appendix C",
+  "label": "app:experiments"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "appendix",
+  "literal": "Appendix C",
+  "label": "app:experiments"
  }
 ]
