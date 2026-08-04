@@ -24,7 +24,29 @@ node_modules/
 # supervision decks that are not part of the submitted codebase. None of
 # this has ever been tracked; the entries stop it being swept in by an
 # absent-minded `git add -A`.
-Dissertation/
+# Ignore the contents of Dissertation/, not the directory itself, so the
+# LaTeX project below can be re-included. Git cannot re-include anything
+# inside an excluded directory, which is why this is not "Dissertation/".
+Dissertation/*
+# The LaTeX project is the exception. Getting the dissertation into git is
+# the point of the migration: plain text means two windows can work on it
+# without the shasum-and-wait ritual the .docx needs.
+!Dissertation/latex/
+# Inside the LaTeX project: the PNGs pandoc extracted from the docx are
+# a compile-time stopgap until the vector figures land, and the build
+# outputs are regenerated on every compile. Neither belongs in git.
+Dissertation/latex/media/
+Dissertation/latex/main.pdf
+Dissertation/latex/*.aux
+Dissertation/latex/*.log
+Dissertation/latex/*.toc
+Dissertation/latex/*.lof
+Dissertation/latex/*.lot
+Dissertation/latex/*.out
+Dissertation/latex/*.bbl
+Dissertation/latex/*.bcf
+Dissertation/latex/*.blg
+Dissertation/latex/*.run.xml
 MSC CLAUDE NOTES/
 Presentations/
 Research/

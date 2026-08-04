@@ -1,0 +1,137 @@
+"""Word-multiset parity between the frozen docx and the LaTeX sources.
+
+The one check that proves the port lost nothing. Extracts the visible
+text from both sides, normalises, and compares as a word multiset.
+Every unmatched token is a loss until explained.
+
+The docx extraction is element-aware: a separator is inserted at every
+paragraph and table-cell boundary, because stripping tags naively glues
+"superseded by Table 4.7.1" and "156-pair dev battery" into
+"Table 4.7.1156". Word's generated contents list is excluded by style
+(TOC1..9, TOCHeading): \tableofcontents regenerates it, so its entries
+would otherwise show up as false losses.
+
+Usage: python3 check_text_parity.py frozen.docx latex_dir [--show N]
+"""
+
+import re
+import sys
+import zipfile
+from collections import Counter
+from pathlib import Path
+
+TOC_STYLES = re.compile(r'<w:pStyle w:val="TOC[^"]*"')
+
+
+def docx_words(path: str) -> Counter:
+    z = zipfile.ZipFile(path)
+    xml = z.read("word/document.xml").decode("utf-8")
+    words: Counter = Counter()
+    for para in re.findall(r"<w:p[ >].*?</w:p>", xml, re.S):
+        if TOC_STYLES.search(para):
+            continue
+        # instrText (field codes) is not w:t, so it is excluded already.
+        # The tag match requires whitespace or an immediate close after
+        # "w:t", or <w:tab/>, <w:tbl>, <w:tc> and <w:tcPr> match too and
+        # sweep raw XML into the "text". Runs are joined with no
+        # separator: Word splits words mid-run, so joining on a space
+        # would shear "the" into "t he". Tabs and breaks become spaces.
+        para = re.sub(r"<w:(?:tab|br|cr)\s*/>", "<w:t> </w:t>", para)
+        text = "".join(
+            re.findall(r"<w:t(?:\s[^>]*)?>(.*?)</w:t>", para, re.S))
+        text = unescape(text)
+        words.update(tokens(text))
+    return words
+
+
+def unescape(s: str) -> str:
+    return (s.replace("&amp;", "&").replace("&lt;", "<")
+            .replace("&gt;", ">").replace("&quot;", '"')
+            .replace("&apos;", "'"))
+
+
+# LaTeX commands whose argument is invisible in the PDF
+DROP_ARG = (
+    "label", "ref", "cite", "textcite", "parencite", "includegraphics",
+    "graphicspath", "bibliography", "input", "include", "pandocbounded",
+    "hypertarget", "vspace", "hspace", "definecolor", "pagenumbering",
+    "pagestyle", "thispagestyle", "setcounter", "addtocounter", "usepackage",
+    "documentclass", "geometry", "renewcommand", "newcommand",
+    "providecommand", "fancyhead", "fancyfoot", "columnwidth", "settowidth",
+)
+
+
+def tex_words(latex_dir: str) -> Counter:
+    words: Counter = Counter()
+    for path in sorted(Path(latex_dir, "chapters").glob("*.tex")):
+        t = path.read_text(encoding="utf-8")
+        t = re.sub(r"(?<!\\)%.*", "", t)                      # comments
+        t = t.replace("@@CL@@", " ").replace("@@/CL@@", " ")
+        t = t.replace("@@CC@@", " ").replace("@@/CC@@", " ")
+        # longtable/minipage begin lines carry column specs (p{...},
+        # \real{}, \tabcolsep) whose letters are not document text
+        t = re.sub(r"\\begin\{longtable\}.*", " ", t)
+        t = re.sub(r"\\begin\{minipage\}[^\n]*", " ", t)
+        # colspec continuation lines and pandoc's caption-type plumbing
+        t = re.sub(r"^.*\\tabcolsep.*$", " ", t, flags=re.M)
+        t = re.sub(r"^.*\\LTcaptype.*$", " ", t, flags=re.M)
+        t = re.sub(r"\\begin\{[^}]*\}(\[[^\]]*\])?(\{[^}]*\})*", " ", t)
+        t = re.sub(r"\\end\{[^}]*\}", " ", t)
+        # keep \href display text, drop the URL argument
+        t = re.sub(r"\\href\{[^}]*\}", " ", t)
+        # \texorpdfstring{tex}{pdf}: the tex arm is the visible one
+        t = re.sub(r"\\texorpdfstring\{([^{}]*)\}\{[^{}]*\}", r"\1", t)
+        # inline formatting: keep the argument without a brace boundary,
+        # or "\emph{merged_respons}es" splits a word in two
+        for _ in range(3):
+            t = re.sub(
+                r"\\(?:emph|textbf|textit|texttt|textsc|underline|ul|uline"
+                r"|textsubscript|textsuperscript|mbox|texorpdfstring)"
+                r"\{([^{}]*)\}", r"\1", t)
+        for cmd in DROP_ARG:
+            t = re.sub(r"\\" + cmd + r"\*?(\[[^\]]*\])*\{[^{}]*\}", " ", t)
+        # \textquotesingle{} keeps a real following space; the bare
+        # control word consumes the spaces after it, as TeX would
+        t = t.replace("\\textquotesingle{}", "'")
+        t = re.sub(r"\\textquotesingle\s*", "'", t)
+        t = t.replace("\\ldots{}", "…").replace("\\ldots", "…")
+        t = t.replace("``", '"').replace("''", '"')
+        t = re.sub(r"\\linewidth|\\textwidth|\\real\{[^}]*\}", " ", t)
+        t = re.sub(r"\\[a-zA-Z@]+\*?", " ", t)                # remaining commands
+        t = re.sub(r"\\[%&#$_{}\\]", lambda m: m.group(0)[1], t)  # escaped chars
+        t = t.replace("~", " ").replace("&", " ")
+        t = re.sub(r"[{}\[\]]", " ", t)
+        words.update(tokens(t))
+    return words
+
+
+def tokens(text: str):
+    text = (text.replace("\u2019", "'").replace("\u2018", "'")
+            .replace("\u201c", '"').replace("\u201d", '"')
+            .replace("\u2011", "-"))
+    # en and em dashes, and their LaTeX spellings, all normalise to "-"
+    text = re.sub(r"\u2013|\u2014|-{2,3}", "-", text)
+    for tok in re.findall(r"[A-Za-z0-9](?:[A-Za-z0-9.,'’%/:=+-]*[A-Za-z0-9%])?",
+                          text):
+        yield tok.strip(".,:'").casefold()
+
+
+def main() -> None:
+    docx, latex_dir = sys.argv[1], sys.argv[2]
+    show = int(sys.argv[sys.argv.index("--show") + 1]) if "--show" in sys.argv else 40
+    dw, tw = docx_words(docx), tex_words(latex_dir)
+    lost = dw - tw
+    gained = tw - dw
+    total = sum(dw.values())
+    print(f"docx tokens {total}, tex tokens {sum(tw.values())}")
+    print(f"lost (in docx, not in tex): {sum(lost.values())} "
+          f"({100 * sum(lost.values()) / total:.2f}%)")
+    for tok, n in lost.most_common(show):
+        print(f"  -{n} {tok!r}")
+    print(f"gained (in tex, not in docx): {sum(gained.values())}")
+    for tok, n in gained.most_common(show):
+        print(f"  +{n} {tok!r}")
+
+
+if __name__ == "__main__":
+    main()
