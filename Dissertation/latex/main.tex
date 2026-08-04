@@ -38,6 +38,14 @@
 \usepackage{microtype}
 \usepackage{xurl}          % long URLs break instead of running off the page
 
+% Author-year citations. The prose is written as narrative citations,
+% which reads naturally with author-year and awkwardly with numbers.
+\usepackage[style=authoryear, backend=biber, maxcitenames=3,
+            maxbibnames=99, uniquename=false, uniquelist=false,
+            urldate=long, dashed=false]{biblatex}
+\renewcommand*{\nameyeardelim}{\addcomma\space}
+\addbibresource{references.bib}
+
 % hyperref is loaded by the class; loading it again with options would
 % clash, so configure it here instead
 \hypersetup{
@@ -85,9 +93,11 @@
 \include{chapters/05-discussion}
 \include{chapters/06-conclusion}
 
-%%%% References. Still the typed list carried over from Word.
-%%%% Phase 5 replaces this with biblatex over references.bib.
-\include{chapters/07-references}
+% Three entries of the typed reference list are never cited in the
+% prose (a docx defect carried over, flagged in the port report):
+% keep them in the rendered list so it matches the typed 43.
+\nocite{anthropic2026,edp2024,wei2022}
+\printbibliography[heading=bibintoc, title=References]
 
 \appendix
 \include{chapters/08-appendix}
