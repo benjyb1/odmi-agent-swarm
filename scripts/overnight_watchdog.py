@@ -38,7 +38,9 @@ def now():
 
 
 class Watchdog:
-    def __init__(self, out):
+    def __init__(self, out, script="scripts/overnight_review.py", extra=()):
+        self.script = script
+        self.extra = list(extra)
         self.out = os.path.abspath(out)
         os.makedirs(self.out, exist_ok=True)
         self.log_path = os.path.join(self.out, "watchdog.log")
@@ -86,7 +88,7 @@ class Watchdog:
             return None
 
     def launch(self, resume):
-        cmd = [sys.executable, "scripts/overnight_review.py", "--out", self.out]
+        cmd = [sys.executable, self.script, "--out", self.out] + self.extra
         if resume:
             cmd.append("--resume")
         logf = open(os.path.join(self.out, "supervisor.stdout"), "a")
@@ -205,6 +207,10 @@ def main():
     ap.add_argument("--out", default="build/overnight")
     ap.add_argument("--daemon", action="store_true",
                     help="detach and run in the background")
+    ap.add_argument("--script", default="scripts/overnight_review.py",
+                    help="supervisor to own and relaunch")
+    ap.add_argument("--extra", nargs=argparse.REMAINDER, default=[],
+                    help="everything after this is passed to the supervisor")
     args = ap.parse_args()
 
     out = os.path.abspath(args.out)
@@ -213,7 +219,7 @@ def main():
         daemonise(out)
 
     caff = hold_caffeinate(out)
-    wd = Watchdog(out)
+    wd = Watchdog(out, script=args.script, extra=args.extra)
     wd.log(f"caffeinate pid {caff}" if caff else "caffeinate UNAVAILABLE")
     sys.exit(wd.run())
 
