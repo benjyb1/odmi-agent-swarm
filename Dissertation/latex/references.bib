@@ -1,0 +1,135 @@
+% ODMI Agent Swarm — Bibliography
+% Last reviewed: 2026-05-11
+%
+% Citation discipline: one BibTeX key per source, lowercase author surname
+% plus year (e.g. yao2022react). Add a short comment line above each entry
+% summarising why it is cited and which section uses it. Keep the database
+% trim. Do not add entries you have not actually consulted.
+
+% =========================================================================
+% Open data policy and the ODMI itself
+% =========================================================================
+
+% The EU Open Data Maturity Report 2024. The closest thing to a primary
+% source for the index methodology. Used in Background §2.1.
+@misc{odmi2024report,
+  author = {{European Data Portal} and {Capgemini Invent}},
+  title = {Open Data Maturity Report 2024},
+  year = {2024},
+  publisher = {European Commission},
+  howpublished = {\url{https://data.europa.eu/en/publications/open-data-maturity/2024}},
+  note = {Accessed 2026-05-11.}
+}
+
+% The EU Open Data Directive. Foundational for the policy framing.
+@misc{eu2019directive,
+  author = {{European Parliament and Council}},
+  title = {Directive {(EU)} 2019/1024 on open data and the re-use of public sector information},
+  year = {2019},
+  howpublished = {Official Journal of the European Union L 172, 26.6.2019},
+  note = {The "Open Data Directive". Cited in Background §2.1 and §1.1.}
+}
+
+% Implementing regulation on high-value datasets. Referenced in the ODMI
+% question P11.
+@misc{eu2023hvd,
+  author = {{European Commission}},
+  title = {Commission Implementing Regulation {(EU)} 2023/138 on a list of specific high-value datasets and the arrangements for their publication and re-use},
+  year = {2023}
+}
+
+% =========================================================================
+% Agentic LLM systems
+% =========================================================================
+
+% ReAct: the canonical reference for tool-using LLMs with interleaved
+% reasoning and acting. Use in Background §2.2.
+@inproceedings{yao2023react,
+  author = {Shunyu Yao and Jeffrey Zhao and Dian Yu and Nan Du and Izhak Shafran and Karthik Narasimhan and Yuan Cao},
+  title = {{ReAct}: Synergizing Reasoning and Acting in Language Models},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2023}
+}
+
+% AutoGen: multi-agent collaboration framework. Compare against LangGraph
+% in Background §2.2.
+@inproceedings{wu2024autogen,
+  author = {Qingyun Wu and Gagan Bansal and Jieyu Zhang and Yiran Wu and Beibin Li and Erkang Zhu and Li Jiang and Xiaoyun Zhang and Shaokun Zhang and Jiale Liu and Ahmed Awadallah and Ryen W. White and Doug Burger and Chi Wang},
+  title = {{AutoGen}: Enabling Next-Gen {LLM} Applications via Multi-Agent Conversation},
+  booktitle = {COLM},
+  year = {2024}
+}
+
+% =========================================================================
+% LLM evaluation on agentic / real-world tasks
+% =========================================================================
+
+% GAIA: benchmark for general AI assistants. Used in Background §2.3 as the
+% closest published analogue to the open-ended task here.
+@inproceedings{mialon2024gaia,
+  author = {Gr{\'e}goire Mialon and Cl{\'e}mentine Fourrier and Craig Swift and Thomas Wolf and Yann LeCun and Thomas Scialom},
+  title = {{GAIA}: A Benchmark for General {AI} Assistants},
+  booktitle = {International Conference on Learning Representations (ICLR)},
+  year = {2024}
+}
+
+% AgentBench: evaluating LLMs as agents across diverse tasks. Background §2.3.
+@inproceedings{liu2024agentbench,
+  author = {Xiao Liu and Hao Yu and Hanchen Zhang and Yifan Xu and Xuanyu Lei and Hanyu Lai and Yu Gu and Hangliang Ding and Kaiwen Men and Kejuan Yang and Shudan Zhang and Xiang Deng and Aohan Zeng and Zhengxiao Du and Chenhui Zhang and Sheng Shen and Tianjun Zhang and Yu Su and Huan Sun and Minlie Huang and Yuxiao Dong and Jie Tang},
+  title = {{AgentBench}: Evaluating {LLM}s as Agents},
+  booktitle = {ICLR},
+  year = {2024}
+}
+
+% WebArena: realistic environment for evaluating web agents. Background §2.3.
+@inproceedings{zhou2024webarena,
+  author = {Shuyan Zhou and Frank F. Xu and Hao Zhu and Xuhui Zhou and Robert Lo and Abishek Sridhar and Xianyi Cheng and Tianyue Ou and Yonatan Bisk and Daniel Fried and Uri Alon and Graham Neubig},
+  title = {{WebArena}: A Realistic Web Environment for Building Autonomous Agents},
+  booktitle = {ICLR},
+  year = {2024}
+}
+
+% =========================================================================
+% Retrieval-augmented generation and faithfulness
+% =========================================================================
+
+% Original RAG paper. Foundational for Background §2.4.
+@inproceedings{lewis2020rag,
+  author = {Patrick Lewis and Ethan Perez and Aleksandara Piktus and Fabio Petroni and Vladimir Karpukhin and Naman Goyal and Heinrich K{\"u}ttler and Mike Lewis and Wen-tau Yih and Tim Rockt{\"a}schel and Sebastian Riedel and Douwe Kiela},
+  title = {Retrieval-Augmented Generation for Knowledge-Intensive {NLP} Tasks},
+  booktitle = {NeurIPS},
+  year = {2020}
+}
+
+% Chain-of-verification. Background §2.4 (faithfulness mitigation).
+@inproceedings{dhuliawala2024chainofverification,
+  author = {Shehzaad Dhuliawala and Mojtaba Komeili and Jing Xu and Roberta Raileanu and Xian Li and Asli Celikyilmaz and Jason Weston},
+  title = {Chain-of-Verification Reduces Hallucination in Large Language Models},
+  booktitle = {ACL Findings},
+  year = {2024}
+}
+
+% Survey on hallucination in LLMs.
+@article{huang2025hallucination,
+  author = {Lei Huang and Weijiang Yu and Weitao Ma and Weihong Zhong and Zhangyin Feng and Haotian Wang and Qianglong Chen and Weihua Peng and Xiaocheng Feng and Bing Qin and Ting Liu},
+  title = {A Survey on Hallucination in Large Language Models: Principles, Taxonomy, Challenges, and Open Questions},
+  journal = {ACM Transactions on Information Systems},
+  year = {2025}
+}
+
+% =========================================================================
+% Multilingual LLMs and low-resource European languages
+% =========================================================================
+
+% Add entries here on Claude / GPT multilingual benchmarks, FLORES-200, etc.
+% Pending review of the Anthropic multilingual evaluation card and the
+% relevant 2024-2025 papers.
+
+% =========================================================================
+% AI for policy analysis and automated benchmarking
+% =========================================================================
+
+% Add entries on AI for civic / policy analysis. Candidates:
+%   - LangChain-based policy QA work
+%   - Recent ACL / EMNLP papers on automated regulation analysis
+%   - Capgemini and EU Commission technical reports on the ODMI methodology
