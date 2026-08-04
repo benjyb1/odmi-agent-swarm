@@ -1,14 +1,14 @@
-\chapter{Appendix}\label{appendix}
+\chapter*{Appendices}
+\addcontentsline{toc}{chapter}{Appendices}\label{app:appendices}
 
 This appendix carries the material the body points at but has no room for, and a second group of results that did not reach Chapter 4 at all. Sections A to F support claims made in the text: the failure-mode register, the pipeline detail behind abstention and attribution, the experiment log, the questions ruled out in advance, the prior-work scoring, and the baselines. Sections G to J are new here: the full question bank, the catalogue recompute in full, the development-set results, and the figures the body does not use. Tables and figures are numbered by section, so Table C.1 is the first table of Appendix C.
 
-\section{A. Full Failure-Mode Register (FM-01 to FM-34)}\label{a.-full-failure-mode-register-fm-01-to-fm-34}
+\chapter{Full Failure-Mode Register (FM-01 to FM-34)}\label{app:failure-register}
 
 The register lists every way the project has identified for a wrong answer to reach the committed state. It was built by walking the pipeline stage by stage and asking what could pass each gate, not by collecting observed errors, so a mode can appear here without having fired in any run. Class is the useful column: \textquotesingle Caught\textquotesingle{} modes are stopped by a deterministic gate before commit, \textquotesingle LLM-only\textquotesingle{} modes are left as a prompt-tunable risk, and the twenty-two \textquotesingle Structural\textquotesingle{} modes cannot be closed by prompting alone. Those twenty-two are the count §5.4 cites and the attack list for further work.
 
 Severity is the product of likelihood and how silently a mode commits. `Caught' modes are stopped by a deterministic gate before commit; `LLM-only' modes are accepted as a prompt-tunable risk; `Structural' modes cannot be fixed by prompting alone and form the attack list for future work.
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0685}}
   >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.4302}}
@@ -16,6 +16,7 @@ Severity is the product of likelihood and how silently a mode commits. `Caught' 
   >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1274}}
   >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0899}}
   >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1469}}@{}}
+\caption{The thirty-four failure modes by which the swarm can commit a wrong answer.}\label{tab:failure-register}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{ID}
@@ -69,11 +70,9 @@ FM-32 & Verifier recompute is the same code on the same snapshot & Catalogue & S
 FM-33 & Correlated low-resource-language error across agents & Language & Structural & Med & Open \\
 FM-34 & Translation flips meaning before the model reads it & Language & Structural & Med & Open \\
 \end{longtable}
-}
 
-Table A.1: The thirty-four failure modes by which the swarm can commit a wrong answer.
 
-\section{B. Pipeline Detail: Abstention Reasons, Evidence Gates and the False-Positive Audit}\label{ccb.-pipeline-detail-abstention-reasons-evidence-gates-and-the-false-positive-auditcc}
+\chapter{Pipeline Detail: Abstention Reasons, Evidence Gates and the False-Positive Audit}\label{app:pipeline-detail}
 
 Three parts of the pipeline are set out in full here, each of which the body states a result for without showing the workings. The first is the abstention taxonomy, which records why the swarm declined to answer on 508 of the 1,144 evaluation pairs. The second is the quote citation gate, the deterministic check that a committed answer\textquotesingle s quote really appears in the text the Researcher read, and the three ways that check is lenient. The third is the false-positive audit, the post-hoc review of every committed answer that landed against a published ``no''.
 
@@ -85,13 +84,13 @@ Nine tenths of the abstentions are the system declining evidence the Researcher 
 
 Codes E, G, I and D are evidence-based abstentions and account for 461 of the 508. B records an operational failure at 16, and C at 12 records the leakage guard stopping the pair before it could commit. Codes A, F1 and F3 record zero in this run.
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.0706}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.5941}}
   >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.0882}}
   >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.0882}}
   >{\centering\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1588}}@{}}
+\caption{Why the swarm did not commit, over the 508 evaluation abstentions.}\label{tab:abstention-codes}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\centering
 \textbf{Code}
@@ -120,13 +119,16 @@ F1 & Schema-invalid hard failure & 0 & 0\% & n/a \\
 Z & Instrumentation mismatch: the classifier reads peak confidence, the commit gate reads the last attempt (§4.2) & 19 & 4\% & 16 of 19 \\
 & \textbf{Total (all no-commits)} & \textbf{508} & \textbf{100\%} & 479 of 508 \\
 \end{longtable}
-}
 
-Table B.1: Why the swarm did not commit, over the 508 evaluation abstentions.
 
-\includegraphics[width=6.1in,height=3.06297in]{media/media/image22.png}
 
-Figure B.1: Why the swarm abstained, by country. The 508 evaluation abstentions grouped into five causes.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/abstained_by_country.png}
+\caption{Why the swarm abstained, by country. The 508 evaluation abstentions grouped into five causes.}
+\label{fig:abstained-by-country}
+\end{figure}
 
 \textbf{The quote citation gate, Attributability part 1}
 
@@ -140,12 +142,12 @@ The first framing is neutral. The reviewer is shown the ODMI gold answer and its
 
 The second framing is pro-swarm. The reviewer is instructed to act as an advocate for swarm, being asked to build the ``strongest possible evidence-grounded case'' that the swarm\textquotesingle s ``yes'' was right and the ODMI\textquotesingle s ``no'' was mistaken, and to return one of three verdicts: that the swarm over-read its evidence even on the most generous reading, that the case is ambiguous, or that the gold is wrong and the swarm is vindicated. This is the stringent test. A false positive counts as the swarm being right only if a reviewer actively trying to prove that, from the evidence the swarm itself cited, can succeed.
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1671}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.5504}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.0688}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.0885}}@{}}
+\caption{The false-positive audit, over the 91 adjudicated cases of the 94. Shares are of 91.}\label{tab:fp-audit}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Pass}
@@ -167,13 +169,11 @@ Pass 2, advocate & Swarm over-read its evidence even on the most generous readin
 & Ambiguous & 23 & 25\% \\
 & Gold wrong, swarm vindicated & 0 & 0\% \\
 \end{longtable}
-}
 
-Table B.2: The false-positive audit, over the 91 adjudicated cases of the 94. Shares are of 91.
 
 The two passes agree on the direction. Nothing in the audit supports the swarm against the published key: the advocate pass returns ``no'' case at all where the gold is wrong and the swarm right. That is what licenses treating match against ODMI as a fair measure rather than one inflated by stale ground truth, and it is the basis for the staleness band §3.4 discusses being treated as negligible.
 
-\section{C. Experiments}\label{ccc.-experimentscc}
+\chapter{Experiments}\label{app:experiments}
 
 Every experiment was registered before dispatch, in a design note fixing the question, the sample, the endpoint and the adoption rule, and in a machine-readable row carrying the same design. The table below is that register, filtered to the runs that completed. The paragraph after it is the model comparison, reproduced from §4.8 because the numbers behind it live in this appendix rather than in the body.
 
@@ -185,13 +185,13 @@ Another lever on this cost is the choice of model, which sets both the reasoning
 
 Completed experiments:
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1106}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2295}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2428}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2362}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1808}}@{}}
+\caption{The completed experiments, with the sample, result and adoption rule for each.}\label{tab:experiments}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Exp}
@@ -235,22 +235,20 @@ exp36\_model\_opus & All-Opus whole-stack cost point & 156-pair dev battery & De
 cb\_heldout\_20260725 & Closed-book parametric probe (retrieval disabled) & Evaluation 8, 1,144 pairs & 42.9\% of the answer key reproduced against the 47.3\% always-yes floor & Below the floor; no answer-key memorisation demonstrated \\
 heldout\_fp\_audit\_merged94 & False-positive audit of the evaluation negative-gold errors & 94 EXP-36 false positives, 91 adjudicable & Charitable pass: 16/91 genuine swarm error, 69/91 definitional gap, 6/91 defensible or stale gold. Adversarial pass: 0/91 gold wrong & No case of the swarm right and ODMI wrong; the 3 not\_applicable pairs flagged for manual review \\
 \end{longtable}
-}
 
-Table C.1: The completed experiments, with the sample, result and adoption rule for each.
 
 \textbf{What the orchestrator refuses}
 
 The orchestrator refuses to dispatch a run where the experiment identifier has no row in the registry, where two arms differ from the baseline in more than one setting, where a specification names an evaluation country, where two arms share an identifier, or where no ceiling has been declared on the number of model calls the run may spend. Each is a hard failure that halts the run before any expenditure.
 
-\section{D. Out-of-Reach Questions}\label{d.-out-of-reach-questions}
+\chapter{Out-of-Reach Questions}\label{app:out-of-reach}
 
 The 29 questions judged systematically out of reach of a web agent. The rule is that the answer is a fact about internal operational behaviour for which there is no standard public artefact. Questions answerable from a policy document, observable as a portal feature, computable from harvested metadata, or which themselves ask whether something is published, are excluded. The classification was made from the question text alone, before any run data was consulted.
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.1386}}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.8614}}@{}}
+\caption{The 29 questions judged out of reach of a web agent.}\label{tab:out-of-reach}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Question}
@@ -291,15 +289,12 @@ I9-b & Social media sentiment analysis \\
 I9-c & Other \\
 I11 & Are there any public bodies in your country that have developed a systematic ways of classifying the gathered reuse cases? \\
 \end{longtable}
-}
 
-Table D.1: The 29 questions judged out of reach of a web agent.
 
-\section{E. Prior Work Scored Against the Six Criteria, with Justifications}\label{cce.-prior-work-scored-against-the-six-criteria-with-justificationscc}
+\chapter{Prior Work Scored Against the Six Criteria, with Justifications}\label{app:prior-work-scored}
 
 The abridged version of this table, Table E.1, appears as Table 2.2 in §2.8. Verdicts are read from the papers themselves, and quoted passages are taken verbatim from the primary text. A tick means the work addresses and reports the criterion, not that it succeeds. Partial means it addresses one of the criterion's two conditions, or reports it without measuring it.
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1427}}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1428}}
@@ -308,6 +303,7 @@ The abridged version of this table, Table E.1, appears as Table 2.2 in §2.8. Ve
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1428}}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1430}}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\caption{Prior work scored against the six criteria of §2.2, with the evidence for each verdict.}\label{tab:prior-work-full}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 Work
@@ -342,22 +338,19 @@ Chowdhury et al. (2026) & 81.7\% on Check-COVID, against 85.8\% for a single-cal
 Fumega and Gao (2026) & An ``average mismatch rate of 42\% between the AI's answers and those of human researchers'' across four indicators in their end-to-end phase. & By indicator, mismatch of 19\% on Data Protection (2 of 12 questions) against 69\% on Land Tenure (17 of 25), chosen respectively for single-document and fragmented evidence. Their stated percentages do not reconcile with their own counts. & Not addressed. The sample is drawn from Africa and Latin America, but results are not broken down by region. & The agents are prompted for ``justifications (with a link to the evidence)'' per sub-question, so a trail exists, but nothing checks that the link supports the claim. Both reported failures are of that kind, an ``API Access'' button cited as evidence of bulk access, and ``corporate body'' read as covering group privacy. & No abstention. "Partially" is an answer option and not a decline, and uncertainty calibration appears only in the future-work list. Incompleteness is handled by "a human-in-the-loop approach for curation and validation". & Table 2 documents tools and configuration by phase, but no run is repeated and no variance is reported. \\
 This work & Tested against the human key and against an independent deterministic recompute. & Decomposed by ODMI dimension and by question form. & Decomposed by language-resource stratum. & Offline quote-in-source gate on every committed answer, plus Verifier entailment judgement. & Three-way outcome with a confidence floor driving abstention, calibration assessed post-hoc. & Full transcript logging, with stability measured across repeated runs. \\
 \end{longtable}
-}
 
-Table E.1: Prior work scored against the six criteria of §2.2, with the evidence for each verdict.
 
-\section{F. Baselines}\label{clf.-baselinescl}
+\chapter{Baselines}\label{app:baselines}
 
-The baselines the evaluation results are read against. \includegraphics[width=6.1in,height=1.67996in]{media/media/image23.png}
+The baselines the evaluation results are read against.
 
-Table F.1: The baselines any result has to clear.\textbf{ }
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2157}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3039}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2059}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2745}}@{}}
+\caption{The baselines any result has to clear.}\label{tab:baselines}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Baseline}
@@ -378,16 +371,15 @@ Majority class, development battery & the same, on the class-balanced tuning set
 Closed-book, retrieval disabled & how much of the answer key the model already carries & 42.9\%, against a 47.3\% floor & 1,139 evaluation pairs \\
 Researcher alone, no verification & what one agent reaches before any checking & 23.7\% coverage, 64.9\% commit-accuracy & 156-pair development battery, Sonnet 4.6 \\
 \end{longtable}
-}
 
-\section{G. The Full Question Bank}\label{clg.-the-full-question-bankcl}
+\chapter{The Full Question Bank}\label{app:question-bank}
 
 The complete ODMI questionnaire as the swarm sees it, all 143 questions in the order they appear in the instrument. This is the population every figure in Chapter 4 is drawn from, so it is here in full rather than sampled. By dimension: Policy 31, Portal 45, Quality 29 and Impact 38. By answer shape: 124 binary, 12 percentage bands, 3 ordinal magnitudes, 2 count bands and 2 categorical. The 124 binary questions are the ones the headline accuracy figures are computed over, because they are the only shape where a ``yes'' or ``no'' can be scored against the published key without a banding judgement.
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.1386}}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.8614}}@{}}
+\caption{All 143 questions of the 2025 ODMI questionnaire.}\label{tab:question-bank}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Question}
@@ -542,23 +534,21 @@ I29 & Is the use of open data in your country having an impact on the level of i
 I30 & Is the use of open data in your country having an impact on the level of entrepreneurship (especially of women and minorities) and business creation (especially with Small- and Medium-sized Enterprises)? For Explanation: * If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain. \\
 I31 & Is the use of open data in your country having an impact on the level of productivity? For Explanation: * If yes, please provide an example of one reuse case. For this reuse case, please provide (1) a URL to the reuse case, (2) a URL to the open dataset used by the reuse case, and (3) a description of the reuse case and its impact in this sub-domain. \\
 \end{longtable}
-}
 
-Table G.1: All 143 questions of the 2025 ODMI questionnaire.
 
-\section{H. The Catalogue Recompute in Full}\label{clh.-the-catalogue-recompute-in-fullcl}
+\chapter{The Catalogue Recompute in Full}\label{app:catalogue-recompute}
 
 The nine Quality questions the deterministic catalogue tool can answer without an agent, computed directly from a harvest of each national portal. §3.5 reports the agreement rate; the underlying numbers are here. Two things to read carefully. The harvest is a snapshot, so a country\textquotesingle s figure is only as current as the fetch date in the first table, and France\textquotesingle s harvest is marked partial, meaning the portal was paged rather than exhausted. Estonia returned nothing at all and is kept in the table as a record of the attempt. Where the computed band and the published answer disagree the disagreement is real and unresolved, not an error corrected here.
 
 \textbf{What was harvested}
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1181}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1869}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1476}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1574}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1574}}@{}}
+\caption{The portal harvest behind every catalogue figure.}\label{tab:harvest-register}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Country}
@@ -586,19 +576,17 @@ NL & ckan\_json & 20,772 & 2026-06-02 & complete \\
 RO & ckan\_json & 5,143 & 2026-06-02 & complete \\
 SE & sparql\_rdf & 23,305 & 2026-07-17 & complete \\
 \end{longtable}
-}
 
-Table H.1: The portal harvest behind every catalogue figure.
 
 \textbf{What the harvest computes, against the published answer}
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1274}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1177}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.3333}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1470}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2745}}@{}}
+\caption{Every catalogue metric computed from the harvests of Table H.1, 75 in total, beside the answer the country published.}\label{tab:catalogue-metrics}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Question}
@@ -691,25 +679,23 @@ Q27 & NL & 50.6\% (10,510/20,772) & 51-70\% & \textgreater90\% \\
 Q27 & RO & 62.3\% (3,203/5,143) & 51-70\% & 31-50\% \\
 Q27 & SE & 63.9\% (14,896/23,305) & 51-70\% & \textgreater90\% \\
 \end{longtable}
-}
 
-Table H.2: Every catalogue metric computed from the harvests of Table H.1, 75 in total, beside the answer the country published.
 
 One snapshot per country, the most recent, read from catalogue\_snapshots and catalogue\_metrics in data/odmi.db. Earlier snapshots for the same country are superseded and left out. Croatia\textquotesingle s harvest predates the RDF serialiser fix, and its Q12, Q13, Q21 and Q25 all read zero on fields the portal does populate, which is the malformed-IRI truncation that fix addressed. Those four cells are an artefact of the harvest and not a measurement of the portal.
 
-\section{I. Development-Set Results}\label{cli.-development-set-resultscl}
+\chapter{Development-Set Results}\label{app:dev-results}
 
 Every threshold, prompt and retrieval setting in the final configuration was chosen on a development set the evaluation countries never touched. The body says that happened but never shows what the swarm scored there, so the tuning battery is reported here. It is 156 pairs over Malta, the Netherlands and Albania, built by taking all of each country\textquotesingle s negative golds and an equal number of randomly drawn positive ones, which makes it roughly class-balanced and therefore much harder than the questionnaire\textquotesingle s natural base rate. The run below is the frozen production configuration on Sonnet 4.6, the same stack as the evaluation headline.
 
 \textbf{By country}
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1476}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1082}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1476}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2952}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2952}}@{}}
+\caption{The 156-pair development battery by country.}\label{tab:dev-by-country}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Country}
@@ -731,18 +717,16 @@ MT & 60 & 16.7\% & 80.0\% (8/10) & 3.3\% (1/30) \\
 NL & 52 & 86.5\% & 66.7\% (30/45) & 53.8\% (14/26) \\
 All three & 156 & 46.8\% & 72.6\% (53/73) & 21.8\% (17/78) \\
 \end{longtable}
-}
 
-Table I.1: The 156-pair development battery by country.
 
 \textbf{By dimension}
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1966}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1376}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1868}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3932}}@{}}
+\caption{The same battery by ODMI dimension.}\label{tab:dev-by-dimension}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Dimension}
@@ -762,80 +746,158 @@ Policy & 34 & 55.9\% & 73.7\% (14/19) \\
 Portal & 53 & 43.4\% & 78.3\% (18/23) \\
 Quality & 25 & 40.0\% & 80.0\% (8/10) \\
 \end{longtable}
-}
 
-Table I.2: The same battery by ODMI dimension.
 
 The spread between the three countries is the useful part. The Netherlands commits on 86.5\% of its pairs and the swarm is wrong on more than half its negative golds there; Malta commits on 16.7\% and is wrong on one. That is the coverage-precision trade the body describes, visible within a single run rather than across configurations. It also shows why a development figure cannot be read as a headline: these three countries were picked for their negative-gold share, not to be representative.
 
 Computed from the wide\_only arm of exp34\_retrieval\_strategy\_s46 in data/odmi.db, the all-Sonnet-4.6 whole-stack run over the frozen 156-pair battery, deduplicated to one canonical row per pair. Definitions as Chapter 4, so a commit is a committed terminal status carrying a non-abstention answer and commit accuracy is strict matches over scoreable commits.
 
-\section{J. Figures Not Used in the Body}\label{clj.-figures-not-used-in-the-bodycl}
+\chapter{Figures Not Used in the Body}\label{app:unused-figures}
 
 Everything below was produced during the project and is not used anywhere in the body. Some are alternative renderings of a result Chapter 4 already makes, kept because they show it more directly than the version that was chosen; the rest are analyses that were run and then not written up. None of it is load-bearing for any claim in the text, and nothing here should be read as a result the dissertation argues for. Two carry a note where their numbers do not line up with the body, which is exactly why they were left out.
 
-\includegraphics[width=6.1in,height=2.1578in]{media/media/image24.png}
 
-Figure J.1: Where the 1,144 evaluation pairs went. 636 committed and 508 abstained, and of the scoreable commits 70.1\% match the published key.
 
-\includegraphics[width=6.1in,height=2.03126in]{media/media/image25.png}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/fig_4_1_funnel.pdf}
+\caption{Where the 1,144 evaluation pairs went. 636 committed and 508 abstained, and of the scoreable commits 70.1\% match the published key.}
+\label{fig:j-funnel}
+\end{figure}
 
-Figure J.2: The evaluation run as shares of all 1,144 pairs, then of the 623 scoreable commits alone.
 
-\includegraphics[width=6.1in,height=1.93641in]{media/media/image26.png}
 
-Figure J.3: The same run read four ways. An alternative rendering of Table 4.1.1, with the negative-gold false-positive count underneath.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_4_1_coverage_accuracy.pdf}
+\caption{The evaluation run as shares of all 1,144 pairs, then of the 623 scoreable commits alone.}
+\label{fig:j-shares}
+\end{figure}
 
-\includegraphics[width=6.09474in,height=4.04637in]{media/media/image27.png}
 
-Figure J.4: Accuracy on binary pairs with abstention forced off and left on, against the always-yes floor of 0.594. Forced answering falls below the floor; allowing abstention clears it, on 55.6\% coverage.
 
-\includegraphics[width=6.1in,height=3.37239in]{media/media/image28.png}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/j3_four_ways.png}
+\caption{The same run read four ways. An alternative rendering of Table 4.1.1, with the negative-gold false-positive count underneath.}
+\label{fig:j-four-ways}
+\end{figure}
 
-Figure J.5: Stated confidence at the moment of commit, split by whether the swarm answered ``yes'' or ``no''. 87 of the 143 committed no answers sit at exactly the 0.65 floor.
 
-\includegraphics[width=6.1in,height=3.48015in]{media/media/image29.png}
 
-Figure J.6: Answers held below the 0.65 commit floor beside those committed above it. 73 of the 88 withheld immediately under the floor were a correct no.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{figures/fig_4_2_forced_vs_abstaining.pdf}
+\caption{Accuracy on binary pairs with abstention forced off and left on, against the always-yes floor of 0.594. Forced answering falls below the floor; allowing abstention clears it, on 55.6\% coverage.}
+\label{fig:j-forced}
+\end{figure}
 
-\includegraphics[width=6.1in,height=2.09143in]{media/media/image30.png}
 
-Figure J.7: The 508 abstentions by code, split by resource stratum and by the class of the published answer.
 
-\includegraphics[width=6.1in,height=2.01769in]{media/media/image31.png}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/fig_4_3_3_confidence_by_label.pdf}
+\caption{Stated confidence at the moment of commit, split by whether the swarm answered ``yes'' or ``no''. 87 of the 143 committed no answers sit at exactly the 0.65 floor.}
+\label{fig:j-confidence-at-commit}
+\end{figure}
 
-Figure J.8: The gold-class mix of the two largest abstention codes against the evaluation base rate. Verifier rejections sit on the base rate at 59.1\%; floor failures are enriched in negative golds at 45.1\%.
 
-\includegraphics[width=4.69379in,height=4.04637in]{media/media/image32.png}
 
-Figure J.9: Abstention rate against commit accuracy, one point per evaluation country. Abstaining more does not by itself buy accuracy.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/fig_4_6_subthreshold_recovery.pdf}
+\caption{Answers held below the 0.65 commit floor beside those committed above it. 73 of the 88 withheld immediately under the floor were a correct no.}
+\label{fig:j-subthreshold}
+\end{figure}
 
-\includegraphics[width=4.04637in,height=4.04637in]{media/media/image33.png}
 
-Figure J.10: Reconstructed yes-share against the published yes-share with abstentions dropped. Every country sits above the diagonal, so scoring only what the swarm answered overstates maturity.
 
-\includegraphics[width=4.04637in,height=4.04637in]{media/media/image34.png}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/j7_abstention_codes.png}
+\caption{The 508 abstentions by code, split by resource stratum and by the class of the published answer.}
+\label{fig:j-abstention-codes}
+\end{figure}
 
-Figure J.11: The same reconstruction with every abstention coerced to no. The bias reverses and every country falls below the diagonal.
 
-\includegraphics[width=4.04637in,height=4.04637in]{media/media/image35.png}
 
-Figure J.12: The same reconstruction with abstentions filled from the published key. This is an oracle, and the ceiling the reconstruction would reach if abstention were solved.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/j8_code_gold_mix.png}
+\caption{The gold-class mix of the two largest abstention codes against the evaluation base rate. Verifier rejections sit on the base rate at 59.1\%; floor failures are enriched in negative golds at 45.1\%.}
+\label{fig:j-code-gold-mix}
+\end{figure}
 
-\includegraphics[width=5.61961in,height=4.04637in]{media/media/image36.png}
 
-Figure J.13: The band each country\textquotesingle s reconstructed score could occupy, from treating every abstention as no to treating every one as yes, against the published score. Coverage is on the right.
 
-\includegraphics[width=4.17611in,height=4.04637in]{media/media/image37.png}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\linewidth]{figures/j9_abstention_vs_accuracy.png}
+\caption{Abstention rate against commit accuracy, one point per evaluation country. Abstaining more does not by itself buy accuracy.}
+\label{fig:j-abstention-accuracy}
+\end{figure}
 
-Figure J.14: Coverage against published ODMI score, one point per evaluation country, Pearson r 0.72 and Spearman rho 0.81 on eight points.
 
-\includegraphics[width=6.1in,height=2.58382in]{media/media/image38.png}
 
-Figure J.16: The two populations a human reviewer inherits. Declined answers arrive flagged and are easy to route; committed answers are identical in form whether right or wrong.
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.65\linewidth]{figures/j10_yes_share_dropped.png}
+\caption{Reconstructed yes-share against the published yes-share with abstentions dropped. Every country sits above the diagonal, so scoring only what the swarm answered overstates maturity.}
+\label{fig:j-yes-share-dropped}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.65\linewidth]{figures/j11_yes_share_no.png}
+\caption{The same reconstruction with every abstention coerced to no. The bias reverses and every country falls below the diagonal.}
+\label{fig:j-yes-share-no}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.65\linewidth]{figures/j12_yes_share_oracle.png}
+\caption{The same reconstruction with abstentions filled from the published key. This is an oracle, and the ceiling the reconstruction would reach if abstention were solved.}
+\label{fig:j-yes-share-oracle}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_exp36_score_bands.pdf}
+\caption{The band each country\textquotesingle s reconstructed score could occupy, from treating every abstention as no to treating every one as yes, against the published score. Coverage is on the right.}
+\label{fig:j-score-bands}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.7\linewidth]{figures/fig_exp36_coverage_vs_published.pdf}
+\caption{Coverage against published ODMI score, one point per evaluation country, Pearson r 0.72 and Spearman rho 0.81 on eight points.}
+\label{fig:j-coverage-published}
+\end{figure}
+
+
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/fig_5_1_two_populations.pdf}
+\caption{The two populations a human reviewer inherits. Declined answers arrive flagged and are easy to route; committed answers are identical in form whether right or wrong.}
+\label{fig:j-two-populations}
+\end{figure}
 
 The counts are not the evaluation run. They are the projection §4.8 makes over the full 5,148-pair questionnaire, where the evaluation coverage and commit accuracy put around 2,860 pairs committed and 2,290 declined, of which 2,010 right and 850 wrong.
 
-\includegraphics[width=6.1in,height=2.56865in]{media/media/image39.png}
 
-Figure J.17: Why a ``yes'' and a ``no'' are not symmetric. A yes has a document behind it; a ``no'' rests on an absence, which leaves nothing to quote.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.9\linewidth]{figures/fig_5_4_evidence_asymmetry.pdf}
+\caption{Why a ``yes'' and a ``no'' are not symmetric. A yes has a document behind it; a ``no'' rests on an absence, which leaves nothing to quote.}
+\label{fig:j-asymmetry}
+\end{figure}

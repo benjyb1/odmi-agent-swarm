@@ -1,8 +1,8 @@
-\chapter{Discussion}\label{discussion}
+\chapter{Discussion}\label{ch:discussion}
 
 This chapter reads the verdicts of §4 as a single account, returns to what the adversarial design contributed, then turns from the swarm to the questionnaire. It closes with the threats to the figures reported.
 
-\section{The Scorecard}\label{the-scorecard}
+\section{The Scorecard}\label{sec:scorecard}
 
 The six criteria were introduced in §2.2 as the conditions under which an automated assessment stays contestable, and Chapter 4 returned a verdict on each. Read individually, those verdicts show multiple failure modes: abstention tracking maturity, correct negatives clustering below the confidence threshold, answer variance between runs. Read together, they describe a single constraint that affects everything downstream, data availability. This section works through the criteria in the order that makes that constraint visible, starting from the result most in need of explanation. The system reproduces the human process closely on the answers it commits to, yet when it is forced to answer every question its accuracy falls below what a fixed reply of yes would score. Its competence is therefore real but conditional on being allowed to decline, and what follows sets out what it is declining and why.
 
@@ -16,9 +16,14 @@ Generalisability shows that this over-reading is not uniform but scales with how
 
 Subgroup Equity carries the same mechanism from questions to countries. The stratification was built to detect a language effect, on the expectation that weaker comprehension of a national language would produce confident error, and that effect did not appear. What appeared instead is that measurement error tracks maturity. A mature country does most things, so a question whose true answer is no is still surrounded by adjacent evidence of related practices, and the open web returns abundant material that reads as support for yes. A less mature country more often lacks the practice outright, and the web returns little that could be mistaken for it. The false-positive rate consequently rises with a country\textquotesingle s published maturity while coverage falls as maturity falls, the two panels of Figure 5.1, so a country\textquotesingle s assessed result depends in part on where it already sits on the scale the index exists to measure. An error that correlates with the quantity being estimated is a bias rather than noise, and the distinction matters for what follows, because noise averages out when many questions are pooled into a score and bias does not.
 
-\includegraphics[width=5.9in,height=2.89321in]{media/media/image19.png}
 
-Figure 5.1: Measurement error against the maturity being measured. North Macedonia, hollow, is the one country off the false-positive trend.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_5_2_error_vs_maturity.pdf}
+\caption{Measurement error against the maturity being measured. North Macedonia, hollow, is the one country off the false-positive trend.}
+\label{fig:error-vs-maturity}
+\end{figure}
 
 Reproducibility confirms the same account from a third direction. Run three times over one battery with the search cache cleared between runs, the system reached the same outcome on around seven pairs in ten, and almost all of the disagreement concerned whether to answer rather than what to answer. When all three runs did commit they agreed on the label nearly every time, so the answer itself is stable and the instability sits in the decision to commit. That instability concentrates on the thin-evidence negatives whose confidence rests just above the threshold. The overall score is fairly stable, because a score pooling many questions absorbs the individual flips and commit-accuracy barely moves across the runs. The traceability condition is met for the headline run, whose logs allow every figure to be re-derived, so the part of the system that fails is judgement under thin evidence and not the discipline of the record.
 
@@ -26,13 +31,13 @@ Set end to end, the six verdicts in Table 5.1 describe one system. It is a compe
 
 RQ1 asked whether an automated assessment can meet the conditions that keep it legitimate, and the answer here is split. A country can see the evidence behind each answer and can see which of its questions the system declined, so the result is auditable in a way the closest comparable work is not. It cannot assume that a neighbouring country met the same standard, because the standard varies with the maturity being assessed. Automation can preserve transparency that makes an assessment challengeable, and a swarm architecture provides this where a single `black-box' agent cannot. Yet, this does not yet preserve the even treatment that makes a ranking fair, and §5.3 sets out the change to the questionnaire that would remove that dependence.
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1635}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1641}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1111}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2806}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2806}}@{}}
+\caption{The six criteria of §2.2, and the verdict Chapter 4 returned on each.}\label{tab:scorecard}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Criterion}
@@ -56,31 +61,39 @@ RQ1 asked whether an automated assessment can meet the conditions that keep it l
 \textbf{Generalisability} & Results decomposed by answer type and by ODMI dimension & Not met. Performance varies by dimension and collapses on the graded shapes & Commit-accuracy from 0.784 (145 of 185) on Portal to 0.622 (102 of 164) on Impact, and negative-gold false-positive rate from 0.132 (15 of 114) on Portal to 0.500 (33 of 66) on Policy. The four percentage-band questions with no catalogue route are declined on all 32 of their pairs, and the count-band questions return 1 exact match across 16 pairs. Graded questions are 19 of the 143, and 10 of 143 once the nine catalogue questions are set aside & The system can take a defined part of the questionnaire, since its accuracy follows how far the available evidence settles a question. Any published result would have to carry its per-dimension reliability, because a Policy pass and a Portal pass mean different things \\
 \textbf{Reproducibility} & Traceability, a record complete enough to re-derive any reported figure. Stability, measured as variance between runs & Traceability met with one gap. Stability holds for the score and fails per question & Every Researcher, Verifier and Adjudicator call writes its prompt version, model version and raw response; the snippet picker writes no equivalent row, so its prompt and model version sit outside the record. Three replicates over the 148-pair development intersection, outcome unanimity 0.703, label agreement 0.922 (47 of 51) once all three commit, and commit-accuracy range 0.014 & The figure the ODMI would publish survives a repeat run, because the per-question flips offset each other once 143 questions pool into a score. A country reading a single answer gets a weaker guarantee, since whether the system answers that question at all moves between runs \\
 \end{longtable}
-}
 
-Table 5.1: The six criteria of §2.2, and the verdict Chapter 4 returned on each.
 
-\section{Debate in an ODMI Environment}\label{debate-in-an-odmi-environment}
+\section{Debate in an ODMI Environment}\label{sec:debate-odmi}
 
 RQ2 asked what a swarm of distinct roles adds over a single agent, and what the adversarial stance adds in particular. The design\textquotesingle s premise was that an adversarial second agent would decorrelate the blind spots that produce an error, on the reasoning of Cohen et al. (2023) that opposition surfaces the mistakes a corroborative check misses. §2.5 had already qualified this, noting that decorrelation is only partial when the two agents share weights and priors. The ablation in §4.7 confirms it over all 1,144 evaluation pairs. Holding the architecture fixed and swapping only the Verifier\textquotesingle s stance leaves the two configurations agreeing on which pairs they get right and wrong. Of the 110 pairs exactly one arm answered correctly, 51 went to the adversarial arm and 59 to the corroborative, at a McNemar p of 0.5047. Whether a different frontier model in the Verifier\textquotesingle s role would decorrelate the errors this pairing shares is a question for future work. The results point past it, however, because the abstention gap decomposed in §4.4 rests almost entirely on the Researcher failing to reach the confidence floor rather than on the Verifier misjudging what it retrieved. The constraint that bounds the system therefore sits on the retrieval side rather than the reasoning side, and a Verifier with stronger reasoning may be aiming at the wrong bottleneck, leaving the harder task of finding evidence untouched.
 
 The architecture was justified by the finding of Tyen et al. (2024), that a model judges a located error far more reliably than it detects one unaided. §2 read this as the case for the Adjudicator, handing it an already-drawn disagreement to rule on, but the same finding also governs the Verifier that does the initial error pass. A positive answer can fail its evidence in two ways that are not equally locatable. In the first the passage is off-target. In the second it is on-target but insufficient. The Verifier locates the first reliably, which is most of what its relevance rejections are, and cannot locate the second, because all that separates the Researcher and Verifier is a prompt difference, which the Corroboration prompt swap-out shows has negligible effect. The over-read, the lower row of Figure 5.2, is therefore never surfaced as a disagreement and does not reach the Adjudicator.
 
-\includegraphics[width=5.9in,height=2.56287in]{media/media/image20.png}
 
-Figure 5.2: Two ways a positive answer fails its evidence.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_5_3_two_failure_modes.pdf}
+\caption{Two ways a positive answer fails its evidence.}
+\label{fig:two-failure-modes}
+\end{figure}
 
 The more consequential result is one none of these works anticipated. Cohen, Chowdhury and Zhu all study debate where the material to settle a claim is on hand and the open question~is how to reason over it, whereas the ODMI frequently offers evidence that is thin, adjacent or absent. The bottleneck this section has located, retrieval rather than the reasoning the debate was~built to sharpen, therefore falls outside what that literature was set up to examine, and it is where progression towards an automated assessor should be focused.
 
 The Verifier is suited to an environment where it can set opposing evidence against the Researcher\textquotesingle s, where the answer turns on a reasoning difference over material both agents can see. The ODMI\textquotesingle s hard questions rarely provide that, since their evidence is thin, with adjacent material that reads as support for yes and nothing substantive that reads as support for no. There is little for two positions to be built from, so the debate has no practical opposition to stage. This is the setting the adversarial stance was meant for, since refuting over-reach on thin evidence is its stated purpose, yet it is the setting where it can do least. To refute a claim resting on weak but on-topic evidence the Verifier would need counterevidence the web does not hold, and without it the objection reduces to judging the evidence insufficient, a call it makes no more convincingly than the Researcher. The swarm\textquotesingle s contribution is therefore coverage, and the adversarial stance adds nothing beyond what a corroborative check already supplies.
 
-\section{Reformulating the ODMI}\label{reformulating-the-odmi}
+\section{Reformulating the ODMI}\label{sec:reformulation}
 
 In their similar work, Fumega and Gao (2026) concluded that their approach still required human oversight rather than being fully autonomous. The results here extend that conclusion, since they show oversight does not have to fall evenly, as Figure 5.3 makes plain. So, the useful question is which parts of the assessment the system can be trusted with and which have to stay manual.
 
-\includegraphics[width=5.89873in,height=3.01865in]{media/media/image21.png}
 
-Figure 5.3: Outcome composition by ODMI dimension over the 1,144 evaluation pairs, ordered by false-positive rate on negative golds.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_5_5_dimension_oversight.pdf}
+\caption{Outcome composition by ODMI dimension over the 1,144 evaluation pairs, ordered by false-positive rate on negative golds.}
+\label{fig:dimension-oversight}
+\end{figure}
 
 The system is most reliable on the questions whose evidence is clear and whose nonexistence can be proved, and those are concentrated in the Portal dimension. Portal asks whether a feature is present on the national portal, which is visible on the page or absent from it, and the system commits on these at 0.784 accuracy with the lowest false-positive rate of the four dimensions. Quality behaves similarly on the questions it will answer, committing at 0.803 once its computable catalogue questions are set aside, with the second-lowest false-positive rate, though it is more cautious than Portal and declines more than half of what it is asked. Together the two are 74 of the 143 questions, the observable half of the questionnaire, the part that asks what a portal shows or a catalogue holds rather than what a team does behind it.
 
@@ -94,12 +107,12 @@ The reformulation this points to is not a matter of making the questions easier 
 
 This is also the answer to the manipulation problem raised by Powers et al. (2002) and their work on automated essay scoring, where they found writers inflated an automated score more easily than they improved the actual work that was behind the score. An assessment is gameable when creating the evidence it rewards is cheaper than actually doing the activity the evidence is meant to prove, and the current questionnaire offers little resistance, since evidence of internal practices is largely unverifiable. Requiring the published artefact reverses that for an openness index, and the current questions show the difference plainly. A country can claim to monitor its search terms at no cost, as PT28 invites, but it cannot fake having its portal\textquotesingle s source code public on GitHub, which PT43 asks for, nor a catalogue the quality assessment reads as machine-readable, which Q27 scores, without actually holding them. Where the cheapest way to satisfy a question is to produce the artefact, and the artefact is the open behaviour the question was after, scoring well on the assessment becomes a better approximation of the assessed quality.
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2836}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2321}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.3116}}
   >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.1727}}@{}}
+\caption{What each group of questions would have to ask instead.}\label{tab:reformulation}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Question group}
@@ -125,9 +138,7 @@ Policy implementation, 9 of 31 (P22 to P29) & Whether the team carries out a pra
 Impact, measuring reuse and awareness, 18 of 38 & Whether the team measures reuse or runs awareness activities & The published measurement & The published report \\
 Impact, reuse cases, 20 of 38 & For a documented reuse case across four benefit areas & Inbound links and citations to datasets, repositories calling the portal API, dataset references in research and in the press & Third-party sites, outside the government estate \\
 \end{longtable}
-}
 
-Table 5.2: What each group of questions would have to ask instead.
 
 The demand that Policy framework questions in Table 5.2 name their provision follows from §4.5, where the failure was over-reading an adjacent document rather than missing evidence. The governance rows ask for an outcome instead because a bare existence test is met by a nominal committee as easily as by a working one, and the monitoring rows, which run across all four dimensions, are where the reformulation is strongest.
 
@@ -137,7 +148,7 @@ Openness that a government enacts, whether a policy adopted, a portal feature de
 
 This is the answer to RQ3. Responsibility is not handed over whole or withheld whole but split by type of question, the machine taking what the public record can answer, and the human keeping what needs internal knowledge. The observable half is the part the machine can take. In its current form, the swarm commits to about half of these questions, so a quarter of the whole questionnaire outright. It can flag the observable questions it cannot commit to, and leave the operational half wholly to the human.
 
-\section{Threats to Validity}\label{threats-to-validity}
+\section{Threats to Validity}\label{sec:threats}
 
 Appendix A holds the full register of thirty-four modes by which the swarm can commit a wrong answer, twenty-two of them structural. The threats set out below are those bearing on the reported figures.
 
@@ -153,7 +164,7 @@ Construct validity is threatened by the non-independence of the deterministic ca
 
 The language confound in §4.4 was not resolved directly. To determine whether the higher abstention in the lower-resource stratum reflects the model's poorer reading of those languages, or simply fewer publications to read, we would need to rerun the same pairs on translated evidence, keeping the evidence constant while varying only the language the model reads. Conducting that experiment across the stratum required translation volume beyond the free tiers, so a comparison at a useful scale was not possible. Consequently, the decomposition in §4.4 identifies the gap in the Researcher's confidence rather than in the Verifier's judgement, leaving the second branch of the question the stratification was meant to address unresolved.
 
-\section{Legal, Social, Ethical and Professional Issues}\label{legal-social-ethical-and-professional-issues}
+\section{Legal, Social, Ethical and Professional Issues}\label{sec:lsep}
 
 There are two requirements of the BCS Code of Conduct and the IET Rules of Conduct that bear directly on this work: The duty to act in the public interest and the duty to work within the limits of demonstrated competence. The first of these governs how the system collects its evidence. Every request identifies the project, the institution and a contact address. The retrieval layer reads each portal\textquotesingle s robots.txt before fetching and refuses any path the portal excludes, and where a site presents an automated challenge the fetch waits within a fixed budget and then abandons the page, so no attempt is made to defeat the check. A separate set of controls, described in §3.6, keeps the evaluation from reading ODMI\textquotesingle s own published answers. The questionnaire and the published answers it is measured against are Commission documents, reusable under Decision 2011/833/EU and released on data.europa.eu under a Creative Commons Attribution licence, so their use here carries an attribution requirement and nothing further. Evidence drawn from national portals is quoted in short passages from public pages, with the source URL recorded alongside each quotation. Model access runs through a local proxy onto a flat-rate subscription, so the costs reported in §4.8 are arithmetic equivalents computed from published per-token rates, and no figure in this report is billed spend.
 

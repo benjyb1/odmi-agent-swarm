@@ -1,12 +1,17 @@
-\chapter{Background and Related Work}\label{background-and-related-work}
+\chapter{Background and Related Work}\label{ch:background}
 
 This section builds towards an architecture that can answer a policy questionnaire from the open web without asserting more than its evidence supports. It begins with the ODMI itself, followed by the criteria that must be met for it to remain a legitimate assessment post-automation. Past works are then weighed against those criteria. The review turns first to LLMs, why they are a sensible starting point and how they become agentic, then to the limitations that make them unreliable where evidence is scarce. Self-verification, multi-agent debate and abstention answer those limitations. The section closes with the difficulty a multi-lingual setting adds, and with the gap that remains for this work to address.
 
-\section{The ODMI as an Assessment}\label{the-odmi-as-an-assessment}
+\section{The ODMI as an Assessment}\label{sec:odmi-assessment}
 
-\includegraphics[width=7.08611in,height=1.73819in]{media/media/image2.png}
 
-Figure 2.1: The Open Data Maturity Index
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/odmi_overview.png}
+\caption{Maturity Index}
+\label{fig:odmi-overview}
+\end{figure}
 
 The four dimensions of the ODMI aim to measure the entire open-data lifecycle, from creating policy to delivering real-world benefits. Policy measures open-data strategies, government structures, laws and implementation measures. Portal measures the functionality and usability of the national open data portal. Quality measures metadata standards, compliance, monitoring and data deployment quality. Impact measures the reuse of open data and the benefits it produces. These dimensions perform sequential roles, with Policy informing decisions on open data, the Portal providing access to data, Quality assuring it is of a usable standard, and Impact measuring the value of this data.
 
@@ -16,7 +21,7 @@ Davis, Kingsbury and Merry (2012) argue that indicators, such as the ODMI, funct
 
 Fumega and Gao (2026) put this directly, asking whether AI can take over indicator development, evidence discovery and policy evaluation without compromising `contextual nuance or democratic legitimacy' (p.1). Mirroring the results of human assessors is only half of the question. The other half is whether artificial intelligence can preserve the epistemic properties that make these assessments worth having, such as explainability. Handing the job to a machine may cut costs, but if the underlying processes are opaque and indisputable, this technology ultimately degrades the authority and contestability of global benchmarking data (Davis et al., 2012).
 
-\section{Criteria for an Automated System}\label{criteria-for-an-automated-system}
+\section{Criteria for an Automated System}\label{sec:criteria}
 
 The criteria below set out what such a system has to demonstrate before it can be trusted with the automation of producing benchmarking indices. They govern any generative system that stands in for human judgement in producing a published assessment comparing several parties, where the system finds its own evidence. That covers the benchmarking indices in §2.1 and comparable exercises such as sustainability ratings and regulatory compliance monitoring.
 
@@ -30,15 +35,14 @@ Williamson, Xi and Breyer (2012) set out the evidence an automated scorer must p
 
 Convergent Validity asks whether the system reaches the right answer. The QF4SA defines accuracy as closeness to a true value, and §3.4 discusses the limits of self-reported answers as a stand-in for that value. Williamson et al. (2012) add that agreement with an independent measure carries more weight than agreement with a human key alone. Nine questions in the ODMI\textquotesingle s Quality dimension are deterministic, asking for a proportion of datasets meeting a metadata standard, and §3.5 sets out how these are computed directly.
 
-\textbf{Table 2.1: Criteria for a generative system automating an assessment.}
 
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1565}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1568}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2586}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2295}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1985}}@{}}
+\caption{Criteria for a generative system automating an assessment.}\label{tab:criteria}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\centering
 \textbf{Criterion}
@@ -62,23 +66,32 @@ Attributability & Does every committed answer trace to a passage a reader would 
 Selectivity & Can the system decline to answer, and was it right to decline? & Models are optimised to guess when uncertain (Kalai et al., 2025). The QF4SA assumes the data is already available, but that is not the case for the ODMI, where the evidence has to be found and may not exist in public. & A commitment only where the evidence supports it, an abstention otherwise, and a stated confidence that tracks observed accuracy. & New here. Neither framework supplies it, as both assume a system that always answers. \\
 Reproducibility & Does a second run of the assessment return the same answers? & A deterministic algorithm satisfies this by construction, and a generative assessor cannot. Two runs may search differently while the truth has not changed, so the outcome is what has to hold, not the route. & Traceability, a property of the record: prompts, evidence, model version and settings, enough to re-derive any reported figure without re-running the system. Stability, a property of the system, measured as variance between runs. & QF4SA reproducibility (Yung et al., 2022), the one dimension carried through unchanged. \\
 \end{longtable}
-}
 
 Together these six criteria, set out in Table 2.1, make up the conditions under which an automated ODMI score remains contestable in Davis et al.\textquotesingle s sense. A country disputing its score should be able to check the evidence held against it (Attributability), and know the answers weren't guessed (Selectivity). It should also be able to establish whether the same standard was applied to its neighbours (Subgroup Equity), whether the result agrees with what a human assessor would have reached (Convergent Validity), whether the score rests on the parts of the questionnaire the system handles best (Generalisability), and whether a second run would return the same figure (Reproducibility).
 
-\section{Limitations of LLMs in Truth-Seeking}\label{limitations-of-llms-in-truth-seeking}
+\section{Limitations of LLMs in Truth-Seeking}\label{sec:llm-limitations}
 
 Using a basic large language model in an evidence-retrieval setting has two key drawbacks. It can only recall information from its training data, and this information isn't necessarily true. LLMs are optimised to match the statistical distribution of their training corpus, so the gradient signal rewards predicting the most likely next token based on context, not factual truth. Truth only enters indirectly; the phrase ``the capital of France is'' is most likely followed by ``Paris'', as this is the most frequent resolution of the sentence, not because it `knows' that is the case. The training objective never targets truth directly; it is a byproduct of statistical patterns in text. Figure\,2.1 illustrates that, in the long tail where facts are rare in the training corpus, completing a statement may result in many continuations, not all of which are true (Kandpal et\,al.,\,2023). Backpropagation preserves the statistical regularity of a fact while discarding its provenance, so the model retains that a completion is likely but not where it came from or how reliable that source was.
 
-\includegraphics[width=5.9in,height=2.26898in]{media/media/image3.png}
 
-Figure 2.1: Why the objective produces hallucination. 
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_2_1_hallucination_objective.pdf}
+\caption{produces hallucination.}
+\label{fig:hallucination}
+\end{figure}
 
 A model built this way will therefore state things that are false, and will state them as confidently as it states things that are true. A pertinent question is why the behaviour survives post-training, where reinforcement learning shapes the model towards answering in a desired manner rather than merely fluently. Most benchmarks are graded binarily and award no credit for abstention, so a model answering "I do not know" scores identically to one answering incorrectly, while a model that guesses has positive expected value (Kalai et al., 2025). Optimisation against such benchmarks actively encourages confident fabrication under uncertainty, since the chance of guessing correctly is non-zero and the chance of scoring by abstaining is not. This incentive is inherited by any system built on such a model.
 
-\emph{Extrinsic} hallucination is the main risk for the purposes of agentic research, where the generated output cannot be verified from the source (Maynez et al., 2020; Ji et al., 2023). Previous works in retrieval-augmented generation and web retrieval systems have constrained models to reason solely from web-derived evidence, treating parametric recall as inadmissible (Lewis et al., 2020; Nakano et al., 2021; Menick et al., 2022; Gao et al., 2023). \includegraphics[width=7.08611in,height=3.24167in]{media/media/image4.png}
+\emph{Extrinsic} hallucination is the main risk for the purposes of agentic research, where the generated output cannot be verified from the source (Maynez et al., 2020; Ji et al., 2023). Previous works in retrieval-augmented generation and web retrieval systems have constrained models to reason solely from web-derived evidence, treating parametric recall as inadmissible (Lewis et al., 2020; Nakano et al., 2021; Menick et al., 2022; Gao et al., 2023). 
 
-Figure 2.2: Prior-steered retrieval. 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_2_2_prior_steered_retrieval.pdf}
+\caption{Prior-steered retrieval.}
+\label{fig:prior-steered}
+\end{figure}
 
 The constraint is not airtight\textbf{, as the loop traced in Figure 2.2 shows, since} parametric knowledge cannot be switched off and models tend to resolve conflicts between retrieved context and prior belief in favour of the prior (Longpre et al., 2021). The no-retrieval baseline is reported in Table F.1, to isolate the effect of prior steering. The failure mode that dominates in this setting, however, comes from the ODMI's sparse evidence. Much of what the questionnaire asks about exists only in obscure national portals, in inconsistent formats, and in some cases nowhere public at all, which is the long-tail regime in which a model\textquotesingle s recall is least reliable (Mallen et al., 2023). A search over that space often returns a document on the same subject as the question, but that does not directly settle it. The agent then has to decide whether such a document supports its claim, and it decides under the incentive set out above, where committing scores and abstaining does not. The dominant failure is therefore over-reading, where the system treats related evidence as proof of the claim. Every citation it offers is real, so requiring the agent to cite its sources does not catch it.
 
@@ -88,13 +101,18 @@ A ``yes'' is an existential claim, and one document that establishes the practic
 
 Meeting the Selectivity standard set out in §2.2 requires three things of the architecture. The system has to be able to interrogate its own outputs, to subject them to adversarial challenge, and to return nothing at all where the evidence does not reach. The remainder of this chapter takes each in turn, self-verification in §2.4, adversarial multi-agent debate in §2.5 and abstention in §2.6.
 
-\section{Methods towards Verification}\label{methods-towards-verification}
+\section{Methods towards Verification}\label{sec:verification-methods}
 
 Figure 2.3 traces the lineage between the past works, where no single work arrives at the set of requirements the ODMI imposes.
 
-\includegraphics[width=5.4in,height=3.69858in]{media/media/image5.png}
 
-Figure 2.3: What each prior method adds and misses. 
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{figures/fig_2_4_verification_lineage.pdf}
+\caption{What each prior method adds and misses.}
+\label{fig:lineage}
+\end{figure}
 
 SelfCheckGPT (Manakul et al., 2023) samples the same response several times and measures how far the responses agree, on the finding that hallucinated content diverges under resampling while well-attested content does not. Dhuliawala et al. (2024) take an adjacent route, drafting an answer, breaking it into atomic verification questions, and answering each without the draft in view so the original claim cannot steer the check. They note that retrieval-based systems beat their architecture on very rare facts, which ties back to the long-tail argument in §2.3. Both works improve accuracy over answering directly, and both share one error. They detect inconsistency within prior knowledge and say nothing about whether that prior knowledge is correct. Neither consults an external source, so both fail on Attributability with no evidence trail beyond the model\textquotesingle s own parameters.
 
@@ -106,7 +124,7 @@ The deeper limitation is the direction of the search. SAFE generates its queries
 
 This motivates the question this work puts to the test, whether opposition is what a setting with little to no evidence requires. If one agent is tasked with defending a claim, and one with refuting it, the model's disposition to confidently assert is set against itself instead of being left to run in the same direction, meaning only claims backed by substantial evidence should survive the process. This results in three relations. The claim survives refutation, the refutation defeats the claim, or both positions are asserted equally with opposing evidence. It is this third relation that a single corroborative check cannot resolve and is most significant in an environment where sparse and adjacent evidence is expected. Whether the opposition itself does the work, or the extra retrieval that arguing forces, is what §4.7 separates.
 
-\section{Multi-Agent Debate for Verification}\label{multi-agent-debate-for-verification}
+\section{Multi-Agent Debate for Verification}\label{sec:debate}
 
 Multi-agent adversarial verification sits within the multi-agent debate family and is a relatively new line of research. Du et al. (2023) proposed a collaborative multi-agent architecture and found that cooperatively proposing and critiquing arguments meant the agents' collective intelligence could self-correct hallucinations. Liang et al. (2023) are among the first to shift away from collaborative debate, towards using adversarial tension to expose weak reasoning. §2.4 showed that a model cannot reliably check itself, since it carries the same blind spots that produced the error (Huang et al., 2024; Tyen et al., 2024). A second agent set to agree inherits the problem and adds little in a data-scarce setting. Cohen et al. (2023) found that opposition surfaces errors a corroborative check misses, though their verifier interrogated the claim alone and admitted no external evidence. The hypothesis here is that adversarial pressure decorrelates the two models\textquotesingle{} errors, and that pairing that pressure with retrieval closes the gap Cohen left open.
 
@@ -116,7 +134,7 @@ Chowdhury et al. (2026) are the closest architectural precedent. Their PROClaim 
 
 Smit et al. (2024) found that debate protocols do not reliably outperform cheaper strategies such as self-consistency and `multi-path ensembling'. Zhu et al. (2026) set out the sharper condition, showing that where agents are homogeneous and both are equally likely to be right, debate preserves expected correctness and cannot improve on majority vote. That applies here, since the Researcher and the Verifier are one model separated by a prompt. The result assumes a pool of evidence that stays fixed for the duration of the exchange, and each round here retrieves new material, which is the same mechanism Chowdhury et al. (2026) measured when progressive retrieval carried 7.5 of their 10.0 points. The claim under test is therefore narrower than ``debate is unanimously better''. It is that adversarial debate over retrieved evidence separates from a corroborative check in a sparse-web environment, whether on accuracy or on false positives. §4.7 settles it by ablating each agent in turn.
 
-\section{Allowing for Abstention}\label{allowing-for-abstention}
+\section{Allowing for Abstention}\label{sec:abstention}
 
 §2.5 left the system with three outcomes. Debate can settle which of two cases has stronger evidence, but it cannot settle a case where the evidence is equally weak on both sides. Embedding a model in a debate does not remove the guessing incentive of §2.3, and both Researcher and Verifier will guess if forced to produce an answer. Abstention removes this pressure. Where a question measures an internal practice, or little to no evidence exists online, abstention is what lets the system decline honestly.
 
@@ -126,7 +144,7 @@ When a model commits with confidence 0.7 it should be correct roughly 70\% of th
 
 Abstention has a hidden cost, as while the system declining is what stops it guessing, a declined question is still a question the assessment has no answer for. This means total accuracy reduces as abstention increases, and a system maximising accuracy just on answers it commits to is incentivised to answer extremely cautiously. And thus, the choice of threshold is a policy decision, balancing coverage and accuracy. Selectivity from §2.2 asks both whether the system can decline and whether it was right to do so. The design supplies the first. Calibration is what would make the stated confidence non-trivial, and §4.2 reports whether it did.
 
-\section{Multilingual Evidence Retrieval}\label{multilingual-evidence-retrieval}
+\section{Multilingual Evidence Retrieval}\label{sec:multilingual}
 
 The ODMI covers thirty-six states and more than twenty languages, and any variance in how well the system assesses them lands directly on Subgroup Equity. When a state scores poorly, three explanations sit behind that score, since the model may have misunderstood the evidence, the evidence may never have been published, or the country may simply be less open than its peers. Only the first is a property of the assessor rather than the country, which makes comprehension the one artefact that can and should be isolated.
 
@@ -134,7 +152,7 @@ Language capability is not uniform, because an LLM acquires each language as a b
 
 Isolating comprehension does not clear Subgroup Equity on its own. Countries differ in what they publish, how they publish it, and how easy their national estates are to browse, so lower maturity may itself confound the ability of the system to assess their score. Separating them is what §4.4 attempts to do.
 
-\section{Research Gap}\label{research-gap}
+\section{Research Gap}\label{sec:research-gap}
 
 Two lines of work run through this chapter. One gives a model the means to retrieve its own evidence and act on it, the other checks whether an answer is sound. The two works that come closest to joining them are set out below, before Table 2.2 scores every work in the chapter against the six criteria.
 
@@ -146,9 +164,6 @@ Their work highlights the necessity of both conditions of Attributability, as th
 
 Appendix E details how these works score against the full criteria.
 
-\section{}\label{section-5}
-
-{\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1639}}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1382}}
@@ -157,6 +172,7 @@ Appendix E details how these works score against the full criteria.
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1415}}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1395}}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1382}}@{}}
+\caption{Prior work scored against the six criteria of §2.2. A tick means the work addresses and reports the criterion, not that it succeeds. Partial means it addresses one of the criterion\textquotesingle s two conditions, or reports it without measuring it. The full justification for every cell, with the passage each verdict is read from, is in Appendix E.}\label{tab:prior-work}\\
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Work}
@@ -191,9 +207,7 @@ Chowdhury et al. (2026) & ✓ & ✓ & ✗ & ✓ & ✓ & ✓ \\
 Fumega and Gao (2026) & ✓ & ✓ & ✗ & Partial & ✗ & Partial \\
 This work & ✓ & ✓ & ✓ & ✓ & ✓ & ✓ \\
 \end{longtable}
-}
 
-Table 2.2: Prior work scored against the six criteria of §2.2. A tick means the work addresses and reports the criterion, not that it succeeds. Partial means it addresses one of the criterion\textquotesingle s two conditions, or reports it without measuring it. The full justification for every cell, with the passage each verdict is read from, is in Appendix E.
 
 Table 2.2 shows the shape of the gap. Attributability and Selectivity are met together only by Chowdhury et al. (2026). The only system operating in a real assessment setting, Fumega and Gao (2026), satisfies neither of the criteria fully. Although commercial research agents leave a per-claim trail, they lack a method to verify that the cited source supports the claim, and they have no abstention channel. The verification machinery and the open-world setting have never been brought together.
 
