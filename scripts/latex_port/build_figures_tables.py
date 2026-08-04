@@ -245,6 +245,31 @@ def drop_stale_baselines_image(base: Path) -> None:
     print("appendix F: stale baselines image dropped")
 
 
+def fix_longtable_heads(base: Path) -> None:
+    r"""Give every longtable a proper first head.
+
+    Pandoc emits one head block closed by \endhead, which longtable
+    repeats on every page. Placing the \caption row inside it prints
+    the caption on every page and defines the label once per page.
+    The fix is the standard shape: caption + head + \endfirsthead,
+    then the bare head + \endhead for the continuation pages.
+    """
+    for path in sorted((base / "chapters").glob("*.tex")):
+        text = path.read_text(encoding="utf-8")
+        pat = re.compile(
+            r"(\\caption\{.*?\}\\label\{[^}]*\}\\\\\n)(.*?)(\\endhead\n)",
+            re.S)
+
+        def repl(m):
+            cap, head, _ = m.group(1), m.group(2), m.group(3)
+            return cap + head + "\\endfirsthead\n" + head + "\\endhead\n"
+
+        text, n = pat.subn(repl, text)
+        if n:
+            path.write_text(text, encoding="utf-8")
+            print(f"{path.name}: {n} longtable heads restructured")
+
+
 def main() -> None:
     base = Path(sys.argv[1])
     stage = sys.argv[2] if len(sys.argv) > 2 else "all"
@@ -253,6 +278,8 @@ def main() -> None:
         do_figures(base)
     if stage in ("all", "tables"):
         do_tables(base)
+    if stage in ("all", "tables", "heads"):
+        fix_longtable_heads(base)
 
 
 if __name__ == "__main__":

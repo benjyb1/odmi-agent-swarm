@@ -1,0 +1,1172 @@
+[
+ {
+  "file": "01-introduction.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "section",
+  "literal": "\u00a74.1",
+  "label": "sec:convergent-validity"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "section",
+  "literal": "\u00a75.3",
+  "label": "sec:reformulation"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "chapter",
+  "literal": "\u00a72",
+  "label": "ch:background"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "chapter",
+  "literal": "\u00a73",
+  "label": "ch:methodology"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "chapter",
+  "literal": "\u00a74",
+  "label": "ch:results"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "chapter",
+  "literal": "\u00a75",
+  "label": "ch:discussion"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "chapter",
+  "literal": "\u00a76",
+  "label": "ch:conclusion"
+ },
+ {
+  "file": "01-introduction.tex",
+  "kind": "figure",
+  "literal": "Figure 1.1",
+  "label": "fig:assumption"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.1",
+  "label": "sec:odmi-assessment"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a73.4",
+  "label": "sec:ground-truth"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a73.5",
+  "label": "sec:catalogue-tool"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a73.4",
+  "label": "sec:ground-truth"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a73.5",
+  "label": "sec:catalogue-tool"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.4",
+  "label": "sec:verification-methods"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a71.3",
+  "label": "sec:open-world"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.4",
+  "label": "sec:verification-methods"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.5",
+  "label": "sec:debate"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.6",
+  "label": "sec:abstention"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a71.3",
+  "label": "sec:open-world"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.4",
+  "label": "sec:verification-methods"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.5",
+  "label": "sec:debate"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a73.9",
+  "label": "sec:metrics"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a74.2",
+  "label": "sec:selectivity"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a74.2",
+  "label": "sec:selectivity"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a75.3",
+  "label": "sec:reformulation"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "appendix",
+  "literal": "Appendix E",
+  "label": "app:prior-work-scored"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "figure",
+  "literal": "Figure 2.2",
+  "label": "fig:prior-steered"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "figure",
+  "literal": "Figure 2.3",
+  "label": "fig:lineage"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "table",
+  "literal": "Table 2.1",
+  "label": "tab:criteria"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "table",
+  "literal": "Table F.1",
+  "label": "tab:baselines"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "table",
+  "literal": "Table 2.2",
+  "label": "tab:prior-work"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "table",
+  "literal": "Table 2.2",
+  "label": "tab:prior-work"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "chapter",
+  "literal": "\u00a72",
+  "label": "ch:background"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a73.2",
+  "label": "sec:agent-loop"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a74.6",
+  "label": "sec:reproducibility"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a74.5",
+  "label": "sec:generalisability"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a73.5",
+  "label": "sec:catalogue-tool"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a73.6",
+  "label": "sec:leakage-controls"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a72.5",
+  "label": "sec:debate"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a72.6",
+  "label": "sec:abstention"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "chapter",
+  "literal": "\u00a74",
+  "label": "ch:results"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a73.5",
+  "label": "sec:catalogue-tool"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a74.1",
+  "label": "sec:convergent-validity"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "section",
+  "literal": "\u00a72.7",
+  "label": "sec:multilingual"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "chapter",
+  "literal": "\u00a74",
+  "label": "ch:results"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "appendix",
+  "literal": "\u00a78.3",
+  "label": "app:experiments"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "chapter",
+  "literal": "\u00a74",
+  "label": "ch:results"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "chapter",
+  "literal": "\u00a74",
+  "label": "ch:results"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "chapter",
+  "literal": "\u00a74",
+  "label": "ch:results"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "chapter",
+  "literal": "\u00a74",
+  "label": "ch:results"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "appendix",
+  "literal": "Appendix D",
+  "label": "app:out-of-reach"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "appendix",
+  "literal": "Appendix C",
+  "label": "app:experiments"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "figure",
+  "literal": "Figure 3.1",
+  "label": "fig:subtrio"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "figure",
+  "literal": "Figure 3.2",
+  "label": "fig:leakage-points"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "figure",
+  "literal": "Figure 3.3",
+  "label": "fig:evaluation-set-fig"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "figure",
+  "literal": "Figure 3.3",
+  "label": "fig:evaluation-set-fig"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "table",
+  "literal": "Table 3.1",
+  "label": "tab:answer-shapes"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "table",
+  "literal": "Table 3.2",
+  "label": "tab:harvests"
+ },
+ {
+  "file": "03-approach-and-methodology.tex",
+  "kind": "table",
+  "literal": "Table 3.3",
+  "label": "tab:metrics"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.8",
+  "label": "sec:cost-runtime"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.9",
+  "label": "sec:reconstruction"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a71.3",
+  "label": "sec:open-world"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a73.2",
+  "label": "sec:agent-loop"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a73.2",
+  "label": "sec:agent-loop"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.7",
+  "label": "sec:multilingual"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.1",
+  "label": "sec:convergent-validity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a75.3",
+  "label": "sec:reformulation"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.1",
+  "label": "sec:convergent-validity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.2",
+  "label": "sec:selectivity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.2",
+  "label": "sec:selectivity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.4",
+  "label": "sec:verification-methods"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.5",
+  "label": "sec:debate"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.5",
+  "label": "sec:debate"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.2",
+  "label": "sec:selectivity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.3",
+  "label": "sec:attributability"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a73.3",
+  "label": "sec:retrieval"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a73.2",
+  "label": "sec:agent-loop"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.2",
+  "label": "sec:selectivity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.2",
+  "label": "sec:selectivity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.5",
+  "label": "sec:generalisability"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "section",
+  "literal": "\u00a74.6",
+  "label": "sec:reproducibility"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "chapter",
+  "literal": "\u00a75",
+  "label": "ch:discussion"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "chapter",
+  "literal": "Chapter 3",
+  "label": "ch:methodology"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "appendix",
+  "literal": "Appendix B",
+  "label": "app:pipeline-detail"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "appendix",
+  "literal": "Appendix C",
+  "label": "app:experiments"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.1.1",
+  "label": "fig:outcome-makeup"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.1.2",
+  "label": "fig:accuracy-by-class"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.1.3",
+  "label": "fig:recompute-band"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.2.1",
+  "label": "fig:per-class-confidence"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.2.2",
+  "label": "fig:reliability"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.2.1",
+  "label": "fig:per-class-confidence"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.4.2",
+  "label": "fig:against-maturity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.4.2",
+  "label": "fig:against-maturity"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.5.1",
+  "label": "fig:by-dimension"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.5.1",
+  "label": "fig:by-dimension"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.5.2",
+  "label": "fig:by-answer-shape"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.6.2",
+  "label": "fig:replicates-fig"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "figure",
+  "literal": "Figure 4.9.1",
+  "label": "fig:reconstruction-fig"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "table",
+  "literal": "Table 4.1.1",
+  "label": "tab:four-ways"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "table",
+  "literal": "Table 4.2.1",
+  "label": "tab:abstention-reasons"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "table",
+  "literal": "Table 4.3.1",
+  "label": "tab:attributability"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "table",
+  "literal": "Table 4.4.1",
+  "label": "tab:strata"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "table",
+  "literal": "Table 4.6.1",
+  "label": "tab:replicates"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "table",
+  "literal": "Table 4.7.1",
+  "label": "tab:ablation"
+ },
+ {
+  "file": "04-results.tex",
+  "kind": "table",
+  "literal": "Table 4.8.1",
+  "label": "tab:cost"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "chapter",
+  "literal": "\u00a74",
+  "label": "ch:results"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a72.3",
+  "label": "sec:llm-limitations"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a75.3",
+  "label": "sec:reformulation"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a72.5",
+  "label": "sec:debate"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "chapter",
+  "literal": "\u00a72",
+  "label": "ch:background"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.1",
+  "label": "sec:convergent-validity"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a72.1",
+  "label": "sec:odmi-assessment"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.5",
+  "label": "sec:generalisability"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a73.3",
+  "label": "sec:retrieval"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a75.2",
+  "label": "sec:debate-odmi"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.6",
+  "label": "sec:reproducibility"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a71.2",
+  "label": "sec:motivation"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.4",
+  "label": "sec:subgroup-equity"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a73.6",
+  "label": "sec:leakage-controls"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a74.8",
+  "label": "sec:cost-runtime"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "section",
+  "literal": "\u00a75.3",
+  "label": "sec:reformulation"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "chapter",
+  "literal": "Chapter 4",
+  "label": "ch:results"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "chapter",
+  "literal": "Chapter 4",
+  "label": "ch:results"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "appendix",
+  "literal": "Appendix A",
+  "label": "app:failure-register"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "figure",
+  "literal": "Figure 4.2.2",
+  "label": "fig:reliability"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "figure",
+  "literal": "Figure 5.1",
+  "label": "fig:error-vs-maturity"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "figure",
+  "literal": "Figure 5.2",
+  "label": "fig:two-failure-modes"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "figure",
+  "literal": "Figure 5.3",
+  "label": "fig:dimension-oversight"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "table",
+  "literal": "Table 5.1",
+  "label": "tab:scorecard"
+ },
+ {
+  "file": "05-discussion.tex",
+  "kind": "table",
+  "literal": "Table 5.2",
+  "label": "tab:reformulation"
+ },
+ {
+  "file": "06-conclusion.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "06-conclusion.tex",
+  "kind": "section",
+  "literal": "\u00a71.3",
+  "label": "sec:open-world"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a75.4",
+  "label": "sec:threats"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a74.2",
+  "label": "sec:selectivity"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a73.4",
+  "label": "sec:ground-truth"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a74.8",
+  "label": "sec:cost-runtime"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a74.7",
+  "label": "sec:ablation"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a72.8",
+  "label": "sec:research-gap"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a72.2",
+  "label": "sec:criteria"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a73.5",
+  "label": "sec:catalogue-tool"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "section",
+  "literal": "\u00a74.8",
+  "label": "sec:cost-runtime"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "chapter",
+  "literal": "Chapter 4",
+  "label": "ch:results"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "chapter",
+  "literal": "Chapter 4",
+  "label": "ch:results"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "chapter",
+  "literal": "Chapter 4",
+  "label": "ch:results"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "chapter",
+  "literal": "Chapter 4",
+  "label": "ch:results"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "table",
+  "literal": "Table C.1",
+  "label": "tab:experiments"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "table",
+  "literal": "Table 4.7.1",
+  "label": "tab:ablation"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "table",
+  "literal": "Table E.1",
+  "label": "tab:prior-work-full"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "table",
+  "literal": "Table 2.2",
+  "label": "tab:prior-work"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "table",
+  "literal": "Table H.1",
+  "label": "tab:harvest-register"
+ },
+ {
+  "file": "08-appendix.tex",
+  "kind": "table",
+  "literal": "Table 4.1.1",
+  "label": "tab:four-ways"
+ },
+ {
+  "file": "02-background-and-related-work.tex",
+  "kind": "figure",
+  "literal": "Figure 2.1",
+  "label": "fig:hallucination"
+ }
+]

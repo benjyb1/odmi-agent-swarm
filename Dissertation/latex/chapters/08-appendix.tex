@@ -1,11 +1,11 @@
 \chapter*{Appendices}
 \addcontentsline{toc}{chapter}{Appendices}\label{app:appendices}
 
-This appendix carries the material the body points at but has no room for, and a second group of results that did not reach Chapter 4 at all. Sections A to F support claims made in the text: the failure-mode register, the pipeline detail behind abstention and attribution, the experiment log, the questions ruled out in advance, the prior-work scoring, and the baselines. Sections G to J are new here: the full question bank, the catalogue recompute in full, the development-set results, and the figures the body does not use. Tables and figures are numbered by section, so Table C.1 is the first table of Appendix C.
+This appendix carries the material the body points at but has no room for, and a second group of results that did not reach Chapter~\ref{ch:results} at all. Sections A to F support claims made in the text: the failure-mode register, the pipeline detail behind abstention and attribution, the experiment log, the questions ruled out in advance, the prior-work scoring, and the baselines. Sections G to J are new here: the full question bank, the catalogue recompute in full, the development-set results, and the figures the body does not use. Tables and figures are numbered by section, so Table~\ref{tab:experiments} is the first table of Appendix C.
 
 \chapter{Full Failure-Mode Register (FM-01 to FM-34)}\label{app:failure-register}
 
-The register lists every way the project has identified for a wrong answer to reach the committed state. It was built by walking the pipeline stage by stage and asking what could pass each gate, not by collecting observed errors, so a mode can appear here without having fired in any run. Class is the useful column: \textquotesingle Caught\textquotesingle{} modes are stopped by a deterministic gate before commit, \textquotesingle LLM-only\textquotesingle{} modes are left as a prompt-tunable risk, and the twenty-two \textquotesingle Structural\textquotesingle{} modes cannot be closed by prompting alone. Those twenty-two are the count §5.4 cites and the attack list for further work.
+The register lists every way the project has identified for a wrong answer to reach the committed state. It was built by walking the pipeline stage by stage and asking what could pass each gate, not by collecting observed errors, so a mode can appear here without having fired in any run. Class is the useful column: \textquotesingle Caught\textquotesingle{} modes are stopped by a deterministic gate before commit, \textquotesingle LLM-only\textquotesingle{} modes are left as a prompt-tunable risk, and the twenty-two \textquotesingle Structural\textquotesingle{} modes cannot be closed by prompting alone. Those twenty-two are the count Section~\ref{sec:threats} cites and the attack list for further work.
 
 Severity is the product of likelihood and how silently a mode commits. `Caught' modes are stopped by a deterministic gate before commit; `LLM-only' modes are accepted as a prompt-tunable risk; `Structural' modes cannot be fixed by prompting alone and form the attack list for future work.
 
@@ -17,6 +17,22 @@ Severity is the product of likelihood and how silently a mode commits. `Caught' 
   >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.0899}}
   >{\raggedright\arraybackslash}p{(\linewidth - 10\tabcolsep) * \real{0.1469}}@{}}
 \caption{The thirty-four failure modes by which the swarm can commit a wrong answer.}\label{tab:failure-register}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{ID}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Failure mode}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Stage}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Class}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Severity}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Status}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{ID}
@@ -104,6 +120,20 @@ Codes E, G, I and D are evidence-based abstentions and account for 461 of the 50
 \textbf{Gold existed}
 \end{minipage} \\
 \midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\centering
+\textbf{Code}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Reason}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{n}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{\%}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\centering
+\textbf{Gold existed}
+\end{minipage} \\
+\midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
@@ -116,7 +146,7 @@ A & Thin web / no search results & 0 & 0\% & -- \\
 F3 & Search-empty hard failure & 0 & 0\% & n/a \\
 C & Deny-listed / MQA source (leakage guard) & 12 & 2\% & 12 of 12 \\
 F1 & Schema-invalid hard failure & 0 & 0\% & n/a \\
-Z & Instrumentation mismatch: the classifier reads peak confidence, the commit gate reads the last attempt (§4.2) & 19 & 4\% & 16 of 19 \\
+Z & Instrumentation mismatch: the classifier reads peak confidence, the commit gate reads the last attempt (Section~\ref{sec:selectivity}) & 19 & 4\% & 16 of 19 \\
 & \textbf{Total (all no-commits)} & \textbf{508} & \textbf{100\%} & 479 of 508 \\
 \end{longtable}
 
@@ -159,6 +189,18 @@ The second framing is pro-swarm. The reviewer is instructed to act as an advocat
 \textbf{Share}
 \end{minipage} \\
 \midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Pass}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Verdict}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{n}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Share}
+\end{minipage} \\
+\midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
@@ -171,17 +213,17 @@ Pass 2, advocate & Swarm over-read its evidence even on the most generous readin
 \end{longtable}
 
 
-The two passes agree on the direction. Nothing in the audit supports the swarm against the published key: the advocate pass returns ``no'' case at all where the gold is wrong and the swarm right. That is what licenses treating match against ODMI as a fair measure rather than one inflated by stale ground truth, and it is the basis for the staleness band §3.4 discusses being treated as negligible.
+The two passes agree on the direction. Nothing in the audit supports the swarm against the published key: the advocate pass returns ``no'' case at all where the gold is wrong and the swarm right. That is what licenses treating match against ODMI as a fair measure rather than one inflated by stale ground truth, and it is the basis for the staleness band Section~\ref{sec:ground-truth} discusses being treated as negligible.
 
 \chapter{Experiments}\label{app:experiments}
 
-Every experiment was registered before dispatch, in a design note fixing the question, the sample, the endpoint and the adoption rule, and in a machine-readable row carrying the same design. The table below is that register, filtered to the runs that completed. The paragraph after it is the model comparison, reproduced from §4.8 because the numbers behind it live in this appendix rather than in the body.
+Every experiment was registered before dispatch, in a design note fixing the question, the sample, the endpoint and the adoption rule, and in a machine-readable row carrying the same design. The table below is that register, filtered to the runs that completed. The paragraph after it is the model comparison, reproduced from Section~\ref{sec:cost-runtime} because the numbers behind it live in this appendix rather than in the body.
 
 \textbf{The completed experiments}
 
 \textbf{Model choice}
 
-Another lever on this cost is the choice of model, which sets both the reasoning model and the model that picks the snippets. Comparing models from the same family on the same 156 development-set pairs, Haiku 4.5 delivered 28.8\% accuracy, Sonnet 4.6 delivered 34.0\% at 1.4 times Haiku\textquotesingle s cost per correct answer, and Opus 4.8 delivered 21.8\% at 4.6 times. Opus is dominated on both axes, being the least accurate and the most expensive of the three. Coverage explains the ordering. Haiku committed to 43\% of the battery, Sonnet to 46.8\% and Opus to 29.5\%, and total accuracy counts an abstention as a failure. On committed answers alone the three converge, at 67.2\% for Haiku, 72.6\% for Sonnet and 73.9\% for Opus. With this lens Opus is not worse at answering these questions, it is more reluctant to answer them, and marginally the most accurate when it does. Like the Verifier stance in §4.7, changing the model moves how much the system is willing to say rather than how often it is right. Sonnet is retained because it commits most, at a middling price, with commit-accuracy indistinguishable from a model costing over three times as much.
+Another lever on this cost is the choice of model, which sets both the reasoning model and the model that picks the snippets. Comparing models from the same family on the same 156 development-set pairs, Haiku 4.5 delivered 28.8\% accuracy, Sonnet 4.6 delivered 34.0\% at 1.4 times Haiku\textquotesingle s cost per correct answer, and Opus 4.8 delivered 21.8\% at 4.6 times. Opus is dominated on both axes, being the least accurate and the most expensive of the three. Coverage explains the ordering. Haiku committed to 43\% of the battery, Sonnet to 46.8\% and Opus to 29.5\%, and total accuracy counts an abstention as a failure. On committed answers alone the three converge, at 67.2\% for Haiku, 72.6\% for Sonnet and 73.9\% for Opus. With this lens Opus is not worse at answering these questions, it is more reluctant to answer them, and marginally the most accurate when it does. Like the Verifier stance in Section~\ref{sec:ablation}, changing the model moves how much the system is willing to say rather than how often it is right. Sonnet is retained because it commits most, at a middling price, with commit-accuracy indistinguishable from a model costing over three times as much.
 
 Completed experiments:
 
@@ -192,6 +234,20 @@ Completed experiments:
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2362}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1808}}@{}}
 \caption{The completed experiments, with the sample, result and adoption rule for each.}\label{tab:experiments}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Exp}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Experiment}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Scope (n)}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Result}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Outcome}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Exp}
@@ -229,7 +285,7 @@ EXP-39 & Language-comprehension probes (no DeepL) & Frozen 150 subset, local OPU
 EXP-32 & All-Haiku whole-stack cost point & 156-pair dev battery & Lower anchor of the cost-quality frontier & Frontier point, not adopted \\
 EXP-41 & Run-to-run stability & 3 replicates, 148-pair intersection & Label agreement 0.922, three-way unanimity 0.703, evidence-path divergence 0.894 & Answers stable, evidence paths are not \\
 EXP-36 & Frozen headline whole-system run & Evaluation 8, 1,144 pairs & Coverage 0.556, commit-accuracy 0.701 {[}0.664, 0.736{]}, negative-gold FPR 0.247, ECE 0.063 & The reported headline \\
-EXP-28 & Architecture ablation ladder (researcher only / no adjudicator / trio). Sonnet 5, superseded by Table 4.7.1 & 156-pair dev battery, 78 negative golds & Commit rate 0.237, 0.391, 0.468 and commit-accuracy 0.649, 0.689, 0.726 across the three arms; negative-gold false-positive rate rises 0.13 to 0.22 (ten wrong to seventeen of 78) & Each layer adds coverage and accuracy; the Verifier does not filter for precision \\
+EXP-28 & Architecture ablation ladder (researcher only / no adjudicator / trio). Sonnet 5, superseded by Table~\ref{tab:ablation} & 156-pair dev battery, 78 negative golds & Commit rate 0.237, 0.391, 0.468 and commit-accuracy 0.649, 0.689, 0.726 across the three arms; negative-gold false-positive rate rises 0.13 to 0.22 (ten wrong to seventeen of 78) & Each layer adds coverage and accuracy; the Verifier does not filter for precision \\
 EXP-40 & Corroborative vs adversarial verifier, end to end & 156-pair dev battery & Balanced accuracy 0.261 against 0.262; sixteen discordant pairs split eight-eight; McNemar p = 1.00 & Null end to end, against the EXP-38 frozen-ladder result \\
 exp36\_model\_opus & All-Opus whole-stack cost point & 156-pair dev battery & Delivered accuracy 21.8\% at £22.12, £0.65 per correct answer; worse than Sonnet 4.6 (p \textless{} 0.001) and Haiku 4.5 (p = 0.035) & Upper anchor of the cost-quality frontier; dominated on both axes, not adopted \\
 cb\_heldout\_20260725 & Closed-book parametric probe (retrieval disabled) & Evaluation 8, 1,144 pairs & 42.9\% of the answer key reproduced against the 47.3\% always-yes floor & Below the floor; no answer-key memorisation demonstrated \\
@@ -249,6 +305,14 @@ The 29 questions judged systematically out of reach of a web agent. The rule is 
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.1386}}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.8614}}@{}}
 \caption{The 29 questions judged out of reach of a web agent.}\label{tab:out-of-reach}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Question}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Text}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Question}
@@ -293,7 +357,7 @@ I11 & Are there any public bodies in your country that have developed a systemat
 
 \chapter{Prior Work Scored Against the Six Criteria, with Justifications}\label{app:prior-work-scored}
 
-The abridged version of this table, Table E.1, appears as Table 2.2 in §2.8. Verdicts are read from the papers themselves, and quoted passages are taken verbatim from the primary text. A tick means the work addresses and reports the criterion, not that it succeeds. Partial means it addresses one of the criterion's two conditions, or reports it without measuring it.
+The abridged version of this table, Table~\ref{tab:prior-work-full}, appears as Table~\ref{tab:prior-work} in Section~\ref{sec:research-gap}. Verdicts are read from the papers themselves, and quoted passages are taken verbatim from the primary text. A tick means the work addresses and reports the criterion, not that it succeeds. Partial means it addresses one of the criterion's two conditions, or reports it without measuring it.
 
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1427}}
@@ -303,7 +367,25 @@ The abridged version of this table, Table E.1, appears as Table 2.2 in §2.8. Ve
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1428}}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1430}}
   >{\raggedright\arraybackslash}p{(\linewidth - 12\tabcolsep) * \real{0.1429}}@{}}
-\caption{Prior work scored against the six criteria of §2.2, with the evidence for each verdict.}\label{tab:prior-work-full}\\
+\caption{Prior work scored against the six criteria of Section~\ref{sec:criteria}, with the evidence for each verdict.}\label{tab:prior-work-full}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Work
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Convergent Validity
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Generalisability
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Subgroup Equity
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Attributability
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Selectivity
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Reproducibility
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 Work
@@ -362,6 +444,18 @@ The baselines the evaluation results are read against.
 \textbf{Denominator}
 \end{minipage} \\
 \midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Baseline}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{What it isolates}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Value}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Denominator}
+\end{minipage} \\
+\midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
@@ -374,12 +468,20 @@ Researcher alone, no verification & what one agent reaches before any checking &
 
 \chapter{The Full Question Bank}\label{app:question-bank}
 
-The complete ODMI questionnaire as the swarm sees it, all 143 questions in the order they appear in the instrument. This is the population every figure in Chapter 4 is drawn from, so it is here in full rather than sampled. By dimension: Policy 31, Portal 45, Quality 29 and Impact 38. By answer shape: 124 binary, 12 percentage bands, 3 ordinal magnitudes, 2 count bands and 2 categorical. The 124 binary questions are the ones the headline accuracy figures are computed over, because they are the only shape where a ``yes'' or ``no'' can be scored against the published key without a banding judgement.
+The complete ODMI questionnaire as the swarm sees it, all 143 questions in the order they appear in the instrument. This is the population every figure in Chapter~\ref{ch:results} is drawn from, so it is here in full rather than sampled. By dimension: Policy 31, Portal 45, Quality 29 and Impact 38. By answer shape: 124 binary, 12 percentage bands, 3 ordinal magnitudes, 2 count bands and 2 categorical. The 124 binary questions are the ones the headline accuracy figures are computed over, because they are the only shape where a ``yes'' or ``no'' can be scored against the published key without a banding judgement.
 
 \begin{longtable}[]{@{}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.1386}}
   >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.8614}}@{}}
 \caption{All 143 questions of the 2025 ODMI questionnaire.}\label{tab:question-bank}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Question}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Text}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Question}
@@ -538,7 +640,7 @@ I31 & Is the use of open data in your country having an impact on the level of p
 
 \chapter{The Catalogue Recompute in Full}\label{app:catalogue-recompute}
 
-The nine Quality questions the deterministic catalogue tool can answer without an agent, computed directly from a harvest of each national portal. §3.5 reports the agreement rate; the underlying numbers are here. Two things to read carefully. The harvest is a snapshot, so a country\textquotesingle s figure is only as current as the fetch date in the first table, and France\textquotesingle s harvest is marked partial, meaning the portal was paged rather than exhausted. Estonia returned nothing at all and is kept in the table as a record of the attempt. Where the computed band and the published answer disagree the disagreement is real and unresolved, not an error corrected here.
+The nine Quality questions the deterministic catalogue tool can answer without an agent, computed directly from a harvest of each national portal. Section~\ref{sec:catalogue-tool} reports the agreement rate; the underlying numbers are here. Two things to read carefully. The harvest is a snapshot, so a country\textquotesingle s figure is only as current as the fetch date in the first table, and France\textquotesingle s harvest is marked partial, meaning the portal was paged rather than exhausted. Estonia returned nothing at all and is kept in the table as a record of the attempt. Where the computed band and the published answer disagree the disagreement is real and unresolved, not an error corrected here.
 
 \textbf{What was harvested}
 
@@ -549,6 +651,20 @@ The nine Quality questions the deterministic catalogue tool can answer without a
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1574}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1574}}@{}}
 \caption{The portal harvest behind every catalogue figure.}\label{tab:harvest-register}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Country}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Route}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Datasets}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Fetched}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Harvest}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Country}
@@ -586,7 +702,21 @@ SE & sparql\_rdf & 23,305 & 2026-07-17 & complete \\
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.3333}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1470}}
   >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2745}}@{}}
-\caption{Every catalogue metric computed from the harvests of Table H.1, 75 in total, beside the answer the country published.}\label{tab:catalogue-metrics}\\
+\caption{Every catalogue metric computed from the harvests of Table~\ref{tab:harvest-register}, 75 in total, beside the answer the country published.}\label{tab:catalogue-metrics}\\
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Question}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Country}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Computed}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Band}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Published}
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
 \toprule\noalign{}
 \begin{minipage}[b]{\linewidth}\raggedright
 \textbf{Question}
@@ -709,6 +839,20 @@ Every threshold, prompt and retrieval setting in the final configuration was cho
 \textbf{Negative-gold FP rate}
 \end{minipage} \\
 \midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Country}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Pairs}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Coverage}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Commit accuracy}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Negative-gold FP rate}
+\end{minipage} \\
+\midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
@@ -738,6 +882,18 @@ All three & 156 & 46.8\% & 72.6\% (53/73) & 21.8\% (17/78) \\
 \textbf{Commit accuracy}
 \end{minipage} \\
 \midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Dimension}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Pairs}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Coverage}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Commit accuracy}
+\end{minipage} \\
+\midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
@@ -750,11 +906,11 @@ Quality & 25 & 40.0\% & 80.0\% (8/10) \\
 
 The spread between the three countries is the useful part. The Netherlands commits on 86.5\% of its pairs and the swarm is wrong on more than half its negative golds there; Malta commits on 16.7\% and is wrong on one. That is the coverage-precision trade the body describes, visible within a single run rather than across configurations. It also shows why a development figure cannot be read as a headline: these three countries were picked for their negative-gold share, not to be representative.
 
-Computed from the wide\_only arm of exp34\_retrieval\_strategy\_s46 in data/odmi.db, the all-Sonnet-4.6 whole-stack run over the frozen 156-pair battery, deduplicated to one canonical row per pair. Definitions as Chapter 4, so a commit is a committed terminal status carrying a non-abstention answer and commit accuracy is strict matches over scoreable commits.
+Computed from the wide\_only arm of exp34\_retrieval\_strategy\_s46 in data/odmi.db, the all-Sonnet-4.6 whole-stack run over the frozen 156-pair battery, deduplicated to one canonical row per pair. Definitions as Chapter~\ref{ch:results}, so a commit is a committed terminal status carrying a non-abstention answer and commit accuracy is strict matches over scoreable commits.
 
 \chapter{Figures Not Used in the Body}\label{app:unused-figures}
 
-Everything below was produced during the project and is not used anywhere in the body. Some are alternative renderings of a result Chapter 4 already makes, kept because they show it more directly than the version that was chosen; the rest are analyses that were run and then not written up. None of it is load-bearing for any claim in the text, and nothing here should be read as a result the dissertation argues for. Two carry a note where their numbers do not line up with the body, which is exactly why they were left out.
+Everything below was produced during the project and is not used anywhere in the body. Some are alternative renderings of a result Chapter~\ref{ch:results} already makes, kept because they show it more directly than the version that was chosen; the rest are analyses that were run and then not written up. None of it is load-bearing for any claim in the text, and nothing here should be read as a result the dissertation argues for. Two carry a note where their numbers do not line up with the body, which is exactly why they were left out.
 
 
 
@@ -779,7 +935,7 @@ Everything below was produced during the project and is not used anywhere in the
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/j3_four_ways.png}
-\caption{The same run read four ways. An alternative rendering of Table 4.1.1, with the negative-gold false-positive count underneath.}
+\caption{The same run read four ways. An alternative rendering of Table~\ref{tab:four-ways}, with the negative-gold false-positive count underneath.}
 \label{fig:j-four-ways}
 \end{figure}
 
@@ -891,7 +1047,7 @@ Everything below was produced during the project and is not used anywhere in the
 \label{fig:j-two-populations}
 \end{figure}
 
-The counts are not the evaluation run. They are the projection §4.8 makes over the full 5,148-pair questionnaire, where the evaluation coverage and commit accuracy put around 2,860 pairs committed and 2,290 declined, of which 2,010 right and 850 wrong.
+The counts are not the evaluation run. They are the projection Section~\ref{sec:cost-runtime} makes over the full 5,148-pair questionnaire, where the evaluation coverage and commit accuracy put around 2,860 pairs committed and 2,290 declined, of which 2,010 right and 850 wrong.
 
 
 
