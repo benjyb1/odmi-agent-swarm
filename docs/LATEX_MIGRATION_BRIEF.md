@@ -83,6 +83,96 @@ Already extracted for you, do not redo:
 - `docs/RED_TRIAGE.md` the coloured regions as 89 decidable blocks
 - `docs/LATEX_MIGRATION.md` the twelve-phase plan
 
+## Colour: everything ends up black
+
+The finished LaTeX carries no coloured text. Every red passage becomes
+ordinary black body text. There are no `\ccnote` or `\claudenote` macros in
+the output and no colour package is needed for the body.
+
+This is safe only because the docx is cleaned first. Phase 0 clears every
+working note out of the master, so by the time you convert, anything still
+red is content that has been adopted. Do not assume that silently.
+
+Carry the colour through the conversion anyway, as a tripwire rather than as
+a feature. Wrap coloured runs in ASCII sentinels inside a scratch copy of
+the docx, convert, then before stripping the sentinels, list every coloured
+passage and check it against this test: does it read as prose belonging to
+the dissertation, or as an instruction to the author. Anything matching the
+second reading, anything of the form "check this", "add a citation",
+"rewrite", "TODO", "TBC", a bare bracketed aside, or a fragment that is not
+a sentence, is a note that survived phase 0.
+
+**Stop and report if you find one. Do not convert it to black text.** A note
+turned black is a note that has silently entered the submitted document,
+and it is the single failure mode this instruction creates.
+
+Once the list is clean, strip the sentinels and let the text render black.
+Report the count you cleared.
+
+## Cross-references: every one becomes a real reference
+
+No number may survive as literal text in the prose. This applies without
+exception to all five kinds:
+
+| In the docx | In the LaTeX |
+|---|---|
+| `§2.2` | `Section~\ref{sec:...}` |
+| `Chapter 4` | `Chapter~\ref{ch:...}` |
+| `Appendix E` | `Appendix~\ref{app:...}` |
+| `Figure 4.5.1` | `Figure~\ref{fig:...}` |
+| `Table 4.4.1` | `Table~\ref{tab:...}` |
+
+Rules:
+
+- Every chapter, section, subsection, figure and table carries a `\label`
+  with a consistent prefix (`ch:`, `sec:`, `fig:`, `tab:`, `app:`).
+- Use a non-breaking space before every `\ref`, so the number never wraps
+  away from its word.
+- Keep the author's house style for the word itself. The docx writes `§2.2`;
+  render it as `Section~\ref{...}` unless told otherwise, and be consistent
+  across the whole document.
+- Use `\appendix` so appendices number as A, B, C. Drop the manual letters
+  currently in the headings, which render as "8.5 E. Prior Work Scored…".
+
+Verification, and this is not optional:
+
+1. Grep the finished `.tex` for any surviving literal reference: `§` followed
+   by a digit, or `Figure`, `Table`, `Chapter` or `Appendix` followed by a
+   number, anywhere outside a caption. **The count must be zero.**
+2. For every `\ref`, compare the number it resolves to against the literal
+   string it replaced in the frozen docx. Every difference is either a
+   renumber you intended or a mistake. List both and account for each one.
+3. Zero undefined references and zero multiply-defined labels.
+
+A `\ref` pointing at the wrong section reads as a perfectly plausible number
+in the PDF. Check 2 is the only thing that catches it.
+
+## Figures: right file, right place, right caption
+
+For each of the 19 figures, all four must hold:
+
+- **Right file.** The vector PDF from `Dissertation/figures_new/`, never the
+  PNG embedded in the docx, which Word may have downsampled on paste. The
+  filenames do not map onto the figure numbers, so reconcile each one
+  against `docs/RESULTS.md` and record the mapping.
+- **Right place.** The figure appears in the same position in the reading
+  order as it does in the docx, in the same section, near the paragraph that
+  discusses it. Use `[htbp]` and check nothing has floated pages away from
+  its reference.
+- **Right caption.** The caption text matches the docx exactly, sits below
+  the figure, and the number is generated rather than typed.
+- **Right reference.** At least one `\ref` points to it, and every `\ref`
+  resolves to the figure the surrounding sentence is actually describing.
+
+**Confirm every figure by eye against its caption.** A wrong image under a
+right caption passes every automated check ever written, and it is the most
+likely way this document ends up confidently wrong.
+
+Tables follow the same four rules, with the caption above rather than below,
+`booktabs` rules, no vertical lines, `longtable` for anything crossing a
+page and `tabularx` or `adjustbox` for anything crossing the margin. Two
+tables currently exist only as images and must be rebuilt as real tables.
+
 ## Method
 
 Work phase by phase from `docs/LATEX_MIGRATION.md`. Commit each phase
@@ -100,12 +190,9 @@ multiset. Anything missing is a loss until explained.
 
 ## Traps, all of them observed on this document
 
-**Pandoc discards character colour with no warning.** The two note channels
-live entirely in colour. A plain conversion destroys 2,800 coloured runs and
-the output looks perfectly fine. Wrap coloured runs in ASCII sentinels
-inside a scratch copy of the docx first, convert, then turn the sentinels
-into `\ccnote{}` and `\claudenote{}`. Count sentinels in against macros out,
-and assert zero strays.
+**Pandoc discards character colour with no warning.** This matters even
+though the finished document carries no colour, because colour is how you
+prove nothing was left behind. See the colour section below.
 
 **Everything before the first `\chapter` lands in the preamble.** If you
 split by chapter and discard what precedes the first one, you silently lose
@@ -177,10 +264,17 @@ predates weeks of edits.
 ## Definition of done
 
 - Text parity against the frozen docx reports no unexplained differences
+- Zero literal `§`, `Figure`, `Table`, `Chapter` or `Appendix` numbers left
+  in the prose; every one is a `\ref`
+- Every `\ref` resolves to the same target the docx pointed at, checked
+  number by number against the frozen source
 - Zero undefined references, zero multiply-defined labels
 - Every citation key resolves, no `??` in the output
 - Every figure and table has a label, a caption and at least one reference
-- Every figure confirmed by eye against its caption
+- Every figure confirmed by eye against its caption, and every figure the
+  vector PDF rather than a docx PNG
+- No coloured text anywhere in the output, and a report of how many
+  passages were cleared and that none of them was a note
 - Front matter present and correct
 - `docs/REVIEW_COMMENTS.md` and `docs/RED_TRIAGE.md` fully worked through
 - The frozen docx still sits untouched in `archive/`
