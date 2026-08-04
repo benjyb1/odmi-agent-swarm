@@ -282,3 +282,15 @@ predates weeks of edits.
 Report honestly. If a phase is incomplete, say which and why. Negative
 results and unresolved problems are worth more here than a clean-sounding
 summary.
+
+## After you finish
+
+The port is not the last step. `docs/LATEX_REVIEW_BRIEF.md` is a
+publication-hygiene sweep that fans out over every section and reads it,
+checking that figure and section numbers line up, that no working note or
+internal identifier survived, and that the build is clean. Hand over to it
+once the document compiles.
+
+Your own report should tell that sweep what to look at hardest: which
+figures you were least sure of, which references you retargeted by judgement
+rather than by rule, and anything you could not verify without a compiler.
