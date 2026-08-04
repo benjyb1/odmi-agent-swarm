@@ -1,6 +1,6 @@
 r"""Citation integrity gate.
 
-Every \textcite/\parencite key must exist in references.bib, every
+Every \citet/\citep key must exist in references.bib, every
 bib entry must be cited somewhere, and the entry count must match the
 43 references of the typed list the bib was converted from. Rendering
 is verified on Overleaf, whose biblatex and biber versions pair; the
@@ -26,7 +26,7 @@ def main() -> None:
     used = Counter()
     for path in sorted((base / "chapters").glob("*.tex")):
         text = path.read_text(encoding="utf-8")
-        for m in re.finditer(r"\\(?:textcite|parencite)\{([^}]+)\}", text):
+        for m in re.finditer(r"\\(?:citet|citep)\{([^}]+)\}", text):
             for key in m.group(1).split(","):
                 used[key.strip()] += 1
 

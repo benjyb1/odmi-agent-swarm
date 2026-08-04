@@ -1,10 +1,12 @@
 # LaTeX port and publication-hygiene sweep, 2026-08-04
 
 The dissertation is ported from `Dissertation/Dissertation.docx` to
-LaTeX on the KCL `kclthesis` class under `Dissertation/latex/`, and the
+LaTeX on the KCL `kclthesis` class under `Dissertation/latex/`, the
 post-migration sweep of `docs/LATEX_REVIEW_BRIEF.md` has run over the
-result. This file is the consolidated report: what was done, what every
-gate showed, and every finding of the sweep, ranked.
+result, and the whole thing has since been aligned with the supplied
+KCL Final Report LaTeX Template (7CCSMPRJ), IEEE citations included.
+This file is the consolidated report: what was done, what every gate
+showed, and every finding of the sweep, ranked.
 
 Frozen ground truth: `Dissertation/archive/Dissertation.20260804-162405.frozen-latex-port.docx`
 (sha1 `6ea6c759`). The master's hash was identical at freeze and at the
@@ -16,12 +18,67 @@ in `archive/` until the PDF is submitted.
 `Dissertation/odmi-dissertation-latex.zip` (also in the repo as the
 tracked `Dissertation/latex/` directory) contains the whole project:
 `main.tex`, `kclthesis.cls`, `references.bib`, `kcl.png`,
-`chapters/*.tex`, `figures/*`. Compiler: pdfLaTeX or XeLaTeX, biber for
-the bibliography; Overleaf's default toolchain handles both. Local
-compilation was checked with tectonic throughout; the local bundle's
-biblatex predates the installed biber, so citations render resolved
-only on Overleaf. Everything else (references, labels, fonts, layout)
-was verified locally against the compiled PDF.
+`chapters/*.tex`, `figures/*`. Compiler: pdfLaTeX (the template's own
+engine) or XeLaTeX, with BibTeX for the bibliography. Overleaf's
+default toolchain runs it as shipped. The whole document, citations
+and reference list included, also compiles locally under tectonic, so
+every claim below was checked against a compiled PDF rather than
+inferred from source.
+
+## Template conformance
+
+Built against the KCL Final Report LaTeX Template (7CCSMPRJ), the zip
+Benjy supplied. Its `kclthesis.cls` and the one here are the same file
+apart from a single patch, noted below. `main.tex` follows the
+template's `Thesis.tex`: the same cover-field block in the same order,
+the same package set plus the ones this document needs, the same body
+sequence (cover, blank page, front matter, contents, figures and
+tables, fancyhdr block, chapters, references, appendix), the same
+`tocdepth`/`secnumdepth`, and `\linespread{1}`.
+
+**Citations are IEEE**, as the template specifies. The template writes
+`\bibliographystyle{ieeetr}`; this document uses `IEEEtranN`, the
+natbib-compatible build of the official IEEE style. Same numbered
+`[n]` output, numbered in order of first citation, but `ieeetr` prints
+neither URLs, DOIs nor arXiv identifiers, and 26 of the 43 entries
+carry one. `IEEEtranN` also supports `\citet`, which keeps the
+narrative citations the prose is written around: "Cohen et al. [15]
+found that opposition surfaces errors...". The 110 in-text commands
+became 56 `\citet` and 54 `\citep`.
+
+`references.bib` was rewritten from biblatex fields to BibTeX ones by
+`scripts/latex_port/bib_to_ieee.py`, which reports every rule it
+applies. BibTeX ignores fields it does not know without a word of
+complaint, so a bare style swap would have dropped all ten journal
+names, all seventeen arXiv identifiers and all four DOIs. It also
+sentence-cases titles, which is correct IEEE style but flattens proper
+nouns: ten brace protections are listed in the script, one of them
+found by reading the compiled list ("Trust me, i'm wrong").
+
+### Deviations from the template, each deliberate
+
+| Deviation | Why | To undo |
+| --- | --- | --- |
+| `kclthesis.cls` loads `report`, not `article` | six numbered chapters and appendices A to J; `article` has no `\chapter`. Section numbering is identical either way. The template's own appendix guidance asks for "Appendix A, Appendix A.1", which `\appendix` gives only under `report` | revert the one line marked "ODMI patch 1" |
+| `IEEEtranN` rather than `ieeetr` | `ieeetr` silently drops URL, DOI and arXiv identifiers, and cannot do narrative citations | `\bibliographystyle{ieeetr}`, and expect 26 entries to lose their identifier |
+| Front matter is acknowledgements, abstract, nomenclature | the template's order. The docx had the abstract first | swap the two `\chapter*` blocks in `chapters/00-front-matter.tex` |
+| `nomencl`, `glossaries`, `makeindex`, the theorem environments and the maths macros are not loaded | nothing in the document uses them | copy the lines back from `Thesis.tex` |
+| `contents/figures_tables.tex` is inlined in `main.tex` rather than a separate include | three lines | no effect either way |
+| Chapter sources live in `chapters/`, not `contents/` | the port's naming | rename the directory and the `\include` paths |
+
+`\linespread{1}` is the template's, and it overrides the
+`\onehalfspacing` the class ends with, so the document is
+single-spaced: 132 pages rather than the 145 it ran to before. If KEATS
+asks for 1.5 spacing, delete that one line in `main.tex`.
+
+`figures/signature.png` is the template's own red "Signature"
+placeholder, shipped so the cover compiles as the template intends.
+Replace it with an image of your signature.
+
+One thing the template says that this document does not meet: its
+`contents/introduction.tex` states "The dissertation should be less
+than 15000 words". The cover word count is 25,675. Check the length
+limit for 7CCSMPRJ on KEATS.
 
 ## How the port ran
 
@@ -55,24 +112,32 @@ Pipeline in `scripts/latex_port/`, one commit per phase:
    C). Zero undefined, zero multiply defined, zero literals surviving.
 6. **Bibliography** (`736a2fa`): all 43 typed references converted
    field-for-field into `references.bib`; 110 in-text citations
-   rewritten (`\textcite`/`\parencite`); biblatex authoryear.
-   `check_cites.py`: every key resolves; 40 of 43 entries cited.
+   rewritten. `check_cites.py`: every key resolves; 40 of 43 entries
+   cited. Later moved from biblatex author-year to BibTeX and IEEE
+   numbering, per the template.
 7. **Build clean-up** (`5ace59f`): overfull >5pt from 518 to 24, zero
-   missing glyphs, zero undefined references, 145 pages.
+   missing glyphs, zero undefined references.
+8. **Template conformance**: preamble, front matter, spacing and
+   citation style aligned with the supplied 7CCSMPRJ template; see the
+   section above.
 
 ### On the class-assumption note in the migration brief
 
 While this port ran, the brief gained a section saying kclthesis is
 article-based, has no `\chapter`, and the conversion should demote
-every heading one level. That guidance was written for an agent with
-no compiler. This port took the other route: `kclthesis.cls` is
-patched to `\LoadClass{report}` (the change and its reason are in the
-class header), so the document keeps real chapters, "Chapter 4" in
-the prose points at an actual chapter, floats number 4.1, 4.2 without
-extra machinery, and `\appendix` letters the appendix chapters A to J.
-The whole thing compiles under tectonic, and the compiled PDF is what
-the sweep below verified. The cover pages the class produces are
-unchanged by the base-class swap.
+every heading one level. The first half is right: the class as shipped
+does load `article`. This port took the other route and patched it to
+`\LoadClass{report}` (the change and its reason are in the class
+header), so the document keeps real chapters, "Chapter 4" in the prose
+points at an actual chapter, floats number 4.1, 4.2 without extra
+machinery, and `\appendix` letters the appendix chapters A to J, which
+is the form the template's own appendix guidance asks for. Section
+numbering is the same under either base class. The whole thing
+compiles, and the compiled PDF is what the sweep below verified. The
+cover pages are unchanged by the swap. This is now the only edit to
+the shipped class: the two other patches this port had made were
+reverted once the template's `signature.png` and its `\red`
+definition were carried across.
 
 ### Deviations from a pure conversion, all deliberate and logged
 
@@ -119,13 +184,21 @@ with a leading tilde.
   (rendered from labels), the regenerated contents and References
   lists, repeated longtable heads, the cover fields, and the repaired
   glued cell. No content word lost.
-- **References** (`check_refs.py`): 195/195 resolve; target identity
+- **References** (`check_refs.py`): 199/199 resolve; target identity
   verified against the docx literal for each.
 - **Citations** (`check_cites.py`): 43 entries, every cited key
   resolves, no key missing. Three entries are cited nowhere in the
   docx either (`anthropic2026`, `edp2024`, `wei2022`); kept via
   `\nocite` so the rendered list matches the typed 43 — author to
   decide whether to prune them instead.
+- **Reference list, read against the docx** : all 43 rendered IEEE
+  entries matched one for one against the typed Harvard list in the
+  frozen docx, on authors, year, title, venue and identifier. One
+  defect found and fixed (BibTeX had lowercased "I'm"); nothing else
+  differs beyond the expected Harvard-to-IEEE reformatting.
+- **Build**: 132 pages, zero undefined citations, zero undefined
+  references, zero multiply-defined labels, zero missing glyphs, zero
+  LaTeX warnings, 21 overfull boxes over 5pt (all table gutters).
 - **Numbers** (`verify_numbers.py` over the `latex_qa.py` manifest):
   96 of 98 self-checking sentences agree; the two mismatches are the
   known Fumega and Gao verbatim quotes, correct as they stand.
@@ -163,9 +236,15 @@ author's decision.
 
 **Cover**
 
-- QUOTE: `\studentnumber{\red{student number}}`
-  PROBLEM: prints "student number" in red on both cover pages.
+- QUOTE: `\studentnumber{\red{Student number goes here}}`
+  PROBLEM: prints "Student number goes here" in red on both cover
+  pages.
   FIX: fill in the student number. SEVERITY: MUST-NOT-SHIP
+- QUOTE: `figures/signature.png`
+  PROBLEM: the cover carries the template's red "Signature"
+  placeholder image.
+  FIX: replace the file with an image of your signature.
+  SEVERITY: MUST-NOT-SHIP
 - QUOTE: `\ReleaseProject{0}`
   PROBLEM: prints, in red, "Check the appropriate box below" with two
   unticked release-consent boxes.

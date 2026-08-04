@@ -1,23 +1,27 @@
 % Automating the EU Open Data Maturity Index with an LLM Agent Swarm
 % MSc Advanced Computing dissertation, King's College London.
 %
+% Built on the KCL Final Report LaTeX Template (7CCSMPRJ). The preamble
+% and the body order below follow that template's Thesis.tex; the
+% deviations are listed in docs/LATEX_PORT_REPORT.md and every one of
+% them is commented where it occurs.
+%
 % Migrated from Dissertation.docx on 2026-08-04 by the pipeline in
 % scripts/latex_port/. The frozen source is
 % Dissertation/archive/Dissertation.20260804-162405.frozen-latex-port.docx
 % and remains the ground truth for the migration until submission.
 %
-% Compiles under XeLaTeX (tectonic, checked locally) and pdfLaTeX
-% (Overleaf). The submission PDF is built on Overleaf.
+% Compiles under pdfLaTeX (Overleaf, the template's own engine) and
+% XeLaTeX (tectonic, used for local checking). BibTeX, not biber.
 
 \documentclass[]{kclthesis}
 
-%============================================================
-% Cover page. The student number is still a placeholder and prints
-% in red on the cover until it is filled in.
-%============================================================
+%===========================================================
+% Change below accordingly and remove ``\red{}''
+%===========================================================
 \modulecode{7CCSMPRJ}
 \submissiontitle{Individual Project Submission 2025/26}
-\studentnumber{\red{student number}}
+\studentnumber{\red{Student number goes here}}
 \programme{MSc Advanced Computing}
 \supervisor{Dr Johanna Walker}
 % Basis: chapters 1 to 6 including tables and captions, excluding the
@@ -26,10 +30,16 @@
 \wordcount{25,675}
 \title{Automating the EU Open Data Maturity Index with an LLM Agent Swarm}
 \author{Benjamin Bream}
-\ReleaseProject{0}
+\ReleaseProject{0} %Replace 0 by 1 if release project; Replace 0 by 2 if not release project
 \department{Informatics}
-%============================================================
+%===========================================================
 
+\usepackage{float}
+\usepackage[utf8]{inputenc}
+\usepackage{graphbox}
+
+% Added for this document. The template's nomencl, glossaries, makeindex
+% and theorem environments are left out because nothing here uses them.
 \usepackage[british]{babel}
 \usepackage{csquotes}
 \usepackage{booktabs}
@@ -37,20 +47,30 @@
 \usepackage{array}
 \usepackage{calc}
 \usepackage{graphicx}
-\usepackage{float}
 \usepackage{microtype}
 \usepackage{xurl}          % long URLs break instead of running off the page
 
-% Author-year citations. The prose is written as narrative citations,
-% which reads naturally with author-year and awkwardly with numbers.
-\usepackage[style=authoryear, backend=biber, maxcitenames=3,
-            maxbibnames=99, uniquename=false, uniquelist=false,
-            urldate=long, dashed=false]{biblatex}
-\renewcommand*{\nameyeardelim}{\addcomma\space}
-\addbibresource{references.bib}
+% IEEE numbered citations, as the template specifies. IEEEtranN is the
+% natbib-compatible build of the official IEEE style. Same numbered
+% output as the template's ieeetr, but it prints URLs, DOIs and arXiv
+% identifiers, which ieeetr silently drops, and \citet keeps the
+% narrative citations the prose is written around ("Cohen et al. [7]
+% show that..."). References are numbered in order of first citation.
+\usepackage[numbers,sort&compress]{natbib}
+% babel rewrites the caption names at \begin{document}, so the heading
+% has to be set after it or the list comes out titled "Bibliography".
+\AtBeginDocument{\renewcommand{\bibname}{References}}
 
-% hyperref is loaded by the class; loading it again with options would
-% clash, so configure it here instead
+\linespread{1}
+
+\setcounter{tocdepth}{5}
+\setcounter{secnumdepth}{5}
+
+\def\blue#1{\textcolor{blue}{#1}}
+\def\red#1{\textcolor{red}{#1}}
+
+% hyperref is loaded by the class, so it is configured rather than
+% reloaded (reloading with options would clash).
 \hypersetup{
   hidelinks,
   pdftitle={Automating the EU Open Data Maturity Index with an LLM Agent Swarm},
@@ -71,26 +91,41 @@
 
 \begin{document}
 \pagenumbering{gobble}
-\maketitle
-\maketitleTwo
 
-%%%% Front matter: abstract, acknowledgements, nomenclature.
+%%%%%% depends what you like, might try out the other frontpage as well
+\maketitle 		% official styled layout
+\maketitleTwo 	% adapted layout which looks nicer from my point of view.
+
+%%%%%% empty page after main page.
+\newpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
+
+%%%%%% Acknowledgements, Abstract, Nomenclature
 \include{chapters/00-front-matter}
 
+%%%%%% Table of contents
 \pagenumbering{roman}
-\setcounter{tocdepth}{2}
+\setcounter{tocdepth}{4}
 \tableofcontents
+\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% the template's contents/figures_tables.tex, inlined
+\thispagestyle{empty}
 \listoffigures
 \listoftables
 \newpage
-
+\fancyhead{}
+\fancyfoot{}
 \pagestyle{fancy}
-\fancyhead{}\fancyfoot{}
 \fancyhead[RO,LE]{\sffamily\small \thepage}
 \fancyhead[LO,RE]{\sffamily\small \nouppercase{\rightmark}}
 \renewcommand{\headrulewidth}{0.4pt}
 \renewcommand{\footrulewidth}{0.0pt}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%% Main content
 \pagenumbering{arabic}
 
 \include{chapters/01-introduction}
@@ -100,12 +135,15 @@
 \include{chapters/05-discussion}
 \include{chapters/06-conclusion}
 
+%%%%% References
 % Three entries of the typed reference list are never cited in the
 % prose (a docx defect carried over, flagged in the port report):
 % keep them in the rendered list so it matches the typed 43.
 \nocite{anthropic2026,edp2024,wei2022}
-\printbibliography[heading=bibintoc, title=References]
+\bibliographystyle{IEEEtranN}
+\bibliography{references}
 
+%%%%% Appendix
 \appendix
 \include{chapters/08-appendix}
 

@@ -1,7 +1,14 @@
-% Front matter: abstract, acknowledgements, nomenclature.
+% Front matter, in the template's order: acknowledgements, abstract,
+% nomenclature. To put the abstract first instead, swap the two
+% \chapter* blocks below.
 % The docx title block (title, programme, author, university, department,
 % supervisor, date) is not repeated here because the kclthesis cover
 % pages carry every one of those fields.
+
+\chapter*{Acknowledgements}
+\addcontentsline{toc}{chapter}{Acknowledgements}
+
+I thank Dr Johanna Walker for her supervision and for the direction she gave this work at several points where it could have gone otherwise. I am grateful to my friends and family for the help along the way. Any errors are my own.
 
 \chapter*{Abstract}
 \addcontentsline{toc}{chapter}{Abstract}
@@ -13,11 +20,6 @@ Six criteria for how a generative system stands in for a human assessor were ass
 The swarm was evaluated by generating responses to 1,144 question-country pairs from a sample of eight countries, scored against the published 2025 answers. It declined to answer 508 questions due to not finding adequate evidence, and found sufficient confidence to answer 636. 70.1\% of swarm answers successfully matched the 2025 responses. Replacing the Verifier's adversarial stance with a corroborative stance instead changed neither accuracy nor coverage. What did raise coverage was the number of reasoning stages, from 26.6\% with the Researcher alone to 55.6\% with the full three agent swarm.
 
 The way the questionnaire is currently set up limits what can be achieved by this approach. Accuracy divided noticeably by answer class, scoring 87.0\% on questions whose true answer is yes against 48.9\% where the answer is no. Around a fifth of the questions ask a team about internal practice that leaves little public trace, so that an agent searching the open web cannot separate a practice a country does not follow from one it simply has not published. The closing chapter proposes a reformulation of the questionnaire, moving beyond asking whether a practice exists and asking instead for discoverable evidence. This would make the self-assessment exercise more evidence-based while also paving the way to becoming a more automatable task.
-
-\chapter*{Acknowledgements}
-\addcontentsline{toc}{chapter}{Acknowledgements}
-
-I thank Dr Johanna Walker for her supervision and for the direction she gave this work at several points where it could have gone otherwise. I am grateful to my friends and family for the help along the way. Any errors are my own.
 
 \chapter*{Nomenclature}
 \addcontentsline{toc}{chapter}{Nomenclature}

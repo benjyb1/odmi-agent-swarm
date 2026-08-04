@@ -1,18 +1,17 @@
 \ProvidesClass{kclthesis}[2016/02/13 KCL MSc Thesis Class by Sebastian Zillessen and Andre Mueller]
 \NeedsTeXFormat{LaTeX2e}
 
-% Local changes for the ODMI dissertation (2026-08-04), each marked
-% "ODMI patch" below:
-%   1. LoadClass report instead of article. The document has real
-%      chapters and appendices A to J; article has no \chapter, so the
-%      dissertation could not compile on the class as shipped.
-%   2. \red is used by the cover but was never defined in the class;
-%      defined here so unfilled cover fields print red instead of
-%      failing the build.
-%   3. The signature graphic is optional. The shipped class hard-codes
-%      figures/signature.png with graphbox's align=c key, which fails
-%      when the file or package is absent. Drop a signature.png into
-%      figures/ and it appears; otherwise the line stays blank.
+% One local change for the ODMI dissertation (2026-08-04), marked
+% "ODMI patch" below. Everything else is the class exactly as shipped in
+% the KCL Final Report LaTeX Template (7CCSMPRJ).
+%
+%   1. LoadClass report instead of article. The document has six
+%      numbered chapters and appendices A to J; article has no \chapter,
+%      so the dissertation cannot compile on the class as shipped.
+%      Section numbering is unchanged by this (1, 1.1, 1.1.1 either
+%      way); chapters gain their own opening page and \appendix titles
+%      the appendices "Appendix A" and so on, which is what the
+%      template's own appendix guidance asks for.
 
 \newif\ifkclthesis@releaseproject
 \newif\ifkclthesis@notreleaseproject
@@ -65,9 +64,6 @@
 \newcommand*{\ReleaseProject}[1]{\gdef\@ReleaseProject{#1}}
 \newcommand*{\department}[1]{\gdef\@department{#1}}
 
-
-% ODMI patch 2: the cover uses \red but the class never defines it
-\providecommand{\red}[1]{\textcolor{red}{#1}}
 
 % New Comment for todonotes
 \newcommand{\insertref}[1]{\todo[color=green!40]{#1}}
@@ -185,8 +181,7 @@
 
 \begin{minipage}{0.5\textwidth}
 \begin{flushleft}
-	% ODMI patch 3: signature image optional, graphbox key dropped
-	\textbf{Signature:} \IfFileExists{figures/signature.png}{\raisebox{-0.4\height}{\includegraphics[scale=0.5]{figures/signature.png}}}{}
+	\textbf{Signature:} \includegraphics[scale=0.5,align=c]{figures/signature.png}
 \end{flushleft}
 \end{minipage}%
 \begin{minipage}{0.5\textwidth}

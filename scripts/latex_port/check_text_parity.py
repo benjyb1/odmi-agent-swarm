@@ -65,7 +65,7 @@ def unescape(s: str) -> str:
 
 # LaTeX commands whose argument is invisible in the PDF
 DROP_ARG = (
-    "label", "ref", "cite", "textcite", "parencite", "includegraphics",
+    "label", "ref", "cite", "citet", "citep", "includegraphics",
     "graphicspath", "bibliography", "input", "include", "pandocbounded",
     "hypertarget", "vspace", "hspace", "definecolor", "pagenumbering",
     "pagestyle", "thispagestyle", "setcounter", "addtocounter", "usepackage",
@@ -84,7 +84,7 @@ def tex_words(latex_dir: str) -> Counter:
         # generated matter: citations render from the .bib, references
         # from the labels, and the repeated longtable head appears once
         # in the docx
-        t = re.sub(r"\\(?:textcite|parencite|nocite)\{[^}]*\}", " ", t)
+        t = re.sub(r"\\(?:citet|citep|nocite)\{[^}]*\}", " ", t)
         t = re.sub(r"(?:Section|Chapter|Appendix|Figure|Table)~\\ref\{[^}]*\}",
                    " ", t)
         t = re.sub(r"\\endfirsthead.*?\\endhead", " ", t, flags=re.S)

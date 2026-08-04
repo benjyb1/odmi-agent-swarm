@@ -8,10 +8,11 @@ dissertation_qa; this file only synthesises its paragraph structure
 from the .tex sources.
 
 References are resolved before checking: \ref{sec:selectivity} becomes
-"Section 4.2" via the compiled .aux files, and \textcite/\parencite
-become author-year text via references.bib, so the number and
-cross-reference checks see what a reader of the PDF sees. Compile
-before running, or the resolver has no .aux to read.
+"Section 4.2" via the compiled .aux files, and \citet/\citep become
+the IEEE numbers BibTeX assigned, read from the \bibcite lines of
+main.aux, so the number and cross-reference checks see what a reader
+of the PDF sees. Compile before running, or the resolver has no .aux
+to read.
 
 LaTeX-specific additions: every % comment in the sources is reported
 as a note (comments ship in the source and are read by anyone given
@@ -63,22 +64,23 @@ def aux_labels(base: str) -> dict:
 
 
 def bib_authors(base: str) -> dict:
-    """key -> 'Surname (year)' for citation rendering."""
+    """key -> (short author, IEEE number) as actually rendered.
+
+    Read from main.aux, not guessed from the .bib: BibTeX writes a
+    \\bibcite line per entry holding the number it assigned and the
+    author form natbib prints, so the QA text matches the PDF exactly.
+    """
     out = {}
-    path = os.path.join(base, "references.bib")
+    path = os.path.join(base, "main.aux")
     if not os.path.exists(path):
         return out
     with open(path, encoding="utf-8") as f:
-        for entry in re.finditer(
-                r"@\w+\{([^,]+),(.*?)(?=\n@|\Z)", f.read(), re.S):
-            key, body = entry.group(1), entry.group(2)
-            author = re.search(r"author\s*=\s*\{(.*?)\},", body, re.S)
-            year = re.search(r"year\s*=\s*\{(\d{4})\}", body)
-            surname = "Anon"
-            if author:
-                first = author.group(1).split(" and ")[0]
-                surname = re.sub(r"[{}\\\"']", "", first.split(",")[0]).strip()
-            out[key] = (surname, year.group(1) if year else "n.d.")
+        for m in re.finditer(
+                r"\\bibcite\{([^}]+)\}\{\{([^}]*)\}\{[^}]*\}\{\{(.*?)\}\}",
+                f.read()):
+            short = m.group(3).replace("~", " ").replace("{", "").replace(
+                "}", "")
+            out[m.group(1)] = (short, m.group(2))
     return out
 
 
@@ -89,20 +91,18 @@ def delatex(text: str, labels: dict, bib: dict) -> str:
 
     text = re.sub(r"\\ref\{([^}]+)\}", ref, text)
 
-    def textcite(m):
+    def citet(m):
         keys = [k.strip() for k in m.group(1).split(",")]
-        s, y = bib.get(keys[0], ("??", "??"))
-        return f"{s} et al. ({y})" if len(keys) == 1 else s
+        author = bib.get(keys[0], ("??", "?"))[0]
+        nums = ", ".join(bib.get(k, ("??", "?"))[1] for k in keys)
+        return f"{author} [{nums}]"
 
-    def parencite(m):
-        parts = []
-        for k in m.group(1).split(","):
-            s, y = bib.get(k.strip(), ("??", "??"))
-            parts.append(f"{s} et al., {y}")
-        return "(" + "; ".join(parts) + ")"
+    def citep(m):
+        keys = [k.strip() for k in m.group(1).split(",")]
+        return "[" + ", ".join(bib.get(k, ("??", "?"))[1] for k in keys) + "]"
 
-    text = re.sub(r"\\textcite\{([^}]+)\}", textcite, text)
-    text = re.sub(r"\\parencite\{([^}]+)\}", parencite, text)
+    text = re.sub(r"\\citet\{([^}]+)\}", citet, text)
+    text = re.sub(r"\\citep\{([^}]+)\}", citep, text)
 
     text = re.sub(r"(?<!\\)%.*", "", text)
     # commands with up to three brace groups whose content is invisible
@@ -229,7 +229,7 @@ def check_citation_keys(base: str) -> tuple:
         if not fname.endswith(".tex"):
             continue
         text = open(os.path.join(chdir, fname), encoding="utf-8").read()
-        for m in re.finditer(r"\\(?:textcite|parencite|nocite)\{([^}]+)\}",
+        for m in re.finditer(r"\\(?:citet|citep|nocite)\{([^}]+)\}",
                              text):
             used.update(k.strip() for k in m.group(1).split(","))
     main = open(os.path.join(base, "main.tex"), encoding="utf-8").read()
