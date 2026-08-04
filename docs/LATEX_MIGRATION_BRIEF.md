@@ -83,6 +83,32 @@ Already extracted for you, do not redo:
 - `docs/RED_TRIAGE.md` the coloured regions as 89 decidable blocks
 - `docs/LATEX_MIGRATION.md` the twelve-phase plan
 
+## The class is article-based, so there are no chapters
+
+`kclthesis.cls` line 15 is `\LoadClass[11pt,a4paper]{article}`. There is no
+`\chapter` command. The template's own content files open with
+`\section{Introduction}`.
+
+This shifts every heading down one level and changes several things that
+follow from it:
+
+- Convert with `--top-level-division=section`, not `chapter`. A conversion
+  producing `\chapter{}` fails on the first heading.
+- What the docx calls a chapter becomes a `\section`, its sections become
+  `\subsection`, and its subsections become `\subsubsection`. That lands
+  neatly on the author's existing `§4.1` style, because article numbers
+  sections 1, 2, 3 and subsections 4.1, 4.2.
+- Figures and tables number flat by default in article, as Figure 1, 2, 3.
+  Use `\numberwithin{figure}{section}` and `\numberwithin{table}{section}`
+  to get the 4.1, 4.2 form the document uses.
+- `\appendix` still works and letters the sections A, B, C.
+- The seven "Chapter N" references in the prose have no chapters to point
+  at. Reword them to Section, and say so in your report.
+
+An earlier attempt at this port assumed a report class and would not have
+compiled. It was never caught because there is no compiler here. Read the
+class before you assume anything about its structure.
+
 ## Colour: everything ends up black
 
 The finished LaTeX carries no coloured text. Every red passage becomes
@@ -117,7 +143,7 @@ exception to all five kinds:
 | In the docx | In the LaTeX |
 |---|---|
 | `§2.2` | `Section~\ref{sec:...}` |
-| `Chapter 4` | `Chapter~\ref{ch:...}` |
+| `Chapter 4` | `Section~\ref{sec:...}`, since the class has no chapters |
 | `Appendix E` | `Appendix~\ref{app:...}` |
 | `Figure 4.5.1` | `Figure~\ref{fig:...}` |
 | `Table 4.4.1` | `Table~\ref{tab:...}` |
