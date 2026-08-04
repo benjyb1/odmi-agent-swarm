@@ -1,11 +1,11 @@
 \chapter*{Appendices}
 \addcontentsline{toc}{chapter}{Appendices}
 
-This appendix carries the material the body points at but has no room for, and a second group of results that did not reach Chapter~\ref{ch:results} at all. Sections A to F support claims made in the text: the failure-mode register, the pipeline detail behind abstention and attribution, the experiment log, the questions ruled out in advance, the prior-work scoring, and the baselines. Sections G to J are new here: the full question bank, the catalogue recompute in full, the development-set results, and the figures the body does not use. Tables and figures are numbered by section, so Table~\ref{tab:experiments} is the first table of Appendix~\ref{app:experiments}.
+This appendix carries the material the body points at but has no room for, and a second group of results that did not reach Chapter~\ref{ch:results} at all. Appendices \ref{app:failure-register} to \ref{app:baselines} support claims made in the text: the failure-mode register, the pipeline detail behind abstention and attribution, the experiment log, the questions ruled out in advance, the prior-work scoring, and the baselines. Appendices \ref{app:question-bank} to \ref{app:unused-figures} are new here: the full question bank, the catalogue recompute in full, the development-set results, and the figures the body does not use. Tables and figures are numbered by section, so Table~\ref{tab:experiments} is the first table of Appendix~\ref{app:experiments}.
 
 \chapter{Full Failure-Mode Register (FM-01 to FM-34)}\label{app:failure-register}
 
-The register lists every way the project has identified for a wrong answer to reach the committed state. It was built by walking the pipeline stage by stage and asking what could pass each gate, not by collecting observed errors, so a mode can appear here without having fired in any run. Class is the useful column: 'Caught' modes are stopped by a deterministic gate before commit, 'LLM-only' modes are left as a prompt-tunable risk, and the twenty-two 'Structural' modes cannot be closed by prompting alone. Those twenty-two are the count Section~\ref{sec:threats} cites and the attack list for further work.
+The register (Table~\ref{tab:failure-register}) lists every way the project has identified for a wrong answer to reach the committed state. It was built by walking the pipeline stage by stage and asking what could pass each gate, not by collecting observed errors, so a mode can appear here without having fired in any run. Class is the useful column: 'Caught' modes are stopped by a deterministic gate before commit, 'LLM-only' modes are left as a prompt-tunable risk, and the twenty-two 'Structural' modes cannot be closed by prompting alone. Those twenty-two are the count Section~\ref{sec:threats} cites and the attack list for further work.
 
 Severity is the product of likelihood and how silently a mode commits. `Caught' modes are stopped by a deterministic gate before commit; `LLM-only' modes are accepted as a prompt-tunable risk; `Structural' modes cannot be fixed by prompting alone and form the attack list for future work.
 
@@ -68,7 +68,7 @@ FM-34 & Translation flips meaning before the model reads it & Language & Structu
 
 \chapter{Pipeline Detail: Abstention Reasons, Evidence Gates and the False-Positive Audit}\label{app:pipeline-detail}
 
-Three parts of the pipeline are set out in full here, each of which the body states a result for without showing the workings. The first is the abstention taxonomy, which records why the swarm declined to answer on 508 of the 1,144 evaluation pairs. The second is the quote citation gate, the deterministic check that a committed answer's quote really appears in the text the Researcher read, and the three ways that check is lenient. The third is the false-positive audit, the post-hoc review of every committed answer that landed against a published ``no''.
+Three parts of the pipeline are set out in full here, each of which the body states a result for without showing the workings. The first is the abstention taxonomy (Table~\ref{tab:abstention-codes}, split by country in Figure~\ref{fig:abstained-by-country}), which records why the swarm declined to answer on 508 of the 1,144 evaluation pairs. The second is the quote citation gate, the deterministic check that a committed answer's quote really appears in the text the Researcher read, and the three ways that check is lenient. The third is the false-positive audit (Table~\ref{tab:fp-audit}), the post-hoc review of every committed answer that landed against a published ``no''.
 
 \textbf{Why the swarm abstained}
 
@@ -227,7 +227,7 @@ The orchestrator refuses to dispatch a run where the experiment identifier has n
 
 \chapter{Out-of-Reach Questions}\label{app:out-of-reach}
 
-The 29 questions judged systematically out of reach of a web agent. The rule is that the answer is a fact about internal operational behaviour for which there is no standard public artefact. Questions answerable from a policy document, observable as a portal feature, computable from harvested metadata, or which themselves ask whether something is published, are excluded. The classification was made from the question text alone, before any run data was consulted.
+The 29 questions judged systematically out of reach of a web agent (Table~\ref{tab:out-of-reach}). The rule is that the answer is a fact about internal operational behaviour for which there is no standard public artefact. Questions answerable from a policy document, observable as a portal feature, computable from harvested metadata, or which themselves ask whether something is published, are excluded. The classification was made from the question text alone, before any run data was consulted.
 
 {\footnotesize
 \begin{longtable}[]{@{}
@@ -350,7 +350,7 @@ Researcher alone, no verification & what one agent reaches before any checking &
 
 \chapter{The Full Question Bank}\label{app:question-bank}
 
-The complete ODMI questionnaire as the swarm sees it, all 143 questions in the order they appear in the instrument. This is the population every figure in Chapter~\ref{ch:results} is drawn from, so it is here in full rather than sampled. By dimension: Policy 31, Portal 45, Quality 29 and Impact 38. By answer shape: 124 binary, 12 percentage bands, 3 ordinal magnitudes, 2 count bands and 2 categorical. The 124 binary questions are the ones the headline accuracy figures are computed over, because they are the only shape where a ``yes'' or ``no'' can be scored against the published key without a banding judgement.
+The complete ODMI questionnaire as the swarm sees it (Table~\ref{tab:question-bank}), all 143 questions in the order they appear in the instrument. This is the population every figure in Chapter~\ref{ch:results} is drawn from, so it is here in full rather than sampled. By dimension: Policy 31, Portal 45, Quality 29 and Impact 38. By answer shape: 124 binary, 12 percentage bands, 3 ordinal magnitudes, 2 count bands and 2 categorical. The 124 binary questions are the ones the headline accuracy figures are computed over, because they are the only shape where a ``yes'' or ``no'' can be scored against the published key without a banding judgement.
 
 {\footnotesize
 \begin{longtable}[]{@{}
@@ -516,7 +516,7 @@ I31 & Is the use of open data in your country having an impact on the level of p
 
 \chapter{The Catalogue Recompute in Full}\label{app:catalogue-recompute}
 
-The nine Quality questions the deterministic catalogue tool can answer without an agent, computed directly from a harvest of each national portal. Section~\ref{sec:catalogue-tool} reports the agreement rate; the underlying numbers are here. Two things to read carefully. The harvest is a snapshot, so a country's figure is only as current as the fetch date in the first table, and France's harvest is marked partial, meaning the portal was paged rather than exhausted. Estonia returned nothing at all and is kept in the table as a record of the attempt. Where the computed band and the published answer disagree the disagreement is real and unresolved, not an error corrected here.
+The nine Quality questions the deterministic catalogue tool can answer without an agent, computed directly from a harvest of each national portal. Section~\ref{sec:catalogue-tool} reports the agreement rate; the underlying numbers are in Table~\ref{tab:catalogue-metrics}. Two things to read carefully. The harvest is a snapshot, so a country's figure is only as current as the fetch date in the first table, and France's harvest is marked partial, meaning the portal was paged rather than exhausted. Estonia returned nothing at all and is kept in the table as a record of the attempt. Where the computed band and the published answer disagree the disagreement is real and unresolved, not an error corrected here.
 
 \textbf{What was harvested}
 
@@ -655,7 +655,7 @@ One snapshot per country, the most recent, read from catalogue\_snapshots and ca
 
 \chapter{Development-Set Results}\label{app:dev-results}
 
-Every threshold, prompt and retrieval setting in the final configuration was chosen on a development set the evaluation countries never touched. The body says that happened but never shows what the swarm scored there, so the tuning battery is reported here. It is 156 pairs over Malta, the Netherlands and Albania, built by taking all of each country's negative golds and an equal number of randomly drawn positive ones, which makes it roughly class-balanced and therefore much harder than the questionnaire's natural base rate. The run below is the frozen production configuration on Sonnet 4.6, the same stack as the evaluation headline.
+Every threshold, prompt and retrieval setting in the final configuration was chosen on a development set the evaluation countries never touched. The body says that happened but never shows what the swarm scored there, so the tuning battery is reported here, split by country in Table~\ref{tab:dev-by-country} and by dimension in Table~\ref{tab:dev-by-dimension}. It is 156 pairs over Malta, the Netherlands and Albania, built by taking all of each country's negative golds and an equal number of randomly drawn positive ones, which makes it roughly class-balanced and therefore much harder than the questionnaire's natural base rate. The run below is the frozen production configuration on Sonnet 4.6, the same stack as the evaluation headline.
 
 \textbf{By country}
 
@@ -718,7 +718,7 @@ Computed from the wide\_only arm of exp34\_retrieval\_strategy\_s46 in data/odmi
 
 \chapter{Figures Not Used in the Body}\label{app:unused-figures}
 
-Everything below was produced during the project and is not used anywhere in the body. Some are alternative renderings of a result Chapter~\ref{ch:results} already makes, kept because they show it more directly than the version that was chosen; the rest are analyses that were run and then not written up. None of it is load-bearing for any claim in the text, and nothing here should be read as a result the dissertation argues for. Two carry a note where their numbers do not line up with the body, which is exactly why they were left out.
+Everything below (Figures~\ref{fig:j-funnel} to~\ref{fig:j-asymmetry}) was produced during the project and is not used anywhere in the body. Some are alternative renderings of a result Chapter~\ref{ch:results} already makes, kept because they show it more directly than the version that was chosen; the rest are analyses that were run and then not written up. None of it is load-bearing for any claim in the text, and nothing here should be read as a result the dissertation argues for. Two carry a note where their numbers do not line up with the body, which is exactly why they were left out.
 
 
 

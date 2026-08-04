@@ -80,6 +80,49 @@ One thing the template says that this document does not meet: its
 than 15000 words". The cover word count is 25,675. Check the length
 limit for 7CCSMPRJ on KEATS.
 
+## Rubric pass (2026-08-04, after the template work)
+
+The KEATS report rubric audited point by point. Already met: cover
+fields, one-page abstract covering objectives, work and findings,
+acknowledgements, ToC with page numbers, lists of figures and tables,
+consecutive page numbering, captions on all 64 floats, numbered
+headings on one system, IEEE references applied consistently, a
+structure section closing the introduction, and an LSEP chapter that
+names and applies the BCS Code of Conduct and IET Rules of Conduct
+(§5.5). No equations in the document, so the equation rules are moot.
+
+Fixed in this pass, all mechanical:
+
+- **Contractions** (rubric: not to be used): the four in body prose
+  expanded (were not, is not, did not, does not; §2.2, §2.3, §4.6,
+  Conclusion). The two "I don't know" instances stay: both are
+  verbatim quotations from national-team responses. "Don't
+  Hallucinate, Abstain" stays: a paper title.
+- **Nomenclature completeness** (rubric: all abbreviations and symbols,
+  alphabetical): added AI, BCS, DIY, DNS, EU, IET, MMLU, SHA-256, URL
+  and the symbol rho; list re-checked alphabetical.
+- **Every appendix now referred to in the text** (rubric requirement).
+  Body parentheticals added for the five that had none: F baselines
+  (§4.1), G question bank (§3.4), H catalogue recompute (§3.5), I
+  development-set results (§3.7); the appendix opener's "Sections A to
+  F" prose became real "Appendices A to F" ranges, which also covers J.
+- **Every float now referred to in the text** (rubric requirement).
+  Figure 2.1 gets its reference from §2.1; the eight appendix tables
+  and one appendix figure that had none are now referenced from their
+  chapters' opening sentences. The sixteen Appendix J figures are
+  covered by an explicit "Figures J.1 to J.16" range in the J opener;
+  per-figure references would be circular for a gallery whose whole
+  point is that the body does not use it.
+
+Deliberately not applied: "numerical values should be in 4 decimal
+places". The report's values carry the precision of their sources
+(published percentages to one decimal, counts exact); padding them to
+four decimals would manufacture precision the data does not have.
+
+Residual: the country-code row labels in Table 3.2 (AL, HU, RO...)
+are ISO codes with no legend; a one-line caption note would close the
+letter of the abbreviation rule if wanted.
+
 ## How the port ran
 
 Pipeline in `scripts/latex_port/`, one commit per phase:
