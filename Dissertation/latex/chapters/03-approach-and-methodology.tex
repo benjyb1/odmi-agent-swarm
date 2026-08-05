@@ -15,7 +15,7 @@ Requiring the Researcher to return a verbatim passage forms the first half of At
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\linewidth]{figures/fig_3_1_subtrio.pdf}
-\caption{The three agent swarm.}
+\caption{The three-agent swarm.}
 \label{fig:subtrio}
 \end{figure}
 
@@ -23,15 +23,15 @@ A pair either routes to the deterministic catalogue tool or through the three ag
 
 The Researcher: The first of three model calls converts the question and country into two or three brief search queries, one in English and, if the national language differs, one in that language. The second reads each page the pipeline fetches and keeps the passages relevant to the question, dropping any page that yields none. The third reads the snippets it kept and generates a structured answer comprising a label, a verbatim passage, the source URL, and two confidence scores: one for the evidence found and one for the answer derived from that evidence. The quote and URL make the answer auditable, and the answer confidence is the score the commit threshold acts on.
 
-The Verifier: the verification system comprises several deterministic and probabilistic components. It begins with a deterministic offline gate that checks whether the cited quote appears in the snippet and whether the URL is absent from the deny-list of Section~\ref{sec:leakage-controls}. The gate is deliberately lenient in three recorded ways, set out in Appendix~\ref{app:pipeline-detail}. The system seeks reasons to reject the Researcher's claim, proceeding through five reasoning steps: substring check, source authority, evidence fit, counterevidence, and verdict. It also conducts an adversarial counter-search for every question, on queries a small model call of its own generates. If the Verifier accepts the answer and the Researcher's confidence exceeds the final threshold, the pair proceeds to the upper exit shown in Figure~\ref{fig:subtrio}, without an Adjudicator pass. Otherwise, the Verifier returns its counter-argument to the Researcher for a retry.
+The Verifier: The verification system comprises several deterministic and probabilistic components. It begins with a deterministic offline gate that checks whether the cited quote appears in the snippet and whether the URL is absent from the deny-list of Section~\ref{sec:leakage-controls}. The gate is deliberately lenient in three recorded ways, set out in Appendix~\ref{app:pipeline-detail}. The system seeks reasons to reject the Researcher's claim, proceeding through five reasoning steps: substring check, source authority, evidence fit, counterevidence, and verdict. It also conducts an adversarial counter-search for every question, on queries a small model call of its own generates. If the Verifier accepts the answer and the Researcher's confidence exceeds the final threshold, the pair proceeds to the upper exit shown in Figure~\ref{fig:subtrio}, without an Adjudicator pass. Otherwise, the Verifier returns its counter-argument to the Researcher for a retry.
 
 Commit: If the Verifier passes the answer and the Researcher confidence clears the final floor, the pair commits there, with no Adjudicator pass. Most committed answers leave the loop at this point.
 
-Retry: a rejected or sub-floor answer returns to the Researcher with the Verifier's counterevidence attached, and the next attempt is forced to diverge from the queries already tried. Without that constraint the retry re-reads the pages that produced the rejected answer, so the loop repeats itself rather than reaching new evidence. Each round therefore enlarges the evidence pool rather than re-arguing over a fixed one. That is the progressive retrieval Section~\ref{sec:debate} identified as carrying most of Chowdhury et al.'s improvement. Three retries are allowed, so four attempts in all.
+Retry: A rejected or sub-floor answer returns to the Researcher with the Verifier's counterevidence attached, and the next attempt is forced to diverge from the queries already tried. Without that constraint the retry re-reads the pages that produced the rejected answer, so the loop repeats itself rather than reaching new evidence. Each round therefore enlarges the evidence pool rather than re-arguing over a fixed one. That is the progressive retrieval Section~\ref{sec:debate} identified as carrying most of Chowdhury et al.'s improvement. Three retries are allowed, so four attempts in all.
 
 The Adjudicator: Only once the retry loop is exhausted, the Adjudicator agent is deployed. It runs no new web searches, and weighs up all the collected evidence throughout the retries from both previous agents. It outputs an authoritative verdict on whether the Researcher, the Verifier or neither was correct, or that the case cannot be settled at all, together with an answer, a confidence, a reasoning string, and the source URL and quote it commits to. If the Adjudicator confidence is below the threshold the answer is not committed.
 
-Confidence threshold: A single threshold governs commitment, 0.65. A Verifier finalises an answer only if the label is not an abstention and the Researcher's confidence reaches 0.65; otherwise, the pair returns to the retry loop. The same threshold is applied after adjudication, where an Adjudicator answer below 0.65 is rewritten as inconclusive. As detailed in Section~\ref{sec:abstention}, the choice of threshold is a policy decision, between balancing accuracy and coverage.
+Confidence threshold: A single threshold governs commitment, 0.65. A Verifier finalises an answer only if the label is not an abstention and the Researcher's confidence reaches 0.65; otherwise, the pair returns to the retry loop. The same threshold is applied after adjudication, where an Adjudicator answer below 0.65 is rewritten as inconclusive. As detailed in Section~\ref{sec:abstention}, the choice of threshold is a policy decision, balancing accuracy and coverage.
 
 \section{Retrieval}\label{sec:retrieval}
 
@@ -41,7 +41,7 @@ The pipeline then runs in stages. Each query is issued to a Google Serper search
 
 \section{Ground Truth and Its Limits}\label{sec:ground-truth}
 
-The swarm's accuracy is marked against the 2025 ODMI assessment answers, as it is the closest publicly available ground truth. It provides all 5,148 answers across every question-country pair, each one self-reported by the country and then reviewed by Capgemini, who confirm 63\% of answers, supplement 27\% of answers with more evidence, and actively change around 10\%. The evidence attached to an answer ranges from a clear URL to a more informal comment from a national data team such as `We are working on it'. In Chapter~\ref{ch:results}, the term `gold' refers to the answer in the ground truth set, for example `negative-golds' means the questions in the 2025 questionnaire that were answered with a ``no'' or low band. Table~\ref{tab:answer-shapes} shows the breakdown of question type, with the majority requiring a binary answer; the full question bank is reproduced in Appendix~\ref{app:question-bank}.
+The swarm's accuracy is marked against the 2025 ODMI assessment answers, as it is the closest publicly available ground truth. It provides all 5,148 answers across every question-country pair, each one self-reported by the country and then reviewed by Capgemini, who confirm 63\% of answers, supplement 27\% of answers with more evidence, and actively change around 10\%. The evidence attached to an answer ranges from a clear URL to a more informal comment from a national data team such as `We are working on it'. In Chapter~\ref{ch:results}, the term `gold' refers to the answer in the ground truth set, for example `negative golds' means the questions in the 2025 questionnaire that were answered with a ``no'' or low band. Table~\ref{tab:answer-shapes} shows the breakdown of question type, with the majority requiring a binary answer; the full question bank is reproduced in Appendix~\ref{app:question-bank}.
 
 {\small
 \begin{longtable}[]{@{}
@@ -69,9 +69,9 @@ Categorical & 2 & 1\% \\
 }
 
 
-Rating accuracy as the match rate with this ground-truth is not perfect. The answers originate with the country, and 29 of the questions ask about internal practice where evidence is hard to find online, such as `Do you monitor search keywords?' or `Do you monitor portal traffic?' (Appendix~\ref{app:out-of-reach} lists all 29). Across all 36 countries these 29 questions are answered ``yes'' 79.3\% of the time, which confounds whether the system is successfully retrieving the relevant information and reasoning carefully over it, or whether the architecture has not addressed the natural LLM optimism bias and both Researcher and Verifier have been misled by vague or missing evidence. This points to a class of error that sits outside the declared ground-truth mismatches, and isolating it is an necessary step towards true reliability. Secondly, many of the calculated answers for the nine deterministic questions diverge from the reported figures, as shown in Section~\ref{sec:catalogue-tool}, so the ground truth is demonstrably wrong on at least some items. 
+Rating accuracy as the match rate with this ground truth is not perfect. The answers originate with the country, and 29 of the questions ask about internal practice where evidence is hard to find online, such as `Do you monitor search keywords?' or `Do you monitor portal traffic?' (Appendix~\ref{app:out-of-reach} lists all 29). Across all 36 countries these 29 questions are answered ``yes'' 79.3\% of the time, which confounds whether the system is successfully retrieving the relevant information and reasoning carefully over it, or whether the architecture has not addressed the natural LLM optimism bias and both Researcher and Verifier have been misled by vague or missing evidence. This points to a class of error that sits outside the declared ground-truth mismatches, and isolating it is a necessary step towards true reliability. Secondly, many of the calculated answers for the nine deterministic questions diverge from the reported figures, as shown in Section~\ref{sec:catalogue-tool}, so the ground truth is demonstrably wrong on at least some items. 
 
-These two flaws change how the evaluation has to be framed. Where the swarm and the ODMI disagree, it can be unclear whether the swarm is wrong or the ODMI is, and \citet{fumega2026} found that an agentic assessor is sometimes right where the human experts are not. Neither rater is infallible here, since the swarm can misread evidence and the human key is self-reported and diverges from the recompute. Section~\ref{sec:convergent-validity} takes this up again, doing an independent audit of 94 false positives across eight countries, to see where the system falls short, and which questions are structurally out-of-reach for a closed-world assessment.
+These two flaws change how the evaluation has to be framed. Where the swarm and the ODMI disagree, it can be unclear whether the swarm is wrong or the ODMI is, and \citet{fumega2026} found that an agentic assessor is sometimes right where the human experts are not. Neither rater is infallible here, since the swarm can misread evidence and the human key is self-reported and diverges from the recompute. Section~\ref{sec:convergent-validity} takes this up again, doing an independent audit of 94 false positives across eight countries, to see where the system falls short, and which questions are structurally out of reach for a closed-world assessment.
 
 \section{Deterministic Tool for Catalogue Questions}\label{sec:catalogue-tool}
 
@@ -113,7 +113,7 @@ The tool can only harvest a country whose portal route is known, so classificati
 \end{longtable}
 }
 
-Recomputed values are percentages, except Q13 which is a count of distinct licences. Bold marks a recompute falling in the band the country reported: 31 of 66 across the eight complete harvests. Partial harvests are excluded. 
+Recomputed values are percentages, except Q13, which is a count of distinct licences. Bold marks a recompute falling in the band the country reported: 31 of 66 across the eight complete harvests. Partial harvests are excluded. 
 
 \section{Data-Leakage Controls}\label{sec:leakage-controls}
 
@@ -185,7 +185,7 @@ The following metrics, set out in Table~\ref{tab:metrics}, will be used in Chapt
 \bottomrule\noalign{}
 \endlastfoot
 Coverage & Share of attempted pairs the system commits to. The complement of the abstention rate & All attempted pairs \\
-Commit-accuracy & Share of committed answers matching the key & Scorable committed pairs \\
+Commit accuracy & Share of committed answers matching the key & Scoreable committed pairs \\
 Per-class recall & Share of one gold class answered correctly, reported separately for yes and no golds & All golds in the class, and committed golds alone \\
 Negative-gold false-positive rate & Share of negative golds the system answered ``yes''. A negative gold is one whose key answer is no, or a low band & All negative golds, and committed negative golds alone \\
 Balanced accuracy & Mean of the true-positive and true-negative rates, removing the class imbalance that raw accuracy rewards. 0.5 is the floor, and below it the system is doing worse than answering the same way every time & Binary gold pairs \\
@@ -197,4 +197,4 @@ Spearman's rank correlation & Whether two orderings agree, on {[}-1, 1{]}, where
 \end{longtable}
 }
 
-An abstention is neither correct nor incorrect, so every rate over a gold class has two defensible denominators. Taken over committed answers alone, a rate scores only what the system said, which rewards declining whenever it is unsure. Taken over every gold in the class, an abstention counts as a failure, which rewards answering regardless. Neither denominator is honest by itself, so Chapter~\ref{ch:results} reports both. Coverage is read beside every accuracy figure, since abstaining on all but one pair and getting it right returns a commit-accuracy of 100\%.
+An abstention is neither correct nor incorrect, so every rate over a gold class has two defensible denominators. Taken over committed answers alone, a rate scores only what the system said, which rewards declining whenever it is unsure. Taken over every gold in the class, an abstention counts as a failure, which rewards answering regardless. Neither denominator is honest by itself, so Chapter~\ref{ch:results} reports both. Coverage is read beside every accuracy figure, since abstaining on all but one pair and getting it right returns a commit accuracy of 100\%.
