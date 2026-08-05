@@ -18,8 +18,13 @@ broken, fixed in a pass.
 - [ ] **Release-of-project box.** Prints the red "Check the appropriate box
       below" with both boxes unticked. `\ReleaseProject{1}` to agree,
       `{2}` to refuse. Only you can make this call.
-- [ ] **Signature.** `figures/signature.png` is the template's red
-      "Signature" placeholder. Replace with an image of your own.
+- [fixed] **Signature.** `figures/signature.png` was the template's red
+      "Signature" placeholder. Replaced at the author's instruction with
+      his name set in Snell Roundhand Bold, rendered to the same 237x77
+      transparent PNG so the class file is untouched. Verified on the
+      rendered cover. To change the face, rerun
+      `make_signature_from_font.py` with a different choice, or drop in
+      a scan of a handwritten signature at the same dimensions.
 - [ ] **Word count and length limit.** Cover says 25,675 (chapters 1 to 6
       including tables and captions). Recomputing the same basis on the
       current build gives 25,507, so the printed figure overstates by
