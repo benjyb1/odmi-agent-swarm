@@ -39,6 +39,8 @@ Dissertation/latex/media/
 Dissertation/latex/main.pdf
 Dissertation/latex/*.aux
 Dissertation/latex/chapters/*.aux
+Dissertation/latex/chapters/*.blg
+Dissertation/latex/chapters/*.bbl
 Dissertation/latex/*.log
 Dissertation/latex/*.toc
 Dissertation/latex/*.lof
