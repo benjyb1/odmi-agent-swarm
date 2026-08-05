@@ -1,11 +1,13 @@
 # Pre-submission checklist, ODMI dissertation
 
-Written 2026-08-05, after the Word to LaTeX migration. Status against the
-compiled PDF at commit `6edbd86`, not against the sources: several of the
-defects below were invisible in the `.tex` and only showed on the page.
+Written 2026-08-05 after the Word to LaTeX migration; re-verified end to
+end 2026-08-05 (second pass) against the compiled PDF, with every page
+rendered to an image and inspected. The build is now 131 pages (was 132;
+the failure-register table lost a page of wrapped labels). Status below
+is against the sources as of this pass, not `6edbd86`.
 
 Legend: `[ ]` outstanding, yours. `[x]` checked and clean. `[fixed]` was
-broken, fixed in this pass.
+broken, fixed in a pass.
 
 ---
 
@@ -19,21 +21,27 @@ broken, fixed in this pass.
 - [ ] **Signature.** `figures/signature.png` is the template's red
       "Signature" placeholder. Replace with an image of your own.
 - [ ] **Word count and length limit.** Cover says 25,675 (chapters 1 to 6
-      including tables and captions). The template's own guidance says
-      "The dissertation should be less than 15000 words". Confirm the real
-      7CCSMPRJ limit and the counting basis on KEATS. If the limit binds,
-      this is the largest single risk to the mark and nothing else on this
-      list matters as much.
+      including tables and captions). Recomputing the same basis on the
+      current build gives 25,507, so the printed figure overstates by
+      168; left as is because the counting method must stay the one the
+      cover names. The template's own guidance says "The dissertation
+      should be less than 15000 words". Confirm the real 7CCSMPRJ limit
+      and the counting basis on KEATS. If the limit binds, this is the
+      largest single risk to the mark and nothing else on this list
+      matters as much.
 
 ## 2. Unaddressed review comments the migration dropped
 
 The frozen docx carried seven comments. Word comments do not survive
-conversion, so they are not in the LaTeX and not in the PDF. **All seven
-anchor passages still stand verbatim**, so none has been acted on. Five
-are from a reader, two are your own.
+conversion, so they are not in the LaTeX and not in the PDF. Second-pass
+correction to what this section said before. The first comment was
+already acted on in Word before the freeze (the frozen docx has no bold
+on the dimension names, verified in its `document.xml`), so six remain,
+not seven. The six anchor passages below stand verbatim in the LaTeX.
 
-- [ ] "Not sure these need to be in bold - it's giving written by AI"
-      → §2.1, the bold dimension names (**Policy**, **Portal**, ...).
+- [x] "Not sure these need to be in bold - it's giving written by AI"
+      → §2.1 dimension names. Already resolved in Word; nothing bold
+      there in the frozen docx or the PDF.
 - [ ] "explain" (your own)
       → §2.3, "so the gradient signal rewards predicting the most likely
       next token".
@@ -41,7 +49,8 @@ are from a reader, two are your own.
       terminology in engineering)"
       → Chapter 4, "stance of the Verifier is load-bearing".
 - [ ] "Is 'decline' the right word here?"
-      → Chapter 4.
+      → Chapter 4 opening paragraph; the comment range sits on "abstains
+      on | many it would have got right".
 - [ ] "Double check the wording in this bit, is this the clearest way you
       can say this?"
       → §5.1, "the accuracy it reaches in normal operation is bought by
@@ -52,147 +61,221 @@ are from a reader, two are your own.
 
 ## 3. Content contradictions. Your call, examiner-visible
 
-- [ ] **£0.28 against £0.26** for the same per-committed-pair cost, Table
-      4.7 against the prose below it. The arithmetic favours £0.26
-      (636 × £0.26 + 508 × £0.41 ≈ £374, matching the stated £375).
+- [fixed] **£0.28 against £0.26** for the same per-committed-pair cost,
+      Table 4.7 against the prose below it. Settled by the register and
+      the arithmetic, so the table cell was corrected to £0.26.
+      Working. `docs/RESULTS.md` line 520 gives the committed-pair mean
+      as £0.26 ($211.84 × 0.79); 636 × £0.26 + 508 × £0.41 ≈ £374,
+      matching the stated £375 total, while £0.28 gives £386 and
+      matches nothing.
 - [ ] **88/73 against 89/79** for the same sub-floor negative-gold
-      population, §4.1 against §4.2. Figure J.6 uses 88/73.
-- [ ] **P28 against PT28.** Table 5.2 cites search-term monitoring as a
-      Policy question P28; the question bank gives it as PT28.
-- [ ] **Appendix B 407-pair overlap** appears to double-count.
-- [ ] **Two arithmetic mismatches** flagged by `verify_numbers.py`, both in
-      Appendix E and both inside verbatim quotes from Fumega and Gao
+      population. Verified this pass against the canonical analysis
+      (`evaluation/figures/abstention_gold_class_by_code.json`,
+      exp36_frozen_headline) and `docs/RESULTS.md`. Code G holds 199
+      pairs, of which 89 carry a no gold (79 correct) and 73 carry a
+      yes gold (18 correct, "around a quarter"). §4.2 therefore agrees
+      with the register; the Chapter 4 opener's "Of the 88 withheld
+      answers sitting below the floor on a negative gold, 73 were
+      correct" does not, and its 73 is the yes-gold count. Not fixed
+      here because Figure J.6 has the same 88/73 baked into its
+      rendered annotation and no generating script survives, so a
+      prose-only fix would put body and figure in open disagreement.
+      Decide. Align the opener and J.6's caption to 89/79 and re-render
+      or drop the figure annotation, or leave all three as they stand.
+- [ ] **P28 against PT28.** Verified against the question bank. Search
+      keyword monitoring is PT28 (Portal); P28 asks about training
+      plans for civil servants. Table 5.2's Policy row (P22 to P29)
+      uses "as P28 asks for search-term monitoring" as its example, so
+      a bare swap to PT28 would place a Portal question inside a Policy
+      row. No P22 to P29 question covers monitoring. The row needs a
+      different example or rewording, which is your prose.
+- [fixed] **Appendix B 407-pair overlap** double-counted. Corrected to
+      "Of the 235 pairs they cover between them, 172 failed both, 36
+      the Verifier test alone and 27 the floor test alone." Working.
+      The canonical analysis gives E = 208, G = 199, overlap = 172, so
+      the union is 208 + 199 − 172 = 235, Verifier-alone is 36,
+      floor-alone is 27. The old sentence's 407 was 208 + 199 with the
+      172 counted twice, and its own neighbouring sentence states the
+      172 overlap.
+- [ ] **Two arithmetic mismatches** flagged by `verify_numbers.py`, both
+      in Appendix E and both inside verbatim quotes from Fumega and Gao
       ("19% ... 2 of 12", "69% ... 17 of 25"). Correct as quotations;
-      leave them.
-- [ ] **Internal identifiers on the page.** Appendix C's run-ID row labels
-      render as broken fragments across three lines
-      (`exp36_ model_ opus`, `cb_ heldout_ 20260725`,
-      `heldout_ fp_ audit_ merged94`), and `data/odmi.db` and
-      `exp34_retrieval_strategy_s46` appear in Appendix H and J prose.
-      These mean nothing to an examiner and look like leaked scaffolding.
+      leave them. Re-confirmed this pass, still the only two.
+- [ ] **Internal identifiers on the page.** Appendix C's run-ID row
+      labels still render as stacked fragments (`exp36_ model_ opus`,
+      `cb_ heldout_ 20260725`, `heldout_ fp_ audit_ merged94`), and
+      `data/odmi.db`, `catalogue_snapshots`, `catalogue_metrics` and
+      `exp34_retrieval_strategy_s46` / `wide_only` appear in Appendix H
+      and I prose. One decision across all of them. Reword for an
+      outside reader, or keep deliberately as the receipts trail and
+      say so.
 
-## 4. Fixed in this pass
+## 4. Fixed
 
-- [fixed] **Cover fields misaligned.** The class stacks six labels in one
-  centred minipage against six values in another. Your title wraps to two
-  lines, which pushed the value column out of step: the cover read
-  "Supervisor: LLM Agent Swarm" and "Word Count: Dr Johanna Walker". Now a
-  two-column tabular.
-- [fixed] **Contents had no page numbers for the front matter.** The
-  template leaves `\pagenumbering{gobble}` in force across
-  Acknowledgements, Abstract and Nomenclature, so all three reached the
-  contents list with a blank page number. The rubric requires one. They
-  now read i, ii, iii.
-- [fixed] **Font encoding.** Added T1 and `lmodern`, so the pdfLaTeX build
-  has real glyphs for the accented author names and the plus-minus sign,
-  hyphenates those words, and stays vector rather than bitmap.
-- [fixed] Contractions, nomenclature completeness, and the appendices and
-  floats that were never referred to in the text (previous commit).
+First pass (cover alignment, front-matter page numbers, fonts, rubric
+items) as before:
+
+- [fixed] **Cover fields misaligned.** Two-column tabular now; the
+  "Supervisor: LLM Agent Swarm" column slip is gone. Re-verified on the
+  page this pass.
+- [fixed] **Contents had no page numbers for the front matter.**
+  Acknowledgements, Abstract and Nomenclature list as i, ii, iii.
+  Re-verified on the page.
+- [fixed] **Font encoding.** T1 and `lmodern` for real accented glyphs
+  under pdfLaTeX. But see the sterling item below for what T1 broke
+  under XeTeX.
+- [fixed] Contractions, nomenclature completeness, float and appendix
+  references. Re-verified this pass; zero contractions in prose, the
+  nomenclature additions all present and alphabetical.
+
+Second pass, all found on the rendered page:
+
+- [fixed] **£ printed as č, ± printed as ś.** 21 sterling signs and 2
+  plus-minus signs were literal characters. Under XeTeX with `[T1]`
+  fontenc a literal £ resolves by byte to the T1 slot holding c-caron,
+  so every cost figure in Table 4.7, §4.8, §5.4 and Appendix C printed
+  "č0.33", and Appendix E's "67.0 ± 4.7" printed "ś". pdfLaTeX was
+  unaffected, which is why source and Overleaf story looked fine. All
+  are now `\pounds{}` and `$\pm$`, correct under both engines.
+- [fixed] **"MSc in MSc Advanced Computing"** on the title page. The
+  class prints "the degree of MSc in \programme", so the field must not
+  itself start with "MSc". Field set to "Advanced Computing"; the cover
+  now reads "Degree Programme: Advanced Computing". Put "MSc" back in
+  `main.tex` line 28 if you prefer it on the cover label and accept the
+  doubled title-page sentence.
+- [fixed] **Bold full stop** after the citation "[3]." on page 1
+  (`\textbf{.}` cruft) and **spurious bold** on "as Section 1.2
+  records" mid-sentence in §5.4. Both unbolded.
+- [fixed] **Wrong-direction quotes.** Apostrophes standing as opening
+  quotes ('We are working on it', 'Do you monitor search keywords?',
+  'Caught'/'LLM-only'/'Structural', 'always'/'standard'/'never', and
+  eleven sites in the Appendix G question bank). All now open with a
+  backtick. Q22's unbalanced double quote stays. Verified verbatim in
+  the ODMI source, which also lacks the closing quote.
+- [fixed] **Missing space** in "portal traffic?'(Appendix D".
+- [fixed] **Italic span closed two letters early** on
+  "merged_responses" in §3.6 (was italic to "merged_respons"). The
+  deny-list code confirms the full token.
+- [fixed] **Raised-tilde approx signs** in Table C.1 (`\textasciitilde`)
+  now `$\sim$`.
+- [fixed] **Failure-register table geometry.** The ID column was 19pt,
+  so all 34 labels wrapped as "FM-" over "01"; the Severity header
+  collided with Status ("SeverityStatus"); "Deterministic" overfilled
+  the Stage column. Columns rebalanced; every ID now sits on one line,
+  headers have gaps, and the table is a page shorter, which is where
+  page 132 went.
+- [fixed] **Table 5.1 column collision** "TraceabilityEvery" in the
+  Reproducibility row (Verdict column too narrow for the word). Now
+  hyphenates like the row label beside it.
+- [fixed] **§4.1 heading stranded** as the last line of the Chapter 4
+  opener. The section's lead paragraph now follows the heading (moved
+  verbatim from below Table 4.1; floats unchanged), so the heading is
+  no longer orphaned.
+- [fixed] **Table 4.7 committed-pair cost** and **Appendix B overlap
+  sentence**, per section 3 above.
 
 ## 5. Post-migration checks. What a Word to LaTeX port breaks
 
-This is the section that matters most for this document, because these are
-failures a normal proofread does not look for. Each was run against the
-frozen docx `Dissertation.20260804-162405.frozen-latex-port.docx`.
+Re-run in full this pass. Deterministic gates re-run at the final
+commit; every page of the compiled PDF rendered at 150 dpi and
+inspected (six sweeps of 20 pages plus the front matter by hand).
 
 ### Content that silently vanishes
 
-- [x] **Word count of body text.** Word-multiset parity against the frozen
-      docx. Every residual difference is accounted for: generated
-      citations, generated cross-references, the regenerated contents and
-      reference lists, repeated table headers, and the deliberate
-      insertions. No content word lost.
-- [x] **Footnotes and endnotes.** The docx has zero of both, so nothing to
-      lose. Worth stating because pandoc handles them badly and their
-      absence would otherwise look like a loss.
-- [ ] **Comments.** Seven existed and are gone. See section 2.
-- [x] **Hyperlinks.** 58 in the docx. All 56 in the front matter were the
-      generated contents list, regenerated by `\tableofcontents`; the
-      other 2 were reference-list URLs, regenerated from the `.bib`. No
-      body hyperlink lost.
-- [x] **Lists.** Six numbered-list paragraphs in the docx, all empty
-      formatting artefacts. Nothing lost.
-- [x] **Emphasis.** Bold 356 to 299 and italic 132 to 69, the differences
-      being headings (now `\chapter`/`\section`) and the typed reference
-      list's italic journal titles (now generated by the `.bst`).
+- [x] **Word count of body text.** Parity re-run. 820 docx-only tokens,
+      87 tex-only; the delta against the first pass is exactly the
+      three number corrections above. Classes unchanged (citations,
+      cross-references, regenerated lists, repeated headers, deliberate
+      insertions). No content word lost.
+- [x] **Footnotes and endnotes.** None in the docx, none needed.
+- [ ] **Comments.** Seven existed; one was already acted on in Word,
+      six remain. See section 2.
+- [x] **Hyperlinks.** Regenerated (contents, references). No body
+      hyperlink lost.
+- [x] **Lists.** Nothing lost (the six numbered paragraphs in the docx
+      were empty artefacts).
+- [x] **Emphasis.** Re-verified via the sweep; the §2.1 bold names are
+      absent in the frozen docx too, so nothing was dropped there.
 - [x] **Superscripts and subscripts.** None in the docx.
-- [x] **Special characters.** Tick, cross, rho, arrows and comparison
-      operators became commands; they were missing-character boxes.
-      Straight quotes and `´`-as-apostrophe corrected. Zero missing
-      glyphs in the build.
+- [x] **Special characters.** Tick, cross, rho, arrows, comparison
+      operators are commands. £ and ± are now commands as well after
+      the T1/XeTeX finding above. Zero missing glyphs in the build and
+      zero wrong-glyph substitutions on the rendered pages.
 
 ### Numbering, which auto-numbering silently changes
 
-- [x] **Every cross-reference resolves to the number it had in Word.**
-      199 checked against the docx literal each replaced: 172 unchanged,
-      27 renumbered, and every renumber is intended (the docx numbered two
-      figures 2.1, chapter 4 floats drop to chapter depth, §8.3 becomes
-      Appendix C, and the docx had no J.15). Zero undefined, zero literal
-      references left behind.
-- [x] **No `??` anywhere in the PDF.**
-- [x] **Heading hierarchy.** Six chapters, 38 sections, appendices A to J
-      continuous. Four empty headings in the docx removed; two of them
-      would have renumbered §1.7 and §2.8.
-- [x] **Captions.** All 64 verbatim against the docx. Two the port itself
-      truncated were caught and restored.
-- [x] **Lists of figures and tables complete.** 38 figures, 26 tables,
-      matching the float count exactly.
+- [x] **Cross-references.** 199/199 resolve, 0 undefined, 172 unchanged
+      against the docx literal, 27 intended renumbers. Re-run at the
+      final commit.
+- [x] **No `??` anywhere in the PDF.** Re-checked by page inspection
+      and text extraction.
+- [x] **Heading hierarchy.** Unchanged; six chapters, appendices A to J.
+- [x] **Captions.** All present, tables above, figures below, none
+      separated from its float. Re-verified on the page.
+- [x] **Lists of figures and tables complete.** 38 figures, 26 tables.
+      Re-counted on the rendered front matter.
 
 ### Layout, which only shows on the page
 
-- [x] **Cover.** See section 4. This is the one that was actually broken.
-- [x] **Blank pages.** One, page 3, which the template asks for.
-- [x] **Float drift.** No figure or table lands more than two pages from
-      its first mention, apart from appendix floats referenced from the
-      body, which is where appendices belong.
-- [x] **Orphaned headings.** No section heading is the last line of a page.
-- [x] **Table page breaks.** Multi-page tables repeat their header row.
-      Verified on the page, not just in the source.
-- [x] **Overfull boxes.** 518 down to 21 over 5pt, all table gutters. The
-      largest, 37.9pt, is the class's own cover header, where three
-      minipages total 1.05 of the text width. It does not show.
-- [x] **Figure resolution.** Every raster is 248 dpi or better at its
-      printed width. Word export commonly downsamples; this one did not.
-- [x] **Fonts embedded, no Type 3 bitmaps.**
+- [x] **Cover.** Fields aligned. See section 1 for the placeholders.
+- [x] **Blank pages.** One, page 3, template-required.
+- [x] **Float drift.** Not re-measured numerically this pass; the
+      page-by-page sweep saw no float far from its context.
+- [fixed] **Orphaned headings.** One found on the page this pass (§4.1,
+      above) and fixed. No other heading strands.
+- [x] **Table page breaks.** Every multi-page table (2.1, 5.1, 5.2,
+      A.1, B.2, C.1, D.1, E.1, G.1, H.2) repeats its header row on
+      every continuation page. Verified on the page.
+- [x] **Overfull boxes.** 18 over 5pt (was 21; the table fixes removed
+      three). Largest remains the class's own 37.9pt cover header. None
+      visible at print size except the items now fixed.
+- [x] **Figure resolution.** No pixelation at print size on any page.
+- [x] **Fonts embedded, no Type 3 bitmaps.** Re-checked with pdffonts.
 
-### Bibliography, rebuilt from scratch and therefore fully re-checkable
+### Bibliography
 
-- [x] **All 43 entries present**, read one by one against the typed
-      Harvard list in the frozen docx: authors, year, title, venue,
-      identifier. One defect found and fixed, BibTeX had lowercased "I'm".
-- [x] **Every citation resolves.** 124 instances over 40 keys, zero
-      undefined. Three entries are cited nowhere in the docx either and
-      are kept with `\nocite` so the list still shows 43.
-- [x] **Citation grammar survived Harvard to IEEE.** Zero possessive
-      citations, zero year-as-noun constructions, zero literal
-      "(Author, 2024)" survivors.
-- [x] **No URL lost.** The docx list carried five; the `.bib` has nine,
-      the four extra being DOIs now rendered as links.
+- [x] **43 entries, 124 citation instances over 40 keys, zero
+      undefined, three deliberate `\nocite`.** Re-run at the final
+      commit. References pages inspected. [1] to [43], no gaps, no
+      mangled names, URLs wrap inside the measure.
+
+### Known cosmetics, deliberately left
+
+- Figure 3.1's "below 0.65, or inconclusive" annotation touches the
+  abstain box border. In the figure asset; no generating script in the
+  repo, so an asset edit is needed if it bothers you.
+- Figure J.12's title clips its final ")" at the image edge (source
+  render defect; same situation, no script).
+- Figure J.10 and J.12 point labels crowd; Figure J.13's hatching
+  strikes through its in-bar digits.
+- Empty running heads on Conclusion and appendix continuation pages
+  (section-less chapters under fancyhdr; the template does this).
+- A widow "not." tops §5.1's second page.
+- Run-in headings in Appendix C ("The completed experiments" with no
+  body, the duplicate "Completed experiments:" lead-in) read as
+  assembly seams; noted in the port report findings, your prose.
 
 ## 6. Cannot be verified here. Check on the first Overleaf compile
 
-Every local check used tectonic, which is XeTeX. The submission PDF will
-be built by Overleaf with pdfLaTeX. These need eyes once, after the first
-compile there:
+Unchanged from the first pass. Everything local ran on tectonic, which
+is XeTeX; the submission engine is pdfLaTeX.
 
-- [ ] **It compiles at all.** Nothing in the source is XeTeX-specific and
-      the only non-ASCII characters are `£` and `±`, both covered by T1,
-      but this has never actually been run through pdfLaTeX.
-- [ ] **Line breaking and page count.** pdfTeX and XeTeX break lines
-      differently, so the 132 pages and the 21 overfull boxes are XeTeX
-      numbers. Re-measure the overfull list on Overleaf and re-check the
-      table gutters.
-- [ ] **BibTeX ran.** The reference list should be numbered [1] to [43] in
-      citation order, and no `[?]` should appear. Overleaf runs BibTeX
-      automatically; if the list is missing, compile twice.
-- [ ] **Compile timeout.** 132 pages with 25 vector figures may exceed the
-      free-tier limit. If it times out, use the KCL Overleaf licence.
+- [ ] **It compiles at all.** Now more likely than before. The only
+      non-ASCII characters left in the sources are three umlauts in
+      `main.tex` comments; £ and ± became commands.
+- [ ] **Line breaking and page count.** The 131 pages and 18 overfull
+      boxes are XeTeX numbers. Re-measure on Overleaf.
+- [ ] **BibTeX ran.** Reference list numbered [1] to [43], no `[?]`.
+- [ ] **Compile timeout.** If the free tier times out, use the KCL
+      licence.
 - [ ] **Final read of the built PDF**, front to back, at 100%. Nothing
       above substitutes for it.
 
 ## 7. Note for whoever runs the QA scripts again
 
-`scripts/latex_qa.py` resolves references and citations from the compiled
-`.aux` files. Run it against a tree with no `.aux` present and it silently
-reports every reference as unresolved: 121 phantom scaffolding hits and
-333 phantom SPaG issues. Compile first, then run it.
+`scripts/latex_qa.py` resolves references and citations from the
+compiled `.aux` files. Run it against a tree with no `.aux` present and
+it silently reports every reference as unresolved: 121 phantom
+scaffolding hits and 333 phantom SPaG issues. Compile first, then run
+it. The 133-and-rising "outstanding notes" count is `%` source
+comments, which do not render; they are port documentation, not TODOs.
