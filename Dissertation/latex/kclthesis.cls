@@ -194,7 +194,7 @@
 
 \begin{minipage}{0.5\textwidth}
 \begin{flushleft}
-	\textbf{Signature:} \includegraphics[scale=0.5,align=c]{figures/signature.png}
+	\textbf{Signature:} \mbox{{\calligra\LARGE Benjamin Bream}}
 \end{flushleft}
 \end{minipage}%
 \begin{minipage}{0.5\textwidth}

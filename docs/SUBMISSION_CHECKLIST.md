@@ -18,13 +18,17 @@ broken, fixed in a pass.
 - [ ] **Release-of-project box.** Prints the red "Check the appropriate box
       below" with both boxes unticked. `\ReleaseProject{1}` to agree,
       `{2}` to refuse. Only you can make this call.
-- [fixed] **Signature.** `figures/signature.png` was the template's red
-      "Signature" placeholder. Replaced at the author's instruction with
-      his name set in Snell Roundhand Bold, rendered to the same 237x77
-      transparent PNG so the class file is untouched. Verified on the
-      rendered cover. To change the face, rerun
-      `make_signature_from_font.py` with a different choice, or drop in
-      a scan of a handwritten signature at the same dimensions.
+- [fixed] **Signature.** Was the template's red "Signature" placeholder
+      image. Now typeset directly, `\mbox{{\calligra\LARGE Benjamin
+      Bream}}` at `kclthesis.cls:197`, with `\usepackage{calligra}` in
+      `main.tex`. No image file involved, so it survives any re-upload
+      and needs no binary in the Overleaf project.
+      `figures/signature.png` deleted as now unreferenced. Verified on
+      the rendered cover, one line, no wrap. The `calligra` package is
+      standard TeX Live and resolves under tectonic here, but it has
+      not been through pdfLaTeX, so confirm it on the first Overleaf
+      compile.
+
 - [ ] **Word count and length limit.** Cover says 25,675 (chapters 1 to 6
       including tables and captions). Recomputing the same basis on the
       current build gives 25,507, so the printed figure overstates by
