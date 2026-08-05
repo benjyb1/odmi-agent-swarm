@@ -6,7 +6,7 @@ One finding runs through the chapter. The swarm can evidence a ``yes'' by findin
 
 \section{Convergent Validity}\label{sec:convergent-validity}
 
-
+The swarm was dispatched over all 1,144 question-country pairs of the eight countries. It committed to an answer on 636 and declined the remaining 508, split by country in Figure~\ref{fig:outcome-makeup}, a coverage of 55.6\%. Over just the committed answers it scored an accuracy of 70.1\%. Table~\ref{tab:four-ways} presents the results, distinguishing aggregate accuracy (including abstentions), commit accuracy (excluding abstentions), the accuracy of always answering ``yes'', and the accuracy of using only the model's priors (Appendix~\ref{app:baselines}). The table compares the 907 pairs that take a binary answer and carry a plain yes or no in the key. The remaining 237 either ask for a band or a count, where an always-yes baseline has no meaning, or are questions the assessors did not answer ``yes'' or ``no''.
 
 \begin{figure}[htbp]
 \centering
@@ -40,9 +40,6 @@ Closed book, retrieval off & 75.6\%\newline 865/1,144 & 43.0\%\newline 390/907 &
 Always-yes baseline & 100\% & 59.4\%\newline 539/907 & 100\% & 0\% & 50.0\% \\
 \end{longtable}
 }
-
-The swarm was dispatched over all 1,144 question-country pairs of the eight countries. It committed to an answer on 636 and declined the remaining 508, split by country in Figure~\ref{fig:outcome-makeup}, a coverage of 55.6\%. Over just the committed answers it scored an accuracy of 70.1\%. Table~\ref{tab:four-ways} presents the results, distinguishing aggregate accuracy (including abstentions), commit accuracy (excluding abstentions), the accuracy of always answering ``yes'', and the accuracy of using only the model's priors (Appendix~\ref{app:baselines}). The table compares the 907 pairs that take a binary answer and carry a plain yes or no in the key. The remaining 237 either ask for a band or a count, where an always-yes baseline has no meaning, or are questions the assessors did not answer ``yes'' or ``no''.
-
 
 Scoring every abstention as an error gives a strict lower bound. On that reading the swarm reaches 42.4\% accuracy, against the 59.4\% returned by arbitrarily answering ``yes'' to every question. Balanced accuracy, the mean of the yes- and no-recalls, falls to 39.6\%, against the 50.0\% any single-class rule achieves by construction. This reading is not how the system was intended, as many questions do not have sufficient public evidence to answer, and thus abstention is the correct path in these cases, but it establishes that the system has no aggregate advantage over the majority class once abstention is removed.
 
@@ -366,7 +363,7 @@ Section~\ref{sec:criteria} set timeliness and cost-effectiveness aside from the 
 
 One caveat governs every figure below. The system runs through a local proxy against a flat subscription, so the marginal cost of a run is zero and the sterling amounts are notional, converting logged tokens at published list prices to give what the same work would cost on a metered API. The figures cover every model call the pipeline makes. The three agents account for 23\% of the spend, the remaining 77\% goes to the snippet picker, the call that reads each fetched page and selects the passages the Researcher reasons over (Section~\ref{sec:retrieval}). The system spends over three times as much reading pages as it does reasoning about what it read.
 
-Answering all 1,144 evaluation pairs cost £375 in notional compute, spread across the denominators of Table~\ref{tab:cost}: £0.33 per attempted pair, £0.59 per answer given, and £0.86 per answer that matched the key, of which there were 437.
+Answering all 1,144 evaluation pairs cost \pounds{}375 in notional compute, spread across the denominators of Table~\ref{tab:cost}: \pounds{}0.33 per attempted pair, \pounds{}0.59 per answer given, and \pounds{}0.86 per answer that matched the key, of which there were 437.
 
 {\small
 \begin{longtable}[]{@{}
@@ -384,27 +381,27 @@ Answering all 1,144 evaluation pairs cost £375 in notional compute, spread acro
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Every pair attempted & 1,144 & £0.33 \\
-Pairs the swarm answered & 636 & £0.59 \\
-Answers matching the key & 437 & £0.86 \\
-A pair it committed to & 636 & £0.28 \\
-A pair it abstained on & 508 & £0.41 \\
-Whole evaluation run & 1,144 & £375 total \\
+Every pair attempted & 1,144 & \pounds{}0.33 \\
+Pairs the swarm answered & 636 & \pounds{}0.59 \\
+Answers matching the key & 437 & \pounds{}0.86 \\
+A pair it committed to & 636 & \pounds{}0.28 \\
+A pair it abstained on & 508 & \pounds{}0.41 \\
+Whole evaluation run & 1,144 & \pounds{}375 total \\
 \end{longtable}
 }
 
 
-These figures are averages; pair cost varies with the number of calls required. A pair that the system committed to cost £0.26 and required 2.2 attempts, whereas a pair on which it abstained cost £0.41 and used the full three-retry budget, because under the loop described in Section~\ref{sec:agent-loop} a pair reaches abstention only after all retries are exhausted. Section~\ref{sec:selectivity} argued that abstention is the honest outcome when evidence is thin, and this is the cost of that honesty. Selectivity is the most expensive result for a pair.
+These figures are averages; pair cost varies with the number of calls required. A pair that the system committed to cost \pounds{}0.26 and required 2.2 attempts, whereas a pair on which it abstained cost \pounds{}0.41 and used the full three-retry budget, because under the loop described in Section~\ref{sec:agent-loop} a pair reaches abstention only after all retries are exhausted. Section~\ref{sec:selectivity} argued that abstention is the honest outcome when evidence is thin, and this is the cost of that honesty. Selectivity is the most expensive result for a pair.
 
-Per-country cost is nearly flat, from £0.310 in Finland to £0.348 in Bosnia and Herzegovina, up to £0.385 with Bulgaria, and most of that spread is the abstention mix rather than anything about how hard a country's evidence is to read. Bosnia abstains on 61.5\% of its pairs against Finland's 25.9\%, and an abstained pair costs 58\% more than a committed one does. Set against Section~\ref{sec:subgroup-equity}, where coverage, commit accuracy and the false-positive rate all track published maturity, cost is the one measure that does not.
+Per-country cost is nearly flat, from \pounds{}0.310 in Finland to \pounds{}0.348 in Bosnia and Herzegovina, up to \pounds{}0.385 with Bulgaria, and most of that spread is the abstention mix rather than anything about how hard a country's evidence is to read. Bosnia abstains on 61.5\% of its pairs against Finland's 25.9\%, and an abstained pair costs 58\% more than a committed one does. Set against Section~\ref{sec:subgroup-equity}, where coverage, commit accuracy and the false-positive rate all track published maturity, cost is the one measure that does not.
 
 Model choice is the other lever, and Appendix~\ref{app:experiments} gives the comparison across Haiku 4.5, Sonnet 4.6 and Opus 4.8 on the development battery. It moves how much the system is willing to say, rather than how often it is right. Sonnet is retained because it commits most, at a middling price, with commit-accuracy indistinguishable from Opus, which costs over three times as much.
 
 A pair took a median of 200 seconds from its first logged Researcher call to its finalised row, counting the searches issued and the pages fetched alongside the model's own work, and 95\% finished inside six minutes. This is an upper bound under load, since up to twenty pairs ran simultaneously on one machine competing for the same connection. Three pairs ran past thirty minutes, the longest at forty-nine, each stalled on an unresponsive server with the Swedish catalogue endpoint worst among them.
 
-The eight evaluation countries took 45 hours and £375, so all 36 extrapolate to roughly 200 hours and £1,700. The time is an upper bound, since the eight were chosen to oversample negative golds, which skews them below the European average on maturity, and Section~\ref{sec:subgroup-equity} found lower-maturity countries abstain more, sending more pairs through the full retry budget.
+The eight evaluation countries took 45 hours and \pounds{}375, so all 36 extrapolate to roughly 200 hours and \pounds{}1,700. The time is an upper bound, since the eight were chosen to oversample negative golds, which skews them below the European average on maturity, and Section~\ref{sec:subgroup-equity} found lower-maturity countries abstain more, sending more pairs through the full retry budget.
 
-This £1,700 does not buy a completed assessment, as the coverage across the eight countries is 55.6\%. The system would commit to around 2,860 of the 5,148 pairs and decline the other 2,290. Of the answers it commits to, 70.1\% match the published key. In practice, if this system ran as a precursor to human judgement, an assessor following it would have two populations to work on. The 2,290 declined pairs arrive as a visible queue, flagged and easy to route. The harder population is the 850 or so committed answers that are wrong, which look ostensibly identical to the correct answers, with the same structure of quote and source as the 2,010 that are right.
+This \pounds{}1,700 does not buy a completed assessment, as the coverage across the eight countries is 55.6\%. The system would commit to around 2,860 of the 5,148 pairs and decline the other 2,290. Of the answers it commits to, 70.1\% match the published key. In practice, if this system ran as a precursor to human judgement, an assessor following it would have two populations to work on. The 2,290 declined pairs arrive as a visible queue, flagged and easy to route. The harder population is the 850 or so committed answers that are wrong, which look ostensibly identical to the correct answers, with the same structure of quote and source as the 2,010 that are right.
 
 \section{Reconstructing the Index}\label{sec:reconstruction}
 

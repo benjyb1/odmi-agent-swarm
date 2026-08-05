@@ -22,7 +22,10 @@
 \modulecode{7CCSMPRJ}
 \submissiontitle{Individual Project Submission 2025/26}
 \studentnumber{\red{Student number goes here}}
-\programme{MSc Advanced Computing}
+% The class prints this field three ways, one of them inside the sentence
+% "submitted for the degree of MSc in <programme>" (kclthesis.cls line 257),
+% so the field must not itself start with "MSc" or the title page doubles it.
+\programme{Advanced Computing}
 \supervisor{Dr Johanna Walker}
 % Basis: chapters 1 to 6 including tables and captions, excluding the
 % front matter, references and appendices, computed by scripts/latex_qa.py.
