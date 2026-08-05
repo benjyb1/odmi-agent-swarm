@@ -158,12 +158,21 @@ Found on the third pass, all still in both builds.
       Figure 4.3's own cells gives 18 agree, 14 differ, 4 n/a. Pick one
       framing and align the four sites; the choice is methodological,
       not arithmetic.
-- [ ] **§4.2 "reaching 100% near 0.95, on nine answers".** The register
-      (`docs/RESULTS.md` line 269 and §15) has yes-gold accuracy first
-      reaching 1.000 at 0.95 on 42 of 42, and records that no sweep in
-      any database produces a nine-answer point. The earlier 0.88 was
-      corrected to 0.95 but the "nine answers" survived. Your call
-      whether "nine" has a source; the register says it does not.
+- [ ] **§4.2 "reaching 100\% near 0.95, on nine answers"** pairs two
+      different points on the same curve. Both numbers are real and
+      both are on the page, but they do not belong together. Figure
+      4.4's own right-hand annotation reads "Yes-golds ends 1.00 at
+      n = 9", so nine is the count at the far end of the sweep, near a
+      threshold of 1.00. `docs/RESULTS.md` line 269 gives "Yes-gold
+      accuracy first reaches 1.000 | at 0.95 | 42/42", so at 0.95 the
+      count is 42. The sentence takes the threshold from the first
+      point and the sample size from the last. Either write "reaching
+      100\% near 0.95, on 42 answers" or "reaching 100\% by the end of
+      the sweep, on nine answers". Check which one you meant against
+      Figure 4.4 before changing it. Supersedes the earlier
+      `docs/RESULTS.md` §15 note, which was written against the
+      superseded "0.88" wording and concluded no nine-answer point
+      existed; the figure shows one, at the other end of the range.
 - [ ] **Appendix H omits Montenegro.** §4.1 names four countries with
       harvestable portals (Finland, Croatia, Sweden and Montenegro) and
       Figure 4.3 renders nine ME cells, but Table H.1 lists no ME
