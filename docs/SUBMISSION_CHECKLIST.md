@@ -3,8 +3,16 @@
 Written 2026-08-05 after the Word to LaTeX migration; re-verified end to
 end 2026-08-05 (second pass) against the compiled PDF, with every page
 rendered to an image and inspected. The build is now 131 pages (was 132;
-the failure-register table lost a page of wrapped labels). Status below
-is against the sources as of this pass, not `6edbd86`.
+the failure-register table lost a page of wrapped labels).
+
+Third pass 2026-08-05, section 5 re-run in full. All 131 pages of the
+local build rendered at 150 dpi and inspected again, plus a targeted
+sweep of the author's own Overleaf-compiled PDF of the same day
+(pdfTeX-1.40.27, 128 pages), which settles most of section 6 by
+artefact. The Overleaf copy carried cover and prose edits the repo did
+not have; those are now mirrored into the tree (commits `2f4a4b2`,
+`c0db7e1`), so a fresh zip upload no longer reverts them. Status below
+is against the sources as of this pass.
 
 Legend: `[ ]` outstanding, yours. `[x]` checked and clean. `[fixed]` was
 broken, fixed in a pass.
@@ -13,31 +21,33 @@ broken, fixed in a pass.
 
 ## 1. Blocking. The document cannot be submitted until these are done
 
-- [ ] **Student number.** Cover prints "Student number goes here" in red,
-      on both cover pages. `\studentnumber{}` in `main.tex`.
-- [ ] **Release-of-project box.** Prints the red "Check the appropriate box
-      below" with both boxes unticked. `\ReleaseProject{1}` to agree,
-      `{2}` to refuse. Only you can make this call.
+- [fixed] **Student number.** Now `\studentnumber{K25117192}`, mirrored
+      from your own Overleaf edit. Verified on both rendered covers.
+- [fixed] **Release-of-project box.** Now `\ReleaseProject{1}` (agree),
+      mirrored from your own Overleaf edit. Tick renders on both builds.
 - [fixed] **Signature.** Was the template's red "Signature" placeholder
       image. Now typeset directly, `\mbox{{\calligra\LARGE Benjamin
       Bream}}` at `kclthesis.cls:197`, with `\usepackage{calligra}` in
       `main.tex`. No image file involved, so it survives any re-upload
       and needs no binary in the Overleaf project.
       `figures/signature.png` deleted as now unreferenced. Verified on
-      the rendered cover, one line, no wrap. The `calligra` package is
-      standard TeX Live and resolves under tectonic here, but it has
-      not been through pdfLaTeX, so confirm it on the first Overleaf
-      compile.
+      the rendered cover, one line, no wrap. Third pass closes the
+      pdfLaTeX caveat. Your Overleaf PDF of 2026-08-05 is a
+      pdfTeX-1.40.27 build and the calligra signature renders correctly
+      on its cover, embedded as Type 1, no Type 3 fonts anywhere in the
+      file.
 
-- [ ] **Word count and length limit.** Cover says 25,675 (chapters 1 to 6
-      including tables and captions). Recomputing the same basis on the
-      current build gives 25,507, so the printed figure overstates by
-      168; left as is because the counting method must stay the one the
-      cover names. The template's own guidance says "The dissertation
-      should be less than 15000 words". Confirm the real 7CCSMPRJ limit
-      and the counting basis on KEATS. If the limit binds, this is the
-      largest single risk to the mark and nothing else on this list
-      matters as much.
+- [ ] **Word count and length limit.** Cover now says 22,606, your
+      Overleaf figure, mirrored into the repo. Verified basis. It is
+      chapters 1 to 6 excluding tables and captions (a detex recount of
+      that basis gives 22,555, delta 51; the same chapters including
+      tables and captions give 25,683, which is the old 25,675 cover
+      figure's basis). The `main.tex` comment now records this. The
+      template's own guidance says "The dissertation should be less
+      than 15000 words". Confirm the real 7CCSMPRJ limit and the
+      counting basis on KEATS. If the limit binds, this is the largest
+      single risk to the mark and nothing else on this list matters as
+      much.
 
 ## 2. Unaddressed review comments the migration dropped
 
@@ -78,26 +88,36 @@ not seven. The six anchor passages below stand verbatim in the LaTeX.
       matching the stated £375 total, while £0.28 gives £386 and
       matches nothing.
 - [ ] **88/73 against 89/79** for the same sub-floor negative-gold
-      population. Verified this pass against the canonical analysis
+      population. Verified against the canonical analysis
       (`evaluation/figures/abstention_gold_class_by_code.json`,
-      exp36_frozen_headline) and `docs/RESULTS.md`. Code G holds 199
-      pairs, of which 89 carry a no gold (79 correct) and 73 carry a
-      yes gold (18 correct, "around a quarter"). §4.2 therefore agrees
-      with the register; the Chapter 4 opener's "Of the 88 withheld
-      answers sitting below the floor on a negative gold, 73 were
-      correct" does not, and its 73 is the yes-gold count. Not fixed
-      here because Figure J.6 has the same 88/73 baked into its
-      rendered annotation and no generating script survives, so a
-      prose-only fix would put body and figure in open disagreement.
-      Decide. Align the opener and J.6's caption to 89/79 and re-render
-      or drop the figure annotation, or leave all three as they stand.
+      exp36_frozen_headline) and `docs/RESULTS.md` lines 274-275. Code
+      G holds 199 pairs, of which 89 carry a no gold (79 correct) and
+      73 carry a yes gold (18 correct, "around a quarter"). Third-pass
+      state. You corrected the Chapter 4 opener to 89/79 on Overleaf,
+      and the repo now matches (`c0db7e1`); the same commit corrects
+      Table 5.1's Selectivity cell, a third site of the claim the
+      earlier passes had missed, which still reads 88/73 on your
+      Overleaf. What remains open is Figure J.6. Its caption and its
+      baked-in render annotation still say "73 of the 88", in the repo,
+      on your Overleaf, and in the List of Figures line the caption
+      generates, and they now openly disagree with the corrected body.
+      No generating script survives for the figure. Decide. Align the
+      caption to 89/79 and re-render or drop the annotation, or cut the
+      figure.
 - [ ] **P28 against PT28.** Verified against the question bank. Search
       keyword monitoring is PT28 (Portal); P28 asks about training
       plans for civil servants. Table 5.2's Policy row (P22 to P29)
       uses "as P28 asks for search-term monitoring" as its example, so
       a bare swap to PT28 would place a Portal question inside a Policy
-      row. No P22 to P29 question covers monitoring. The row needs a
-      different example or rewording, which is your prose.
+      row. No P22 to P29 question covers monitoring (P23's monitoring
+      is of policy implementation, not search terms). Third-pass note.
+      Your Overleaf now carries exactly that bare swap, "as PT28 asks
+      for search-term monitoring" inside the Policy implementation row,
+      so the row cites a Portal question. The repo deliberately keeps
+      P28 rather than entrench the swap. The row needs a different
+      example (P27's assistance activities or P29's annual events both
+      fit "whether the team carries out a practice") or rewording,
+      which is your prose.
 - [fixed] **Appendix B 407-pair overlap** double-counted. Corrected to
       "Of the 235 pairs they cover between them, 172 failed both, 36
       the Verifier test alone and 27 the floor test alone." Working.
@@ -118,6 +138,53 @@ not seven. The six anchor passages below stand verbatim in the LaTeX.
       and I prose. One decision across all of them. Reword for an
       outside reader, or keep deliberately as the receipts trail and
       say so.
+
+Found on the third pass, all still in both builds.
+
+- [ ] **Catalogue cells, 36/50% against 32/44%.** The same comparison is
+      stated two ways. §4.1 says "Across the thirty-six measurable
+      cells the recompute agrees with the published key on eighteen,
+      50% agreement" and "disagree on 50% of the measurable cells", and
+      the Conclusion says "diverged from the answer key 50% of the
+      time". Table 5.1's Convergent row says "agreement on 18 of 32
+      measurable cells across four countries, so 44% divergence" and
+      §5.3 says "44% of the cells it could reach". Both framings share
+      the 18 agreements; they differ on whether Croatia's four
+      harvest-artefact cells (Q12, Q13, Q21, Q25, which Appendix H's
+      own note calls "an artefact of the harvest and not a measurement
+      of the portal", rendered n/a in Figure 4.3) count as measured
+      disagreements. `docs/RESULTS.md` §15 records this as
+      unreconciled and sides with 36 distinct cells. Counting from
+      Figure 4.3's own cells gives 18 agree, 14 differ, 4 n/a. Pick one
+      framing and align the four sites; the choice is methodological,
+      not arithmetic.
+- [ ] **§4.2 "reaching 100% near 0.95, on nine answers".** The register
+      (`docs/RESULTS.md` line 269 and §15) has yes-gold accuracy first
+      reaching 1.000 at 0.95 on 42 of 42, and records that no sweep in
+      any database produces a nine-answer point. The earlier 0.88 was
+      corrected to 0.95 but the "nine answers" survived. Your call
+      whether "nine" has a source; the register says it does not.
+- [ ] **Appendix H omits Montenegro.** §4.1 names four countries with
+      harvestable portals (Finland, Croatia, Sweden and Montenegro) and
+      Figure 4.3 renders nine ME cells, but Table H.1 lists no ME
+      harvest, Table H.2's 75 metrics contain no ME rows, and the
+      canonical `data/odmi.db` has no ME in `catalogue_snapshots` or
+      `catalogue_metrics`. Figure 4.3 is a docx-era PNG with no
+      generating script, so the ME column has no surviving data source
+      in the repo. An appendix titled "The Catalogue Recompute in Full"
+      is missing one of the four evaluation countries it exists to
+      back. Recreate the ME harvest rows, or note the omission and its
+      reason in H.
+- [ ] **Appendix J's opener promises notes that no longer exist.** "Two
+      carry a note where their numbers do not line up with the body,
+      which is exactly why they were left out." No J caption carries
+      any such note (all sixteen grepped and read on the page; the one
+      note that existed at port time is gone). Either add the two notes
+      (J.3's closed-book 42.9% is over the register's 1,139
+      classifiable pairs, not the "1,144 pairs" its rendered subtitle
+      claims, and Table F.1 already states 1,139; J.4's 0.503/0.701
+      sit on a different base than the body's binary numbers) or
+      reword the sentence.
 
 ## 4. Fixed
 
@@ -185,9 +252,13 @@ Second pass, all found on the rendered page:
 
 ## 5. Post-migration checks. What a Word to LaTeX port breaks
 
-Re-run in full this pass. Deterministic gates re-run at the final
-commit; every page of the compiled PDF rendered at 150 dpi and
-inspected (six sweeps of 20 pages plus the front matter by hand).
+Re-run in full on the second pass and again on the third. Deterministic
+gates re-run at the final commit (refs 199/199 with 0 undefined, cites
+PASS, arithmetic 96/98 with the two known quote mismatches, parity
+824 docx-only against 91 tex-only with the +4/+4 delta being exactly
+the mirrored Overleaf edits, 131 pages, 18 overfull over 5pt, largest
+the class's own 37.9pt, zero missing glyphs); every page of the
+compiled PDF rendered at 150 dpi and inspected.
 
 ### Content that silently vanishes
 
@@ -263,18 +334,43 @@ inspected (six sweeps of 20 pages plus the front matter by hand).
 - Run-in headings in Appendix C ("The completed experiments" with no
   body, the duplicate "Completed experiments:" lead-in) read as
   assembly seams; noted in the port report findings, your prose.
+- Figure 4.5's in-figure annotations use em dashes ("ECE 0.089 —
+  under-confident", "ECE 0.299 — inverted"). In the asset, both
+  builds; against your own style rule, but a re-render decision.
+- On the Overleaf build only, the first failure-register table page
+  carries a stale "References" running head (its arabic 73). The local
+  build's appendix continuation heads are empty as recorded above; the
+  difference is mark timing at the engines' different page breaks.
+  Cosmetic, not fixable from the sources alone.
 
-## 6. Cannot be verified here. Check on the first Overleaf compile
+## 6. The first Overleaf compile. Now mostly settled by artefact
 
-Unchanged from the first pass. Everything local ran on tectonic, which
-is XeTeX; the submission engine is pdfLaTeX.
+Third pass. Your Overleaf-compiled PDF of 2026-08-05 01:59 BST
+(Producer pdfTeX-1.40.27, 128 pages) was inspected directly, cover,
+front matter, every glyph-bearing page class, both big tables, the
+references and the J gallery, plus a word-level text diff against the
+local build. That closes most of this section.
 
-- [ ] **It compiles at all.** Now more likely than before. The only
-      non-ASCII characters left in the sources are three umlauts in
-      `main.tex` comments; £ and ± became commands.
-- [ ] **Line breaking and page count.** The 131 pages and 18 overfull
-      boxes are XeTeX numbers. Re-measure on Overleaf.
-- [ ] **BibTeX ran.** Reference list numbered [1] to [43], no `[?]`.
+- [x] **It compiles under pdfLaTeX.** Proven by the artefact. BibTeX
+      ran, references numbered [1] to [43], no `[?]`, ToC and lists
+      regenerated consistently with its own pagination.
+- [x] **Glyphs under pdfLaTeX.** All 21 sterling signs, both
+      plus-minus, ticks, crosses, arrows, ≥, ∼, ρ, en dashes and the
+      calligra signature render correctly. Zero Type 3 fonts, zero
+      missing-glyph boxes, no mojibake in the text layer.
+- [x] **Line breaking and page count.** 128 pages against the local
+      131; the diff shows the difference is pagination only, no
+      content divergence beyond the edits now mirrored into the repo.
+- [ ] **Overleaf still ahead or behind on four things.** Its hyperref
+      pdftitle still reads "Automating the EU Open Data Maturity Index
+      with a Multi-Agent LLM System" while its cover says no "EU" (one
+      line in its main.tex, now already fixed in the repo copy); its
+      Table 5.1 cell still reads 88/73 where the repo now has 89/79;
+      its Table 5.2 carries the bare PT28 swap (section 3); and its
+      §4.1/J.6 88/73 state matches the repo's remaining open item. A
+      fresh upload of the rebuilt zip resolves the first two and
+      reverts the third to P28; either way section 3's decisions
+      remain yours.
 - [ ] **Compile timeout.** If the free tier times out, use the KCL
       licence.
 - [ ] **Final read of the built PDF**, front to back, at 100%. Nothing
