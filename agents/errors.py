@@ -55,6 +55,25 @@ class AuthUnavailableShutdown(RateLimitedShutdown):
     """
 
 
+class SearchProviderExhausted(RateLimitedShutdown):
+    """The search provider returned a definitive resource-exhaustion error
+    (observed 2026-07-13: Serper `400 {"message": "Not enough credits"}`).
+
+    Not a transient blip and not a malformed-query 400 -- every subsequent
+    call fails identically until the account is topped up, so this is the
+    same shape of problem as a 429: a shared external resource is exhausted,
+    not a bug in the caller. Subclasses `RateLimitedShutdown` to reuse its
+    whole contract (same handler, same EXIT_CODE_RATE_LIMITED, same
+    dispatcher global-stop-and-resume behaviour).
+
+    Complements `agents.tools.search_serper.check_serper_credits` (a
+    preflight probe run once before a batch starts): that catches an
+    account already empty at launch, but not credits running out mid-batch,
+    which crashed the coordinator subprocess uncaught with no DB update
+    before this existed.
+    """
+
+
 class BlockerShutdown(BaseException):
     """The DIY fetch stage exceeded its wall-clock ceiling (D43).
 

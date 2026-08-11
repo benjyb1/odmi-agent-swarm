@@ -155,7 +155,7 @@ def generate_adversarial_queries(
         user_message=_build_query_gen_message(inp),
         output_schema=_Queries,
         model=model,
-        max_tokens=200,
+        max_tokens=400,
         condition_label="verifier_query_gen",
         prompt_version_id=prompt_id,
         usage_context=f"verifier_query_gen:{inp.question_id}:{inp.country_code}",
